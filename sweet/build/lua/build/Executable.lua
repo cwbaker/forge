@@ -36,8 +36,3 @@ function Executable:clean()
         clean_executable( self );
     end
 end
-
-function Executable:project()
-    generate_visual_studio_project( self );
-end
-

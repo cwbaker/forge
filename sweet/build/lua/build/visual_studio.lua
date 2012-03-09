@@ -39,52 +39,54 @@ local function configurations( vcproj, target, include_directories )
     );
 
     local module = target:id();
-    for variant, variant_settings in pairs(target.settings.variants) do
-        local output = "";
-        if target:rule() == Executable then
-            output = relative( target.settings.bin.."/"..module.."_"..platform.."_"..variant..".exe" );
-        end
-        
-        local defines = "";
-        defines = defines.."BUILD_PLATFORM_"..upper(platform)..";";
-        defines = defines.."BUILD_VARIANT_"..upper(variant)..";";
-        defines = defines.."BUILD_MODULE_"..upper(string.gsub(module, "-", "_"))..";"
-        defines = defines.."BUILD_LIBRARY_TYPE_"..upper(variant_settings.library_type)..";";
-        if target.settings.defines then
-            for _, define in ipairs(target.settings.defines) do
-                defines = defines..define..";";
+    for _, platform in ipairs(target.settings.platforms) do
+        for variant, variant_settings in pairs(target.settings.variants) do
+            local output = "";
+            if target:rule() == Executable then
+                output = relative( target.settings.bin.."/"..module.."_"..platform.."_"..variant..".exe" );
             end
-        end    
-        if target.defines then
-            for _, define in ipairs(target.defines) do
-                defines = defines..define..";";
+            
+            local defines = "";
+            defines = defines.."BUILD_PLATFORM_"..upper(platform)..";";
+            defines = defines.."BUILD_VARIANT_"..upper(variant)..";";
+            defines = defines.."BUILD_MODULE_"..upper(string.gsub(module, "-", "_"))..";"
+            defines = defines.."BUILD_LIBRARY_TYPE_"..upper(variant_settings.library_type)..";";
+            if target.settings.defines then
+                for _, define in ipairs(target.settings.defines) do
+                    defines = defines..define..";";
+                end
+            end    
+            if target.defines then
+                for _, define in ipairs(target.defines) do
+                    defines = defines..define..";";
+                end
             end
-        end
 
-        vcproj:write( [[
-        <Configuration
-            Name="]]..variant..[[|Win32"
-            OutputDirectory="../../../../obj/]]..platform..[[_]]..variant..[[/]]..relative(target:directory(), root())..[["
-            IntermediateDirectory="../../../../obj/]]..platform..[[_]]..variant..[[/]]..relative(target:directory(), root())..[["
-			ConfigurationType="0"
-            >
-            <Tool
-                Name="VCNMakeTool"
-                BuildCommandLine="build command=build variant=]]..variant..[[ platform=]]..platform..[[ target=]]..target:id()..[["
-                ReBuildCommandLine="build command=clean variant=]]..variant..[[ platform=]]..platform..[[ target=]]..target:id()..[[ &#x0D;&#x0A; build command=build variant=]]..variant..[[ platform=]]..platform..[[ target=]]..target:id()..[["
-                CleanCommandLine="build command=clean variant=]]..variant..[[ platform=]]..platform..[[ target=]]..target:id()..[["
-                Output="]]..output..[["
-                PreprocessorDefinitions="]]..defines..[["
-                IncludeSearchPath="]]..include_directories..[["
-                ForcedIncludes=""
-                AssemblySearchPath=""
-                ForcedUsingAssemblies=""
-                CompileAsManaged=""
-            />
-        </Configuration>
-]]
-        );
-    end    
+            vcproj:write( [[
+            <Configuration
+                Name="]]..platform.."_"..variant..[[|Win32"
+                OutputDirectory="../../../../obj/]]..platform..[[_]]..variant..[[/]]..relative(target:directory(), root())..[["
+                IntermediateDirectory="../../../../obj/]]..platform..[[_]]..variant..[[/]]..relative(target:directory(), root())..[["
+                ConfigurationType="0"
+                >
+                <Tool
+                    Name="VCNMakeTool"
+                    BuildCommandLine="build command=build variant=]]..variant..[[ platform=]]..platform..[[ target=]]..target:id()..[["
+                    ReBuildCommandLine="build command=clean variant=]]..variant..[[ platform=]]..platform..[[ target=]]..target:id()..[[ &#x0D;&#x0A; build command=build variant=]]..variant..[[ platform=]]..platform..[[ target=]]..target:id()..[["
+                    CleanCommandLine="build command=clean variant=]]..variant..[[ platform=]]..platform..[[ target=]]..target:id()..[["
+                    Output="]]..output..[["
+                    PreprocessorDefinitions="]]..defines..[["
+                    IncludeSearchPath="]]..include_directories..[["
+                    ForcedIncludes=""
+                    AssemblySearchPath=""
+                    ForcedUsingAssemblies=""
+                    CompileAsManaged=""
+                />
+            </Configuration>
+    ]]
+            );
+        end    
+    end
     
     vcproj:write( [[
 	</Configurations>

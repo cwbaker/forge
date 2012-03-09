@@ -21,11 +21,13 @@
 #include <sweet/lua/ptr.hpp>
 #include <boost/bind.hpp>
 #include <list>
+#include <string>
 #include <algorithm>
 
 using std::sort;
-using std::vector;
 using std::list;
+using std::vector;
+using std::string;
 using namespace sweet;
 using namespace sweet::atomic;
 using namespace sweet::lua;
@@ -200,12 +202,15 @@ void Scheduler::output( const std::string& output, ptr<Scanner> scanner, ptr<Arg
     SWEET_ASSERT( build_tool_ );
     if ( scanner )
     {
+        int matches = 0;
         const vector<Pattern>& patterns = scanner->get_patterns();
         for ( vector<Pattern>::const_iterator pattern = patterns.begin(); pattern != patterns.end(); ++pattern )
         {
             boost::match_results<const char*> match;
             if ( regex_search(output.c_str(), output.c_str() + output.length(), match, pattern->get_regex()) ) 
             {
+                ++matches;
+                
                 ptr<Environment> environment = allocate_environment( working_directory );
                 try
                 {
@@ -229,6 +234,11 @@ void Scheduler::output( const std::string& output, ptr<Scanner> scanner, ptr<Arg
                     destroy_environment( environment );
                 }
             }
+        }
+        
+        if ( matches == 0 )
+        {
+            build_tool_->output( output.c_str() );
         }
     }
     else
@@ -285,7 +295,7 @@ void Scheduler::push_output( const std::string& output, ptr<Scanner> scanner, pt
 void Scheduler::push_error( const std::exception& exception, ptr<Environment> environment )
 {
     thread::ScopedLock lock( results_mutex_ );
-    results_.push_back( boost::bind(&Scheduler::error, this, exception.what(), environment) );
+    results_.push_back( boost::bind(&Scheduler::error, this, string(exception.what()), environment) );
     results_condition_.notify_all();
 }
 

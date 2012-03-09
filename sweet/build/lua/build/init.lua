@@ -14,8 +14,9 @@ require "build/QtMoc";
 require "build/AsciiDoc";
 require "build/Project";
 require "build/msvc";
+require "build/mingw";
 require "build/visual_studio";
-
+    
 -- Provide python like syntax for string interpolation.
 getmetatable("").__mod = function( format, args )
     if args then
@@ -50,6 +51,10 @@ function setup( settings )
             visual_studio_directory = autodetect_visual_studio_directory() or "C:/Program Files/Microsoft Visual Studio 9.0";
             windows_sdk_directory = autodetect_windows_sdk_directory() or "C:/Program Files/Microsoft SDKs/Windows/v6.0A";
         };
+        
+        mingw = {
+            mingw_directory = autodetect_mingw_directory() or "C:/mingw";
+        };
 
         parser = {
             executable = "d:/usr/local/bin/parser.exe";
@@ -72,7 +77,7 @@ function setup( settings )
         };
 
         platforms = {
-            "msvc"
+            "msvc", "mingw"
         };
 
         variants = {
@@ -241,7 +246,12 @@ function build()
     local total_start = 0;
 
     parser( settings );
-    msvc( settings );
+    
+    if platform == "msvc" then
+        msvc( settings );
+    elseif platform == "mingw" then
+        mingw( settings );
+    end
     
     local load_start = ticks();
     load_project( project );
@@ -266,8 +276,6 @@ function build()
         rm( settings.cache );
     elseif command == "compile" then
         compile( source );
-    elseif command == "projects" then
-        postorder( visit("projects"), all );
     elseif command == "dependencies" then
         print_dependencies( all );
     elseif command == "namespace" then
@@ -387,6 +395,7 @@ function load_project( project )
         cache:add_dependency( SourceFile("build/lua/build/QtMoc.lua") );
         cache:add_dependency( SourceFile("build/lua/build/AsciiDoc.lua") );
         cache:add_dependency( SourceFile("build/lua/build/msvc.lua") );
+        cache:add_dependency( SourceFile("build/lua/build/mingw.lua") );
         cache:add_dependency( SourceFile("build/lua/build/visual_studio.lua") );
         local user_settings = home( "user_settings.lua" );
         if exists(user_settings) then

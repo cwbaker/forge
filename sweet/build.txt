@@ -170,6 +170,7 @@ passing "platform=_platform_" on the command line.  The default value, used
 when no platform is passed on the command line, is "msvc".
 
   - *msvc* - build using Microsoft Visual C++ 9.0 or 10.0.
+  - *mingw* - build using MinGW.
 
 The *target* variable can be set to to specify the target to build by passing 
 "target=_target_" on the command line.  The target value is interpreted 
