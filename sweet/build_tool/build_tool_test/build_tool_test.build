@@ -1,0 +1,33 @@
+
+Executable {
+    id = "build_tool_test";
+
+    libraries = {    
+        "assert/assert",
+        "build_tool/build_tool",
+        "error/error",
+        "lua/lua",
+        "lua/lua_/liblua",
+        "path/path",
+        "persist/persist",
+        "pointer/pointer",
+        "process/process",
+        "rtti/rtti",
+        "thread/thread",
+        "unit/libUnitTest"
+    };
+
+    Cc {
+        pch = "stdafx.hpp";
+        "main.cpp",
+        "ErrorChecker.cpp",
+        "FileChecker.cpp",
+        --[[
+        "TestDirectoryApi.cpp",
+        ]]
+        "TestGraph.cpp",
+        "TestPostorder.cpp",
+        "TestPreorder.cpp",
+        "TestScanner.cpp"
+    };
+}

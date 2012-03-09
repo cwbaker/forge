@@ -1,0 +1,41 @@
+
+Executable {
+    id = "persist_test";
+
+    libraries = {
+        "assert/assert", 
+        "error/error",
+        "path/path",
+        "persist/persist",
+        "rtti/rtti",
+        "unit/libUnitTest"
+    };
+
+    Cc {
+        pch = "stdafx.hpp";
+        "Item.cpp",
+        "main.cpp",
+        "TestArrays.cpp",
+        "TestBadArchives.cpp",
+        "TestBasicTypes.cpp",
+        "TestBasicTypesInContainers.cpp",
+        "TestContainersInContainers.cpp",
+        "TestHashMap.cpp",
+        "TestHashMultimap.cpp",
+        "TestHashMultiset.cpp",
+        "TestHashSet.cpp",
+        "TestLinks.cpp",
+        "TestList.cpp",
+        "TestMap.cpp",
+        "TestMissingElements.cpp",
+        "TestMultimap.cpp",
+        "TestMultiset.cpp",
+        "TestOwningPointers.cpp",
+        "TestPathFilter.cpp",
+        "TestPolymorphicTypes.cpp",
+        "TestReordering.cpp",
+        "TestSet.cpp",
+        "TestVector.cpp",
+        "TestVersions.cpp"
+    };
+}

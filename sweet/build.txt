@@ -1,0 +1,1374 @@
+
+:toc:
+:numbered:
+:theme: sweet
+:pygments:
+
+= Sweet Build =
+
+== Overview ==
+
+Sweet Build is a build tool.  It tracks dependencies and timestamps between
+files to determine which are out of date and then carries out actions to 
+bring those files up to date.
+
+Sweet Build is similar to GNU Make, Perforce Jam, SCons, Waf, Lake, and other 
+dependency based build tools.  It's main difference to these tools is that it 
+allows scripts to make arbitrary passes over the dependency graph to correctly 
+establish dependency relationships.  For example it can be configured to run a 
+code generation pass before scanning for implicit dependencies to make sure 
+that implicit dependencies from generated files are found correctly.  Sweet 
+Build has been designed to handle source trees spanning multiple directories, 
+with multiple variants, and to make use of multiple processor machines by 
+allowing dependency scanning and command execution to happen in parallel.  
+
+Features:
+
+  - Single executable with no external dependencies.
+  - Lua scripting language to specify dependency graph and actions.
+  - Support for builds spread across multiple directories.
+  - Platform independent path and file system operations.
+  - Scanning source files for regular expressions to generate dependencies.
+  - Filtering the output of external processes using regular expressions.
+  - Dependency graph save and load for faster incremental builds.
+  - Parallel execution to make use of multiple processors.
+  - Variant builds.
+
+Anti-features:
+
+  - Not in widespread use.
+
+=== GNU Make vs SCons vs Sweet Build ===
+
+These are timing tests based on the tests run by Noel Llopis in his "The Quest for the Perfect
+Build System" blog entries (parts 
+http://gamesfromwithin.com/the-quest-for-the-perfect-build-system[1], 
+http://gamesfromwithin.com/the-quest-for-the-perfect-build-system-part-2[2], and 
+http://gamesfromwithin.com/bad-news-for-scons-fans[3]).  In the test 50 libraries
+with 100 classes each are built.  Each source file includes 15 headers from its own library
+and 5 headers from other libraries.
+
+The tests are run on an Intel Core2 Duo P8600 @2.4GHz, 4GB RAM, with a Samsung SSD RBX
+series 128GB hard drive.
+
+[options="header"]
+|====
+|Tool |Full |Incremental |Single
+|GNU Make |456.3s |4.2s |3.2s
+|SCons |427.2s |43.1s |8.7s
+|Sweet Build |135.4s |1.8s |1.6s
+|====
+
+Sweet Build performs well on a full rebuild because it passes all files on the command 
+line to a single invocation of the compiler while both GNU Make and SCons pass each file 
+to a separate invocation of the compiler.
+
+== Installation ==
+
+Sweet Build consists of a single executable with no external dependencies
+that can be installed by copying it anywhere that your build process can 
+execute it from.  The build scripts that it uses need to be loaded by the 
+root build script file "`build.lua`" in each project being built so they 
+can be copied anywhere your build script can locate them.
+
+One place to store the executable and build scripts is in a directory that 
+is version controlled along with the rest of the source code in your project.  
+From there both the executable and build scripts can easily be located by the 
+build process.  This method has the benefit of versioning the executable and 
+the build scripts along with the rest of the code in the project.  Reverting 
+back to a previous revision also reverts to the build process used to build 
+that revision.
+
+Another installation method is to copy the executable into a directory
+in the executable path specified by the `PATH` environment variable and the 
+build scripts into a directory in the Lua search path specified by the 
+`LUA_PATH` environment variable.  In this scenario the executable and build 
+scripts are available to all projects on the machine.  The root build script 
+file can easily load the build scripts using Lua's require function.  This 
+method allows the executable and build scripts to be shared across multiple 
+projects.
+
+Precompiled binaries for Windows and source code for the latest version of 
+Sweet Build can be downloaded from http://www.sweetsoftware.co.nz/.
+
+== Usage ==
+
+    Usage: build [options] [variable=value]
+    Options:
+      -h, --help         Print this message and exit.
+      -v, --version      Print the version and exit.
+      -f, --filename     Set the initial filename.
+      -W, --warn         Set the warning level.
+      -s, --stack-trace  Enable stack traces in error messages.
+
+Sweet Build is invoked by running the build executable from the command line.
+When invoked the executable searches up from the current working directory 
+until it finds a file named "`build.lua`".  Once found this file is executed 
+to carry out the actions to bring the build up to date.
+
+=== Command Line ===
+
+Information is passed from the command line by interpreting assignment 
+expressions (e.g. _variable_=_value_) as assignments to variables to be made 
+before the "`build.lua`" script file is compiled and executed.
+
+Invocation from the top level directory of a project with an empty command
+line builds everything in that project for the "debug" variant and
+"msvc" platform:
+
+    D:\sweet\sweet_build_tool\sweet> build
+
+The *command* variable can be set to control the actions to take by passing 
+"command=_command_" on the command line.  The default value, used when no 
+command is passed from the command line, is "build".  Other accepted values
+are:
+
+ - *build* - builds targets.  This is the default.
+
+ - *clean* - remove targets created during a build.
+
+ - *dependencies* - print the dependency graph of targets.
+
+ - *namespace* - print the hierarchical namespace of targets.
+
+ - *projects* - generate Visual Studio project files.
+
+Invocation with the "clean" command removes files generated during a
+previous build:
+
+    D:\sweet\sweet_build_tool\sweet> build command=clean
+
+The *variant* variable can be set to control the settings used when building
+by passing "variant=_variant_" on the command line.  The default value,
+used when no variant is passed on the command line, is "debug".  Other 
+accepted values are:
+
+ - *debug* - Build with debug information and no optimization to produce
+executables and static libraries suitable for debugging.  This is the default.
+
+ - *debug_dll* - Build with debug information and no optimization to
+produce execuables and dynamic libraries suitable for debugging.
+
+ - *release* - Build with optimization and runtime debugging functions
+to produce executables and static libraries suitable for testing.
+
+ - *release_dll* - Build with optimization and runtime debugging functions
+to produce executables and dynamic libraries suitable for testing.
+
+ - *shipping* - Build with optimization to produce executables and static
+libraries for shipping.
+
+ - *shipping_dll* - Build with optimization to produce executables and
+dynamic libraries for shipping.
+
+Invocation with the "release" variant builds using release options:
+
+    D:\sweet\sweet_build_tool\sweet> build variant=release
+
+The *platform* variable can be set to control the tools used when building by 
+passing "platform=_platform_" on the command line.  The default value, used
+when no platform is passed on the command line, is "msvc".
+
+  - *msvc* - build using Microsoft Visual C++ 9.0 or 10.0.
+
+The *target* variable can be set to to specify the target to build by passing 
+"target=_target_" on the command line.  The target value is interpreted 
+as a path to the target to build.  Relative values are considered relative
+to the current working directory.  The target should always be specified 
+using forward slashes as it is a target path not an operating system path.  
+The default, used when no target is passed on the command line, is to use the 
+target that corresponds to the current working directory.
+
+The executables and libraries in the "build_tool" directory can be built 
+(as opposed to building all of the executables and libraries under the "sweet"
+directory) by specifying the relative path to the "build_tool" directory 
+from the command line using the target variable:
+
+    D:\sweet\sweet_build_tool\sweet> build target=build_tool
+
+Alternatively the executables and libraries in the "build_tool" directory can 
+be built by changing to the "build_tool" directory before invoking the build:
+
+    D:\sweet\sweet_build_tool\sweet> cd build_tool
+    D:\sweet\sweet_build_tool\sweet\build_tool> build
+
+The *version* variable can be set to control the value of the preprocessor 
+macro `BUILD_VERSION` by passing "version=_version_" on the command line.  
+The default, used when no version is set on the command line, is to use the 
+date, time, variant, and platform of the current build.
+
+The *jobs* variable can be set to control the maximum number of jobs to allow 
+in parallel by passing "jobs=_jobs_" on the command line.  The default, used
+when jobs is not set on the command line, is four.
+
+=== Buildfiles ===
+
+Sweet Build is configured using buildfiles.  Buildfiles are Lua scripts that 
+create targets and dependencies that represent the files and dependency 
+relationships in the build.  Each target is created by invoking a rule that 
+defines the behaviour or type of that target.
+
+By default Sweet Build searches up from the current working directory for a
+buildfile named "`build.lua`".  Once found this script is executed to carry 
+out the build.
+
+For example the following "`build.lua`" builds the classic "Hello World!" 
+program.  It creates targets to compile its single source file and to link 
+the resulting object file into the final executable:
+
+[source,lua]
+----
+package.path = root("../../../build/lua/?.lua")..";"..root("../../../build/lua/?/init.lua");
+require "build";
+
+setup {};
+
+Executable {
+    id = "hello_world";
+    Cc {
+        "hello_world.cpp"
+    }
+}
+
+build {};
+----
+
+In an even more contrived example the following "`build.lua`" builds the 
+classic "Hello World!" example using a separate library.  It creates targets 
+to compile the source files in the library and the executable, archive the 
+library, and link the executable.  The executable also specifies a dependency
+on the library which results in the library being linked in with the 
+executable's object files:
+
+[source,lua]
+----
+package.path = root("../../../build/lua/?.lua")..";"..root("../../../build/lua/?/init.lua");
+require "build";
+
+setup {};
+
+Executable {
+    id = "executable";    
+    libraries = {
+        "library"
+    };
+    Cc {
+        "executable.cpp"
+    };
+};
+
+Library {
+    id = "library";
+    Cc {
+        "library.cpp"
+    };
+};
+
+build {};
+----
+
+The Lua scripts that define dependencies may be loaded from several 
+files using the buildfile function.  The buildfile function takes a relative 
+path to the buildfile to load as its only parameter.  The function sets the 
+directory that contains the buildfile as the working directory and then 
+executes the buildfile as a Lua script.  The working directory is the 
+directory that paths expressed in the buildfile are considered relative 
+to.
+
+For example the following "`build.lua`" (used to build the Sweet Lua project)
+uses the buildfile function to load Lua scripts from several different
+sources:
+
+[source,lua]
+----
+command  = command or "build";
+platform = platform or "msvc";
+source = source or "";
+target = target or "";
+variant = variant or "debug";
+version = version or os.date( "%Y.%m.%d %H:%M:%S "..platform.." "..variant );
+jobs = jobs or 4;
+
+package.path = root("build/lua/?.lua")..";"..root("build/lua/?/init.lua");
+require "build";
+
+setup {
+    bin = root( "../bin" );
+    lib = root( "../lib" );
+    obj = root( "../obj" );
+    include_directories = {
+        root( ".." )
+    };
+};
+
+buildfile "assert/assert.build";
+buildfile "error/error.build";
+buildfile "lua/lua.build";
+buildfile "rtti/rtti.build";
+buildfile "traits/traits.build";
+buildfile "unit/unit.build";
+
+build {};
+----
+
+The use of separate buildfiles in combination with the inheritance of settings
+described in the following section allows the build scripts to be reused in
+a modular way.  For example the "`lua/lua.build`" buildfile above is used 
+again in the Sweet Build project but with different settings inherited from 
+the "`build.lua`" script in the Sweet Build project without any changes 
+needing to be made to the "`lua/lua.build`" buildfile.
+
+For less trivial examples of buildfiles and build scripts have a look at the 
+build source code or any of the other libraries at 
+http://www.sweetsoftware.co.nz/.
+
+=== Settings ===
+
+The setup function called at the top of the root buildfile allows buildfiles 
+to override the default settings for the build.  The setup function takes as 
+its sole parameter a table that is set to inherit from the default settings 
+and then becomes the global settings referred to by targets in the build.
+
+The global settings are inherited down from Executable and Library targets to 
+their dependencies.  Targets that define their own settings table set that 
+table to inherit from their parent's settings table.  Targets that don't 
+define their own settings use the settings table of their parent.  The 
+inheritance allows settings to be conditionally overridden on a per target 
+basis.  Any settings that aren't overridden are inherited from the global or 
+parent settings.
+
+For example the following buildfile (used to build the build tool executable)
+overrides the settings for subsystem and stack size but inherits the values 
+for all other settings from the global settings.
+
+[source,lua]
+----
+Executable {
+    id = "build";
+
+    settings = { 
+        subsystem = "CONSOLE"; 
+        stack_size = 32768; 
+    }; 
+    
+    libraries = {    
+        "assert/assert",
+        "build_tool/build_tool",
+        "cmdline/cmdline",
+        "debug/debug",
+        "error/error",
+        "lua/lua",
+        "lua/lua_/liblua",
+        "path/path",
+        "persist/persist",
+        "pointer/pointer",
+        "process/process",
+        "rtti/rtti",
+        "thread/thread",
+    };
+    
+    Cc {
+        pch = "stdafx.hpp";
+        "Application.cpp", 
+        "main.cpp"
+    };
+}
+----
+
+Any of the following settings can be passed to the setup function in the 
+"`build.lua`" buildfile or as fields in the "`settings`" table of an 
+Executable, Library, or Cc target.
+
+- The *bin* setting sets the directory that executables and dynamic libraries 
+are generated in.
+
+- The *lib* setting sets the directory that static libraries are generated in.
+
+- The *obj* setting sets the directory that object files and other 
+intermediate files are generated in.
+
+- The *include_directories* setting sets the include directories to use when 
+compiling C and C++ source files.
+
+- The *library_directories* setting sets the library directories to search 
+when linking executables and dynamic libraries.
+
+- The *platforms* setting sets the platforms that are valid to build for.
+
+- The *variants* setting sets variants that are valid to build for and per 
+variant settings.
+
+- The *compile_as_c* setting sets whether to compile source files as 
+C or C++.
+
+- The *debug* setting sets whether or not to generate debug information.
+
+- The *exceptions* setting sets whether or not to enable C++ exceptions.
+
+- The *generate_map_file* setting sets whether or not to generate a map file.
+
+- The *incremental_linking* setting sets whether or not to use incremental 
+linking.
+
+- The *library_type* setting sets the meaning of the Library rule to mean
+StaticLibrary if its value is "static" or DynamicLibrary is its value is 
+"dynamic".
+
+- The *link_time_code_generation* setting sets whether or not to use link 
+time code generation.
+
+- The *minimal_rebuild* setting sets whether or not to use minimal rebuild.
+
+- The *optimization* setting sets whether or not to optimize code.
+
+- The *pre_compiled_headers* setting sets whether or not to use precompiled 
+headers.
+
+- The *preprocess* setting enables preprocessing source code rather than 
+compiling it for debugging preprocessor errors.
+
+- The *profiling* setting enables or disables profiling in the build.
+
+- The *run_time_checks* setting enables run time checks.
+
+- The *runtime_library* setting controls which C runtime to link with.  It's 
+value can be "static_debug" to link to the static debug runtime, "static" to 
+link to the static runtime, "dynamic_debug" to link to the dynamic debug 
+runtime or "dynamic" to link to the dynamic runtime.
+
+- The *run_time_type_info* settings enables and disables run time type 
+information.
+
+- The *stack_size* setting sets the stack size of executables.
+
+- The *string_pooling* setting enables and disables string pooling.
+
+- The *subsystem* setting sets the value to pass as subsystem when linking 
+(either "CONSOLE" or "WINDOWS").
+
+- The *verbose_linking* setting enables verbose linking for debugging linker 
+errors.
+
+=== Rules ===
+
+The *Executable* rule defines an executable to be linked.  Its identifier
+is the executable to be linked less any platform and variant dependent
+suffix that the build system will add, e.g. "`_msvc_debug.exe`".  It may 
+contain a "`libraries`" key to specify the libraries that the executable 
+depends on.  It may contain a "`settings`" key to specify any target specific 
+settings that override the global settings.  Its contents are the Cc, Parser, 
+and QtMoc targets that specify the source files to generate and/or compile 
+and link to create the executable.
+    
+The *StaticLibrary* rule defines a static library to be archived.  Its 
+identifier is the library to be linked less any platform and variant dependent 
+suffix that the build system will add, e.g. "`_msvc_debug.lib`".  It may 
+contain a "`settings`" key to specify any target specific settings that 
+override the global settings.  Its contents are the Cc, Parser, and QtMoc 
+targets that specify the source files to generate, compile, and link to 
+create the executable.  It may contain a "`libraries`" key that is ignored to 
+allow for the case where a library specified by the Library rule alias is 
+building a static library.
+
+The *DynamicLibrary* rule defines a dynamic library to be archived.  Its 
+identifier is the library to be linked less any platform and variant 
+dependent suffix that the build system will add, e.g. "`_msvc_debug.dll`".  It 
+may contain a "`libraries`" key to specify the libraries that the library
+depends on.  It may contain a "`settings`" key to specify any target specific 
+settings that override the global settings.  Its contents are the Cc, Parser, 
+and QtMoc targets that specify the source files to generate, compile, and 
+link to create the executable.
+
+The *Library* rule is an alias for either the StaticLibrary or DynamicLibrary
+rule depending on the settings value "`library_type`".
+
+The *Cc* rule defines a group of C or C++ source files.  Its identifier is 
+ignored.  It may contain a "`pch`" attribute to specify the pre compiled 
+header to use.  It may contain a "`defines`" attribute to specify extra 
+preprocessor macros to be defined when compiling.  It may contain a 
+"`settings`" key to specify any target specific settings that override the 
+global settings or settings inherited from its containing target.  It must 
+appear within an Executable, StaticLibrary, DynamicLibrary, or Library target.
+    
+The *Parser* rule defines a group of grammar files to be processed into header
+files with the Sweet Parser tool.  Its identifier is ignored.  It must appear 
+within an Executable, StaticLibrary, DynamicLibrary, or Library target.
+
+The *QtMoc* rule defines a group of header files to be processed by the
+Qt meta-object compiler tool for use with Qt's event system.  Its identifier
+is ignored.  It must appear within an Executable, StaticLibrary, 
+DynamicLibrary, or Library target.
+
+The *SourceFile* rule defines a source file that must exist.  It doesn't 
+generally appear in buildfiles directly but is used by the build system
+to expand other targets during the "load", "static_depend", and "depend" 
+passes.
+
+The *HeaderFile* rule defines a header file (or source file that doesn't need 
+to exist).  It doesn't generally appear in buildfiles directly but is used by 
+the build system to expand other targets during the "load", "static_depend", 
+and "depend" passes.
+
+The *File* rule defines a generated file.  It doesn't generally appear in 
+buildfiles directly but is used by the build system to expand other targets 
+during the "load", "static_depend", and "depend" passes.
+
+=== Preprocessor Macros ===
+
+The following preprocessor macros are defined when compiling C and C++ source.
+They allow conditional compilation based on the platform, variant, and module
+being built and pass automatically generated version information to the
+build.
+
+ - *BUILD_PLATFORM_x* is defined to indicate the platform being built where
+ _x_ is replaced by the uppercase platform name.  For example 
+ BUILD_PLATFORM_MSVC is defined when building for the "msvc" platform.
+
+ - *BUILD_VARIANT_x* is defined to indicate the variant that is 
+being built where _x_ is replaced by the uppercase variant name. For example
+BUILD_PLATFORM_RELEASE is defined when building the "release" variant.
+
+ - *BUILD_MODULE_x* is defined to indicate the module being built where _x_
+ is replaced by the uppercase executable or library identifier.  For example
+BUILD_MODULE_LUA is defined when building the "lua" library. 
+
+ - *BUILD_LIBRARY_TYPE_x* is defined to indicate whether dynamic or 
+static libraries are being built where _x_ is replaced by STATIC or 
+DYNAMIC for "static" or "dynamic" library types respectively.
+
+ - *BUILD_LIBRARY_SUFFIX* is defined to be the suffix appended to library names 
+to distinguish between libraries for different platforms and variants.  For
+example BUILD_LIBRARY_SUFFIX is defined as "_msvc_debug.lib" when building
+for the "msvc" platform and "debug" variant.
+
+ - *BUILD_VERSION* is defined to be the date, variant, and platform of the 
+build.
+
+The preprocessor macro `BUILD_LIBRARY_TYPE_DYNAMIC` is defined when libraries
+should be compiled and linked into dynamic libraries instead of static ones.
+This is used in conjunction with the `BUILD_MODULE_x` macro to create macros 
+that evaluate to `__declspec(dllexport)`, `__declspec(dllimport)`, or nothing 
+based on whether a dynamic library is being compiled, a dynamic library is 
+being linked with, or a static library is being compiled or linked with.
+
+The `BUILD_VERSION` macro is not defined when precompiled headers are created.  This
+is because its value changes based on the time of the build and this causes the macro
+to be defined to different values for the precompiled header when the precompiled
+header is compiled at a different time from the source files that include it.
+
+=== Preprocessor And Linker Debugging ===
+
+It is possible to generate preprocessed files from source files rather
+than passing them to the the compiler.  This is done by setting the settings
+field `preprocess` to true.
+
+It is also possible to set the linker to generate verbose output about the 
+libraries it is searching for symbols and why it is searching them.  This is 
+done by setting the settings field `verbose_linking` to true.
+
+== Reference ==
+
+=== Targets and Rules ===
+
+The declarative style in Sweet Build is implemented using a dependency graph.  
+The nodes in this graph are targets.  The behaviour of each target is defined 
+by a rule.
+
+A rule is created by calling the "`Rule()`" function, specifying the name and
+bind type of the rule, and assigning its return value to a variable.  Functions 
+are then defined on that variable to specify what happens when a target for 
+that rule is visited during a traversal.  The returned variable is callable and 
+acts as a constructor that creates targets of that rule.
+
+Rules that are called with a table argument behave differently to rules that
+are passed a string argument.  Rules that are called with a table argument are
+ignored when the graph is loaded from a cache file because these targets are 
+assumed to be targets that have already been created by loading from the
+cache.  Rules that are called with a table argument 
+
+Rules that are created with a table argument are ignored when the graph is 
+loaded from a cache file because these targets are assumed to have already
+been created by loading the the cache file (this allows the build scripts to
+be executed but prevents those targets from being created multiple times).
+Rules the are created with a table argument are expected to have an "id" field
+that specifies the identifier to use for the target to be created.
+
+Rules that are created with a string argument are not ignored when the graph 
+is loaded from the cache file.  These targets are usually only created during
+explicit passes over the graph so it's assumed that, in the case of these
+targets being constructed when the graph has been loaded from a cache file, 
+that these targets should be created again.  The string argument is used as 
+the identifier of the target to create.
+
+Rules that have no argument are created without identifiers.  These are 
+anonymous targets.
+
+For example the Directory rule defines a rule whose targets bind as 
+directories and that create a directory with a name matching their identifier
+when they are outdated.
+
+[source,lua]
+----
+Directory = Rule( "Directory", BIND_DIRECTORY );
+
+function Directory:build()
+    if self:is_outdated() then
+        mkdir( self:get_filename() );
+    end
+end
+----
+
+Targets exist in a hierarchical namespace defined by each target's 
+identifier and working directory.  The identifier of a target is a path 
+similar to a POSIX operating system path (e.g. containing identifiers 
+separated by "/" and using "." and ".." to refer to the current and parent
+directories respectively).  The working directory of a target is a target 
+corresponding to the directory that contains the buildfile that constructed 
+the target (for targets constructed in a buildfile) or the current working 
+directory at the time the constructor was called (for targets constructed 
+during a traversal or scan).  Targets are always created using their 
+identifier as a path relative to their working directory to place them 
+correctly in the hierarchy.
+
+When a buildfile is loaded a target is implicitly created to represent the 
+working directory.  Targets that are constructed in that buildfile are added 
+using their identifier and the working directory to create an absolute path 
+to their place in the hierarchy.  Any targets that are constructed with an 
+explicit "`id`" field are also made dependencies of the working directory 
+target so that all targets in a directory can be built by building the target 
+for the directory (as those targets are all dependencies of that directory).
+
+When a target is visited in a traversal the current working directory is set 
+to the working directory of the visited target.  The current working directory
+is the path that relative paths passed to scripting functions are considered 
+relative to and the directory that commands executed using the "`execute()`" 
+function are started in.
+
+This working directory behaviour is intended to do the correct thing in most 
+situations.  Where buildfiles are spread across multiple directories it 
+gives the behaviour that relative paths mentioned in the buildfile and in 
+scripts that are processing targets created in that buildfile are relative to 
+the directory that the buildfile is in.
+
+Targets are free to bind to files anywhere on the filesystem.  Although
+the addition of newly constructed targets relative to their working 
+directory encourages targets to bind to files in their working directory it
+is not required.  Usually intermediate and final files are bound to files 
+in different directories outside of the source tree and based on the 
+currently selected variant and/or platform.
+
+For example the Cc rule defines its "static_depend" pass to expand its ordinal
+values as source files to be compiled into object files in a directory
+based on the current variant and platform (via the "`obj_directory()`" 
+function).  The source files simply use the relative path expressed in 
+the buildfile (as this will be relative to the directory that contained
+the buildfile thus paths mentioned in the buildfile itself refer to files
+relative to the buildfile) while the targets for the directory and object 
+files are constructed with an absolute path to create their targets outside
+of the source directory structure.
+
+[source,lua]
+----
+function Cc:static_depend()
+    if built_for_platform_and_variant(self) then
+        local directory = Directory( obj_directory(self) );
+        self:add_dependency( directory );
+
+        for _, value in ipairs(self) do
+            local source = SourceFile( value );
+            source:set_required_to_exist( true );
+            source.unit = self;
+            local object = File( obj_directory(self)..obj_name(value) );
+            object.source = value;
+            source.object = object;
+            object:add_dependency( source );
+            object:add_dependency( directory );
+            object:add_dependency( pch );           
+            self:add_dependency( object );
+        end
+    end
+end
+----
+
+=== Binding and Traversal ===
+
+Once the initial dependency graph has been populated it is traversed
+several times to expand explicit and implicit dependencies, bind targets 
+to their associated files in the filesystem, and carry out the 
+actions required to bring the files in the build up to date.
+
+The dependency relationships between targets form a directed graph that 
+dictates the order in which targets are visited during a traversal.  The
+two available traversals are preorder and postorder.  A preorder traversal 
+visits each target in the graph before it visits that target's dependencies.  
+A postorder traversal visits each target's dependencies before it visits that 
+target.  Each traversal takes a visit function as a parameter and that 
+function is called on each target to carry out the visit operation.  
+Cyclic references are quietly ignored.
+
+The visit function typically calls to a member function in the target being 
+visited to do the processing for the traversal.  For example most rules 
+define a "`build()`" function that is called during the "build" traversal to 
+build targets for that rule.  Targets that don't provide the function are 
+assumed to be successfully visited.  The dependencies of a target are always 
+visited regardless of whether or not the depending target provides a function 
+for the pass.  The visit is considered successful if no errors are raised 
+during its execution.
+
+Typical traversals made over a graph are a preorder traversal to propagate 
+settings (the "load" pass), a preorder traversal to create explicit 
+dependencies between targets (the "static_depend" pass), a preorder traversal 
+to create implicit dependencies between targets (the "depend" pass), and then 
+a postorder traversal to build any targets that are outdated (the "build" 
+pass) or a postorder traversal to remove generated files (the "clean" pass).
+
+The "load" pass is a preorder traversal that propagates settings through the 
+targets created when buildfiles are loaded.
+
+The "static_depend" pass is a preorder traversal that create dependencies 
+based on the values specified in targets.  These dependencies only
+change when the buildfiles themselves change and so this pass only needs
+to be run when the cache is outdated.  This pass happens _after_ the "load"
+pass because it relies on settings having been propagated.
+
+The "depend" pass is a preorder traversal that creates implicit dependencies 
+by scanning source files for regular expressions (e.g. recursively scanning 
+C or C++ source files for the header files that they include).
+        
+The "build" pass is a postorder traversal in which targets are built
+if they are outdated.  The postorder traversal provides the correct ordering 
+to ensure that dependencies are built before the targets that depend on them.
+
+The "clean" pass is a postorder traversal that removes files generated during 
+the "build" pass.
+
+The "bind" pass is a special case postorder traversal in which targets are 
+bound to files and their dependencies.  It is implemented in C++ to avoid 
+having to make Lua calls to visit every target in the graph.
+
+The bind type of a rule specifies how targets for that rule bind to files and 
+how they are considered outdated with respect to their dependencies.  Bind 
+type can be BIND_PHONY, BIND_DIRECTORY, BIND_SOURCE_FILE, 
+BIND_INTERMEDIATE_FILE, or BIND_GENERATED_FILE.
+
+Targets that bind as source or intermediate files set their timestamp to the 
+later of the timestamp of the file they are bound to or the latest timestamp 
+of all their dependencies and are never outdated.  Targets that bind as 
+generated files set their timestamp to the timestamp of the file they are 
+bound to and are outdated if any of their dependencies have a timestamp that 
+is newer than theirs.  Targets that bind themselves as phony targets set their
+timestamp to the latest timestamp of all of their dependencies and are 
+considered to be outdated if any of their dependencies are outdated.
+
+=== Scanners and Execution ===
+
+Sweet Build is able to scan files for regular expressions and call Lua 
+functions when those regular expression match.  The value of each 
+sub-expression in the regular expression is passed as a parameter in the 
+call to the match function.
+
+The "`scan()`" function takes a target representing the source file to scan
+and a Scanner that defines the regular expressions to match and the functions
+to call when the expressions are matched.  Scanners are defined by calling
+the "`Scanner()`" function passing a table of regular expressions to scan for 
+and and match functions to execute when matches are found.
+
+For example the CcScanner definition below recursively scans C/C++ source and 
+header files for dependencies implied by the use of the include directive:
+
+[source,lua]
+----
+
+CcScanner = Scanner {
+    [ [[^#include "([^"\n\r]*)"]] ] = function( target, match )
+        local header = HeaderFile( target:directory()..match );
+        target:add_dependency( header );
+        if header:get_bind_type() ~= BIND_INTERMEDIATE_FILE then
+            scan( header, CcScanner );
+        end
+    end;
+
+    [ [[^#include <([^>\n\r]*)>]] ] = function( target, match )
+        local filename = root( "../"..match );
+        if exists(filename) then
+            local header = HeaderFile( filename );
+            target:add_dependency( header );
+            if header:get_bind_type() ~= BIND_INTERMEDIATE_FILE then
+                scan( header, CcScanner );
+            end
+        end
+    end;
+}
+----
+
+The build system internally stores the last write time at the time a target
+was last scanned.  If the target's last write time hasn't changed since the
+last time it was scanned then scanning silently does nothing.  This is an
+optmization to avoid scanning files unnecessarily.
+
+Once it has been determined that a target should be scanned a simple 
+heuristic is used to determine how many lines of the file to scan.  There
+is a maximum number of lines scanned at the start of the file without 
+finding a match and a maximum number of lines scanned after a finding match
+without finding another match.  If either of these maximums are exceeded 
+then scanning stops.
+
+Scanning happens in parallel with the main thread processing.  This means
+that match functions are executed asynchronously to the calling coroutine.  
+The coroutine that called "`scan()`" continues execution immediately and 
+matches are only actually processed when that coroutine finishes or the 
+"`wait()`" function is called.  This can lead to some unexpected results 
+where matches put values into tables and the caller is expecting match 
+results to be available immediately.
+
+The "`execute()`" function is optionally accepts a Scanner parameter.  If a 
+Scanner is passed to "`execute()`" then the output of the command is matched
+against the regular expressions in the Scanner.  Any matches result in the 
+corresponding match function being called asynchronously in a new coroutine.
+
+This can be used to filter the output of compilers or tools for better 
+recognition by IDEs or for capturing the output of tools for use in the build
+system itself.
+
+Like in the "`scan()`" function the value of each sub-expression in the 
+regular expression is passed as a parameter to the match function.  However
+lines that don't match the regular expression are passed straight through to 
+the output.
+
+For example the following script executes the Subversion tool to query the
+properties of a version controlled directory and prints the output to the
+console.  It could just as easily store the output in a table for later 
+processing as part of the build:
+
+[source,lua]
+----
+local PropertyFilter = Scanner {
+    [ [[([A-Za-z0-9_$/\.]+) ([A-Za-z0-9_$/\.]+)]] ] = function( repository_path, filesystem_path )
+        print( "%s -> %s" % {repository_path, filesystem_path} );
+    end;
+};
+
+local cmd = "C:/windows/system32/cmd.exe";
+execute( cmd, "cmd /C svn propget svn:externals .", PropertyFilter );
+----
+
+=== Loading and Saving ===
+
+The dependency graph can be saved and loaded to and from binary or XML 
+files.  This is useful for caching implied dependencies to speed up 
+incremental builds.  For example it is quite time consuming to scan C\++ 
+source files and headers for extra dependencies implied by include directives
+but once it has been done that graph can be saved to a file and reloaded 
+again to recreate the same dependencies.  Only the C++ source files and 
+headers that have changed since the graph was last saved 
+need to be scanned again.
+
+The boolean, numeric, string, and table values stored in Lua tables are also
+saved and reloaded as part of the cache.  This includes correctly persisting
+cyclic relationships between tables.  
+
+Function and closure values are *not* saved.  This is generally not a problem 
+because functions and closures are usually defined in rules and the rule 
+relationship of each target is preserved through a save and a load.
+        
+=== Errors ===
+
+Errors are reported by calling the "`error()`" function and passing 
+a string that describes the error that has occured.  This displays the error 
+message on the console and causes the current processing to fail.
+
+Errors that occur while visiting a target mark the target and any dependent 
+targets as failing.  The dependent targets are not visited (although an error 
+message is displayed for each dependent target that is not visited).  
+Processing of other targets that aren't part of the same dependency chain 
+continues.
+        
+=== Debugging ===
+
+Debugging the build system is unfortunately only possible by adding prints
+at appropriate places.  There are two functions, "`print_dependencies()`" 
+and "`print_namespace()`", that can be used to display a the dependency graph
+and namespace respectively - this can be useful for tracking down why 
+something is being built when it shouldn't or vice versa.
+
+== API ==
+
+=== Configuration Functions ===
+
+*set_maximum_parallel_jobs* ( _maximum_parallel_jobs_ )
+
+Set the maximum number of commands allowed to execute at once.  The minimum
+is 1 and the maximum is 64.  The default is 1.
+
+*get_maximum_parallel_jobs* ()
+
+Get the maximum number of commands that can be executed at once.
+
+*set_stack_trace_enabled* ( _stack_trace_enabled_ )
+
+Set whether or not stack traces are displayed when errors occur.  The default
+is false.
+
+*is_stack_trace_enabled* ()
+
+Are stack traces displayed when errors occur?  Returns true if stack traces
+are enabled otherwise false.
+
+=== File System Functions ===
+
+*cp* ( _source_, _destination_ )
+
+Copy a source file to a destination file.
+
+*cpdir* ( _source_, _destination_ )
+
+Recursively copy source to destination.  Recursively copies
+newer files from the source directory to the destination directory.  Directories
+and files that start with a dot (.) are ignored.
+
+*exists* ( _path_ )
+
+Check whether or not the file or directory at path exists.  Returns true if path
+refers to an existing file or directory otherwise false.
+
+*find* ( _path_ )
+
+Recursively list the contents of path and any descended directories. 
+If path is relative then it is treated as being relative to the current
+working directory.  Glob patterns are not used.  The directory passed
+in is assumed to be a directory and its contents returned as an iterator. 
+Any filtering based on pattern matching must be done by the caller as each entry
+in the directory tree is returned.
+
+*is_directory* ( _path_ )
+
+Check whether or not path is a directory.  Returns true if path
+is a directory otherwise false.
+
+*is_file* ( _path_ )
+
+Check whether path is a file.  Returns true if path is a
+file otherwise false.
+
+*ls* ( _path_ )
+
+List the contents of path (which is assumed to be a directory).  If
+path is relative then it is treated as being relative to the current working
+directory.  Glob patterns are not used.  The directory passed in is assumed
+to be a directory and its contents returned as an iterator.  Any filtering
+based on pattern matching must be done by the caller as each entry in the directory
+is returned.
+
+*mkdir* ( _path_ )
+
+Make the directory path.  If path is relative it is treated
+as being relative to the current working directory.  Any intermediate directories
+specified in the directory passed in that do not already exist are also created.
+
+*rm* ( _path_ )
+
+Remove a file.
+
+*rmdir* ( _path_ )
+
+Recursively remove a directory.  Recursively removes a directory and all of
+its content.  Be careful!
+
+=== Path and String Functions ===
+
+*absolute* ( _path_, [_working_directory_] )
+
+Convert path into an absolute path by prepending working_directory
+or the current working directory if working_directory is not specified.  If 
+the path is already absolute then it is returned unchanged.
+
+*basename* ( _path_ )
+
+Return the basename of path (everything except for the extension of which
+the dot "." is considered part, i.e. the dot "." is not returned as part of the
+basename).
+
+*branch* ( _path_ )
+
+Return all but the last element of a path.
+
+*extension* ( _path_ )
+
+Return the extension of path (including the leading dot ".").
+
+*home* ( [_path_] )
+
+Convert path into a directory relative to the current user's 
+home directory.  If path is omitted then the
+current user's home directory is returned.
+
+*initial* ( [_path_] )                
+
+Convert path into a directory relative to the directory that the build 
+tool was invoked from.  If path is omitted then the
+initial directory is returned.
+
+*is_absolute* ( _path_ )
+
+Check whether or path is absolute.  Returns true if path 
+is absolute otherwise false.
+
+*is_relative* ( _path_ )
+
+Check whether or path is relative.  Returns true if path 
+is relative otherwise false.
+
+*find_target* ( _id_ )
+
+Find a Target in the Graph that is currently being traversed.  This function
+is only valid during a Graph traversal and will throw an error if it is called outside
+of this time.
+
+*leaf* ( _path_ )
+
+Return the last element of path.
+
+*lower* ( _value_ )
+
+Convert value to lower case.  Returns value converted to
+lower case letters.
+
+*native* ( path )
+
+Convert path into its native equivalent.  Returns path
+converted into its native equivalent.
+
+*relative* ( _path_, [_working_directory_] )
+
+Convert path into a path relative to working_directory or
+relative to the current working directory if working_directory is
+not specified.  If the path is already relative then it is returned 
+unchanged.
+
+*root* ( [_path_] )
+
+Convert path into a path relative to the directory that the root file,
+build.lua, was found in when searching up from the initial directory.
+If path is omitted then the root directory is returned.
+
+*upper* ( _value_ )
+
+Convert value to upper case.  Returns value converted to
+upper case letters.
+
+=== Working Directory Functions ===
+
+*cd* ( _path_ )
+
+Change the current working directory to path.  If path is
+relative it is treated as being relative to the current working directory.
+
+*popd* ()
+
+Pop the current working directory and restore the working directory to the working
+directory saved by the most recent call to pushd().  If the current working
+directory is the only directory on the directory stack then this function silently
+does nothing.
+
+*pushd* ( _path_ )
+
+Push the current working directory (so that it can be returned to later by calling
+popd()) and set the new current working directory to path.  If path
+is relative it is treated as being relative to the current working directory.
+
+*pwd* ()
+
+Get the current (present) working directory.  Returns the current working directory.
+
+=== Environment Functions ===
+
+*getenv* ( _name_ )
+
+Get the value of an environment attribute.  If the environment attribute doesn't
+exist then this function returns nil.
+
+*putenv* ( _attribute_, _value_ )
+
+Set the value of an environment attribute.  Setting an environment attribute
+to the empty string clears that environment attribute.
+
+=== Operating System Functions ===
+
+*execute* ( command, arguments, filter )
+
+Executes command passing arguments as the command line and using
+filter to process the output. 
+The command will be executed in a thread and processing of any jobs that can be
+performed in parallel continues.  Returns the value returned by command
+when it exits.  The filter parameter is optional and can be nil to
+pass the output through unchanged.
+
+*hostname* ()
+
+Get the hostname of the computer that the build tool is running on.  Returns
+the hostname.
+
+*print* ( _string_ )
+
+Print text to stdout.
+
+*sleep* ( _milliseconds_ )
+
+Do nothing for milliseconds milliseconds.
+
+*whoami* ()
+
+Get the name of the user account that the build tool is running under.  Returns
+the name.
+
+=== Graph Functions ===
+
+*bind* ( [_target_] )
+
+Bind the targets in this Graph to files and set their outdated
+status and timestamps accordingly.  Returns the number of Targets
+that failed to bind because their files were expected to exist but
+didn't (see Target:set_required_to_exist()).
+
+*buildfile* ( _filename_ )
+
+Load a buildfile from filename into this Graph.
+
+*find_target* ( _id_ )
+
+Find a Target  in this Graph whose identifier matches id.  If
+id is a relative path then it is treated as being relative to the current
+working directory.
+
+*load_binary* ( _filename_ )
+
+Load a previously saved Graph from filename into this Graph.
+
+*save_binary* ( _filename_ )
+
+Save this Graph to filename.
+
+*load_xml* ( _filename_ )
+
+Load a previously saved Graph from filename into this Graph.
+
+*save_xml* ( _filename_ )
+
+Save this Graph to filename.
+
+*postorder* ( _pass_, _target_, _visitor_ )
+
+Perform a postorder traversal of the Targets in this Graph's dependencies calling
+the function pass.  If any Targets don't have a function named pass
+then they will be silently ignored - their dependencies are still visited. 
+Returns the number of visited Targets that failed.
+
+*preorder* ( _pass_, _target_, _visitor_ )
+
+Perform a preorder traversal of the Targets in this Graph's dependencies calling
+the function pass.  If any Targets don't have a function named pass
+then they will be silently ignored - their dependencies are still visited. 
+Returns the number of visited Targets that threw errors during their visit.
+
+*print_dependencies* ( [_target_] )
+
+Print the dependency tree of Targets in this Graph.  If target is nil
+then dependencies from the entire Graph are printed otherwise dependencies of
+target are recursively printed.
+
+*print_namespace* ()
+
+Print the namespace of Targets in this Graph.  If target is nil then
+the namespace of the entire Graph is printed otherwise only Targets that are
+descended from target are printed.
+
+=== Scanners ===
+
+*Scanner* { [_regex_ = _function_]* }
+
+Create a scanner that calls _function_ for each match of _regex_ in its input
+from a target file or from the output of an externally executed process.
+
+*scan* ( _target_, _scanner_, _..._ )
+
+Use this _scanner_ to scan the file that has been bound to _target_.  Any 
+additional arguments are passed through as additional parameters to match
+functions that are called as a result of matching regular expressions in the
+scanned file.
+
+*Scanner:set_initial_lines* ( _initial_lines_ )
+
+Set the maximum number of unmatched lines allowed at the start of a file before
+scanning is stopped.
+
+*Scanner:get_initial_lines* ()
+
+Get the maximum number of unmatched lines allowed at the start of a file before
+scanning is stopped.
+
+*Scanner:set_later_lines* ( _later_lines_ )
+
+Set the maximum number of unmatched lines allowed after at least one matched line
+before scanning is stopped.
+
+*Scanner:get_later_lines* ()
+
+Get the maximum number of unmatched lines allowed after at least one matched line
+before scanning is stopped.
+
+=== Targets ===
+
+*Target:id* ()
+
+Get the identifier of this Target.  Returns the identifier of this Target.
+
+*Target:path* ()
+
+Get the full path of this target.  Returns the full path of this Target.
+
+*Target:directory* ()
+
+Get the directory part of the path of this Target.  Returns the directory part
+of the path of this Target.
+
+*Target:parent* ()
+
+Get the parent of this target.  Returns the parent Target of
+this Target.  This is the Target's parent in the hierarchical
+namespace of Targets not the Target's parent in the dependency
+graph.
+
+*Target:rule* ()
+
+Get the rule for this target.  Returns the rule for this target or nil if
+this target was implicitly created as a working directory for other targets.
+
+*Target:set_bind_type* ( _bind_type_ )
+
+Set the bind type for this Target.  This overrides the bind type specified
+by a Target's TargetPrototype.  See the TargetPrototype constructor
+documentation for more details on the different bind types.  The bind type
+passed to a Target can also be BIND_NULL to set the Target to use the bind
+type specified by its TargetPrototype.
+
+*Target:get_bind_type* ()
+
+Get the bind type for this Target.
+
+*Target:set_required_to_exist* ( _required_to_exist_ )
+
+Set whether or not this Target is required to be bound to an existing file
+or not.  The check for existence is done when Targets are bound and an error 
+is reported for any Targets that have required to exist set to true but are
+bound to files that don't exist.
+
+*Target:is_required_to_exist* ()
+
+Is this Target required to be bound to an existing file?  Returns true if
+this Target is required to be bound to an existing file otherwise false.
+
+*Target:set_timestamp* ( _timestamp_ )
+
+Set the timestamp of this target to timestamp.
+
+The timestamp is the time that is used to determine whether generated Targets are
+outdated with respect to their dependencies. Targets that are bound as generated
+files that have any dependencies with a timestamp later than theirs are considered
+to be outdated and in need of update.
+
+*Target:get_timestamp* ()
+
+Get the timestamp of this Target. 
+
+If this Target isn't bound to a file then the last write time is always the beginning
+of the epoch - January 1st, 1970, 00:00 GMT.  Because this is the oldest possible
+timestamp this will leave unbound targets always needing to be updated.
+
+Returns the timestamp of this Target.
+
+*Target:set_outdated* ( _outdated_ )
+
+Set whether or not this target is outdated.
+
+*Target:is_outdated* ()
+
+Is this Target outdated?  Returns true if this target is outdated otherwise
+false.
+
+*Target:set_filename* ( _filename_ )
+
+Set the filename of this target to filename.  This is the name of the file 
+that this target will attempt to bind to during the bind traversal.
+
+*Target:get_filename* ()
+
+Get the filename of this target.  Returns the filename of this Target or an
+empty string if this Target hasn't been bound to a file.
+
+*Target:set_working_directory* ( _target_ )
+
+Set the working directory of this target to target or to the root directory
+of its containing graph if target is nil.
+
+The working directory is the target that specifies the directory that files 
+specified in scripts for the target are relative to by default and that any 
+commands executed by the target's script functions are started in.  If a 
+target has no working directory then the root target is used instead.
+
+*Target:get_working_directory* ()
+
+Get the working directory of this target.  Returns the working directory of
+this target or nil if this target doesn't have a working directory.
+
+*Target:add_dependency* ( _dependency_ )
+
+Add a dependency to this target.  Cyclic dependencies are not valid but not
+reported by this function - if a cyclic dependency is detected during a traversal
+then a warning is displayed.  If dependency is nil then this function
+will silently do nothing.
+
+*Target:get_dependencies* ()
+
+Iterate over the dependencies of this target.  Returns an iterator over all
+of the dependencies of this target.
+
+=== Rules ===
+
+*Rule* ( _name_, _bind_type_ )
+
+Create a new rule that can be used to create new targets during a traversal.
+
+The name parameter specifies the name that the rule is referred to in 
+buildfiles.  By convention this should be the same as the name of the
+Lua value that it is assigned to.
+
+The bind_type parameter specifies how the targets for this rule bind to files.  
+It can be any of `BIND_PHONY` to not bind to any file, `BIND_DIRECTORY` to bind to 
+a directory, `BIND_SOURCE_FILE` to bind to a source file that must exist, 
+`BIND_INTERMEDIATE_FILE` to bind to a source file that need not exist or a 
+generated source file, or `BIND_GENERATED_FILE` to bind to a generated file.
+
+A bind type of `BIND_PHONY` binds targets as phonies.  They are targets that 
+aren't bound to any file or directory; are outdated if any of their 
+dependencies are outdated; and have the timestamp of their newest dependency.
+
+A bind type of `BIND_DIRECTORY` binds targets to directories. The target is bound to 
+a directory; is outdated if the directory doesn't exist; and has its timestamp set to 
+the earliest possible time so that it won't cause any of the targets that depend on 
+the directory target to be outdated (as they simply require that the directory 
+exists they don't care if the directory is newer or not).
+
+A bind type of `BIND_SOURCE_FILE` or `BIND_INTERMEDIATE_FILE` binds targets to intermediate 
+or source files.  The targets are bound to files; their timestamp is set to the latest 
+timestamp of the file that they are bound to and all their dependencies; they are outdated 
+if any of their dependencies are outdated or if any of their dependencies are newer than 
+they are.  Targets that are bound as source files must also exist and an error will be 
+thrown if they aren't found.
+
+A bind type of `BIND_GENERATED_FILE` binds targets to generated files.  The targets are 
+bound to files; their timestamp is set to the last write time of the file that they
+are bound to; they are outdated if any of their dependencies are newer than they are.
+
+The bind type can be overridden on a per target basis by calling 
+Target:set_bind_type() for the targets that need to have bind types
+different to that specified by their rules.

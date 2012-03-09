@@ -1,0 +1,31 @@
+
+Executable {
+    id = "build";
+
+    settings = { 
+        subsystem = "CONSOLE"; 
+        stack_size = 32768; 
+    }; 
+    
+    libraries = {    
+        "assert/assert",
+        "build_tool/build_tool",
+        "cmdline/cmdline",
+        "debug/debug",
+        "error/error",
+        "lua/lua",
+        "lua/lua_/liblua",
+        "path/path",
+        "persist/persist",
+        "pointer/pointer",
+        "process/process",
+        "rtti/rtti",
+        "thread/thread",
+    };
+    
+    Cc {
+        pch = "stdafx.hpp";
+        "Application.cpp", 
+        "main.cpp"
+    };
+}

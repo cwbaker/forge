@@ -1,0 +1,39 @@
+
+buildfile "build/build.build";
+buildfile "build_tool_test/build_tool_test.build";
+
+Library {
+    id = "build_tool";
+    
+    libraries = {
+        "assert/assert",
+        "error/error",
+        "lua/lua",
+        "lua/lua_/liblua",
+        "path/path",
+        "persist/persist",
+        "pointer/pointer",
+        "process/process",
+        "rtti/rtti",
+        "thread/thread"
+    };
+    
+    Cc {
+        pch = "stdafx.hpp";
+        "BuildTool.cpp",
+        "BuildToolEventSink.cpp",
+        "Error.cpp", 
+        "Executor.cpp",
+        "Graph.cpp",
+        "Job.cpp",
+        "OsInterface.cpp",
+        "Pattern.cpp", 
+        "Rule.cpp",
+        "Scanner.cpp",
+        "Scheduler.cpp", 
+        "Arguments.cpp",
+        "ScriptInterface.cpp",
+        "Target.cpp",
+        "Environment.cpp"
+    };
+}

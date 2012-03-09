@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<people>
+    <person name="Alfred" address="00CA5880">
+        <friends>
+            <friend address="00CA58B4"/>
+            <friend address="00CA58E8"/>
+        </friends>
+    </person>
+    <person name="Ben" address="00CA58B4">
+        <friends>
+            <friend address="00CA5880"/>
+            <friend address="00CA591C"/>
+        </friends>
+    </person>
+    <person name="Camilla" address="00CA58E8">
+        <friends>
+            <friend address="00CA5880"/>
+            <friend address="00CA58B4"/>
+            <friend address="00CA591C"/>
+        </friends>
+    </person>
+    <person name="Denise" address="00CA591C">
+        <friends>
+            <friend address="00CA58E8"/>
+        </friends>
+    </person>
+</people>

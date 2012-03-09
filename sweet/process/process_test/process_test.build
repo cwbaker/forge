@@ -1,0 +1,17 @@
+
+Executable {
+    id = "process_test";
+
+    libraries = {
+        "assert/assert",
+        "cmdline/cmdline",
+        "error/error",
+        "process/process"
+    };
+
+    Cc {
+        pch = "stdafx.hpp";
+        "Application.cpp",
+        "main.cpp"
+    };
+}

@@ -1,0 +1,17 @@
+
+buildfile "path_test/path_test.build";
+
+Library {
+    id = "path";
+    
+    libraries = {
+        "assert/assert",
+        "error/error"
+    };
+
+    Cc {
+        pch = "stdafx.hpp";
+        "BasicPath.cpp",
+        "BasicPathTraits.cpp"
+    };
+}

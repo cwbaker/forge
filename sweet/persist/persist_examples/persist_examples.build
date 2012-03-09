@@ -1,0 +1,21 @@
+
+Executable {
+    id = "persist_examples";
+
+    libraries = {
+        "assert/assert",
+        "error/error",
+        "path/path",
+        "persist/persist",
+        "rtti/rtti"
+    };
+
+    Cc {
+        "main.cpp",
+        "persist_cyclic_references_example.cpp",
+        "persist_filters_example.cpp",
+        "persist_hello_world_example.cpp",
+        "persist_polymorphism_example.cpp",
+        "persist_links_example.cpp"
+    };
+}
