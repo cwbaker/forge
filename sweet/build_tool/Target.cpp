@@ -101,7 +101,7 @@ void Target::recover( Graph* graph )
     graph->get_build_tool()->get_script_interface()->recover_target( ptr_from_this() );
     graph->get_build_tool()->get_script_interface()->update_target( ptr_from_this(), get_rule() );
 
-    for ( vector<ptr<Target>>::const_iterator i = targets_.begin(); i != targets_.end(); ++i )
+    for ( vector<ptr<Target> >::const_iterator i = targets_.begin(); i != targets_.end(); ++i )
     {
         Target* target = i->get();
         SWEET_ASSERT( target );
@@ -150,10 +150,10 @@ const std::string& Target::get_directory() const
 {
     if ( directory_.empty() )
     {
-        vector<ptr<Target>> targets_to_root;
+        vector<ptr<Target> > targets_to_root;
 
         ptr<Target> parent = get_parent();
-        while ( parent != NULL )
+        while ( parent )
         {
             targets_to_root.push_back( parent );
             parent = parent->get_parent();
@@ -161,7 +161,7 @@ const std::string& Target::get_directory() const
 
         if ( !targets_to_root.empty() )
         {
-            vector<ptr<Target>>::const_reverse_iterator i = targets_to_root.rbegin();
+            vector<ptr<Target> >::const_reverse_iterator i = targets_to_root.rbegin();
             ++i;
 
             if ( i == targets_to_root.rend() || (*i)->get_id().find(path::BasicPathTraits<char>::DRIVE) == std::string::npos )
@@ -723,7 +723,7 @@ void Target::add_target( ptr<Target> target, ptr<Target> this_target )
 */
 ptr<Target> Target::find_target_by_id( const std::string& id ) const
 {
-    vector<ptr<Target>>::const_iterator i = targets_.begin();
+    vector<ptr<Target> >::const_iterator i = targets_.begin();
     while ( i != targets_.end() && (*i)->get_id() != id )
     {
         ++i;
@@ -737,7 +737,7 @@ ptr<Target> Target::find_target_by_id( const std::string& id ) const
 // @return
 //  The Targets.
 */
-const std::vector<ptr<Target>>& Target::get_targets() const
+const std::vector<ptr<Target> >& Target::get_targets() const
 {
     return targets_;
 }

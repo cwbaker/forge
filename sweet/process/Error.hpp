@@ -1,6 +1,6 @@
 //
 // Error.hpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PROCESS_ERROR_HPP_INCLUDED
@@ -21,13 +21,13 @@ namespace process
 */
 enum ErrorCode
 {
-    PROCESS_ERROR_NONE,                           ///< No error.
-    PROCESS_ERROR_CREATING_PIPE_FAILED,           ///< Creating a pipe failed.
-    PROCESS_ERROR_DUPLICATING_HANDLE_FAILED,      ///< Duplicating a handle failed.
-    PROCESS_ERROR_EXECUTING_PROCESS_FAILED,       ///< Executing a process failed.
-    PROCESS_ERROR_WAIT_FOR_PROCESS_FAILED,        ///< Waiting for a process to exit failed.
-    PROCESS_ERROR_EXIT_CODE_FOR_PROCESS_FAILED,   ///< Getting the exit code from a process failed.
-    PROCESS_ERROR_READING_PIPE_FAILED             ///< Reading from a pipe failed.
+    PROCESS_ERROR_NONE, ///< No error.
+    PROCESS_ERROR_CREATING_PIPE_FAILED, ///< Creating a pipe failed.
+    PROCESS_ERROR_DUPLICATING_HANDLE_FAILED, ///< Duplicating a handle failed.
+    PROCESS_ERROR_EXECUTING_PROCESS_FAILED, ///< Executing a process failed.
+    PROCESS_ERROR_WAIT_FOR_PROCESS_FAILED, ///< Waiting for a process to exit failed.
+    PROCESS_ERROR_EXIT_CODE_FOR_PROCESS_FAILED, ///< Getting the exit code from a process failed.
+    PROCESS_ERROR_READING_PIPE_FAILED ///< Reading from a pipe failed.
 };
 
 /**

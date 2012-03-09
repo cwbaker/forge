@@ -1,6 +1,6 @@
 //
 // Error.hpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_THREAD_ERROR_HPP_INCLUDED
@@ -36,13 +36,19 @@ class SWEET_THREAD_DECLSPEC Error : public error::Error
         Error( int error );
 };
 
-/** Creating a thread failed. */
+/** 
+// Creating a thread failed. 
+*/
 typedef error::ErrorTemplate<THREAD_ERROR_CREATING_THREAD_FAILED, Error> CreatingThreadFailedError;
 
-/** Joining a thread failed. */
+/** 
+// Joining a thread failed. 
+*/
 typedef error::ErrorTemplate<THREAD_ERROR_JOINING_THREAD_FAILED, Error> JoiningThreadFailedError;
 
-/** Getting the exit code of a thread failed. */
+/** 
+// Getting the exit code of a thread failed. 
+*/
 typedef error::ErrorTemplate<THREAD_ERROR_EXIT_CODE_THREAD_FAILED, Error> ExitCodeThreadFailedError;
 
 }

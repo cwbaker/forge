@@ -44,8 +44,8 @@ class ScriptInterface
     lua::LuaObject scanner_prototype_; ///< The LuaObject that acts as a prototype for Scanners.
     lua::LuaObject target_metatable_; ///< The LuaObject that acts as a metatable for Targets.
     lua::LuaObject target_prototype_; ///< The LuaObject that acts as a prototype for Targets.
-    std::vector<ptr<Rule>> rules_; ///< The Rules that have been loaded in.
-    std::vector<ptr<Environment>> environments_; ///< The stack of Environments.
+    std::vector<ptr<Rule> > rules_; ///< The Rules that have been loaded in.
+    std::vector<ptr<Environment> > environments_; ///< The stack of Environments.
     path::Path root_directory_; ///< The full path to the root directory.
     path::Path initial_directory_; ///< The full path to the initial directory.
 
@@ -54,7 +54,7 @@ class ScriptInterface
 
         lua::Lua& get_lua();
         ptr<Rule> find_rule_by_id( const std::string& id ) const;
-        const std::vector<ptr<Rule>>& get_rules() const;
+        const std::vector<ptr<Rule> >& get_rules() const;
 
         void push_environment( ptr<Environment> environment );
         void pop_environment();        

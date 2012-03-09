@@ -1,6 +1,6 @@
 //
-// BasicBasicPath.ipp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// BasicPath.ipp
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PATH_BASICPATH_IPP_INCLUDED
@@ -98,7 +98,11 @@ BasicPath<String, Traits>::BasicPath( const String& path )
     {
         if ( std::find(begin, end, Traits::DRIVE) != end )
         {
-            std::transform( begin, end, std::back_inserter(drive_), std::toupper );
+            for ( typename String::const_iterator i = begin; i != end; ++i )
+            {
+                drive_.push_back( std::toupper(*i) );
+            }
+            
             elements_.push_back( drive_ );
             absolute_ = true;
 
@@ -144,7 +148,7 @@ BasicPath<String, Traits>::BasicPath( const String& path )
     {
         if ( !compare(begin, end, Traits::CURRENT) )
         {
-            elements_.push_back( typename String() );
+            elements_.push_back( String() );
             elements_.back().assign( begin, end );
         }
 
@@ -234,8 +238,7 @@ const String& BasicPath<String, Traits>::string() const
             string_.append( Traits::SEPARATOR );
         }
 
-        typedef std::vector<String> string_vector;
-        for ( string_vector::const_iterator i = elements_.begin(); i != elements_.end(); ++i )
+        for ( typename std::vector<String>::const_iterator i = elements_.begin(); i != elements_.end(); ++i )
         {
             string_.append( *i );
             string_.append( Traits::SEPARATOR );
@@ -276,8 +279,7 @@ String BasicPath<String, Traits>::native_string() const
         native_string.append( Traits::NATIVE_SEPARATOR );
     }
 
-    typedef std::vector<String> string_vector;
-    for ( string_vector::const_iterator i = elements_.begin(); i != elements_.end(); ++i )
+    for ( typename std::vector<String>::const_iterator i = elements_.begin(); i != elements_.end(); ++i )
     {
         native_string.append( *i );
         native_string.append( Traits::NATIVE_SEPARATOR );
@@ -353,7 +355,7 @@ String BasicPath<String, Traits>::basename() const
     if ( !elements_.empty() )
     {
         const String& leaf = elements_.back();
-        String::size_type pos = leaf.find_last_of( Traits::DELIMITER );
+        typename String::size_type pos = leaf.find_last_of( Traits::DELIMITER );
         if ( pos != String::npos )
         {
             basename.assign( leaf.begin(), leaf.begin() + leaf.find_last_of(Traits::DELIMITER) );
@@ -382,7 +384,7 @@ String BasicPath<String, Traits>::extension() const
     if ( !elements_.empty() )
     {
         const String& leaf = elements_.back();
-        String::size_type pos = leaf.find_last_of( Traits::DELIMITER );
+        typename String::size_type pos = leaf.find_last_of( Traits::DELIMITER );
         if ( pos != String::npos )
         {
             extension.assign( leaf.begin() + leaf.find_last_of(Traits::DELIMITER), leaf.end() );
@@ -420,8 +422,8 @@ BasicPath<String, Traits> BasicPath<String, Traits>::relative( const BasicPath& 
 //
 // Find the first elements that are different in both of the BasicPaths.
 //
-    std::vector<String>::const_iterator i = elements_.begin();
-    std::vector<String>::const_iterator j = path.elements_.begin();
+    typename std::vector<String>::const_iterator i = elements_.begin();
+    typename std::vector<String>::const_iterator j = path.elements_.begin();
 
     while ( i != elements_.end() && j != path.elements_.end() && *i == *j )
     {
@@ -632,10 +634,10 @@ typename BasicPath<String, Traits>::const_reverse_iterator BasicPath<String, Tra
 //  True if \e character is contained in \e separators otherwise false.
 */
 template <class String, class Traits>
-bool BasicPath<String, Traits>::in( int character, typename const Traits::char_type* separators )
+bool BasicPath<String, Traits>::in( int character, const typename Traits::char_type* separators )
 {
     SWEET_ASSERT( separators );    
-    const Traits::char_type* i = separators;
+    const typename Traits::char_type* i = separators;
     while ( *i != 0 && *i != character )
     {
         ++i;
@@ -661,7 +663,7 @@ bool BasicPath<String, Traits>::in( int character, typename const Traits::char_t
 //  True if [\e begin, \e end) matches \e value otherwise false.
 */
 template <class String, class Traits>
-bool BasicPath<String, Traits>::compare( typename String::const_iterator begin, typename String::const_iterator end, typename const Traits::char_type* value )
+bool BasicPath<String, Traits>::compare( typename String::const_iterator begin, typename String::const_iterator end, const typename Traits::char_type* value )
 {
     SWEET_ASSERT( value );    
     while ( begin != end && *value != 0 && *begin == *value )

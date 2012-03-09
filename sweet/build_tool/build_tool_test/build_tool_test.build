@@ -2,32 +2,37 @@
 Executable {
     id = "build_tool_test";
 
-    libraries = {    
-        "assert/assert",
-        "build_tool/build_tool",
-        "error/error",
-        "lua/lua",
-        "lua/lua_/liblua",
-        "path/path",
-        "persist/persist",
-        "pointer/pointer",
-        "process/process",
-        "rtti/rtti",
-        "thread/thread",
-        "unit/libUnitTest"
-    };
-
     Cc {
         pch = "stdafx.hpp";
         "main.cpp",
         "ErrorChecker.cpp",
         "FileChecker.cpp",
-        --[[
         "TestDirectoryApi.cpp",
-        ]]
         "TestGraph.cpp",
         "TestPostorder.cpp",
         "TestPreorder.cpp",
         "TestScanner.cpp"
     };
+
+    libraries = {    
+        "build_tool/build_tool",
+        "lua/lua",
+        "persist/persist",
+        "thread/thread",
+        "path/path",
+        "process/process",
+        "rtti/rtti",
+        "pointer/pointer",
+        "lua/lua_/liblua",
+        "error/error",
+        "assert/assert",
+        "unit/libUnitTest"
+    };
+
+    third_party_libraries = {
+        boost_library( "boost_filesystem" ),
+        boost_library( "boost_regex" ),
+        boost_library( "boost_system" ),
+        boost_library( "boost_thread" )
+    };    
 }

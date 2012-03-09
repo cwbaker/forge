@@ -35,7 +35,7 @@ class ReaderType
         };
 
         typedef std::set<ReaderType> set;
-        typedef std::set<ReaderType*, less_by_name> set_by_name;
+        typedef std::set<const ReaderType*, less_by_name> set_by_name;
 
     private:
         rtti::Type m_type; ///< The rtti::Type for the type returned by SWEET_TYPEID().

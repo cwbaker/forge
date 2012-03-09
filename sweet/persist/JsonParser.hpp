@@ -1,10 +1,12 @@
 //
 // JsonParser.hpp
-// Copyright (c) 2009 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2009 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PERSIST_JSONPARSER_HPP_INCLUDED
 #define SWEET_PERSIST_JSONPARSER_HPP_INCLUDED
+
+#include <istream>
 
 namespace sweet
 {

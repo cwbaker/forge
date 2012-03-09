@@ -80,8 +80,6 @@ if platform == "mingw" then
         
         if target.settings.runtime_library == "static" or target.settings.runtime_library == "static_debug" then
             ccflags = ccflags.." -static-libstdc++";
-        elseif target.settings.runtime_library == "dynamic" or target.settings.runtime_library == "dynamic_debug" then
-            ccflags = ccflags.." -dynamic-libstdc++";
         end
         
         if target.settings.debug then
@@ -190,7 +188,7 @@ if platform == "mingw" then
         elseif target:rule() == Library then
             out = native( target.settings.bin.."/"..dll_name(target:id()) );
             ldflags = ldflags.." -o "..out;
-            ldflags = ldflags.." --dll --out-implib "..native( target.settings.lib.."/"..lib_name(target:id()) );
+            ldflags = ldflags.." -shared -Wl,--out-implib,"..native( target.settings.lib.."/"..lib_name(target:id()) );
         end
         
         if target.settings.verbose_linking then
@@ -199,8 +197,6 @@ if platform == "mingw" then
         
         if target.settings.runtime_library == "static" or target.settings.runtime_library == "static_debug" then
             ldflags = ldflags.." -static-libstdc++";
-        elseif target.settings.runtime_library == "dynamic" or target.settings.runtime_library == "dynamic_debug" then
-            ldflags = ldflags.." -dynamic-libstdc++";
         end
         
         if target.settings.debug then
@@ -214,11 +210,20 @@ if platform == "mingw" then
         if target.settings.stack_size then
             ldflags = ldflags.." -Wl,--stack,"..tostring(target.settings.stack_size);
         end
+        
+        if target.settings.strip then
+            ldflags = ldflags.." -Wl,--strip-all";
+        end
 
         local libraries = "";
         if target.libraries then
             for _, library in ipairs(target.libraries) do
                 libraries = "%s -l%s_%s_%s" % { libraries, library:id(), platform, variant };
+            end
+        end
+        if target.third_party_libraries then
+            for _, library in ipairs(target.third_party_libraries) do
+                libraries = "%s -l%s" % { libraries, library };
             end
         end
 
@@ -274,14 +279,6 @@ if platform == "mingw" then
 
     function cxx_name( name )
         return basename( name )..".cpp";
-    end
-
-    function pch_name( name )
-        return basename( name )..".pch";
-    end
-
-    function pdb_name( name )
-        return basename( name )..".pdb";
     end
 
     function obj_name( name )

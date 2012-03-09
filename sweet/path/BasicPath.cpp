@@ -1,6 +1,6 @@
 //
 // BasicPath.cpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -16,7 +16,7 @@ using namespace sweet::path;
 */
 WidePath sweet::path::current_working_directory()
 {
-#if defined BUILD_PLATFORM_MSVC
+#if defined BUILD_PLATFORM_MSVC || defined BUILD_PLATFORM_MINGW
 //
 // The length returned by GetCurrentDirectoryW includes the terminating
 // null character so the wstring is initialized to have one less character 

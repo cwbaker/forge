@@ -3,10 +3,10 @@ Executable {
     id = "process_test";
 
     libraries = {
-        "assert/assert",
+        "process/process",
         "cmdline/cmdline",
         "error/error",
-        "process/process"
+        "assert/assert"
     };
 
     Cc {

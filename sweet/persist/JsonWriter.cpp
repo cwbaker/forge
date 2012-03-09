@@ -1,12 +1,13 @@
 //
 // JsonWriter.cpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include "JsonWriter.hpp"
 #include "functions.hpp"
 #include "Writer.ipp"
+#include <fstream>
 
 using namespace sweet::persist;
 

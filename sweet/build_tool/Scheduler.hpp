@@ -44,10 +44,10 @@ class BuildTool;
 class Scheduler
 {
     BuildTool* build_tool_; ///< The BuildTool that this Scheduler is part of.
-    std::vector<ptr<Environment>> free_environments_; ///< The Environments that are free and waiting to be assigned a Job.
+    std::vector<ptr<Environment> > free_environments_; ///< The Environments that are free and waiting to be assigned a Job.
     thread::Mutex results_mutex_; ///< The mutex that ensures exclusive access to the results queue.
     thread::Condition results_condition_; ///< The Condition that is used to wait for results.
-    std::deque<boost::function<void()>> results_; ///< The functions to be executed as a result of jobs processing in the thread pool.
+    std::deque<boost::function<void()> > results_; ///< The functions to be executed as a result of jobs processing in the thread pool.
     int jobs_; ///< The number of jobs that are running.
     int failures_; ///< The number of failures in the most recent preorder or postorder traversal.
     bool traversing_; ///< True if a preorder or postorder traversal is happening otherwise false.

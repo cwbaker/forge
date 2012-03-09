@@ -8,6 +8,7 @@
 
 #include "declspec.hpp"
 #include <string>
+#include <locale>
 
 namespace sweet
 {

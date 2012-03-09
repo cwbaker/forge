@@ -9,6 +9,7 @@ jobs = jobs or 4;
 
 package.path = root("build/lua/?.lua")..";"..root("build/lua/?/init.lua");
 require "build";
+require "build/boost";
 
 setup {
     bin = root( "../bin" );
@@ -27,7 +28,6 @@ buildfile "assert/assert.build";
 buildfile "atomic/atomic.build";
 buildfile "build_tool/build_tool.build";
 buildfile "cmdline/cmdline.build";
-buildfile "debug/debug.build";
 buildfile "error/error.build";
 buildfile "lua/lua.build";
 buildfile "path/path.build";

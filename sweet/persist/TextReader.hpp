@@ -95,7 +95,9 @@ class SWEET_PERSIST_DECLSPEC TextReader : public Reader<TextReader>
         void value( const char* name, unsigned int& value );
         void value( const char* name, long& value );
         void value( const char* name, unsigned long& value );
+#if defined(BUILD_PLATFORM_MSVC)
         void value( const char* name, std::time_t& value );
+#endif
         void value( const char* name, float& value );
         void value( const char* name, double& value );
         void value( const char* name, char* value, size_t max );
@@ -103,12 +105,12 @@ class SWEET_PERSIST_DECLSPEC TextReader : public Reader<TextReader>
         void value( const char* name, std::string& value );
         void value( const char* name, std::wstring& value );
 
-        template <class Filter> void value( const char* name, wchar_t* value, size_t max, Filter& filter );
-        template <class Filter> void value( const char* name, std::wstring& value, Filter& filter );
-        template <class Filter> void value( const char* name, char* value, size_t max, Filter& filter );
-        template <class Filter> void value( const char* name, std::string& value, Filter& filter );
+        template <class Filter> void value( const char* name, wchar_t* value, size_t max, const Filter& filter );
+        template <class Filter> void value( const char* name, std::wstring& value, const Filter& filter );
+        template <class Filter> void value( const char* name, char* value, size_t max, const Filter& filter );
+        template <class Filter> void value( const char* name, std::string& value, const Filter& filter );
 
-        template <class Type, class Filter> void value( const char* name, Type& value, Filter& filter );
+        template <class Type, class Filter> void value( const char* name, Type& value, const Filter& filter );
 
         template <class Type> void value( const char* name, Type& object );
         template <class Type> void refer( const char* name, Type& object );

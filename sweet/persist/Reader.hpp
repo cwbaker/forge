@@ -1,6 +1,6 @@
 //
 // Reader.hpp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PERSIST_READER_HPP_INCLUDED
@@ -8,6 +8,7 @@
 
 #include "Archive.hpp"
 #include "ReaderType.hpp"
+#include <set>
 
 namespace sweet
 {
@@ -28,8 +29,8 @@ class Reader : public Archive
         typedef ArchiveTypeReader archive_type;
 
     private:
-        typename std::set<ReaderType<DerivedArchive>> m_types; ///< The types that have been declared for use with this archive.    
-        typename std::set<ReaderType<DerivedArchive>*, typename ReaderType<DerivedArchive>::less_by_name> m_types_by_name; ///< The types that have been declared for use with this archive ordered by name.
+        typename std::set<ReaderType<DerivedArchive> > m_types; ///< The types that have been declared for use with this archive.    
+        typename std::set<const ReaderType<DerivedArchive>*, typename ReaderType<DerivedArchive>::less_by_name> m_types_by_name; ///< The types that have been declared for use with this archive ordered by name.
 
     public:
         Reader();

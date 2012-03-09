@@ -5,19 +5,6 @@ buildfile "build_tool_test/build_tool_test.build";
 Library {
     id = "build_tool";
     
-    libraries = {
-        "assert/assert",
-        "error/error",
-        "lua/lua",
-        "lua/lua_/liblua",
-        "path/path",
-        "persist/persist",
-        "pointer/pointer",
-        "process/process",
-        "rtti/rtti",
-        "thread/thread"
-    };
-    
     Cc {
         pch = "stdafx.hpp";
         "BuildTool.cpp",
@@ -36,4 +23,24 @@ Library {
         "Target.cpp",
         "Environment.cpp"
     };
+
+    libraries = {
+        "assert/assert",
+        "error/error",
+        "lua/lua",
+        "lua/lua_/liblua",
+        "path/path",
+        "persist/persist",
+        "pointer/pointer",
+        "process/process",
+        "rtti/rtti",
+        "thread/thread"
+    };    
+
+    third_party_libraries = {
+        boost_library( "boost_filesystem" ),
+        boost_library( "boost_regex" ),
+        boost_library( "boost_system" ),
+        boost_library( "boost_thread" )
+    };    
 }

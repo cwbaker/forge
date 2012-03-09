@@ -212,11 +212,13 @@ void BinaryReader::value( const char* name, unsigned long& value )
     m_istream->read( reinterpret_cast<char*>(&value), sizeof(value) );
 }
 
+#if defined(BUILD_PLATFORM_MSVC)
 void BinaryReader::value( const char* name, std::time_t& value )
 {
     SWEET_ASSERT( m_istream );
     m_istream->read( reinterpret_cast<char*>(&value), sizeof(value) );
 }
+#endif
 
 void BinaryReader::value( const char* name, float& value )
 {

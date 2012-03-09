@@ -3,11 +3,11 @@ Executable {
     id = "persist_examples";
 
     libraries = {
-        "assert/assert",
-        "error/error",
-        "path/path",
         "persist/persist",
-        "rtti/rtti"
+        "path/path",
+        "rtti/rtti",
+        "error/error",
+        "assert/assert"
     };
 
     Cc {

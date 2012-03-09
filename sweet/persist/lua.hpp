@@ -1,11 +1,15 @@
 //
 // lua.hpp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PERSIST_LUA_HPP_INCLUDED
 #define SWEET_PERSIST_LUA_HPP_INCLUDED
 
+#include "ObjectGuard.hpp"
+#include "EnumFilter.hpp"
+#include "Archive.hpp"
+#include "types.hpp"
 #include <sweet/lua/lua_/lua.h>
 
 namespace sweet
@@ -38,6 +42,8 @@ void save_lua_table( Archive& archive, const char* name, lua_State* lua_state, b
     SWEET_ASSERT( archive.is_writing() );
     SWEET_ASSERT( name );
     SWEET_ASSERT( lua_state );
+
+    using namespace sweet::persist;
 
     int table_index = lua_gettop( lua_state );
     SWEET_ASSERT( lua_istable(lua_state, table_index) || lua_isnil(lua_state, table_index) );

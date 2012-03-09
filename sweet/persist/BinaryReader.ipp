@@ -8,6 +8,7 @@
 
 #include "BinaryReader.hpp"
 #include <fstream>
+#include <string.h>
 
 namespace sweet
 {
@@ -79,7 +80,7 @@ void BinaryReader::read( std::istream& istream, const char* name, const char* ch
     m_istream = NULL;
     m_state.pop();
     SWEET_ASSERT( m_state.empty() );
-    m_resolver.process( version(), object );
+    m_resolver.process( version(), container );
 }
 
 template <class Type, size_t LENGTH>
@@ -99,7 +100,7 @@ void BinaryReader::read( std::istream& istream, const char* name, const char* ch
     m_istream = NULL;
     m_state.pop();
     SWEET_ASSERT( m_state.empty() );
-    m_resolver.process( version(), object );
+    m_resolver.process( version(), values, LENGTH );
 }
 
 template <class Type> 
@@ -117,7 +118,7 @@ void BinaryReader::declare( const char* name, int flags )
 }
 
 template <class Filter> 
-void BinaryReader::value( const char* name, wchar_t* value, size_t max, Filter& filter )
+void BinaryReader::value( const char* name, wchar_t* value, size_t max, const Filter& filter )
 {
     std::wstring archive_value;
     BinaryReader::value( NULL, archive_value );    
@@ -127,7 +128,7 @@ void BinaryReader::value( const char* name, wchar_t* value, size_t max, Filter& 
 }
 
 template <class Filter> 
-void BinaryReader::value( const char* name, std::wstring& value, Filter& filter )
+void BinaryReader::value( const char* name, std::wstring& value, const Filter& filter )
 {
     std::wstring archive_value;
     BinaryReader::value( NULL, archive_value );    
@@ -135,7 +136,7 @@ void BinaryReader::value( const char* name, std::wstring& value, Filter& filter 
 }
 
 template <class Filter> 
-void BinaryReader::value( const char* name, char* value, size_t max, Filter& filter )
+void BinaryReader::value( const char* name, char* value, size_t max, const Filter& filter )
 {
     std::string archive_value;
     BinaryReader::value( NULL, archive_value );    
@@ -145,7 +146,7 @@ void BinaryReader::value( const char* name, char* value, size_t max, Filter& fil
 }
 
 template <class Filter> 
-void BinaryReader::value( const char* name, std::string& value, Filter& filter )
+void BinaryReader::value( const char* name, std::string& value, const Filter& filter )
 {
     std::string archive_value;
     BinaryReader::value( NULL, archive_value );    
@@ -153,7 +154,7 @@ void BinaryReader::value( const char* name, std::string& value, Filter& filter )
 }
 
 template <class Type, class Filter> 
-void BinaryReader::value( const char* name, Type& value, Filter& filter )
+void BinaryReader::value( const char* name, Type& value, const Filter& filter )
 {
     SWEET_ASSERT( m_istream );
     m_istream->read( reinterpret_cast<char*>(&value), sizeof(value) );

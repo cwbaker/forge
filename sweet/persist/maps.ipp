@@ -1,6 +1,6 @@
 //
 // maps.ipp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PERSIST_MAPS_IPP_INCLUDED
@@ -15,22 +15,22 @@ namespace sweet
 namespace persist
 {
 
-template <class Archive, class CONTAINER>
-void save_stl_map( Archive& archive, int mode, const char* name, const char* child_name, CONTAINER& container )
+template <class Archive, class Container>
+void save_stl_map( Archive& archive, int mode, const char* name, const char* child_name, Container& container )
 {
     ObjectGuard<Archive> guard( archive, name, 0, MODE_VALUE, container.size() );
-    typename CONTAINER::iterator i = container.begin();
+    typename Container::iterator i = container.begin();
     while ( i != container.end() )
     {
         ObjectGuard<Archive> guard( archive, child_name, 0, MODE_VALUE, 1 );
-        save( archive, MODE_VALUE, "first", const_cast<remove_const<typename CONTAINER::key_type>::type&>(i->first) );
-        save( archive, mode, "second", const_cast<remove_const<typename CONTAINER::referent_type>::type&>(i->second) );
+        save( archive, MODE_VALUE, "first", const_cast<typename remove_const<typename Container::key_type>::type&>(i->first) );
+        save( archive, mode, "second", const_cast<typename remove_const<typename Container::mapped_type>::type&>(i->second) );
         ++i;
     }
 }
 
-template <class Archive, class CONTAINER>
-void load_stl_map( Archive& archive, int mode, const char* name, const char* child_name, CONTAINER& container )
+template <class Archive, class Container>
+void load_stl_map( Archive& archive, int mode, const char* name, const char* child_name, Container& container )
 {
     SWEET_ASSERT( container.empty() );
 
@@ -39,15 +39,15 @@ void load_stl_map( Archive& archive, int mode, const char* name, const char* chi
     {
         while ( archive.find_next_object(child_name) )
         {
-            typename CONTAINER::iterator position = container.end();
+            typename Container::iterator position = container.end();
             {
                 ObjectGuard<Archive> guard( archive, child_name, 0, MODE_VALUE );
 
                 if ( archive.is_object() )
                 {
-                    typename CONTAINER::key_type key( creator<typename CONTAINER::key_type>::create() );
+                    typename Container::key_type key( creator<typename Container::key_type>::create() );
                     load( archive, MODE_VALUE, "first",  key );
-                    position = container.insert( std::make_pair(key, creator<typename CONTAINER::mapped_type>::create()) ).first;
+                    position = container.insert( std::make_pair(key, creator<typename Container::mapped_type>::create()) ).first;
                     load( archive, mode, "second", position->second );
                 }
             }
@@ -67,8 +67,8 @@ void load_stl_map( Archive& archive, int mode, const char* name, const char* chi
     }
 }
 
-template <class Archive, class CONTAINER>
-void load_stl_multimap( Archive& archive, int mode, const char* name, const char* child_name, CONTAINER& container )
+template <class Archive, class Container>
+void load_stl_multimap( Archive& archive, int mode, const char* name, const char* child_name, Container& container )
 {
     SWEET_ASSERT( container.empty() );    
 
@@ -77,15 +77,15 @@ void load_stl_multimap( Archive& archive, int mode, const char* name, const char
     {
         while ( archive.find_next_object(child_name) )
         {
-            typename CONTAINER::iterator position = container.end();
+            typename Container::iterator position = container.end();
             {
                 ObjectGuard<Archive> guard( archive, child_name, 0, MODE_VALUE );
 
                 if ( archive.is_object() )
                 {
-                    typename CONTAINER::key_type key( creator<typename CONTAINER::key_type>::create() );
+                    typename Container::key_type key( creator<typename Container::key_type>::create() );
                     load( archive, MODE_VALUE, "first",  key );
-                    position = container.insert( std::make_pair(key, creator<typename CONTAINER::mapped_type>::create()) );
+                    position = container.insert( std::make_pair(key, creator<typename Container::mapped_type>::create()) );
                     load( archive, mode, "second", position->second );
                 }
             }

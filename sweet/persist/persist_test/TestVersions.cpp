@@ -48,7 +48,7 @@ SUITE( TestVersions )
 
         template <class Archive> void enter( Archive& archive )
         {
-            archive.declare <Model> ( "Model", PERSIST_NORMAL );
+            archive.template declare <Model> ( "Model", PERSIST_NORMAL );
         }
 
         template <class Archive> void exit( Archive& archive )

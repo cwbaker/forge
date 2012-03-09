@@ -46,7 +46,7 @@ Error::Error( int error, const char* format, ... )
 /**
 // Destructor.
 */
-Error::~Error()
+Error::~Error() throw ()
 {
 }
 
@@ -67,7 +67,7 @@ int Error::error() const
 // @return
 //  The text.
 */
-const char* Error::what() const
+const char* Error::what() const throw ()
 {
    return text_;
 }
@@ -135,10 +135,9 @@ void Error::append( const char* text )
 // @return
 //  The buffer.
 */
-const char* Error::format( int oserror, char* buffer, size_t length )
+const char* Error::format( int oserror, char* buffer, unsigned int length )
 {
     SWEET_ASSERT( buffer );
-    SWEET_ASSERT( length > 0 );
     int actual_length = ::FormatMessageA( FORMAT_MESSAGE_FROM_SYSTEM, 0, oserror, 0, buffer, static_cast<int>(length), 0 );
     while ( actual_length > 0 && (buffer[actual_length] == '\n' || buffer[actual_length] == '\r' || buffer[actual_length] == '.' || buffer[actual_length] == 0) )
     {

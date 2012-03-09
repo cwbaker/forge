@@ -26,10 +26,6 @@ SUITE( TestArrays )
           //multi_items_,
           //raw_items_,
         {
-            memset( items_, 0, sizeof(items_) );
-            memset( multi_items_, 0, sizeof(multi_items_) );
-            memset( raw_items_, 0, sizeof(raw_items_) );
-
             items_[0] = Item( "000", 2 );
             items_[1] = Item( "001", 2 );
             items_[2] = Item( "002", 2 );
@@ -74,7 +70,7 @@ SUITE( TestArrays )
 
         template <class Archive> void enter( Archive& archive )
         {
-            archive.declare <Item> ( "Item", PERSIST_NORMAL );
+            archive.template declare <Item> ( "Item", PERSIST_NORMAL );
         }
 
         template <class Archive> void exit( Archive& archive )

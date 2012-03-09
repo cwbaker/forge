@@ -1,10 +1,11 @@
 //
 // Ucs2CharFilter.cpp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include "Ucs2CharFilter.hpp"
+#include <sweet/assert/assert.hpp>
 
 using namespace sweet::persist;
 
@@ -106,10 +107,10 @@ void Ucs2CharFilter::to_memory( const char* src_begin, const char* src_end, wcha
     }
 }
 
-size_t Ucs2CharFilter::to_archive_length( const wchar_t* begin, const wchar_t* end ) const
+unsigned int Ucs2CharFilter::to_archive_length( const wchar_t* begin, const wchar_t* end ) const
 {
     const wchar_t* src = begin;
-    size_t length = 0;
+    unsigned int length = 0;
     while ( src < end )
     {
         if ( *src < 0x80 )
@@ -131,9 +132,9 @@ size_t Ucs2CharFilter::to_archive_length( const wchar_t* begin, const wchar_t* e
     return length;
 }
 
-size_t Ucs2CharFilter::to_memory_length( const char* begin, const char* end ) const
+unsigned int Ucs2CharFilter::to_memory_length( const char* begin, const char* end ) const
 {
-    size_t length = 0;
+    unsigned int length = 0;
     const char* src = begin;
     while ( src < end )
     {

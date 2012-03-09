@@ -1,15 +1,17 @@
 //
 // lua_functions.cpp
-// Copyright (c) 2007 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "lua_types.hpp"
 #include "lua_functions.hpp"
 #include "LuaUserData.hpp"
-#include "LuaUserDataTemplate.hpp"
 #include "LuaConverter.hpp"
 #include "LuaStackGuard.hpp"
+#include "LuaUserDataTemplate.ipp"
 #include <sweet/rtti/Type.hpp>
+#include <sweet/assert/assert.hpp>
+#include <stdio.h>
 
 namespace sweet
 {

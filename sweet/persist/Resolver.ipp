@@ -63,28 +63,28 @@ void Resolver::process( int version, const char* child_name, Type& values, size_
     }
 }
 
-template <class FILTER> 
-void Resolver::value( const char* name, wchar_t* value, size_t max, FILTER& filter )
+template <class Filter> 
+void Resolver::value( const char* name, wchar_t* value, size_t max, const Filter& filter )
 {
 }
 
-template <class FILTER> 
-void Resolver::value( const char* name, std::wstring& value, FILTER& filter )
+template <class Filter> 
+void Resolver::value( const char* name, std::wstring& value, const Filter& filter )
 {
 }
 
-template <class FILTER> 
-void Resolver::value( const char* name, char* value, size_t max, FILTER& filter )
+template <class Filter> 
+void Resolver::value( const char* name, char* value, size_t max, const Filter& filter )
 {
 }
 
-template <class FILTER> 
-void Resolver::value( const char* name, std::string& value, FILTER& filter )
+template <class Filter> 
+void Resolver::value( const char* name, std::string& value, const Filter& filter )
 {
 }
 
-template <class Type, class FILTER> 
-void Resolver::value( const char* name, Type& value, FILTER& filter )
+template <class Type, class Filter> 
+void Resolver::value( const char* name, Type& value, const Filter& filter )
 {
 }
 

@@ -1,12 +1,13 @@
 //
 // ptr.hpp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PERSIST_PTR_HPP_INCLUDED
 #define SWEET_PERSIST_PTR_HPP_INCLUDED
 
 #include "ObjectGuard.hpp"
+#include "objects.ipp"
 #include <sweet/pointer/ptr.hpp>
 
 namespace sweet
@@ -14,6 +15,19 @@ namespace sweet
 
 namespace persist
 {
+
+template <class Type> struct resolver<ptr<Type> >
+{
+    static void resolve( void* reference, void* raw_ptr, void* smart_ptr )
+    {
+        if ( smart_ptr )
+        {
+            ptr<Type>* referer = static_cast<ptr<Type>*>( reference );
+            ptr<Type>* owner = static_cast<ptr<Type>*>( smart_ptr );
+            *referer = *owner;
+        }
+    }
+};
 
 template <class Archive, class Type>
 void save( Archive& archive, int mode, const char* name, ptr<Type>& object )
@@ -47,11 +61,11 @@ void load( Archive& archive, int mode, const char* name, ptr<Type>& object )
     switch ( mode )
     {
         case MODE_VALUE:
-            object.reset( static_cast<Type*>(archive.create_and_persist<Type>()) );
+            object.reset( static_cast<Type*>(archive.template create_and_persist<Type>()) );
             break;
 
         case MODE_REFERENCE:
-            archive.reference( archive.get_address(), reinterpret_cast<void**>(&object), &resolver<ptr<Type>>::resolve );
+            archive.reference( archive.get_address(), reinterpret_cast<void**>(&object), &resolver<ptr<Type> >::resolve );
             break;
 
         default:
@@ -75,7 +89,7 @@ void resolve( Archive& archive, int mode, ptr<Type>& object )
             break;
 
         case MODE_REFERENCE:
-            archive.reference( 0, reinterpret_cast<void**>(&object), &resolver<ptr<Type>>::resolve );
+            archive.reference( 0, reinterpret_cast<void**>(&object), &resolver<ptr<Type> >::resolve );
             break;
 
         default:
@@ -85,16 +99,13 @@ void resolve( Archive& archive, int mode, ptr<Type>& object )
 }
 
 template <class Type>
-struct resolver<ptr<Type>>
+struct resolver<weak_ptr<Type> >
 {
     static void resolve( void* reference, void* raw_ptr, void* smart_ptr )
     {
-        if ( smart_ptr )
-        {
-            ptr<Type>* referer = static_cast<ptr<Type>*>( reference );
-            ptr<Type>* owner = static_cast<ptr<Type>*>( smart_ptr );
-            *referer = *owner;
-        }
+        weak_ptr<Type>* referer = static_cast<weak_ptr<Type>*>( reference );
+        ptr<Type>* owner = static_cast<ptr<Type>*>( smart_ptr );
+        *referer = *owner;
     }
 };
 
@@ -121,26 +132,15 @@ void load( Archive& archive, int mode, const char* name, weak_ptr<Type>& object 
     SWEET_ASSERT( object.lock() == ptr<Type>() );
 
     ObjectGuard<Archive> guard( archive, name, 0, MODE_REFERENCE );
-    archive.reference( archive.get_address(), reinterpret_cast<void**>(&object), &resolver<weak_ptr<Type>>::resolve );
+    archive.reference( archive.get_address(), reinterpret_cast<void**>(&object), &resolver<weak_ptr<Type> >::resolve );
 }
 
 template <class Archive, class Type>
 void resolve( Archive& archive, int mode, weak_ptr<Type>& object )
 {
     SWEET_ASSERT( mode == MODE_REFERENCE );
-    archive.reference( 0, reinterpret_cast<void**>(&object), &resolver<weak_ptr<Type>>::resolve );
+    archive.reference( 0, reinterpret_cast<void**>(&object), &resolver<weak_ptr<Type> >::resolve );
 }
-
-template <class Type>
-struct resolver<weak_ptr<Type>>
-{
-    static void resolve( void* reference, void* raw_ptr, void* smart_ptr )
-    {
-        weak_ptr<Type>* referer = static_cast<weak_ptr<Type>*>( reference );
-        ptr<Type>* owner = static_cast<ptr<Type>*>( smart_ptr );
-        *referer = *owner;
-    }
-};
 
 }
 

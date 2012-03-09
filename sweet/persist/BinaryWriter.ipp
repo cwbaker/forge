@@ -1,12 +1,14 @@
 //
 // BinaryWriter.ipp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PERSIST_BINARYWRITER_IPP_INCLUDED
 #define SWEET_PERSIST_BINARYWRITER_IPP_INCLUDED
 
+#include "BinaryWriter.hpp"
 #include <fstream>
+#include <string.h>
 
 namespace sweet
 {
@@ -19,7 +21,8 @@ void BinaryWriter::write( const Char* filename, const Char* name, Type& object )
 {
     SWEET_ASSERT( filename );
     set_filename( widen(filename) );
-    write( std::ofstream(filename, std::ios::binary), name, object );
+    std::ofstream stream( filename, std::ios::binary );
+    write( stream, name, object );
 }
 
 template <class Char, class Type> 
@@ -65,7 +68,6 @@ void BinaryWriter::write( std::ostream& ostream, const Char* name, const Char* c
     ostream.exceptions( std::ostream::eofbit | std::ostream::badbit | std::ostream::failbit );
 
     save( *this, MODE_VALUE, 0, 0, container );
-    object.exit( *this );
 
     m_ostream = NULL;
     m_state.pop();
@@ -82,7 +84,6 @@ void BinaryWriter::write( std::ostream& ostream, const Char* name, const Char* c
     ostream.exceptions( std::ostream::eofbit | std::ostream::badbit | std::ostream::failbit );
 
     save( *this, MODE_VALUE, 0, 0, values, LENGTH );
-    object.exit( *this );
 
     m_ostream = NULL;
     m_state.pop();
@@ -90,31 +91,31 @@ void BinaryWriter::write( std::ostream& ostream, const Char* name, const Char* c
 }
 
 template <class Filter> 
-void BinaryWriter::value( const char* name, wchar_t* value, size_t max, Filter& filter )
+void BinaryWriter::value( const char* name, wchar_t* value, size_t max, const Filter& filter )
 {
-    BinaryWriter::value( NULL, filter.to_archive(std::wstring(value, strnlen(value, max))) );
+    BinaryWriter::value( NULL, filter.to_archive(std::wstring(value, wcslen(value))) );
 }
 
 template <class Filter> 
-void BinaryWriter::value( const char* name, std::wstring& value, Filter& filter )
+void BinaryWriter::value( const char* name, std::wstring& value, const Filter& filter )
 {
     BinaryWriter::value( NULL, filter.to_archive(value) );
 }
 
 template <class Filter> 
-void BinaryWriter::value( const char* name, char* value, size_t max, Filter& filter )
+void BinaryWriter::value( const char* name, char* value, size_t max, const Filter& filter )
 {
-    BinaryWriter::value( NULL, filter.to_archive(std::string(value, strnlen(value, max))) );
+    BinaryWriter::value( NULL, filter.to_archive(std::string(value, strlen(value))) );
 }
 
 template <class Filter> 
-void BinaryWriter::value( const char* name, std::string& value, Filter& filter )
+void BinaryWriter::value( const char* name, std::string& value, const Filter& filter )
 {
     BinaryWriter::value( NULL, filter.to_archive(value) );
 }
 
 template <class Type, class Filter>
-void BinaryWriter::value( const char* name, Type& value, Filter& filter )
+void BinaryWriter::value( const char* name, Type& value, const Filter& filter )
 {
     SWEET_ASSERT( m_ostream );
 

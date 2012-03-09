@@ -32,7 +32,7 @@ end
 
 -- Setup the build system.
 function setup( settings )
-    command  = command or "build";
+    command = command or "build";
     platform = platform or "msvc";
     source = source or "";
     target = target or "";
@@ -56,6 +56,11 @@ function setup( settings )
             mingw_directory = autodetect_mingw_directory() or "C:/mingw";
         };
 
+        boost = {
+            boost_directory = "C:/boost";
+            version = "1.43";
+        };
+        
         parser = {
             executable = "d:/usr/local/bin/parser.exe";
             lua_path = "d:/usr/local/lua/?.lua";
@@ -99,6 +104,7 @@ function setup( settings )
                 run_time_type_info = true;
                 stack_size = 1048576;        
                 string_pooling = false;
+                strip = false;
                 subsystem = "CONSOLE";
                 verbose_linking = false;
             };
@@ -119,8 +125,9 @@ function setup( settings )
                 run_time_checks = true;
                 runtime_library = "dynamic_debug";
                 run_time_type_info = true;
-                stack_size = 1048576;        
+                stack_size = 1048576;
                 string_pooling = false;
+                strip = false;
                 subsystem = "CONSOLE";
                 verbose_linking = false;
             };
@@ -143,6 +150,7 @@ function setup( settings )
                 run_time_type_info = true;
                 stack_size = 1048576;        
                 string_pooling = false;
+                strip = false;
                 subsystem = "CONSOLE";
                 verbose_linking = false;
             };
@@ -165,6 +173,7 @@ function setup( settings )
                 run_time_type_info = true;
                 stack_size = 1048576;        
                 string_pooling = false;
+                strip = false;
                 subsystem = "CONSOLE";
                 verbose_linking = false;
             };
@@ -187,6 +196,7 @@ function setup( settings )
                 run_time_type_info = true;
                 stack_size = 1048576;        
                 string_pooling = false;
+                strip = true;
                 subsystem = "CONSOLE";
                 verbose_linking = false;
             };
@@ -209,6 +219,7 @@ function setup( settings )
                 run_time_type_info = true;
                 stack_size = 1048576;        
                 string_pooling = false;
+                strip = true;
                 subsystem = "CONSOLE";
                 verbose_linking = false;
             };    
@@ -396,6 +407,7 @@ function load_project( project )
         cache:add_dependency( SourceFile("build/lua/build/AsciiDoc.lua") );
         cache:add_dependency( SourceFile("build/lua/build/msvc.lua") );
         cache:add_dependency( SourceFile("build/lua/build/mingw.lua") );
+        cache:add_dependency( SourceFile("build/lua/build/boost.lua") );
         cache:add_dependency( SourceFile("build/lua/build/visual_studio.lua") );
         local user_settings = home( "user_settings.lua" );
         if exists(user_settings) then

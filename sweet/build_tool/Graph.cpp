@@ -1,6 +1,6 @@
 //
 // Graph.cpp
-// Copyright (c) 2007 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -12,11 +12,8 @@
 #include "ScriptInterface.hpp"
 #include "Scheduler.hpp"
 #include "OsInterface.hpp"
-#include <sweet/persist/persist.hpp>
-#include <sweet/persist/lua.hpp>
-#include <sweet/persist/ptr.hpp>
-#include <sweet/persist/vector.hpp>
-#include <sweet/lua/persist.hpp>
+#include "persist.hpp"
+#include <sweet/assert/assert.hpp>
 
 using std::list;
 using std::vector;
@@ -403,7 +400,7 @@ int Graph::bind( ptr<Target> target )
             target_->set_visiting( true );
         }
 
-        ScopedVisit::~ScopedVisit()
+        ~ScopedVisit()
         {
             SWEET_ASSERT( target_ );
             SWEET_ASSERT( target_->is_visiting() == true );
@@ -611,7 +608,7 @@ void Graph::print_dependencies( ptr<Target> target )
             target_->set_visiting( true );
         }
 
-        ScopedVisit::~ScopedVisit()
+        ~ScopedVisit()
         {
             SWEET_ASSERT( target_->is_visiting() );
             target_->set_visiting( false );
@@ -757,8 +754,8 @@ void Graph::print_namespace( ptr<Target> target )
             {
                 target->set_visited( true );            
             
-                const vector<ptr<Target>>& targets = target->get_targets();
-                for ( vector<ptr<Target>>::const_iterator i = targets.begin(); i != targets.end(); ++i )
+                const vector<ptr<Target> >& targets = target->get_targets();
+                for ( vector<ptr<Target> >::const_iterator i = targets.begin(); i != targets.end(); ++i )
                 {
                     ptr<Target> target = *i;
                     SWEET_ASSERT( target );

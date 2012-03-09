@@ -1,11 +1,11 @@
 //
 // strnlen.cpp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
-#include "declspec.hpp"
 #include "strnlen.hpp"
+#include <sweet/assert/assert.hpp>
 
 using namespace sweet::persist;
 
@@ -15,7 +15,7 @@ namespace sweet
 namespace persist
 {
 
-size_t strnlen( const char* string, size_t max )
+unsigned int strnlen( const char* string, unsigned int max )
 {
     SWEET_ASSERT( string );
 
@@ -28,7 +28,7 @@ size_t strnlen( const char* string, size_t max )
     return pos - string;
 }
 
-size_t strnlen( const wchar_t* string, size_t max )
+unsigned int strnlen( const wchar_t* string, unsigned int max )
 {
     SWEET_ASSERT( string );
 

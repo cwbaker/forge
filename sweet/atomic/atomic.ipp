@@ -1,6 +1,6 @@
 //
 // atomic.ipp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_ATOMIC_ATOMIC_IPP_INCLUDED
@@ -8,7 +8,7 @@
 
 #include <sweet/assert/assert.hpp>
 
-#if defined(BUILD_PLATFORM_MSVC)
+#if defined(BUILD_PLATFORM_MSVC) || defined(BUILD_PLATFORM_MINGW)
 #include <windows.h>
 #endif
 
@@ -29,7 +29,7 @@ namespace atomic
 */
 inline int atomic_increment( volatile int* destination )
 {
-#if defined(BUILD_PLATFORM_MSVC)
+#if defined(BUILD_PLATFORM_MSVC) || defined(BUILD_PLATFORM_MINGW)
     SWEET_ASSERT( destination );
     return static_cast<int>( ::InterlockedIncrement(reinterpret_cast<volatile long*>(destination)) );
 #else
@@ -48,7 +48,7 @@ inline int atomic_increment( volatile int* destination )
 */
 inline int atomic_decrement( volatile int* destination )
 {
-#if defined(BUILD_PLATFORM_MSVC)
+#if defined(BUILD_PLATFORM_MSVC) || defined(BUILD_PLATFORM_MINGW)
     SWEET_ASSERT( destination );
     return static_cast<int>( ::InterlockedDecrement(reinterpret_cast<volatile long*>(destination)) );
 #else
@@ -70,7 +70,7 @@ inline int atomic_decrement( volatile int* destination )
 */
 inline int atomic_exchange( volatile int* destination, int exchange )
 {
-#if defined(BUILD_PLATFORM_MSVC)
+#if defined(BUILD_PLATFORM_MSVC) || defined(BUILD_PLATFORM_MINGW)
     SWEET_ASSERT( destination );
     return static_cast<int>( ::InterlockedExchange(reinterpret_cast<volatile long*>(destination), exchange) );
 #else
@@ -110,7 +110,7 @@ return original_value;
 */ 
 inline int atomic_compare_exchange( volatile int* destination, int exchange, int comparand )
 {
-#if defined(BUILD_PLATFORM_MSVC)
+#if defined(BUILD_PLATFORM_MSVC) || defined(BUILD_PLATFORM_MINGW)
     SWEET_ASSERT( destination );
     return static_cast<int>( ::InterlockedCompareExchange(reinterpret_cast<volatile long*>(destination), exchange, comparand) );
 #else

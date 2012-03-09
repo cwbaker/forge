@@ -1,6 +1,6 @@
 //
 // Reader.ipp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PERSIST_READER_IPP_INCLUDED
@@ -10,6 +10,7 @@
 #include "Error.hpp"
 #include "ReaderType.ipp"
 #include "functions.ipp"
+#include <memory>
 
 namespace sweet
 {
@@ -67,13 +68,13 @@ template <class DerivedArchive>
 template <class Type>
 void Reader<DerivedArchive>::declare( const char* name, int flags )
 {
-    ReaderType<DerivedArchive>::set::iterator i = m_types.find( ReaderType<DerivedArchive>(SWEET_STATIC_TYPEID(Type), std::string(), PERSIST_NORMAL, 0, 0) );
+    typename ReaderType<DerivedArchive>::set::iterator i = m_types.find( ReaderType<DerivedArchive>(SWEET_STATIC_TYPEID(Type), std::string(), PERSIST_NORMAL, 0, 0) );
     if ( i != m_types.end() )
     {
         SWEET_ERROR( InvalidTypeError("The type '%s' is already declared", SWEET_STATIC_TYPEID(Type).name()) );
     }
 
-    ReaderType<DerivedArchive>::set::iterator j = m_types.insert( ReaderType<DerivedArchive>(SWEET_STATIC_TYPEID(Type), name, flags, &sweet::persist::create<Type>, &sweet::persist::persist<DerivedArchive, Type>) ).first;
+    typename ReaderType<DerivedArchive>::set::iterator j = m_types.insert( ReaderType<DerivedArchive>(SWEET_STATIC_TYPEID(Type), name, flags, &sweet::persist::create<Type>, &sweet::persist::persist<DerivedArchive, Type>) ).first;
     m_types_by_name.insert( &(*j) );
 }
 
@@ -87,7 +88,7 @@ void* Reader<DerivedArchive>::create_and_persist()
         return 0;
     }
 
-    ReaderType<DerivedArchive>::set::iterator i = m_types.find( ReaderType<DerivedArchive>(SWEET_STATIC_TYPEID(Type), std::string(), PERSIST_NORMAL, 0, 0) );
+    typename ReaderType<DerivedArchive>::set::iterator i = m_types.find( ReaderType<DerivedArchive>(SWEET_STATIC_TYPEID(Type), std::string(), PERSIST_NORMAL, 0, 0) );
     if ( i == m_types.end() )
     {
         SWEET_ERROR( InvalidTypeError("The type '%s' is not declared", SWEET_STATIC_TYPEID(Type).name()) );
@@ -98,7 +99,7 @@ void* Reader<DerivedArchive>::create_and_persist()
     {
         std::string name = archive.get_type();
         ReaderType<DerivedArchive> type_by_name( SWEET_STATIC_TYPEID(Type), name, PERSIST_NORMAL, 0, 0 );
-        ReaderType<DerivedArchive>::set_by_name::iterator j = m_types_by_name.find( &type_by_name );
+        typename ReaderType<DerivedArchive>::set_by_name::iterator j = m_types_by_name.find( &type_by_name );
         if ( j == m_types_by_name.end() )
         {
             SWEET_ERROR( InvalidTypeError("The type '%s' is not declared", name.c_str()) );

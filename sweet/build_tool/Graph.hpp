@@ -70,51 +70,6 @@ class SWEET_BUILD_TOOL_DECLSPEC Graph
         template <class Archive> void persist( Archive& archive );
 };
 
-/**
-// Declare the types persisted in an Archive.
-//
-// @param archive
-//  The Archive to declare the types with.
-*/
-template <class Archive> void Graph::enter( Archive& archive )
-{
-    using namespace sweet::persist;
-    SWEET_ASSERT( build_tool_ );
-    archive.set_context( SWEET_STATIC_TYPEID(BuildTool), build_tool_ );
-    sweet::lua::enter( archive, build_tool_->get_script_interface()->get_lua() );
-    archive.declare<Graph>( "Graph", PERSIST_NORMAL );
-    archive.declare<Target>( "Target", PERSIST_NORMAL );
-}
-
-/**
-// Destroy state created for persisting this Graph.
-//
-// @param archive
-//  The Archive that state was created for.
-*/
-template <class Archive> void Graph::exit( Archive& archive )
-{
-    SWEET_ASSERT( build_tool_ );
-    sweet::lua::exit( archive, build_tool_->get_script_interface()->get_lua() );
-}
-
-/**
-// Persist this Graph with an Archive.
-//
-// @param archive
-//  The Graph to persist this Archive with.
-*/
-template <class Archive> void Graph::persist( Archive& archive )
-{
-    const int BUILD_GRAPH_VERSION = 7;
-    archive.enter( "Sweet Build Graph", BUILD_GRAPH_VERSION, *this );
-    if ( archive.version() != BUILD_GRAPH_VERSION )
-    {
-        SWEET_ERROR( GraphVersionInvalidError("The graph file '%s' has an invalid version", sweet::persist::narrow(archive.get_filename()).c_str()) );
-    }    
-    archive.value( "root", root_target_ );
-}
-
 }
 
 }

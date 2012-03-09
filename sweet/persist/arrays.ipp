@@ -1,6 +1,6 @@
 //
 // arrays.ipp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PERSIST_ARRAYS_IPP_INCLUDED

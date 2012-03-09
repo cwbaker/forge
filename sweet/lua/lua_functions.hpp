@@ -1,6 +1,6 @@
 //
 // lua_functions.hpp
-// Copyright (c) 2007 - 2010 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_LUA_FUNCTIONS_HPP_INCLUDED
@@ -63,7 +63,5 @@ template <class Iterator> void lua_push_iterator( lua_State* lua, Iterator start
 }
 
 }
-
-#include "lua_functions.ipp"
 
 #endif

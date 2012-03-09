@@ -1,6 +1,6 @@
 //
 // TextReader.cpp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -9,6 +9,7 @@
 #include "Ucs2CharFilter.hpp"
 #include "Reader.ipp"
 #include "Writer.ipp"
+#include <string.h>
 
 using namespace sweet::persist;
 
@@ -111,7 +112,7 @@ int TextReader::get_count() const
 // differently in that case (see the comment above).
 //
     SWEET_ASSERT( !m_state.empty() );
-    return m_state.top().m_element != NULL ? m_state.top().m_element->elements().size() : NULL;
+    return m_state.top().m_element != NULL ? m_state.top().m_element->elements().size() : 0;
 }
 
 void TextReader::begin_object( const char* name, const void* address, Mode mode, int size )
@@ -306,6 +307,7 @@ void TextReader::value( const char* name, unsigned long& value )
     }
 }
 
+#if defined(BUILD_PLATFORM_MSVC)
 void TextReader::value( const char* name, std::time_t& value )
 {
     Attribute* attribute = get_current_element()->find_attribute( name );
@@ -314,6 +316,7 @@ void TextReader::value( const char* name, std::time_t& value )
         value = static_cast<std::time_t>( attribute->unsigned_integer() );
     }
 }
+#endif
 
 void TextReader::value( const char* name, float& value )
 {

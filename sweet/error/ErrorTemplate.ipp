@@ -30,7 +30,7 @@ ErrorTemplate<ERRNO, Base>::ErrorTemplate( const char* format, ... )
 {
     va_list args;
     va_start( args, format );
-    append( format, args );
+    Error::append( format, args );
     va_end( args );
 }
 
@@ -47,7 +47,7 @@ template <int ERRNO, class Base>
 ErrorTemplate<ERRNO, Base>::ErrorTemplate( const char* format, va_list args )
 : Base( ERRNO )
 {
-    append( format, args );
+    Error::append( format, args );
 }
 
 }

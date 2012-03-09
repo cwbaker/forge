@@ -101,7 +101,7 @@ sweet::persist::JsonWriter::write( const Char* filename, const char* name, const
 // then recursively write this tree out to a JSON file. 
 //
     TextWriter::write( name, child_name, values );
-    write( path.string().c_str(), get_element() );
+    write( widen(filename).c_str(), get_element() );
 }
 
 
@@ -178,7 +178,7 @@ sweet::persist::JsonWriter::write( std::ostream& stream, const char* name, const
 */
 template <class Type, size_t LENGTH> 
 void 
-sweet::persist::JsonWriter::write( std::ostream& ostream, const char* name, const char* child_name, Type (& values)[LENGTH] )
+sweet::persist::JsonWriter::write( std::ostream& stream, const char* name, const char* child_name, Type (& values)[LENGTH] )
 {
 //
 // Create the root element, process the C++ model into a tree of data, and 

@@ -1,6 +1,6 @@
 //
 // Mutex.cpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -29,9 +29,6 @@ Mutex::~Mutex()
 
 /**
 // Lock this Mutex.
-//
-// @return
-//  Nothing.
 */
 void Mutex::lock()
 {
@@ -41,9 +38,6 @@ void Mutex::lock()
 
 /**
 // Unlock this Mutex.
-//
-// @return
-//  Nothing.
 */
 void Mutex::unlock()
 {

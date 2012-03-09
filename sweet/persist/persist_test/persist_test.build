@@ -3,11 +3,11 @@ Executable {
     id = "persist_test";
 
     libraries = {
-        "assert/assert", 
-        "error/error",
-        "path/path",
         "persist/persist",
+        "path/path",
         "rtti/rtti",
+        "error/error",
+        "assert/assert", 
         "unit/libUnitTest"
     };
 
@@ -20,10 +20,6 @@ Executable {
         "TestBasicTypes.cpp",
         "TestBasicTypesInContainers.cpp",
         "TestContainersInContainers.cpp",
-        "TestHashMap.cpp",
-        "TestHashMultimap.cpp",
-        "TestHashMultiset.cpp",
-        "TestHashSet.cpp",
         "TestLinks.cpp",
         "TestList.cpp",
         "TestMap.cpp",

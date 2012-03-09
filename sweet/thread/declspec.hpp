@@ -1,6 +1,6 @@
 //
 // declspec.hpp
-// Copyright (c) 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2011 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_THREAD_DECLSPEC_HPP_INCLUDED

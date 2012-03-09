@@ -1,10 +1,12 @@
 //
 // widen.cpp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include "functions.hpp"
+#include <sweet/assert/assert.hpp>
+#include <vector>
 
 using namespace sweet::persist;
 
@@ -30,12 +32,12 @@ std::wstring widen( const std::string& narrow_string, const std::locale& locale 
 
     size_t length = narrow_string.length();
     std::vector<wchar_t> buffer( length );    
-    const std::ctype<wchar_t>* ctype = &std::use_facet<std::ctype<wchar_t>>( locale );
+    const std::ctype<wchar_t>* ctype = &std::use_facet<std::ctype<wchar_t> >( locale );
     ctype->widen( narrow_string.c_str(), narrow_string.c_str() + length, &buffer[0] );
     return std::wstring( &buffer[0], length );    
 }
 
-std::wstring sweet::persist::widen( const wchar_t* wide_string, const std::locale& locale )
+std::wstring widen( const wchar_t* wide_string, const std::locale& locale )
 {
     SWEET_ASSERT( wide_string );
     return std::wstring( wide_string );

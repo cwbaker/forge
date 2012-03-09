@@ -11,6 +11,7 @@
 #include <sweet/unit/Win32/TimeHelpers.h>
 #include <sweet/unit/CurrentTest.h>
 #include <string>
+#include <stdio.h>
 
 using std::string;
 using namespace UnitTest;

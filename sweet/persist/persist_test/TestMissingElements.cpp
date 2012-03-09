@@ -97,8 +97,8 @@ SUITE( TestMissingElements )
 
         template <class Archive> void enter( Archive& archive )
         {
-            archive.declare <Element>    ( "Element",    PERSIST_NORMAL );
-            archive.declare <SubElement> ( "SubElement", PERSIST_NORMAL );
+            archive.template declare <Element> ( "Element", PERSIST_NORMAL );
+            archive.template declare <SubElement> ( "SubElement", PERSIST_NORMAL );
         }
 
         template <class Archive> void exit( Archive& archive )

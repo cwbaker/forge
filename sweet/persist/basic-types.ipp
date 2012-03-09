@@ -254,6 +254,7 @@ void resolve( Archive& archive, int mode, unsigned long& value )
     ObjectGuard<Archive> guard( archive, 0, 0, MODE_VALUE );
 }
 
+/*
 template <class Archive>
 void save( Archive& archive, int mode, const char* name, std::time_t& value )
 {
@@ -261,7 +262,9 @@ void save( Archive& archive, int mode, const char* name, std::time_t& value )
     ObjectGuard<Archive> guard( archive, name, 0, MODE_VALUE, 1 );
     archive.value( "value", value );
 }
+*/
 
+/*
 template <class Archive>
 void load( Archive& archive, int mode, const char* name, time_t& value )
 {
@@ -269,12 +272,15 @@ void load( Archive& archive, int mode, const char* name, time_t& value )
     ObjectGuard<Archive> guard( archive, name, 0, MODE_VALUE );
     archive.value( "value", value );
 }
+*/
 
+/*
 template <class Archive>
 void resolve( Archive& archive, int mode, std::time_t& value )
 {
     ObjectGuard<Archive> guard( archive, 0, 0, MODE_VALUE );
 }
+*/
 
 template <class Archive>
 void save( Archive& archive, int mode, const char* name, float& value )

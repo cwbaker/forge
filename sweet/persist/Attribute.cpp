@@ -1,10 +1,13 @@
 //
 // Attribute.cpp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include "Attribute.hpp"
+#include <sweet/assert/assert.hpp>
+#include <sstream>
+#include <string.h>
 
 using namespace sweet::persist;
 

@@ -29,10 +29,10 @@ class SWEET_ERROR_DECLSPEC Error : virtual public std::exception
     public:
         explicit Error( int error );
         Error( int error, const char* format, ... );
-        virtual ~Error();
+        virtual ~Error() throw ();
         int error() const;
-        const char* what() const;
-        static const char* format( int oserror, char* buffer, size_t length );
+        const char* what() const throw ();
+        static const char* format( int oserror, char* buffer, unsigned int length );
 
     protected:
         void append( const char* format, va_list& args );

@@ -16,7 +16,8 @@ struct TestBody
     : written_model_(),
       read_model_()
     {
-        SWEET_ASSERT( filename != NULL );
+        SWEET_ASSERT( filename );
+        
         Writer writer;
         writer.write( filename, "model", written_model_ );
         read_model_.clear();

@@ -1,6 +1,6 @@
 //
 // Error.cpp
-// Copyright (c) 2006  - 2010 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -20,7 +20,6 @@ Error::Error( int error )
 : sweet::error::Error( error )
 {
 }
-
 
 /**
 // Constructor.
@@ -46,6 +45,12 @@ UnresolvedReferencesError::UnresolvedReferencesError( std::multiset<Reference>& 
     va_end( args );
 }
 
+/**
+// Destructor.
+*/
+UnresolvedReferencesError::~UnresolvedReferencesError() throw ()
+{
+}
 
 /**
 // Get the references that were left unresolved.
@@ -53,8 +58,7 @@ UnresolvedReferencesError::UnresolvedReferencesError( std::multiset<Reference>& 
 // @return
 //  The unresolved references.
 */
-const std::multiset<Reference>& 
-UnresolvedReferencesError::get_references() const
+const std::multiset<Reference>& UnresolvedReferencesError::get_references() const
 {
     return m_references;
 }

@@ -2,30 +2,36 @@
 Executable {
     id = "build";
 
+    Cc {
+        pch = "stdafx.hpp";
+        "Application.cpp", 
+        "main.cpp"
+    };
+    
     settings = { 
         subsystem = "CONSOLE"; 
         stack_size = 32768; 
     }; 
     
     libraries = {    
-        "assert/assert",
         "build_tool/build_tool",
         "cmdline/cmdline",
-        "debug/debug",
-        "error/error",
         "lua/lua",
         "lua/lua_/liblua",
-        "path/path",
-        "persist/persist",
-        "pointer/pointer",
         "process/process",
         "rtti/rtti",
         "thread/thread",
+        "persist/persist",
+        "path/path",
+        "pointer/pointer",
+        "error/error",
+        "assert/assert"
     };
     
-    Cc {
-        pch = "stdafx.hpp";
-        "Application.cpp", 
-        "main.cpp"
-    };
+    third_party_libraries = {
+        boost_library( "boost_filesystem" ),
+        boost_library( "boost_regex" ),
+        boost_library( "boost_system" ),
+        boost_library( "boost_thread" )
+    };    
 }

@@ -1,6 +1,6 @@
 //
 // pointers.ipp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PERSIST_POINTERS_IPP_INCLUDED
@@ -8,6 +8,7 @@
 
 #include "ObjectGuard.hpp"
 #include "objects.ipp"
+#include <sweet/rtti/rtti.hpp>
 
 namespace sweet
 {
@@ -55,7 +56,7 @@ void load( Archive& archive, int mode, const char* name, Type*& object )
     switch ( archive.get_mode() )
     {
         case MODE_VALUE:
-            object = static_cast<Type*>( archive.create_and_persist<Type>() );
+            object = static_cast<Type*>( archive.template create_and_persist<Type>() );
             break;
 
         case MODE_REFERENCE:

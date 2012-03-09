@@ -1,6 +1,6 @@
 //
 // Process.cpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved
 //
 
 #include "stdafx.hpp"
@@ -227,7 +227,7 @@ int Process::exit_code()
 //  The number of bytes read (or 0 if this Process has closed the write
 //  end of the pipe or exited).
 */
-size_t Process::read( void* buffer, size_t length )
+unsigned int Process::read( void* buffer, unsigned int length )
 {
     SWEET_ASSERT( process_ != INVALID_HANDLE_VALUE );
     SWEET_ASSERT( stdout_ != INVALID_HANDLE_VALUE );

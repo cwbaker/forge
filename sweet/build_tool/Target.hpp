@@ -47,7 +47,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public enable_ptr_from_this<Target>
     std::string filename_; ///< The filename of this Target.
     weak_ptr<Target> working_directory_; ///< The Target that relative paths expressed when this Target is visited are relative to.
     weak_ptr<Target> parent_; ///< The parent of this Target in the Target namespace or null if this Target has no parent.
-    std::vector<ptr<Target>> targets_; ///< The children of this Target in the Target namespace.
+    std::vector<ptr<Target> > targets_; ///< The children of this Target in the Target namespace.
     std::vector<Target*> dependencies_; ///< The Targets that this Target depends on.
     bool visiting_; ///< Whether or not this Target is in the process of being visited.
     int visited_revision_; ///< The visited revision the last time this Target was visited.
@@ -103,7 +103,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public enable_ptr_from_this<Target>
 
         void add_target( ptr<Target> target, ptr<Target> this_target );
         ptr<Target> find_target_by_id( const std::string& id ) const;
-        const std::vector<ptr<Target>>& get_targets() const;
+        const std::vector<ptr<Target> >& get_targets() const;
 
         void add_dependency( ptr<Target> target );
         void clear_dependencies();
@@ -126,30 +126,6 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public enable_ptr_from_this<Target>
 
         template <class Archive> void persist( Archive& archive );
 };
-
-/**
-// Persist this Target with an Archive.
-//
-// @param archive
-//  The Archive to persist this Target with.
-//
-// @return
-//  Nothing.
-*/
-template <class Archive> 
-void Target::persist( Archive& archive )
-{
-    archive.value( "id", id_ );
-    archive.value( "rule", rule_ );
-    archive.value( "bind_type", bind_type_ );
-    archive.value( "last_write_time", last_write_time_ );
-    archive.value( "last_scan_time", last_scan_time_ );
-    archive.value( "filename", filename_ );
-    archive.refer( "working_directory", working_directory_ );
-    archive.value( "targets", "target", targets_ );
-    archive.refer( "dependencies", "dependency", dependencies_ );
-    sweet::lua::persist<Target, lua::LuaByReference>( archive, "object", *this );
-}
 
 }
 

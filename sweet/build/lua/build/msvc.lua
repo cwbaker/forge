@@ -1,4 +1,20 @@
 
+function registry( key )
+    local values = {};
+    local RegQueryScanner = Scanner {
+        [ [[[ ]* ([A-Za-z0-9_]+) [ ]* ([A-Za-z0-9_]+) [ ]* ([A-Za-z0-9_\\\:\. ]+)]] ] = function( key, type, value )
+            values[key] = value;
+        end;
+        
+        [ [[.*]] ] = function()
+        end;
+    };
+    local reg = "C:/Windows/system32/reg.exe";
+    local arguments = [[reg query "%s"]] % key;
+    system( reg, arguments, RegQueryScanner );
+    return values;
+end
+
 function autodetect_visual_studio_directory()
     local visual_studio_directory = os.getenv( "VS90COMNTOOLS" ) or os.getenv( "VS100COMNTOOLS" );
     if visual_studio_directory then
@@ -8,8 +24,9 @@ function autodetect_visual_studio_directory()
 end
 
 function autodetect_windows_sdk_directory()
-    local windows_sdk_directory = os.getenv( "WindowsSdkDir" );
-    return windows_sdk_directory;
+    local windows_sdk = registry( [[HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows]] );
+    assert( windows_sdk.CurrentInstallFolder, "Windows SDK not found!" );
+    return windows_sdk.CurrentInstallFolder;
 end
 
 function msvc( settings )

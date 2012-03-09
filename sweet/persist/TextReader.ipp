@@ -10,6 +10,7 @@
 #include "TextReader.hpp"
 #include "Reader.ipp"
 #include "objects.ipp"
+#include <string.h>
 
 namespace sweet
 {
@@ -58,7 +59,7 @@ void TextReader::read( const char* name, const char* child_name, Type (&values)[
     reset();
 
     SWEET_ASSERT( m_state.empty() );
-    m_state.push( State(&element, MODE_VALUE) );
+    m_state.push( State(&m_element, MODE_VALUE) );
     load( *this, MODE_VALUE, name, child_name, values, LENGTH );
     m_state.pop();
     SWEET_ASSERT( m_state.empty() );
@@ -82,7 +83,7 @@ TextReader::declare( const char* name, int flags )
 }
 
 template <class Filter> 
-void TextReader::value( const char* name, wchar_t* value, size_t max, Filter& filter )
+void TextReader::value( const char* name, wchar_t* value, size_t max, const Filter& filter )
 {
     Attribute* attribute = get_current_element()->find_attribute( name );
     if ( attribute )
@@ -94,7 +95,7 @@ void TextReader::value( const char* name, wchar_t* value, size_t max, Filter& fi
 }
 
 template <class Filter> 
-void TextReader::value( const char* name, std::wstring& value, Filter& filter )
+void TextReader::value( const char* name, std::wstring& value, const Filter& filter )
 {
     Attribute* attribute = get_current_element()->find_attribute( name );
     if ( attribute )
@@ -104,7 +105,7 @@ void TextReader::value( const char* name, std::wstring& value, Filter& filter )
 }
 
 template <class Filter> 
-void TextReader::value( const char* name, char* value, size_t max, Filter& filter )
+void TextReader::value( const char* name, char* value, size_t max, const Filter& filter )
 {
     Attribute* attribute = get_current_element()->find_attribute( name );
     if ( attribute )
@@ -116,7 +117,7 @@ void TextReader::value( const char* name, char* value, size_t max, Filter& filte
 }
 
 template <class Filter> 
-void TextReader::value( const char* name, std::string& value, Filter& filter )
+void TextReader::value( const char* name, std::string& value, const Filter& filter )
 {
     Attribute* attribute = get_current_element()->find_attribute( name );
     if ( attribute )
@@ -126,7 +127,7 @@ void TextReader::value( const char* name, std::string& value, Filter& filter )
 }
 
 template <class Type, class Filter> 
-void TextReader::value( const char* name, Type& value, Filter& filter )
+void TextReader::value( const char* name, Type& value, const Filter& filter )
 {
     Attribute* attribute = get_current_element()->find_attribute( name );
     if ( attribute )

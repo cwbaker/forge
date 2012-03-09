@@ -5,7 +5,6 @@
 
 #include "stdafx.hpp"
 #include "Application.hpp"
-#include <sweet/debug/debug.hpp>
 #include <exception>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +14,6 @@ using namespace sweet::build_tool;
 int main( int argc, char** argv )
 {
     int result = EXIT_FAILURE;
-    sweet::debug::startup();
 
     try
     {
@@ -29,6 +27,11 @@ int main( int argc, char** argv )
         result = EXIT_FAILURE;
     }
 
-    sweet::debug::shutdown();
+    catch ( ... )
+    {
+        fprintf( stderr, "build: An unexpected error occured.\n" );
+        result = EXIT_FAILURE;
+    }
+
     return result;
 }

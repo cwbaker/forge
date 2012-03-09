@@ -6,6 +6,8 @@
 #include "stdafx.hpp"
 #include "BinaryWriter.hpp"
 #include "Writer.ipp"
+#include <string.h>
+#include <wchar.h>
 
 using namespace sweet::persist;
 
@@ -121,11 +123,13 @@ void BinaryWriter::value( const char* name, unsigned long& value )
     m_ostream->write( reinterpret_cast<const char*>(&value), sizeof(value) );
 }
 
+#if defined(BUILD_PLATFORM_MSVC)
 void BinaryWriter::value( const char* name, time_t& value )
 {
     SWEET_ASSERT( m_ostream );
     m_ostream->write( reinterpret_cast<const char*>(&value), sizeof(value) );
 }
+#endif
 
 void BinaryWriter::value( const char* name, float& value )
 {
@@ -142,7 +146,7 @@ void BinaryWriter::value( const char* name, double& value )
 void BinaryWriter::value( const char* name, wchar_t* value, size_t max )
 {
     SWEET_ASSERT( m_ostream );
-    size_t length = wcsnlen( value, max );
+    size_t length = wcslen( value );
     m_ostream->write( reinterpret_cast<const char*>(&length), sizeof(length) );
     m_ostream->write( reinterpret_cast<const char*>(value), length * sizeof(wchar_t) );
 }
@@ -158,7 +162,7 @@ void BinaryWriter::value( const char* name, std::wstring& value )
 void BinaryWriter::value( const char* name, char* value, size_t max )
 {
     SWEET_ASSERT( m_ostream );
-    size_t length = strnlen( value, max );
+    size_t length = strlen( value );
     m_ostream->write( reinterpret_cast<const char*>(&length), sizeof(length) );
     m_ostream->write( reinterpret_cast<const char*>(value), length );
 }

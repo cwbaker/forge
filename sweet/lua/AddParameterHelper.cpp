@@ -9,6 +9,8 @@
 #include "LuaValue.hpp"
 #include "Lua.hpp"
 #include <sweet/error/macros.hpp>
+#include <memory.h>
+#include <stdio.h>
 
 using namespace sweet::lua;
 
@@ -756,7 +758,13 @@ const char* AddParameterHelper::stack_trace_for_resume( lua_State* lua_state, bo
     size_t written = 0;
     memset( message, 0, length );
 
+#ifdef BUILD_PLATFORM_MSVC
     written += _snprintf( message + written, length - written, "%s", lua_isstring(lua_state, -1) ? lua_tostring(lua_state, -1) : "Unknown error" );
+#elif defined BUILD_PLATFORM_MINGW
+    written += snprintf( message + written, length - written, "%s", lua_isstring(lua_state, -1) ? lua_tostring(lua_state, -1) : "Unknown error" );
+#else
+#error "AddParameter::stack_trace_for_resume() is not supported on this platform!"
+#endif
 
     if ( stack_trace_enabled )
     {

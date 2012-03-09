@@ -30,7 +30,7 @@ class Writer : public Archive
         typedef ArchiveTypeWriter archive_type;
 
     private:
-        std::set<WriterType<DerivedArchive>> m_types; ///< The types that have been declared for this archive.
+        std::set<WriterType<DerivedArchive> > m_types; ///< The types that have been declared for this archive.
         std::set<const void*> m_tracked_addresses; ///< The addresses of the objects that have been tracked by this Writer.
 
     public:

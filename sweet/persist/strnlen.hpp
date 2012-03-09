@@ -1,6 +1,6 @@
 //
 // strnlen.hpp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PERSIST_STRNLEN_HPP_INCLUDED
@@ -14,8 +14,8 @@ namespace sweet
 namespace persist
 {
 
-SWEET_PERSIST_DECLSPEC size_t strnlen( const char* string, size_t max );
-SWEET_PERSIST_DECLSPEC size_t strnlen( const wchar_t* string, size_t max );
+SWEET_PERSIST_DECLSPEC unsigned int strnlen( const char* string, unsigned int max );
+SWEET_PERSIST_DECLSPEC unsigned int strnlen( const wchar_t* string, unsigned int max );
 
 }
 

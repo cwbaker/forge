@@ -27,7 +27,7 @@ void LuaWriter::write( const Char* filename, const char* name, const char* child
     SWEET_ASSERT( filename );
     set_filename( widen(filename) );
     TextWriter::write( name, child_name, container );
-    write( path.string().c_str(), get_element() );
+    write( widen(filename).c_str(), get_element() );
 }
 
 template <class Char, class Type, size_t LENGTH> 
@@ -36,7 +36,7 @@ void LuaWriter::write( const Char* filename, const char* name, const char* child
     SWEET_ASSERT( filename );
     set_filename( widen(filename) );
     TextWriter::write( name, child_name, values );
-    write( path.string().c_str(), get_element() );
+    write( widen(filename).c_str(), get_element() );
 }
 
 template <class Type> 
@@ -54,7 +54,7 @@ void LuaWriter::write( std::ostream& stream, const char* name, const char* child
 }
 
 template <class Type, size_t LENGTH> 
-void LuaWriter::write( std::ostream& ostream, const char* name, const char* child_name, Type (& values)[LENGTH] )
+void LuaWriter::write( std::ostream& stream, const char* name, const char* child_name, Type (& values)[LENGTH] )
 {
     TextWriter::write( name, child_name, values );
     write( stream, get_element() );

@@ -1,12 +1,13 @@
 //
 // LuaWriter.cpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include "LuaWriter.hpp"
 #include "Writer.ipp"
 #include "functions.hpp"
+#include <fstream>
 
 using namespace sweet::persist;
 

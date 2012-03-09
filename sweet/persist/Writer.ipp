@@ -69,7 +69,7 @@ void Writer<DerivedArchive>::persist( const rtti::Type& type, DerivedArchive& ar
     
     if ( object )
     {
-        set<WriterType<DerivedArchive>>::iterator i = m_types.find( WriterType<DerivedArchive>(type, std::string(), PERSIST_NORMAL, 0) );
+        typename set<WriterType<DerivedArchive> >::iterator i = m_types.find( WriterType<DerivedArchive>(type, std::string(), PERSIST_NORMAL, 0) );
         if ( i == m_types.end() )
         {
             SWEET_ERROR( InvalidTypeError("The type '%s' is not declared", type.name()) );
@@ -93,8 +93,9 @@ void Writer<DerivedArchive>::enter( const char* format, int version, Type& objec
         DerivedArchive& archive = static_cast<DerivedArchive&>( *this );
         if ( archive.get_mode() == MODE_VALUE )
         {
-            SWEET_ASSERT( format != 0 );
-            archive.value( get_format_keyword().c_str(), std::string(format) );
+            SWEET_ASSERT( format );
+            std::string format_string( format );
+            archive.value( get_format_keyword().c_str(), format_string );
 
             set_version( version );
             archive.value( get_version_keyword().c_str(), version );
@@ -107,7 +108,7 @@ template <class DerivedArchive>
 template <class Type> 
 void Writer<DerivedArchive>::declare( const char* name, int flags )
 {
-    std::set<WriterType<DerivedArchive>>::iterator i = m_types.find( WriterType<DerivedArchive>(SWEET_STATIC_TYPEID(Type), std::string(), PERSIST_NORMAL, 0) );
+    typename std::set<WriterType<DerivedArchive> >::iterator i = m_types.find( WriterType<DerivedArchive>(SWEET_STATIC_TYPEID(Type), std::string(), PERSIST_NORMAL, 0) );
     if ( i != m_types.end() )
     {
         SWEET_ERROR( InvalidTypeError("The type '%s' is already declared", SWEET_STATIC_TYPEID(Type).name()) );

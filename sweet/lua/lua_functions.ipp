@@ -1,11 +1,14 @@
 //
 // lua_functions.ipp
-// Copyright (c) 2007 - 2010 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_LUA_FUNCTIONS_IPP_INCLUDED
 #define SWEET_LUA_FUNCTIONS_IPP_INCLUDED
 
+#include "LuaConverter.hpp"
+#include "LuaObjectConverter.hpp"
+#include "LuaTraits.hpp"
 #include "LuaUserDataTemplate.ipp"
 #include <sweet/assert/assert.hpp>
 
@@ -29,8 +32,8 @@ namespace lua
 template <class Type> 
 void lua_push( lua_State* lua_state, Type* value )
 {
-    typedef traits::traits<Type>::base_type base_type;
-    LuaObjectConverter<Type*, LuaTraits<base_type>::storage_type>::push( lua_state, value );
+    typedef typename traits::traits<Type>::base_type base_type;
+    LuaObjectConverter<Type*, typename LuaTraits<base_type>::storage_type>::push( lua_state, value );
 }
 
 /**
@@ -47,8 +50,8 @@ void lua_push( lua_State* lua_state, Type* value )
 template <class Type> 
 void lua_push( lua_State* lua_state, const Type* value )
 {
-    typedef traits::traits<Type>::base_type base_type;
-    LuaObjectConverter<const Type*, LuaTraits<base_type>::storage_type>::push( lua_state, value );
+    typedef typename traits::traits<Type>::base_type base_type;
+    LuaObjectConverter<const Type*, typename LuaTraits<base_type>::storage_type>::push( lua_state, value );
 }
 
 /**
@@ -70,11 +73,11 @@ void lua_push( lua_State* lua_state, const Type* value )
 template <class Type> 
 void lua_push_value( lua_State* lua_state, typename traits::traits<Type>::parameter_type value )
 {
-    typedef traits::traits<Type>::value_type value_type;
+    typedef typename traits::traits<Type>::value_type value_type;
     SWEET_ASSERT( lua_state );
     void* copied_value = lua_newuserdata( lua_state, sizeof(LuaUserDataTemplate<value_type>) );
     lua_newtable( lua_state );
-    lua_pushcfunction( lua_state, &lua_gc<LuaUserDataTemplate<value_type>> );
+    lua_pushcfunction( lua_state, &lua_gc<LuaUserDataTemplate<value_type> > );
     lua_setfield( lua_state, -2, "__gc" );
     lua_setmetatable( lua_state, -2 );
     SWEET_ASSERT( copied_value != NULL );
@@ -123,8 +126,7 @@ lua_to_value( lua_State* lua_state, int position )
 //  The value to push.
 */
 template <class Type> 
-sweet::lua::LuaValueWrapper<Type> 
-sweet::lua::value( Type value )
+LuaValueWrapper<Type> value( Type value )
 {
     return LuaValueWrapper<Type>( value );
 }
@@ -179,7 +181,7 @@ weaken( Function function )
 //  Always returns 0.
 */
 template <class Object> 
-int sweet::lua::lua_gc( lua_State* lua_state )
+int lua_gc( lua_State* lua_state )
 {
     SWEET_ASSERT( lua_state );
     SWEET_ASSERT( lua_isuserdata(lua_state, 1) );

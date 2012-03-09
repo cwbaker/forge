@@ -25,7 +25,7 @@ Library {
 
     Cc {
         settings = {
-            platforms = { "msvc" };
+            platforms = { "msvc", "mingw" };
         };
         
         "Win32/TimeHelpers.cpp"

@@ -26,40 +26,6 @@ class Texture
         }
 };
 
-template <class Archive> 
-void save( Archive& archive, int mode, const char* name, Texture* texture )
-{
-    ObjectGuard<Archive> guard( archive, name, NULL, mode, texture ? 1 : 0 );
-    if ( texture )
-    {
-        string filename = texture->filename();
-        archive.value( "filename", filename, path_filter(archive.get_path()) );
-    }
-}
-
-template <class Archive> 
-void load( Archive& archive, int mode, const char* name, Texture*& texture )
-{
-    SWEET_ASSERT( texture == NULL );
-
-    ObjectGuard<Archive> guard( archive, name, NULL, mode );
-    if ( archive.is_object() )
-    {
-        string filename;
-        archive.value( "filename", filename, path_filter(archive.get_path()) );
-
-        TextureCache* texture_manager = reinterpret_cast<TextureCache*>( archive.get_context(SWEET_STATIC_TYPEID(TextureCache)) );
-        SWEET_ASSERT( texture_manager );
-        texture = texture_manager->texture( filename );
-    }
-}
-
-template <class Archive>
-void resolve( Archive& archive, int mode, Texture*& texture )
-{
-    ObjectGuard<Archive> guard( archive, NULL, NULL, mode );
-}
-
 class TextureCache
 {
     map<string, Texture*> textures_;
@@ -97,6 +63,40 @@ class TextureCache
             }
         }
 };
+
+template <class Archive> 
+void save( Archive& archive, int mode, const char* name, Texture* texture )
+{
+    ObjectGuard<Archive> guard( archive, name, NULL, mode, texture ? 1 : 0 );
+    if ( texture )
+    {
+        string filename = texture->filename();
+        archive.value( "filename", filename, path_filter(archive.get_path()) );
+    }
+}
+
+template <class Archive> 
+void load( Archive& archive, int mode, const char* name, Texture*& texture )
+{
+    SWEET_ASSERT( texture == NULL );
+
+    ObjectGuard<Archive> guard( archive, name, NULL, mode );
+    if ( archive.is_object() )
+    {
+        string filename;
+        archive.value( "filename", filename, path_filter(archive.get_path()) );
+
+        TextureCache* texture_manager = reinterpret_cast<TextureCache*>( archive.get_context(SWEET_STATIC_TYPEID(TextureCache)) );
+        SWEET_ASSERT( texture_manager );
+        texture = texture_manager->texture( filename );
+    }
+}
+
+template <class Archive>
+void resolve( Archive& archive, int mode, Texture*& texture )
+{
+    ObjectGuard<Archive> guard( archive, NULL, NULL, mode );
+}
 
 class Model
 {

@@ -238,7 +238,7 @@ void OsInterface::rm( const std::string& path )
 */
 std::string OsInterface::hostname()
 {
-#if defined BUILD_PLATFORM_MSVC
+#if defined BUILD_PLATFORM_MSVC || defined BUILD_PLATFORM_MINGW
     char hostname [1024];
     DWORD length = sizeof(hostname);
 
@@ -264,7 +264,7 @@ std::string OsInterface::hostname()
 */
 std::string OsInterface::whoami()
 {
-#if defined BUILD_PLATFORM_MSVC
+#if defined BUILD_PLATFORM_MSVC || defined BUILD_PLATFORM_MINGW
     char username [1024];
     DWORD length = sizeof(username);
 
@@ -322,7 +322,7 @@ const char* OsInterface::getenv( const char* name )
 */
 void OsInterface::sleep( float milliseconds )
 {
-#if defined BUILD_PLATFORM_MSVC
+#if defined BUILD_PLATFORM_MSVC || defined BUILD_PLATFORM_MINGW
     SWEET_ASSERT( milliseconds >= 0.0f );
     ::Sleep( static_cast<DWORD>(milliseconds) );
 #else
@@ -338,7 +338,7 @@ void OsInterface::sleep( float milliseconds )
 */
 float OsInterface::ticks()
 {    
-#if defined BUILD_PLATFORM_MSVC
+#if defined BUILD_PLATFORM_MSVC || defined BUILD_PLATFORM_MINGW
     return static_cast<float>( ::GetTickCount() ) - initial_tick_count_;
 #else
 #error "OsInterface::ticks() is not implemented for this platform"

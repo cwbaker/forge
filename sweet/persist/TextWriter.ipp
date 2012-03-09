@@ -7,6 +7,7 @@
 #define SWEET_PERSIST_TEXTWRITER_IPP_INCLUDED
 
 #include "Writer.ipp"
+#include <string.h>
 
 namespace sweet
 {
@@ -48,38 +49,38 @@ void TextWriter::write( const char* name, const char* child_name, Type (& values
 
     SWEET_ASSERT( m_state.empty() );
     m_state.push( State(&m_element, MODE_VALUE) );
-    save( *this, MODE_VALUE, name, child_name, values, length );
-    object.exit( *this );
+    save( *this, MODE_VALUE, name, child_name, values, LENGTH );
     m_state.pop();
     SWEET_ASSERT( m_state.empty() );
 }
 
 template <class Filter> 
-void TextWriter::value( const char* name, wchar_t* value, size_t max, Filter& filter )
+void TextWriter::value( const char* name, wchar_t* value, size_t max, const Filter& filter )
 {
     TextWriter::value( name, filter.to_archive(std::wstring(value)) );
 }
 
 template <class Filter> 
-void TextWriter::value( const char* name, std::wstring& value, Filter& filter )
+void TextWriter::value( const char* name, std::wstring& value, const Filter& filter )
 {
     TextWriter::value( name, filter.to_archive(value) );
 }
 
 template <class Filter> 
-void TextWriter::value( const char* name, char* value, size_t max, Filter& filter )
+void TextWriter::value( const char* name, char* value, size_t max, const Filter& filter )
 {
-    TextWriter::value( name, filter.to_archive(std::string(value, strnlen(value, max))) );
+    TextWriter::value( name, filter.to_archive(std::string(value, strlen(value))) );
 }
 
 template <class Filter> 
-void TextWriter::value( const char* name, std::string& value, Filter& filter )
+void TextWriter::value( const char* name, std::string& value, const Filter& filter )
 {
-    TextWriter::value( name, filter.to_archive(value) );
+    std::string filtered_value = filter.to_archive( value );
+    TextWriter::value( name, filtered_value );
 }
 
 template <class Type, class Filter> 
-void TextWriter::value( const char* name, Type& value, Filter& filter )
+void TextWriter::value( const char* name, Type& value, const Filter& filter )
 {
     SWEET_ASSERT( name );
     if ( get_mode() != MODE_REFERENCE )

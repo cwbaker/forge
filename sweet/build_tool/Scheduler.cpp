@@ -419,7 +419,7 @@ int Scheduler::postorder( const lua::LuaValue& function, ptr<Target> target )
             target_->set_visiting( true );
         }
 
-        ScopedVisit::~ScopedVisit()
+        ~ScopedVisit()
         {
             SWEET_ASSERT( target_->is_visiting() );
             target_->set_visiting( false );
@@ -441,7 +441,7 @@ int Scheduler::postorder( const lua::LuaValue& function, ptr<Target> target )
             build_tool_->get_graph()->begin_traversal();
         }
         
-        Postorder::~Postorder()
+        ~Postorder()
         {
             build_tool_->get_graph()->end_traversal();
         }

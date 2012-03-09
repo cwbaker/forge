@@ -43,7 +43,7 @@ void Resolver::track( void* raw_ptr, void* smart_ptr )
     while ( reference != m_references.end() && reference->address() == address )
     {
         reference->resolve( raw_ptr, smart_ptr );
-        reference = m_references.erase( reference );
+        m_references.erase( reference++ );
     }
     
     m_addresses.insert( Address(address, raw_ptr, smart_ptr) );
@@ -237,9 +237,11 @@ void Resolver::value( const char* name, unsigned long& value )
 {
 }
 
+#if defined(BUILD_PLATFORM_MSVC)
 void Resolver::value( const char* name, std::time_t& value )
 {
 }
+#endif
 
 void Resolver::value( const char* name, float& value )
 {

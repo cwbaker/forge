@@ -1,6 +1,6 @@
 //
 // ScopedLock.cpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"

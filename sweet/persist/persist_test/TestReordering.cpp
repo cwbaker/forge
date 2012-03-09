@@ -19,10 +19,10 @@ SUITE( TestReordering )
     {
         struct OrderedItem
         {
-            typedef std::vector<OrderedItem>                         vector;
-            typedef std::vector<std::pair<std::string, OrderedItem>> pair_vector;
-            typedef std::set<OrderedItem>                            set;
-            typedef std::map<std::string, OrderedItem>               map;
+            typedef std::vector<OrderedItem> vector;
+            typedef std::vector<std::pair<std::string, OrderedItem> > pair_vector;
+            typedef std::set<OrderedItem> set;
+            typedef std::map<std::string, OrderedItem> map;
 
             std::string     name_;
             OrderedItem*    previous_;
@@ -104,7 +104,7 @@ SUITE( TestReordering )
 
         template <class Archive> void enter( Archive& archive )
         {
-            archive.declare <OrderedItem> ( "OrderedItem", PERSIST_NORMAL );
+            archive.template declare <OrderedItem> ( "OrderedItem", PERSIST_NORMAL );
         }
 
         template <class Archive> void exit( Archive& archive )

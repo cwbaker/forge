@@ -103,6 +103,7 @@ class SWEET_PERSIST_DECLSPEC UnresolvedReferencesError : public Error
 
     public:
         UnresolvedReferencesError( std::multiset<Reference>& references, const char* format, ... );
+        ~UnresolvedReferencesError() throw ();
         const std::multiset<Reference>& get_references() const;
 };
 

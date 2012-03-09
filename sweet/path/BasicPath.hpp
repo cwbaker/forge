@@ -1,10 +1,12 @@
 //
 // BasicPath.hpp
-// Copyright (c) 2006  - 2010 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PATH_PATH_BASICPATH_HPP_INCLUDED
 #define SWEET_PATH_PATH_BASICPATH_HPP_INCLUDED
+
+#include <string>
 
 namespace sweet
 {
@@ -65,12 +67,12 @@ class BasicPath
         const_reverse_iterator rend() const;
         
     private:
-        static bool in( int character, typename const Traits::char_type* separators );
-        static bool compare( typename String::const_iterator begin, typename String::const_iterator end, typename const Traits::char_type* value );
+        static bool in( int character, const typename Traits::char_type* separators );
+        static bool compare( typename String::const_iterator begin, typename String::const_iterator end, const typename Traits::char_type* value );
 };
 
-typedef BasicPath<std::string, BasicPathTraits<char>> Path;
-typedef BasicPath<std::wstring, BasicPathTraits<wchar_t>> WidePath;
+typedef BasicPath<std::string, BasicPathTraits<char> > Path;
+typedef BasicPath<std::wstring, BasicPathTraits<wchar_t> > WidePath;
 
 WidePath SWEET_PATH_DECLSPEC current_working_directory();
 

@@ -58,7 +58,7 @@ void XmlWriter::write( std::ostream& stream, const char* name, const char* child
 }
 
 template <class Type, size_t LENGTH> 
-void XmlWriter::write( std::ostream& ostream, const char* name, const char* child_name, Type (& values)[LENGTH] )
+void XmlWriter::write( std::ostream& stream, const char* name, const char* child_name, Type (& values)[LENGTH] )
 {
     TextWriter::write( name, child_name, values );
     write( stream, get_element() );

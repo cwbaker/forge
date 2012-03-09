@@ -1,6 +1,6 @@
 //
 // sets.ipp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PERSIST_SETS_IPP_INCLUDED
@@ -12,23 +12,43 @@ namespace sweet
 namespace persist
 {
 
-template <class Archive, class CONTAINER>
-void save_stl_set( Archive& archive, int mode, const char* name, const char* child_name, CONTAINER& container )
+template <class Container, class Type>
+struct set_resolver
+{
+    static void resolve( void* reference, void* raw_ptr, void* smart_ptr )
+    {
+        Container& container = *static_cast<Container*>( reference );
+        container.insert( *static_cast<typename Container::value_type*>(smart_ptr) );
+    }
+};
+
+template <class Container, class Type>
+struct set_resolver<Container, Type*>
+{
+    static void resolve( void* reference, void* raw_ptr, void* smart_ptr )
+    {
+        Container& container = *static_cast<Container*>( reference );
+        container.insert( static_cast<Type*>(raw_ptr) );
+    }
+};
+
+template <class Archive, class Container>
+void save_stl_set( Archive& archive, int mode, const char* name, const char* child_name, Container& container )
 {
     ObjectGuard<Archive> guard( archive, name, 0, MODE_VALUE, container.size() );
 
     archive.flag( PERSIST_PRESERVE_EMPTY_ELEMENTS );
-    typename CONTAINER::iterator i = container.begin();
+    typename Container::iterator i = container.begin();
     while ( i != container.end() )
     {
-        typename CONTAINER::value_type& value = const_cast<typename CONTAINER::value_type&>(*i);
+        typename Container::value_type& value = const_cast<typename Container::value_type&>(*i);
         save( archive, mode, child_name, value );
         ++i;
     }
 }
 
-template <class Archive, class CONTAINER>
-void load_stl_set( Archive& archive, int mode, const char* name, const char* child_name, CONTAINER& container )
+template <class Archive, class Container>
+void load_stl_set( Archive& archive, int mode, const char* name, const char* child_name, Container& container )
 {
     SWEET_ASSERT( container.empty() );
 
@@ -40,9 +60,9 @@ void load_stl_set( Archive& archive, int mode, const char* name, const char* chi
             {
                 while ( archive.find_next_object(child_name) )
                 {
-                    typename CONTAINER::value_type value( creator<typename CONTAINER::value_type>::create() );
+                    typename Container::value_type value( creator<typename Container::value_type>::create() );
                     load( archive, MODE_VALUE, child_name, value );
-                    typename CONTAINER::const_iterator position = container.insert( value ).first;
+                    typename Container::const_iterator position = container.insert( value ).first;
 
                     int backward = 0;
                     while ( position != container.end() )
@@ -72,7 +92,7 @@ void load_stl_set( Archive& archive, int mode, const char* name, const char* chi
                     if ( archive.is_object() )
                     {
                         const void* address = archive.get_address();
-                        archive.reference( address, static_cast<void*>(&container), &set_resolver<CONTAINER, typename CONTAINER::value_type>::resolve );
+                        archive.reference( address, static_cast<void*>(&container), &set_resolver<Container, typename Container::value_type>::resolve );
                         ++count;
                     }
                 }
@@ -87,8 +107,8 @@ void load_stl_set( Archive& archive, int mode, const char* name, const char* chi
     }
 }
 
-template <class Archive, class CONTAINER>
-void load_stl_multiset( Archive& archive, int mode, const char* name, const char* child_name, CONTAINER& container )
+template <class Archive, class Container>
+void load_stl_multiset( Archive& archive, int mode, const char* name, const char* child_name, Container& container )
 {
     SWEET_ASSERT( container.empty() );
 
@@ -100,9 +120,9 @@ void load_stl_multiset( Archive& archive, int mode, const char* name, const char
             {
                 while ( archive.find_next_object(child_name) )
                 {
-                    typename CONTAINER::value_type value( creator<typename CONTAINER::value_type>::create() );
+                    typename Container::value_type value( creator<typename Container::value_type>::create() );
                     load( archive, MODE_VALUE, child_name, value );
-                    typename CONTAINER::const_iterator position = container.insert( value );
+                    typename Container::const_iterator position = container.insert( value );
 
                     int backward = 0;
                     while ( position != container.end() )
@@ -132,7 +152,7 @@ void load_stl_multiset( Archive& archive, int mode, const char* name, const char
                     if ( archive.is_object() )
                     {
                         const void* address = archive.get_address();
-                        archive.reference( address, static_cast<void*>(&container), &set_resolver<CONTAINER, typename CONTAINER::value_type>::resolve );
+                        archive.reference( address, static_cast<void*>(&container), &set_resolver<Container, typename Container::value_type>::resolve );
                         ++count;
                     }
                 }
@@ -147,16 +167,16 @@ void load_stl_multiset( Archive& archive, int mode, const char* name, const char
     }
 }
 
-template <class Archive, class CONTAINER>
-void resolve_stl_set( Archive& archive, int mode, CONTAINER& container )
+template <class Archive, class Container>
+void resolve_stl_set( Archive& archive, int mode, Container& container )
 {
     ObjectGuard<Archive> sequence_guard( archive, 0, 0, MODE_VALUE );
     switch ( mode )
     {
         case MODE_VALUE:
-            for ( typename CONTAINER::iterator i = container.begin(); i != container.end(); ++i )
+            for ( typename Container::iterator i = container.begin(); i != container.end(); ++i )
             {
-                typename CONTAINER::value_type& value = const_cast<typename CONTAINER::value_type&>( *i );
+                typename Container::value_type& value = const_cast<typename Container::value_type&>( *i );
                 resolve( archive, mode, value );
             }
             break;
@@ -167,7 +187,7 @@ void resolve_stl_set( Archive& archive, int mode, CONTAINER& container )
             while ( count > 0 )
             {
                 ObjectGuard<Archive> guard( archive, 0, 0, MODE_REFERENCE );
-                archive.reference( 0, static_cast<void*>(&container), &set_resolver<CONTAINER, typename CONTAINER::value_type>::resolve );
+                archive.reference( 0, static_cast<void*>(&container), &set_resolver<Container, typename Container::value_type>::resolve );
                 --count;
             }
             break;
@@ -178,26 +198,6 @@ void resolve_stl_set( Archive& archive, int mode, CONTAINER& container )
             break;
     }
 }
-
-template <class CONTAINER, class Type>
-struct set_resolver
-{
-    static void resolve( void* reference, void* raw_ptr, void* smart_ptr )
-    {
-        CONTAINER& container = *static_cast<CONTAINER*>( reference );
-        container.insert( *static_cast<typename CONTAINER::value_type*>(smart_ptr) );
-    }
-};
-
-template <class CONTAINER, class Type>
-struct set_resolver<CONTAINER, Type*>
-{
-    static void resolve( void* reference, void* raw_ptr, void* smart_ptr )
-    {
-        CONTAINER& container = *static_cast<CONTAINER*>( reference );
-        container.insert( static_cast<Type*>(raw_ptr) );
-    }
-};
 
 }
 

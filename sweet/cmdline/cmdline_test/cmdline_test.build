@@ -3,8 +3,9 @@ Executable {
     id = "cmdline_test";
 
     libraries = {
-        "assert/assert",
+        "cmdline/cmdline",
         "error/error",
+        "assert/assert",
         "unit/libUnitTest"
     };
 

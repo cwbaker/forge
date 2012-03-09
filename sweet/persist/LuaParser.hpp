@@ -1,10 +1,12 @@
 //
 // LuaParser.hpp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PERSIST_LUAPARSER_HPP_INCLUDED
 #define SWEET_PERSIST_LUAPARSER_HPP_INCLUDED
+
+#include <istream>
 
 namespace sweet
 {

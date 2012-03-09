@@ -43,9 +43,9 @@ class Executor
     thread::Mutex jobs_mutex_; ///< The mutex that ensures exclusive access to this Executor.
     thread::Condition jobs_empty_condition_; ///< The condition attribute that is used to notify threads that there are jobs ready to be processed.
     thread::Condition jobs_ready_condition_; ///< The condition attribute that is used to notify threads that there are jobs ready to be processed.
-    std::deque<boost::function<void ()>> jobs_; ///< The functions to be executed in the thread pool.
+    std::deque<boost::function<void ()> > jobs_; ///< The functions to be executed in the thread pool.
     int maximum_parallel_jobs_; ///< The maximum number of parallel jobs to allow.
-    std::vector<ptr<thread::Thread>> threads_; ///< The thread pool of Threads that process the Commands.
+    std::vector<ptr<thread::Thread> > threads_; ///< The thread pool of Threads that process the Commands.
     bool done_; ///< Whether or not this Executor has finished processing (indicates to the threads in the thread pool that they should return).
 
     public:

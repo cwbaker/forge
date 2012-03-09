@@ -1,6 +1,6 @@
 //
 // ScriptInterface.cpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -206,7 +206,7 @@ lua::Lua& ScriptInterface::get_lua()
 
 ptr<Rule> ScriptInterface::find_rule_by_id( const std::string& id ) const
 {
-    vector<ptr<Rule>>::const_iterator i = rules_.begin();
+    vector<ptr<Rule> >::const_iterator i = rules_.begin();
     while ( i != rules_.end() && (*i)->get_id() != id )
     {        
         ++i;
@@ -215,7 +215,7 @@ ptr<Rule> ScriptInterface::find_rule_by_id( const std::string& id ) const
     return i != rules_.end() ? *i : ptr<Rule>();
 }
 
-const std::vector<ptr<Rule>>& ScriptInterface::get_rules() const
+const std::vector<ptr<Rule> >& ScriptInterface::get_rules() const
 {   
     return rules_;
 }
@@ -391,7 +391,7 @@ ptr<Rule> ScriptInterface::rule( const std::string& id, int bind_type )
 
     ptr<Rule> rule;    
 
-    vector<ptr<Rule>>::const_iterator i = rules_.begin(); 
+    vector<ptr<Rule> >::const_iterator i = rules_.begin(); 
     while ( i != rules_.end() && (*i)->get_id() != id )
     {
         ++i;
@@ -498,7 +498,7 @@ std::string ScriptInterface::initial( const std::string& path ) const
 
 std::string ScriptInterface::home( const std::string& path ) const
 {
-#if defined BUILD_PLATFORM_MSVC
+#if defined BUILD_PLATFORM_MSVC || defined BUILD_PLATFORM_MINGW
     const char* USERPROFILE = "USERPROFILE";
     const char* home = ::getenv( USERPROFILE );
     if ( !home )
@@ -560,15 +560,23 @@ const std::string& ScriptInterface::pwd() const
 
 std::string ScriptInterface::lower( const std::string& value )
 {
-    std::string lower_case_value( value.length(), 0 );
-    std::transform( value.begin(), value.end(), lower_case_value.begin(), std::tolower );
+    std::string lower_case_value;
+    lower_case_value.reserve( value.length() );
+    for ( std::string::const_iterator i = value.begin(); i != value.end(); ++i )
+    {
+        lower_case_value.push_back( tolower(*i) );
+    }
     return lower_case_value;
 }
 
 std::string ScriptInterface::upper( const std::string& value )
 {
-    std::string upper_case_value( value.length(), 0 );
-    std::transform( value.begin(), value.end(), upper_case_value.begin(), std::toupper );
+    std::string upper_case_value;
+    upper_case_value.reserve( value.length() );
+    for ( std::string::const_iterator i = value.begin(); i != value.end(); ++i )
+    {
+        upper_case_value.push_back( toupper(*i) );
+    }
     return upper_case_value;
 }
 
@@ -960,7 +968,7 @@ int ScriptInterface::target_from_graph( lua_State* lua_state )
         SWEET_ASSERT( working_directory );
 
         const int RULE_PARAMETER = 1;
-        ptr<Rule> rule = LuaConverter<ptr<Rule>>::to( lua_state, 1 );
+        ptr<Rule> rule = LuaConverter<ptr<Rule> >::to( lua_state, 1 );
         if ( !rule )
         {
             SWEET_ERROR( lua::RuntimeError("Rule is null when constructing a target") );
@@ -1017,13 +1025,13 @@ int ScriptInterface::target_from_graph( lua_State* lua_state )
             string id = lua_tostring( lua_state, -1 );
             lua_pop( lua_state, 1 );
             ptr<Target> target = graph->target( id, rule, working_directory );
-            LuaConverter<ptr<Target>>::push( lua_state, target );
+            LuaConverter<ptr<Target> >::push( lua_state, target );
         }
         else if ( lua_isnoneornil(lua_state, TARGET_OR_ID_PARAMETER) )
         {
             string id;
             ptr<Target> target = graph->target( id, rule, working_directory );
-            LuaConverter<ptr<Target>>::push( lua_state, target );
+            LuaConverter<ptr<Target> >::push( lua_state, target );
         }
 
         return 1;
@@ -1093,7 +1101,7 @@ int ScriptInterface::preorder( lua_State* lua_state )
         ptr<Target> target;
         if ( !lua_isnoneornil(lua_state, TARGET_PARAMETER) )
         {
-            target = LuaConverter<ptr<Target>>::to( lua_state, TARGET_PARAMETER );
+            target = LuaConverter<ptr<Target> >::to( lua_state, TARGET_PARAMETER );
         }
         
         int failures = script_interface->build_tool_->get_scheduler()->preorder( function, target );
@@ -1124,7 +1132,7 @@ int ScriptInterface::postorder( lua_State* lua_state )
         ptr<Target> target;
         if ( !lua_isnoneornil(lua_state, TARGET_PARAMETER) )
         {
-            target = LuaConverter<ptr<Target>>::to( lua_state, TARGET_PARAMETER );
+            target = LuaConverter<ptr<Target> >::to( lua_state, TARGET_PARAMETER );
         }
         
         int failures = script_interface->build_tool_->get_scheduler()->postorder( function, target );
@@ -1158,7 +1166,7 @@ int ScriptInterface::execute( lua_State* lua_state )
         ptr<Scanner> scanner;
         if ( !lua_isnoneornil(lua_state, SCANNER_PROTOTYPE_PARAMETER) )
         {
-            scanner = LuaConverter<ptr<Scanner>>::to( lua_state, SCANNER_PROTOTYPE_PARAMETER );
+            scanner = LuaConverter<ptr<Scanner> >::to( lua_state, SCANNER_PROTOTYPE_PARAMETER );
         }
 
         const int ARGUMENTS_PARAMETER = 4;
@@ -1189,12 +1197,12 @@ int ScriptInterface::scan( lua_State* lua_state )
         SWEET_ASSERT( script_interface );
 
         const int TARGET_PARAMETER = 1;
-        ptr<Target> target = LuaConverter<ptr<Target>>::to( lua_state, TARGET_PARAMETER );
+        ptr<Target> target = LuaConverter<ptr<Target> >::to( lua_state, TARGET_PARAMETER );
         
         if ( target )
         {
             const int SCANNER_PROTOTYPE_PARAMETER = 2;
-            ptr<Scanner> scanner = LuaConverter<ptr<Scanner>>::to( lua_state, SCANNER_PROTOTYPE_PARAMETER );
+            ptr<Scanner> scanner = LuaConverter<ptr<Scanner> >::to( lua_state, SCANNER_PROTOTYPE_PARAMETER );
 
             const int ARGUMENTS_PARAMETER = 3;
             ptr<Arguments> arguments;

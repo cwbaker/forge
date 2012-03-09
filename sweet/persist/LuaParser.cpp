@@ -1,6 +1,6 @@
 //
 // LuaParser.cpp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -10,13 +10,15 @@
 #include "Element.hpp"
 #include "Error.hpp"
 #include "functions.hpp"
+#include <fstream>
+#include <stdlib.h>
 
 using std::vector;
 using std::istream_iterator;
 using namespace sweet::parser;
 using namespace sweet::persist;
 
-struct LuaParserEventSink : public ParserEventSink<PositionIterator<istream_iterator<unsigned char>>, void*, char>
+struct LuaParserEventSink : public ParserEventSink<PositionIterator<istream_iterator<unsigned char> >, void*, char>
 {
     const char* filename_;
     std::list<Element*> elements_;
@@ -54,19 +56,19 @@ struct LuaParserEventSink : public ParserEventSink<PositionIterator<istream_iter
         elements_.back()->add_attribute( attribute );
     }
 
-    void parser_error( const Parser<PositionIterator<PositionIterator<istream_iterator<unsigned char>>>, void*, char>* parser, const char* message )
+    void parser_error( const Parser<PositionIterator<PositionIterator<istream_iterator<unsigned char> > >, void*, char>* parser, const char* message )
     {
         SWEET_ERROR( ParsingFileFailedError("%s(%d) : %s", filename_, parser->position().line(), message) );
     }
 };
 
-static void string_( PositionIterator<istream_iterator<unsigned char>>* begin, PositionIterator<istream_iterator<unsigned char>> end, std::string* lexeme, int* symbol )
+static void string_( PositionIterator<istream_iterator<unsigned char> >* begin, PositionIterator<istream_iterator<unsigned char> > end, std::string* lexeme, int* symbol )
 {
     SWEET_ASSERT( begin != NULL );
     SWEET_ASSERT( lexeme != NULL );
     SWEET_ASSERT( lexeme->length() == 1 );
 
-    PositionIterator<istream_iterator<unsigned char>> position = *begin;
+    PositionIterator<istream_iterator<unsigned char> > position = *begin;
     int terminator = lexeme->at( 0 );
     SWEET_ASSERT( terminator == '\'' || terminator == '"' );
     lexeme->clear();
@@ -178,7 +180,7 @@ static void string_( PositionIterator<istream_iterator<unsigned char>>* begin, P
     *begin = position;
 }
 
-static void* begin_element( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char>>, void*, char>* context )
+static void* begin_element( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char> >, void*, char>* context )
 {
     LuaParserEventSink* lua_parser_context = static_cast<LuaParserEventSink*>( context );
     SWEET_ASSERT( lua_parser_context != NULL );
@@ -186,7 +188,7 @@ static void* begin_element( int symbol, const ParserNode<void*, char>* start, co
     return NULL;
 }
 
-static void* end_element( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char>>, void*, char>* context )
+static void* end_element( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char> >, void*, char>* context )
 {
     LuaParserEventSink* lua_parser_context = static_cast<LuaParserEventSink*>( context );
     SWEET_ASSERT( lua_parser_context != NULL );
@@ -194,7 +196,7 @@ static void* end_element( int symbol, const ParserNode<void*, char>* start, cons
     return NULL;
 }
 
-static void* nil_attribute( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char>>, void*, char>* context )
+static void* nil_attribute( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char> >, void*, char>* context )
 {
     LuaParserEventSink* lua_parser_context = static_cast<LuaParserEventSink*>( context );
     SWEET_ASSERT( lua_parser_context );
@@ -202,7 +204,7 @@ static void* nil_attribute( int symbol, const ParserNode<void*, char>* start, co
     return NULL;
 }
 
-static void* boolean_attribute( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char>>, void*, char>* context )
+static void* boolean_attribute( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char> >, void*, char>* context )
 {
     LuaParserEventSink* lua_parser_context = static_cast<LuaParserEventSink*>( context );
     SWEET_ASSERT( lua_parser_context );
@@ -210,7 +212,7 @@ static void* boolean_attribute( int symbol, const ParserNode<void*, char>* start
     return NULL;
 }
 
-static void* integer_attribute( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char>>, void*, char>* context )
+static void* integer_attribute( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char> >, void*, char>* context )
 {
     LuaParserEventSink* lua_parser_context = static_cast<LuaParserEventSink*>( context );
     SWEET_ASSERT( lua_parser_context );
@@ -218,7 +220,7 @@ static void* integer_attribute( int symbol, const ParserNode<void*, char>* start
     return NULL;
 }
 
-static void* real_attribute( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char>>, void*, char>* context )
+static void* real_attribute( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char> >, void*, char>* context )
 {
     LuaParserEventSink* lua_parser_context = static_cast<LuaParserEventSink*>( context );
     SWEET_ASSERT( lua_parser_context );
@@ -226,7 +228,7 @@ static void* real_attribute( int symbol, const ParserNode<void*, char>* start, c
     return NULL;
 }
 
-static void* string_attribute( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char>>, void*, char>* context )
+static void* string_attribute( int symbol, const ParserNode<void*, char>* start, const ParserNode<void*, char>* finish, ParserEventSink<PositionIterator<istream_iterator<unsigned char> >, void*, char>* context )
 {
     LuaParserEventSink* lua_parser_context = static_cast<LuaParserEventSink*>( context );
     SWEET_ASSERT( lua_parser_context );
@@ -249,7 +251,7 @@ LuaParser::LuaParser( const char* filename, Element* element )
 
 LuaParser::LuaParser( const wchar_t* filename, Element* element )
 {
-    std::ifstream stream( filename, std::ios::binary );
+    std::ifstream stream( narrow(filename).c_str(), std::ios::binary );
     if ( !stream.is_open() )
     {
         SWEET_ERROR( OpeningFileFailedError("Opening '%s' failed", narrow(filename).c_str()) );
@@ -269,7 +271,7 @@ void LuaParser::parse( const char* filename, std::istream& stream, Element* elem
     stream.exceptions( std::iostream::badbit );
 
     LuaParserEventSink lua_parser_event_sink( filename, element );
-    Parser<PositionIterator<istream_iterator<unsigned char>>, void*, char> parser( &lua_parser_state_machine, &lua_parser_event_sink );
+    Parser<PositionIterator<istream_iterator<unsigned char> >, void*, char> parser( &lua_parser_state_machine, &lua_parser_event_sink );
     parser.lexer_action_handlers()
         ( "string", &string_ )
     ;
@@ -283,7 +285,7 @@ void LuaParser::parse( const char* filename, std::istream& stream, Element* elem
         ( "string_attribute", &string_attribute )
     ;
     
-    parser.parse( PositionIterator<istream_iterator<unsigned char>>(istream_iterator<unsigned char>(stream), istream_iterator<unsigned char>()), PositionIterator<istream_iterator<unsigned char>>() );
+    parser.parse( PositionIterator<istream_iterator<unsigned char> >(istream_iterator<unsigned char>(stream), istream_iterator<unsigned char>()), PositionIterator<istream_iterator<unsigned char> >() );
     if ( !parser.accepted() || !parser.full() )
     {
         SWEET_ERROR( ReadingFileFailedError("Parsing a stream failed") );

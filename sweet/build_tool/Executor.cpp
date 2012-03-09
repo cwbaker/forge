@@ -228,7 +228,7 @@ void Executor::thread_scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Argume
         
         catch ( const std::exception& exception )
         {
-            scheduler->push_error( exception.what(), environment );
+            scheduler->push_error( exception, environment );
             scheduler->push_scan_finished();
         }
         
@@ -269,7 +269,7 @@ void Executor::stop()
             jobs_ready_condition_.notify_all();
         }
 
-        for ( vector<ptr<thread::Thread>>::iterator i = threads_.begin(); i != threads_.end(); ++i )
+        for ( vector<ptr<thread::Thread> >::iterator i = threads_.begin(); i != threads_.end(); ++i )
         {
             try
             {

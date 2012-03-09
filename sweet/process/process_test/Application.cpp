@@ -1,6 +1,6 @@
 //
 // Application.cpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -36,7 +36,7 @@ Application::Application( int argc, char** argv )
     if ( version )
     {
         fprintf( stdout, "Sweet Process Test " BUILD_VERSION " \n" );
-        fprintf( stdout, "Copyright (c) 2007 - 2008 Charles Baker.  All rights reserved. \n" );
+        fprintf( stdout, "Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved. \n" );
     }
     else if ( help )
     {

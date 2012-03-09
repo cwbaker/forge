@@ -1,6 +1,6 @@
 //
 // Process.hpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PROCESS_PROCESS_HPP_INCLUDED
@@ -40,7 +40,7 @@ class SWEET_PROCESS_DECLSPEC Process
 
         void wait();
         int exit_code();
-        size_t read( void* buffer, size_t length );
+        unsigned int read( void* buffer, unsigned int length );
 };
 
 }
