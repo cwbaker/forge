@@ -6,7 +6,7 @@
 #include "stdafx.hpp"
 #include "Graph.hpp"
 #include "Error.hpp"
-#include "Rule.hpp"
+#include "TargetPrototype.hpp"
 #include "Target.hpp"
 #include "BuildTool.hpp"
 #include "ScriptInterface.hpp"
@@ -22,14 +22,46 @@ using namespace sweet;
 using namespace sweet::lua;
 using namespace sweet::build_tool;
 
+namespace sweet
+{
+
+namespace build_tool
+{
+
+struct Deleter
+{
+    ScriptInterface* script_interface_;
+    
+    public:
+        Deleter( ScriptInterface* script_interface )
+        : script_interface_( script_interface )
+        {
+            SWEET_ASSERT( script_interface_ );
+        }
+        
+        void operator()( Target* target ) const
+        {
+            SWEET_ASSERT( target );
+            if ( target->is_referenced_by_script() )
+            {
+                script_interface_->destroy_target( target );
+            }
+            delete target;
+        }
+};
+
+}
+
+}
+
 /**
 // Constructor.
 */
 Graph::Graph()
 : build_tool_( NULL ),
+  filename_(),
   root_target_(),
   cache_target_(),
-  loaded_from_cache_( false ),
   traversal_in_progress_( false ),
   visited_revision_( 0 ),
   successful_revision_( 0 )
@@ -44,15 +76,15 @@ Graph::Graph()
 */
 Graph::Graph( BuildTool* build_tool )
 : build_tool_( build_tool ),
+  filename_(),
   root_target_(),
   cache_target_(),
-  loaded_from_cache_( false ),
   traversal_in_progress_( false ),
   visited_revision_( 0 ),
   successful_revision_( 0 )
 {
     SWEET_ASSERT( build_tool_ );
-    root_target_ = build_tool_->get_script_interface()->target( "", this );
+    root_target_.reset( new Target("", this) );
 }
 
 /**
@@ -88,17 +120,6 @@ BuildTool* Graph::get_build_tool() const
 {
     SWEET_ASSERT( build_tool_ );
     return build_tool_;
-}
-
-/**
-// Is this Graph loaded from a file?
-//
-// @return
-//  True if this Graph was loaded from a file otherwise false.
-*/
-bool Graph::is_loaded_from_cache() const
-{
-    return loaded_from_cache_;
 }
 
 /**
@@ -185,9 +206,9 @@ int Graph::get_successful_revision() const
 // @param id
 //  The identifier of the Target to find or create.
 //
-// @param rule
-//  The Rule of the Target to create or null to create a Target that has no
-//  Rule.
+// @param target_prototype
+//  The TargetPrototype of the Target to create or null to create a Target that has no
+//  TargetPrototype.
 //
 // @param working_directory
 //  The Target that the identifier is relative to or null if the identifier
@@ -196,7 +217,7 @@ int Graph::get_successful_revision() const
 // @return
 //  The Target.
 */
-ptr<Target> Graph::target( const std::string& id, ptr<Rule> rule, ptr<Target> working_directory )
+ptr<Target> Graph::target( const std::string& id, ptr<TargetPrototype> target_prototype, ptr<Target> working_directory )
 {
 //
 // Find the Target by breaking the id into '/' delimited elements and 
@@ -231,9 +252,9 @@ ptr<Target> Graph::target( const std::string& id, ptr<Rule> rule, ptr<Target> wo
                 ptr<Target> new_target = target->find_target_by_id( element );
                 if ( !new_target )
                 {
-                    new_target = build_tool_->get_script_interface()->target( element, this );
+                    new_target.reset( new Target(element, this), Deleter(build_tool_->get_script_interface()) );
                     target->add_target( new_target, target );
-                    if ( i != path.end() || !rule )
+                    if ( i != path.end() || !target_prototype )
                     {
                         new_target->set_working_directory( target );
                         target->add_dependency( new_target );
@@ -246,14 +267,14 @@ ptr<Target> Graph::target( const std::string& id, ptr<Rule> rule, ptr<Target> wo
     }
     else
     {
-        ptr<Target> new_target = build_tool_->get_script_interface()->target( "", this );
+        ptr<Target> new_target( new Target("", this), Deleter(build_tool_->get_script_interface()) );
         target->add_target( new_target, target );
         target = new_target;
     }
 
-    if ( target->get_rule() == NULL )
+    if ( target->get_prototype() == NULL )
     {
-        target->set_rule( rule );
+        target->set_prototype( target_prototype );
     }
 
     if ( target->get_working_directory() == NULL )
@@ -261,9 +282,9 @@ ptr<Target> Graph::target( const std::string& id, ptr<Rule> rule, ptr<Target> wo
         target->set_working_directory( working_directory );
     }
 
-    if ( target->get_rule() != rule )
+    if ( target->get_prototype() != target_prototype )
     {
-        SWEET_ERROR( RuleConflictError("The target '%s' has been created with prototypes '%s' and '%s'", id.c_str(), target->get_rule()->get_id().c_str(), rule ? rule->get_id().c_str() : "none" ) );
+        SWEET_ERROR( PrototypeConflictError("The target '%s' has been created with prototypes '%s' and '%s'", id.c_str(), target->get_prototype()->get_id().c_str(), target_prototype ? target_prototype->get_id().c_str() : "none" ) );
     }
 
     return target;
@@ -361,9 +382,10 @@ void Graph::buildfile( const std::string& filename, ptr<Target> target )
      
     path::Path path( build_tool_->get_script_interface()->absolute(filename) );
     SWEET_ASSERT( path.is_absolute() );
-    ptr<Target> working_directory = Graph::target( path.branch().string(), ptr<Rule>(), ptr<Target>() );
+    ptr<Target> working_directory = Graph::target( path.branch().string(), ptr<TargetPrototype>(), ptr<Target>() );
     root_target_->add_dependency( working_directory );
-    ptr<Target> buildfile_target = Graph::target( path.string(), ptr<Rule>(), ptr<Target>() );
+    ptr<Target> buildfile_target = Graph::target( path.string(), ptr<TargetPrototype>(), ptr<Target>() );
+    buildfile_target->set_filename( path.string() );
     buildfile_target->set_bind_type( BIND_SOURCE_FILE );
     if ( cache_target_ )
     {
@@ -371,6 +393,82 @@ void Graph::buildfile( const std::string& filename, ptr<Target> target )
     }
     build_tool_->get_scheduler()->buildfile( path );
 }
+
+struct ScopedVisit
+{
+    Target* target_;
+
+    ScopedVisit( Target* target )
+    : target_( target )
+    {
+        SWEET_ASSERT( target_ );
+        SWEET_ASSERT( target_->is_visiting() == false );
+        target_->set_visited( true );
+        target_->set_visiting( true );
+    }
+
+    ~ScopedVisit()
+    {
+        SWEET_ASSERT( target_ );
+        SWEET_ASSERT( target_->is_visiting() == true );
+        target_->set_visiting( false );
+    }
+};
+
+struct Bind
+{
+    BuildTool* build_tool_;
+    int failures_;
+    
+    Bind( BuildTool* build_tool )
+    : build_tool_( build_tool ),
+      failures_( 0 )
+    {
+        SWEET_ASSERT( build_tool_ );
+        build_tool_->get_graph()->begin_traversal();
+    }
+    
+    ~Bind()
+    {
+        build_tool_->get_graph()->end_traversal();
+    }
+
+    void visit( Target* target )
+    {
+        SWEET_ASSERT( target );
+
+        if ( !target->is_visited() )
+        {
+            ScopedVisit visit( target );
+
+            const vector<Target*>& dependencies = target->get_dependencies();
+            for ( vector<Target*>::const_iterator i = dependencies.begin(); i != dependencies.end(); ++i )
+            {
+                Target* dependency = *i;
+                SWEET_ASSERT( dependency );
+
+                if ( !dependency->is_visiting() )
+                {
+                    Bind::visit( dependency );
+                }
+                else
+                {
+                    build_tool_->warning( "Ignoring cyclic dependency from '%s' to '%s' during binding", target->get_id().c_str(), dependency->get_id().c_str() );
+                    dependency->set_successful( true );
+                }
+            }
+
+            target->bind();
+            target->set_successful( true );
+
+            if ( target->is_required_to_exist() && target->is_bound_to_file() && target->get_last_write_time() == 0 )
+            {
+                build_tool_->error( "The source file '%s' does not exist", target->get_filename().c_str() );
+                ++failures_;
+            }
+        }
+    }
+};
 
 /**
 // Make a postorder pass over this Graph to bind its Targets.
@@ -387,82 +485,6 @@ int Graph::bind( ptr<Target> target )
 {
     SWEET_ASSERT( !target || target->get_graph() == this );
 
-    struct ScopedVisit
-    {
-        Target* target_;
-
-        ScopedVisit( Target* target )
-        : target_( target )
-        {
-            SWEET_ASSERT( target_ );
-            SWEET_ASSERT( target_->is_visiting() == false );
-            target_->set_visited( true );
-            target_->set_visiting( true );
-        }
-
-        ~ScopedVisit()
-        {
-            SWEET_ASSERT( target_ );
-            SWEET_ASSERT( target_->is_visiting() == true );
-            target_->set_visiting( false );
-        }
-    };
-
-    struct Bind
-    {
-        BuildTool* build_tool_;
-        int failures_;
-        
-        Bind( BuildTool* build_tool )
-        : build_tool_( build_tool ),
-          failures_( 0 )
-        {
-            SWEET_ASSERT( build_tool_ );
-            build_tool_->get_graph()->begin_traversal();
-        }
-        
-        ~Bind()
-        {
-            build_tool_->get_graph()->end_traversal();
-        }
-    
-        void visit( Target* target )
-        {
-            SWEET_ASSERT( target );
-
-            if ( !target->is_visited() )
-            {
-                ScopedVisit visit( target );
-
-                const vector<Target*>& dependencies = target->get_dependencies();
-                for ( vector<Target*>::const_iterator i = dependencies.begin(); i != dependencies.end(); ++i )
-                {
-                    Target* dependency = *i;
-                    SWEET_ASSERT( dependency );
-
-                    if ( !dependency->is_visiting() )
-                    {
-                        Bind::visit( dependency );
-                    }
-                    else
-                    {
-                        build_tool_->warning( "Ignoring cyclic dependency from '%s' to '%s' during binding", target->get_id().c_str(), dependency->get_id().c_str() );
-                        dependency->set_successful( true );
-                    }
-                }
-
-                target->bind();
-                target->set_successful( true );
-
-                if ( target->is_required_to_exist() && target->is_bound_to_file() && target->get_last_write_time() == 0 )
-                {
-                    build_tool_->error( "The source file '%s' does not exist", target->get_filename().c_str() );
-                    ++failures_;
-                }
-            }
-        }
-    };
-
     Bind bind( build_tool_ );
     bind.visit( target ? target.get() : root_target_.get() );
     return bind.failures_;
@@ -470,33 +492,41 @@ int Graph::bind( ptr<Target> target )
 
 /**
 // Clear all of the targets in this graph.
+//
+// The name of the file that this Graph was most recently loaded from is used
+// to create the implicit cache target in the newly cleared Graph.  This gives
+// an implicit target for the cache file that buildfiles are able to depend 
+// on (see Graph::buildfile()) so that the cache can be marked as outdated if
+// any buildfiles change and become newer than the cache.
+//
+// This might be a bit strange if the Graph is then saved to a cache file with
+// a different filename which is why the save functions don't take filename
+// arguments and one of the load functions must be called first to provide the
+// name of the cache file.
 */
-void Graph::clear( const std::string& filename )
+void Graph::clear()
 {
     SWEET_ASSERT( build_tool_ );
-    root_target_ = build_tool_->get_script_interface()->target( "", this );
-    cache_target_ = target( filename );
-    cache_target_->set_bind_type( BIND_GENERATED_FILE );
-    loaded_from_cache_ = false;
+
+    root_target_.reset( new Target("", this) );
+    cache_target_.reset();
+    recover();
 }
 
 /**
 // Recover implicit relationships after this Graph has been loaded from an
 // Archive.
-//
-// @param filename
-//  The name of the file that this Graph was loaded from that is used to 
-//  identify the cache target for this Graph (assumed not empty).
 */
-void Graph::recover( const std::string& filename )
+void Graph::recover()
 {
-    SWEET_ASSERT( !filename.empty() );
+    SWEET_ASSERT( !filename_.empty() );
     SWEET_ASSERT( root_target_ );
+
     root_target_->recover( this );
-    cache_target_ = find_target( filename, ptr<Target>() );
-    SWEET_ASSERT( cache_target_ );
+    cache_target_ = target( filename_, ptr<TargetPrototype>(), ptr<Target>() );
+    cache_target_->set_filename( filename_ );
+    cache_target_->set_bind_type( BIND_GENERATED_FILE );
     bind( cache_target_ );
-    loaded_from_cache_ = true;
 }
 
 /**
@@ -509,21 +539,26 @@ void Graph::recover( const std::string& filename )
 //  The target that corresponds to the file that this Graph was loaded from or
 //  null if there was no cache target.
 */
-Target* Graph::load_xml( const std::string& filename )
+ptr<Target> Graph::load_xml( const std::string& filename )
 {
     SWEET_ASSERT( !filename.empty() );
     SWEET_ASSERT( build_tool_ );
 
+    filename_ = filename;
     root_target_.reset();
     cache_target_.reset();
 
-    path::Path path( build_tool_->get_script_interface()->absolute(filename) );
-    sweet::persist::XmlReader reader;
-    enter( reader );
-    reader.read( path.string().c_str(), "graph", *this );   
-    exit( reader );
-    recover( filename );
-    return cache_target_.get();
+    if ( build_tool_->get_os_interface()->exists(filename) )
+    {
+        path::Path path( filename );
+        SWEET_ASSERT( path.is_absolute() );
+        sweet::persist::XmlReader reader;
+        enter( reader );
+        reader.read( path.string().c_str(), "graph", *this );   
+        exit( reader );
+        recover();
+    }
+    return cache_target_;
 }
 
 /**
@@ -532,15 +567,22 @@ Target* Graph::load_xml( const std::string& filename )
 // @param filename
 //  The name of the file to save this Graph to.
 */
-void Graph::save_xml( const std::string& filename )
+void Graph::save_xml()
 {
-    SWEET_ASSERT( !filename.empty() );
     SWEET_ASSERT( build_tool_ );
-    path::Path path( build_tool_->get_script_interface()->absolute(filename) );
-    sweet::persist::XmlWriter writer;
-    enter( writer );
-    writer.write( path.string().c_str(), "graph", *this );
-    exit( writer );
+
+    if ( !filename_.empty() )
+    {
+        path::Path path( filename_ );
+        sweet::persist::XmlWriter writer;
+        enter( writer );
+        writer.write( path.string().c_str(), "graph", *this );
+        exit( writer );
+    }
+    else
+    {
+        build_tool_->error( "Unable to save a dependency graph without trying to load it first" );
+    }
 }
 
 /**
@@ -553,38 +595,47 @@ void Graph::save_xml( const std::string& filename )
 //  The target that corresponds to the file that this Graph was loaded from or
 //  null if there was no cache target.
 */
-Target* Graph::load_binary( const std::string& filename )
+ptr<Target> Graph::load_binary( const std::string& filename )
 {
     SWEET_ASSERT( !filename.empty() );
     SWEET_ASSERT( build_tool_ );
 
+    filename_ = filename;
     root_target_.reset();
     cache_target_.reset();
 
-    path::Path path( build_tool_->get_script_interface()->absolute(filename) );
-    sweet::persist::BinaryReader reader;
-    enter( reader );
-    reader.read( path.string().c_str(), "graph", *this );   
-    exit( reader );
-    recover( filename );
-    return cache_target_.get();
+    if ( build_tool_->get_os_interface()->exists(filename) )
+    {
+        path::Path path( filename );
+        SWEET_ASSERT( path.is_absolute() );
+        sweet::persist::BinaryReader reader;
+        enter( reader );
+        reader.read( path.string().c_str(), "graph", *this );   
+        exit( reader );
+        recover();
+    }
+    return cache_target_;
 }
 
 /**
 // Save this Graph to a binary file.
-//
-// @param filename
-//  The name of the file to save this Graph to.
 */
-void Graph::save_binary( const std::string& filename )
+void Graph::save_binary()
 {
-    SWEET_ASSERT( !filename.empty() );
     SWEET_ASSERT( build_tool_ );
-    path::Path path( build_tool_->get_script_interface()->absolute(filename) );
-    sweet::persist::BinaryWriter writer;
-    enter( writer );
-    writer.write( path.string().c_str(), "graph", *this );
-    exit( writer );
+
+    if ( !filename_.empty() )
+    {
+        path::Path path( filename_ );
+        sweet::persist::BinaryWriter writer;
+        enter( writer );
+        writer.write( path.string().c_str(), "graph", *this );
+        exit( writer );
+    }
+    else
+    {
+        build_tool_->error( "Unable to save a dependency graph without trying to load it first" );        
+    }
 }
 
 /**
@@ -664,9 +715,9 @@ void Graph::print_dependencies( ptr<Target> target )
                 printf( "    " );
             }
 
-            if ( target->get_rule() )
+            if ( target->get_prototype() )
             {
-                printf( "%s ", target->get_rule()->get_id().c_str() );
+                printf( "%s ", target->get_prototype()->get_id().c_str() );
             }
 
             printf( "'%s' %s %04d-%02d-%02d %02d:%02d:%02d", 
@@ -742,9 +793,9 @@ void Graph::print_namespace( ptr<Target> target )
                     printf( "    " );
                 }
 
-                if ( target->get_rule() != 0 )
+                if ( target->get_prototype() != 0 )
                 {
-                    printf( "%s ", target->get_rule()->get_id().c_str() );
+                    printf( "%s ", target->get_prototype()->get_id().c_str() );
                 }
 
                 printf( "'%s'", target->get_id().c_str() );

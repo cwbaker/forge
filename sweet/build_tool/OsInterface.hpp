@@ -1,10 +1,10 @@
 //
 // OsInterface.hpp
-// Copyright (c) 2010 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2010 - 2012 Charles Baker.  All rights reserved.
 //
 
-#ifndef SWEET_BUILD_TOOL_OPERATINGSYSTEMINTERFACE_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_OPERATINGSYSTEMINTERFACE_HPP_INCLUDED
+#ifndef SWEET_BUILD_TOOL_OSINTERFACE_HPP_INCLUDED
+#define SWEET_BUILD_TOOL_OSINTERFACE_HPP_INCLUDED
 
 #include "declspec.hpp"
 #include <sweet/path/Path.hpp>
@@ -41,6 +41,7 @@ class OsInterface
         void rmdir( const std::string& path );
         void cp( const std::string& from, const std::string& to );
         void rm( const std::string& path );
+        std::string operating_system();
         std::string hostname();
         std::string whoami();
         void putenv( const std::string& attribute, const std::string& value );

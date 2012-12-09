@@ -44,3 +44,10 @@ void ScopedLock::unlock()
 {
     m_mutex.unlock();
 }
+
+#if defined(BUILD_OS_MACOSX)
+pthread_mutex_t* ScopedLock::pthread_mutex() const
+{
+    return m_mutex.pthread_mutex();
+}
+#endif

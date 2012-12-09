@@ -7,7 +7,20 @@
 #include "Process.hpp"
 #include "Error.hpp"
 #include <sweet/assert/assert.hpp>
+
+#if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
+#endif
+
+#if defined(BUILD_OS_MACOSX)
+#include <sweet/cmdline/Splitter.hpp>
+#include <spawn.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#endif
 
 using namespace sweet::process;
 
@@ -16,8 +29,13 @@ using namespace sweet::process;
 */
 Process::Process()
 : flags_( PROCESS_FLAG_NONE ),
+#if defined(BUILD_OS_WINDOWS)
   process_( INVALID_HANDLE_VALUE ),
   stdout_( INVALID_HANDLE_VALUE )
+#elif defined(BUILD_OS_MACOSX)
+  process_( 0 ),
+  stdout_( 0 )
+#endif
 {
 }
 
@@ -39,13 +57,19 @@ Process::Process()
 */
 Process::Process( const char* command, const char* arguments, const char* directory, int flags )
 : flags_( flags ),
+#if defined(BUILD_OS_WINDOWS)
   process_( INVALID_HANDLE_VALUE ),
   stdout_( INVALID_HANDLE_VALUE )
+#elif defined(BUILD_OS_MACOSX)
+  process_( 0 ),
+  stdout_( 0 )
+#endif
 {
     SWEET_ASSERT( command );
     SWEET_ASSERT( arguments );
     SWEET_ASSERT( directory );
 
+#if defined(BUILD_OS_WINDOWS)
     STARTUPINFO startup_info;
     memset( &startup_info, 0, sizeof(startup_info) );
     startup_info.cb = sizeof(startup_info);
@@ -150,6 +174,61 @@ Process::Process( const char* command, const char* arguments, const char* direct
 
     process_ = process_information.hProcess;
     stdout_ = stdout_read;
+
+#elif defined(BUILD_OS_MACOSX)
+    cmdline::Splitter splitter( arguments );
+
+    int original_working_directory = ::open( ".", O_RDONLY );
+    if ( original_working_directory == -1 )
+    {
+        char message [256];
+        SWEET_ERROR( ExecutingProcessFailedError("Executing '%s' failed - unable to open current directory - %s", command, Error::format(errno, message, sizeof(message))) );
+    }
+
+    int result = chdir( directory );
+    if ( result != 0 )
+    {
+        close( original_working_directory );
+        char message [256];
+        SWEET_ERROR( ExecutingProcessFailedError("Executing '%s' failed - unable to change directory to '%s' - %s", command, directory, Error::format(errno, message, sizeof(message))) );
+    }
+
+    int files [2] = { 0, 0 };
+    result = pipe( files );
+    if ( result != 0 )
+    {
+        close( original_working_directory );
+        char message [256];
+        SWEET_ERROR( CreatingPipeFailedError("Creating stdout for '%s' failed - %s", command, Error::format(errno, message, sizeof(message))) );
+    }
+
+    posix_spawn_file_actions_t file_actions;
+    posix_spawn_file_actions_init( &file_actions );
+    posix_spawn_file_actions_addclose( &file_actions, files[0] );
+    posix_spawn_file_actions_addclose( &file_actions, STDOUT_FILENO );
+    posix_spawn_file_actions_addclose( &file_actions, STDERR_FILENO );
+    posix_spawn_file_actions_adddup2( &file_actions, files[1], STDOUT_FILENO );
+    posix_spawn_file_actions_adddup2( &file_actions, files[1], STDERR_FILENO );
+    posix_spawn_file_actions_addclose( &file_actions, files[1] );
+
+    extern char** environ;
+    pid_t pid = 0;
+    result = posix_spawn( &pid, command, &file_actions, NULL, &splitter.arguments()[0], environ );
+    fchdir( original_working_directory );
+    close( original_working_directory );
+
+    if ( result != 0 )
+    {
+        close( files[0] );
+        close( files[1] );
+        char message [256];
+        SWEET_ERROR( ExecutingProcessFailedError("Executing '%s' failed - %s", command, Error::format(result, message, sizeof(message))) );
+    }
+
+    process_ = pid;
+    stdout_ = files[0];
+    close( files[1] );
+#endif    
 }
 
 /**
@@ -157,6 +236,7 @@ Process::Process( const char* command, const char* arguments, const char* direct
 */
 Process::~Process()
 {
+#if defined(BUILD_OS_WINDOWS)
     if ( process_ != INVALID_HANDLE_VALUE )
     {
         ::CloseHandle( process_ );
@@ -168,16 +248,29 @@ Process::~Process()
         ::CloseHandle( stdout_ );
         stdout_ = INVALID_HANDLE_VALUE;
     }
+
+#elif defined(BUILD_OS_MACOSX)
+    if ( process_ != 0 )
+    {
+        int status = 0;
+        waitpid( process_, &status, 0 );
+        process_ = 0;
+    }
+
+    if ( stdout_ != 0 )
+    {
+        close( stdout_ );
+        stdout_ = 0;
+    }
+#endif
 }
 
 /**
 // Wait for this Process to finish.
-//
-// @return 
-//  Nothing.
 */
 void Process::wait()
 {
+#if defined(BUILD_OS_WINDOWS)
     SWEET_ASSERT( process_ != INVALID_HANDLE_VALUE );
 
     DWORD wait = ::WaitForSingleObject( process_, INFINITE );
@@ -187,6 +280,23 @@ void Process::wait()
         error::Error::format( ::GetLastError(), error, sizeof(error) );
         SWEET_ERROR( WaitForProcessFailedError("Waiting for a process failed - %s", error) );
     }
+
+#elif defined(BUILD_OS_MACOSX)
+    SWEET_ASSERT( process_ != 0 );
+
+    pid_t result = waitpid( process_, &exit_code_, 0 );
+    if ( result != process_ )
+    {
+        SWEET_ERROR( WaitForProcessFailedError("Waiting for a process failed - errno=%d", errno) );
+    }
+    process_ = 0;
+
+    if ( stdout_ != 0 )
+    {
+        close( stdout_ );
+        stdout_ = 0;
+    }    
+#endif
 }
 
 /**
@@ -197,6 +307,7 @@ void Process::wait()
 */
 int Process::exit_code()
 {
+#if defined(BUILD_OS_WINDOWS)
     SWEET_ASSERT( process_ != INVALID_HANDLE_VALUE );
 
     DWORD exit_code = 0;
@@ -209,6 +320,10 @@ int Process::exit_code()
     }
 
     return exit_code;
+#elif defined(BUILD_OS_MACOSX)
+    SWEET_ASSERT( process_ == 0 && stdout_ == 0 );
+    return exit_code_;
+#endif
 }
 
 /**
@@ -229,6 +344,7 @@ int Process::exit_code()
 */
 unsigned int Process::read( void* buffer, unsigned int length )
 {
+#if defined(BUILD_OS_WINDOWS)
     SWEET_ASSERT( process_ != INVALID_HANDLE_VALUE );
     SWEET_ASSERT( stdout_ != INVALID_HANDLE_VALUE );
     SWEET_ASSERT( flags_ & PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR );
@@ -241,6 +357,17 @@ unsigned int Process::read( void* buffer, unsigned int length )
         error::Error::format( ::GetLastError(), error, sizeof(error) );
         SWEET_ERROR( ReadingPipeFailedError("Reading from a child process failed - %s", error) );
     }
-
     return read;
+
+#elif defined(BUILD_OS_MACOSX)
+    SWEET_ASSERT( process_ != 0 );
+    SWEET_ASSERT( stdout_ != 0 );
+
+    int bytes = ::read( stdout_, buffer, length );
+    if ( bytes == -1 )
+    {
+        SWEET_ERROR( ReadingPipeFailedError("Reading from a child process failed - errno=%d", errno) );        
+    }
+    return bytes;
+#endif
 }

@@ -58,7 +58,9 @@ template <class Function> LuaPolicyWrapper<Function, LUA_POLICY_WEAKEN> weaken( 
 
 template <class Type> int lua_gc( lua_State* lua );
 template <class Iterator> int lua_iterator( lua_State* lua );
+template <class Iterator, class Function> int lua_iterator_with_function( lua_State* lua );
 template <class Iterator> void lua_push_iterator( lua_State* lua, Iterator start, Iterator finish );
+template <class Iterator, class Function> void lua_push_iterator( lua_State* lua, Iterator start, Iterator finish, const Function& function );
 
 }
 

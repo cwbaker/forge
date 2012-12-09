@@ -5,7 +5,15 @@
 
 #include "stdafx.hpp"
 #include <sweet/path/path.hpp>
+#include <sweet/assert/assert.hpp>
+#include <string>
+#include <stdexcept>
 
+#if defined(BUILD_OS_MACOSX)
+#include <unistd.h>
+#endif
+
+using std::wstring;
 using namespace sweet::path;
 
 /**
@@ -16,7 +24,7 @@ using namespace sweet::path;
 */
 WidePath sweet::path::current_working_directory()
 {
-#if defined BUILD_PLATFORM_MSVC || defined BUILD_PLATFORM_MINGW
+#if defined(BUILD_OS_WINDOWS)
 //
 // The length returned by GetCurrentDirectoryW includes the terminating
 // null character so the wstring is initialized to have one less character 
@@ -27,6 +35,17 @@ WidePath sweet::path::current_working_directory()
     ::GetCurrentDirectoryW( length, &directory[0] );
     return WidePath( directory );
 #else    
-#error "The function sweet::path::current_working_directory() is not implemented for this platform."
+    char directory [4096];
+    const char *result = getcwd( directory, sizeof(directory) );
+    if ( !result )
+    {
+        directory[0] = '\0';
+    }
+
+    unsigned int length = strlen( directory );
+    std::vector<wchar_t> buffer( length );    
+    const std::ctype<wchar_t>* ctype = &std::use_facet<std::ctype<wchar_t> >( std::locale() );
+    ctype->widen( directory, directory + length, &buffer[0] );
+    return WidePath( wstring(&buffer[0], length) );
 #endif
 }

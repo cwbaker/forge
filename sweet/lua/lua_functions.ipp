@@ -244,6 +244,36 @@ int lua_iterator( lua_State* lua_state )
     return 1;
 }
 
+template <class Iterator, class Function> 
+int lua_iterator_with_function( lua_State* lua_state )
+{
+    SWEET_ASSERT( lua_state );
+    SWEET_ASSERT( lua_isuserdata(lua_state, lua_upvalueindex(1)) );
+    SWEET_ASSERT( lua_isuserdata(lua_state, lua_upvalueindex(2)) );
+    SWEET_ASSERT( lua_isuserdata(lua_state, lua_upvalueindex(3)) );
+
+    Iterator& iterator = LuaConverter<Iterator&>::to( lua_state, lua_upvalueindex(1) );
+    Iterator end = LuaConverter<Iterator>::to( lua_state, lua_upvalueindex(2) );
+    Function& function = LuaConverter<Function&>::to( lua_state, lua_upvalueindex(3) );
+    while ( iterator != end && !function(*iterator) )
+    {
+        ++iterator;
+    }
+    
+    if ( iterator != end )
+    {
+        typedef typename Iterator::value_type value_type;
+        LuaConverter<value_type>::push( lua_state, *iterator );
+        ++iterator;
+    }
+    else
+    {
+        lua_pushnil( lua_state );
+    }
+
+    return 1;
+}
+
 /**
 // @internal
 //
@@ -256,7 +286,7 @@ int lua_iterator( lua_State* lua_state )
 // collected.
 //
 // The user data values containing the copied iterators are then bound as 
-// up values to an iterator function (see lua::lua_iterator()) that iterates
+// up values to an iterator function (see lua_iterator()) that iterates
 // over the range returning nil when the end is reached.
 //
 // @param lua_state
@@ -275,6 +305,16 @@ void lua_push_iterator( lua_State* lua_state, Iterator start, Iterator finish )
     lua_push_value<Iterator>( lua_state, start );
     lua_push_value<Iterator>( lua_state, finish );
     lua_pushcclosure( lua_state, &lua_iterator<Iterator>, 2 );
+}
+
+template <class Iterator, class Function> 
+void lua_push_iterator( lua_State* lua_state, Iterator start, Iterator finish, const Function& function )
+{
+    SWEET_ASSERT( lua_state );
+    lua_push_value<Iterator>( lua_state, start );
+    lua_push_value<Iterator>( lua_state, finish );
+    lua_push_value<Function>( lua_state, function );
+    lua_pushcclosure( lua_state, &lua_iterator_with_function<Iterator, Function>, 3 );
 }
 
 }

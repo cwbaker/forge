@@ -1,6 +1,6 @@
 //
 // Executor.hpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_BUILD_TOOL_EXECUTOR_HPP_INCLUDED
@@ -21,6 +21,13 @@ namespace thread
 {
 
 class Thread;
+
+}
+
+namespace process
+{
+
+class Process;
 
 }
 
@@ -59,7 +66,7 @@ class Executor
     private:
         static int thread_main( void* context );
         void thread_process();
-        void thread_execute( const std::string& command, const std::string& command_line, const std::string& directory, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment );
+        void thread_execute( ptr<process::Process> process, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment );
         void thread_scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment );
         void start();
         void stop();

@@ -9,7 +9,7 @@ Executable {
         "unit/libUnitTest"
     };
 
-    Cc {
+    Source {
         "main.cpp",
         "TestPointer.cpp",
         "TestPointerCast.cpp"

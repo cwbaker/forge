@@ -2,15 +2,10 @@
 Executable {
     id = "build";
 
-    Cc {
-        pch = "stdafx.hpp";
-        "Application.cpp", 
-        "main.cpp"
-    };
-    
     settings = { 
         subsystem = "CONSOLE"; 
         stack_size = 32768; 
+        architectures = { "x86_64" };
     }; 
     
     libraries = {    
@@ -33,5 +28,11 @@ Executable {
         boost_library( "boost_regex" ),
         boost_library( "boost_system" ),
         boost_library( "boost_thread" )
+    };    
+
+    Source {
+        pch = "stdafx.hpp";
+        "Application.cpp", 
+        "main.cpp"
     };    
 }

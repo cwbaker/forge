@@ -6,6 +6,8 @@
 #ifndef SWEET_POINTER_WEAK_PTR_IPP_INCLUDED
 #define SWEET_POINTER_WEAK_PTR_IPP_INCLUDED
 
+#include <algorithm>
+
 namespace sweet
 {
 

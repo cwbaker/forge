@@ -13,6 +13,8 @@
 #include <vector>
 #include <iostream>
 
+using std::string;
+using std::vector;
 using namespace sweet::build_tool;
 
 Application::Application( int argc, char** argv )
@@ -26,18 +28,17 @@ Application::Application( int argc, char** argv )
     int jobs = 0;
     int warning_level = 0;
     bool stack_trace_enabled = false;
-    std::vector<std::string> assignments;
+    std::vector<std::string> assignments_and_commands;
 
     cmdline::Parser command_line_parser;
     command_line_parser.add_options()
         ( "help", "h", "Print this message and exit", &help )
         ( "version", "v", "Print the version and exit", &version )
-        ( "filename", "f", "Set the filename of script to load", &filename )
+        ( "file", "f", "Set the script file to load", &filename )
         ( "warn", "W", "Set the warning level", &warning_level )
         ( "stack-trace", "s", "Enable stack traces in error messages", &stack_trace_enabled )
-        ( &assignments )
+        ( &assignments_and_commands )
     ;
-
     command_line_parser.parse( argc, argv );
 
     if ( version || help )
@@ -50,19 +51,39 @@ Application::Application( int argc, char** argv )
 
         if ( help )
         {
-            std::cout << "Usage: build [options] [variable=value] ... \n";
+            std::cout << "Usage: build [options] [variable=value] [command] ... \n";
             std::cout << "Options: \n";
             command_line_parser.print( stdout );
         }
     }
     else
     {
+        vector<string> assignments;
+        vector<string> commands;
+        for ( std::vector<std::string>::const_iterator i = assignments_and_commands.begin(); i != assignments_and_commands.end(); ++i )
+        {
+            std::string::size_type position = i->find( "=" );
+            if ( position == std::string::npos )
+            {
+                commands.push_back( *i );
+            }
+            else
+            {
+                assignments.push_back( *i );
+            }
+        }
+        if ( commands.empty() )
+        {
+            const char* DEFAULT_COMMAND = "default";
+            commands.push_back( DEFAULT_COMMAND );
+        }
+    
         BuildTool build_tool( directory, this );
         build_tool.set_warning_level( warning_level );
         build_tool.set_stack_trace_enabled( stack_trace_enabled );
-        build_tool.assign( assignments );
         build_tool.search_up_for_root_directory( directory );
-        build_tool.execute( filename );
+        build_tool.assign( assignments );
+        build_tool.execute( filename, commands );
     }
 }
 
@@ -98,4 +119,6 @@ void Application::build_tool_error( BuildTool* build_tool, const char* message )
     fputs( message, stderr );
     fputs( ".\n", stderr );
     fflush( stderr );
+
+    result_ = EXIT_FAILURE;
 }

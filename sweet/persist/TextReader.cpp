@@ -353,7 +353,7 @@ void TextReader::value( const char* name, wchar_t* value, size_t max )
     {
         Ucs2CharFilter char_filter;
         size_t utf8_length = attribute->string().length();
-        size_t ucs2_length = std::min( char_filter.to_memory_length(attribute->string().c_str(), attribute->string().c_str() + utf8_length), max );
+        size_t ucs2_length = std::min( static_cast<size_t>(char_filter.to_memory_length(attribute->string().c_str(), attribute->string().c_str() + utf8_length)), max );
         char_filter.to_memory( attribute->string().c_str(), attribute->string().c_str() + utf8_length, value, value + ucs2_length );
         value[max - 1] = L'\0';
     }

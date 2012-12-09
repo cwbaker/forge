@@ -38,7 +38,6 @@ struct XmlParserEventSink : public ParserEventSink<PositionIterator<istream_iter
     
     void parser_error( const ParserEventSink<PositionIterator<istream_iterator<unsigned char> >, void*, char>* parser, const char* message )    
     {
-        printf( message );
     }
 
     void begin_element( const std::string& name )

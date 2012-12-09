@@ -13,9 +13,15 @@ using namespace sweet::thread;
 // Constructor.
 */
 Mutex::Mutex()
+#if defined(BUILD_OS_WINDOWS)
 : m_locked( false )
+#endif
 {
+#if defined(BUILD_OS_WINDOWS)
     ::InitializeCriticalSection( &m_critical_section );
+#elif defined(BUILD_OS_MACOSX)
+    pthread_mutex_init( &mutex_, NULL );
+#endif
 }
 
 /**
@@ -23,8 +29,12 @@ Mutex::Mutex()
 */
 Mutex::~Mutex()
 {
+#if defined(BUILD_OS_WINDOWS)
     SWEET_ASSERT( !m_locked );
     ::DeleteCriticalSection( &m_critical_section );
+#elif defined(BUILD_OS_MACOSX)
+    pthread_mutex_destroy( &mutex_ );
+#endif
 }
 
 /**
@@ -32,8 +42,12 @@ Mutex::~Mutex()
 */
 void Mutex::lock()
 {
+#if defined(BUILD_OS_WINDOWS)
     ::EnterCriticalSection( &m_critical_section );
     m_locked = true;
+#elif defined(BUILD_OS_MACOSX)
+    pthread_mutex_lock( &mutex_ );
+#endif
 }
 
 /**
@@ -41,6 +55,17 @@ void Mutex::lock()
 */
 void Mutex::unlock()
 {
+#if defined(BUILD_OS_WINDOWS)
     m_locked = false;
     ::LeaveCriticalSection( &m_critical_section );
+#elif defined(BUILD_OS_MACOSX)
+    pthread_mutex_unlock( &mutex_ );
+#endif
 }
+
+#if defined(BUILD_OS_MACOSX)
+pthread_mutex_t* Mutex::pthread_mutex()
+{
+    return &mutex_;
+}
+#endif

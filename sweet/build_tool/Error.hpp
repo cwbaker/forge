@@ -1,6 +1,6 @@
 //
 // Error.hpp
-// Copyright (c) 2007 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_BUILD_TOOL_ERROR_HPP_INCLUDED
@@ -28,11 +28,12 @@ enum ErrorCode
     BUILD_TOOL_ERROR_SCANNED_FILE_NOT_FOUND, ///< A Target passed to a scan for a file that doesn't exist.
     BUILD_TOOL_ERROR_ENVIRONMENT_VARIABLE_NOT_FOUND, ///< An environment variable was not found.
     BUILD_TOOL_ERROR_OPERATING_SYSTEM_CALL_FAILED, ///< A call to the operating system failed.
-    BUILD_TOOL_ERROR_INVALID_BIND_TYPE, ///< An invalid BindType was passed to create a Rule or set BindType for a Target.
-    BUILD_TOOL_ERROR_RULE_CONFLICT, ///< The same Target has been created with two different Rules.
+    BUILD_TOOL_ERROR_INVALID_BIND_TYPE, ///< An invalid BindType was passed to create a TargetPrototype or set BindType for a Target.
+    BUILD_TOOL_ERROR_PROTOTYPE_CONFLICT, ///< The same Target has been created with two different TargetPrototypes.
     BUILD_TOOL_ERROR_INITAL_TARGET_NOT_FOUND, ///< The initial target passed to construct a Graph was not found.
     BUILD_TOOL_ERROR_POSTORDER_CALLED_RECURSIVELY, ///< The postorder() function has been called recursively.
-    BUILD_TOOL_ERROR_PREORDER_CALLED_RECURSIVELY ///< The preorder() function has been called recursively.
+    BUILD_TOOL_ERROR_PREORDER_CALLED_RECURSIVELY, ///< The preorder() function has been called recursively.
+    BUILD_TOOL_ERROR_NULL_SCANNER ///< A scan() call was made without passing a valid Scanner.
 };
 
 /**
@@ -76,14 +77,14 @@ typedef error::ErrorTemplate<BUILD_TOOL_ERROR_ENVIRONMENT_VARIABLE_NOT_FOUND, Er
 typedef error::ErrorTemplate<BUILD_TOOL_ERROR_OPERATING_SYSTEM_CALL_FAILED, Error> OperatingSystemCallFailedError;
 
 /**
-// An invalid BindType was passed to create a Rule or set BindType for a Target.
+// An invalid BindType was passed to create a TargetPrototype or set BindType for a Target.
 */
 typedef error::ErrorTemplate<BUILD_TOOL_ERROR_INVALID_BIND_TYPE, Error> InvalidBindTypeError;
 
 /**
-// The same Target has been created with two different Rules.
+// The same target has been created with two different prototypes.
 */
-typedef error::ErrorTemplate<BUILD_TOOL_ERROR_RULE_CONFLICT, Error> RuleConflictError;
+typedef error::ErrorTemplate<BUILD_TOOL_ERROR_PROTOTYPE_CONFLICT, Error> PrototypeConflictError;
 
 /**
 // The initial target passed to construct a Graph was not found.
@@ -98,7 +99,12 @@ typedef error::ErrorTemplate<BUILD_TOOL_ERROR_POSTORDER_CALLED_RECURSIVELY, Erro
 /**
 // The preorder() function has been called recursively.
 */
-typedef error::ErrorTemplate<BUILD_TOOL_ERROR_PREORDER_CALLED_RECURSIVELY , Error> PreorderCalledRecursivelyError;
+typedef error::ErrorTemplate<BUILD_TOOL_ERROR_PREORDER_CALLED_RECURSIVELY, Error> PreorderCalledRecursivelyError;
+
+/**
+// A scan() call was made without passing a valid Scanner.
+*/
+typedef error::ErrorTemplate<BUILD_TOOL_ERROR_NULL_SCANNER, Error> NullScannerError;
 
 }
 

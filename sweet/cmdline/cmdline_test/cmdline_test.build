@@ -9,8 +9,9 @@ Executable {
         "unit/libUnitTest"
     };
 
-    Cc {
+    Source {
         "main.cpp",
-        "TestParser.cpp"
+        "TestParser.cpp",
+        "TestSplitter.cpp"
     };
 }

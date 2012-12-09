@@ -1,12 +1,11 @@
 //
 // Environment.cpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include "Environment.hpp"
 #include "Target.hpp"
-#include "Graph.hpp"
 #include "BuildTool.hpp"
 #include "ScriptInterface.hpp"
 

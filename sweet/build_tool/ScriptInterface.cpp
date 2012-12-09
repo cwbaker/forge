@@ -7,7 +7,7 @@
 #include "ScriptInterface.hpp"
 #include "Error.hpp"
 #include "Scanner.hpp"
-#include "Rule.hpp"
+#include "TargetPrototype.hpp"
 #include "Target.hpp"
 #include "Arguments.hpp"
 #include "Graph.hpp"
@@ -15,6 +15,7 @@
 #include "Environment.hpp"
 #include "Scheduler.hpp"
 #include "OsInterface.hpp"
+#include <sweet/lua/lua_functions.ipp>
 #include <sweet/lua/filesystem.hpp>
 #include <sweet/lua/vector.hpp>
 #include <sweet/lua/ptr.hpp>
@@ -52,7 +53,7 @@ struct Deleter
         {
             SWEET_ASSERT( destroy_function_ );
             SWEET_ASSERT( script_interface_ );
-            SWEET_ASSERT( object );            
+            SWEET_ASSERT( object );       
             (script_interface_->*destroy_function_)( object );
             delete object;
         }
@@ -66,13 +67,13 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
 : os_interface_( os_interface ),
   build_tool_( build_tool ),
   lua_(),
-  rule_metatable_( lua_ ),
-  rule_prototype_( lua_ ),
+  target_prototype_metatable_( lua_ ),
+  target_prototype_prototype_( lua_ ),
   scanner_metatable_( lua_ ),
   scanner_prototype_( lua_ ),
   target_metatable_( lua_ ),
   target_prototype_( lua_ ),
-  rules_(),
+  target_prototypes_(),
   environments_(),
   root_directory_(),
   initial_directory_()
@@ -80,14 +81,13 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
     SWEET_ASSERT( os_interface_ );
     SWEET_ASSERT( build_tool_ );
 
-    rule_metatable_.members()
-        ( "__call",  raw(&ScriptInterface::target_from_graph), this )
-        ( "__index", rule_prototype_ )
+    target_prototype_metatable_.members()
+        ( "__index", target_prototype_prototype_ )
     ;
 
-    rule_prototype_.members()
-        .type( SWEET_STATIC_TYPEID(Rule) )
-        ( "id", &Rule::get_id )
+    target_prototype_prototype_.members()
+        .type( SWEET_STATIC_TYPEID(TargetPrototype) )
+        ( "id", &TargetPrototype::get_id )
     ;
 
     scanner_metatable_.members()
@@ -111,8 +111,8 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "id", &Target::get_id )
         ( "path", &Target::get_path )
         ( "directory", &Target::get_directory )
-        ( "parent", &Target::get_parent )
-        ( "rule", &Target::get_rule )
+        ( "parent", &ScriptInterface::get_parent, this, _1 )
+        ( "prototype", &Target::get_prototype )
         ( "set_bind_type", &Target::set_bind_type )
         ( "get_bind_type", &Target::get_bind_type )
         ( "set_required_to_exist", &Target::set_required_to_exist )
@@ -125,10 +125,10 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "set_filename", &Target::set_filename )
         ( "get_filename", &Target::get_filename )
         ( "set_working_directory", &Target::set_working_directory )
-        ( "get_working_directory", &Target::get_working_directory )
-        ( "get_targets", &Target::get_targets )
+        ( "get_working_directory", &ScriptInterface::get_working_directory, this, _1 )
+        ( "get_targets", raw(&ScriptInterface::get_targets), this )
         ( "add_dependency", &Target::add_dependency )
-        ( "get_dependencies", &Target::get_dependencies )
+        ( "get_dependencies", raw(&ScriptInterface::get_dependencies), this )
     ;
 
     lua_.globals()
@@ -144,14 +144,16 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "BIND_SOURCE_FILE", int(BIND_SOURCE_FILE) )
         ( "BIND_INTERMEDIATE_FILE", int(BIND_INTERMEDIATE_FILE) )
         ( "BIND_GENERATED_FILE", int(BIND_GENERATED_FILE) )        
-        ( "Rule", &ScriptInterface::rule, this )
         ( "Scanner", raw(&ScriptInterface::scanner), this )
+        ( "TargetPrototype", raw(&ScriptInterface::target_prototype__), this )
+        ( "target", raw(&ScriptInterface::target), this )
         ( "find_target", &ScriptInterface::find_target, this )
         ( "absolute", raw(&ScriptInterface::absolute_), this )
         ( "relative", raw(&ScriptInterface::relative_), this )
         ( "root", raw(&ScriptInterface::root_), this )
         ( "initial", raw(&ScriptInterface::initial_), this )
         ( "home", raw(&ScriptInterface::home_), this )
+        ( "anonymous", &ScriptInterface::anonymous, this )
         ( "is_absolute", &ScriptInterface::is_absolute, this )
         ( "is_relative", &ScriptInterface::is_relative, this )
         ( "cd", &ScriptInterface::cd, this )
@@ -169,6 +171,7 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "execute", raw(&ScriptInterface::execute), this )
         ( "scan", raw(&ScriptInterface::scan), this )
         ( "print", &ScriptInterface::print, this )
+        ( "operating_system", &ScriptInterface::operating_system, this )
         ( "hostname", &ScriptInterface::hostname, this )
         ( "whoami", &ScriptInterface::whoami, this )
         ( "exists", &ScriptInterface::exists, this )
@@ -192,6 +195,7 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "print_dependencies", &ScriptInterface::print_dependencies, this )
         ( "print_namespace", &ScriptInterface::print_namespace, this )
         ( "wait", &ScriptInterface::wait, this )
+        ( "clear", &ScriptInterface::clear, this )
         ( "load_xml", &ScriptInterface::load_xml, this )
         ( "save_xml", &ScriptInterface::save_xml, this )
         ( "load_binary", &ScriptInterface::load_binary, this )
@@ -202,22 +206,6 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
 lua::Lua& ScriptInterface::get_lua()
 {
     return lua_;
-}
-
-ptr<Rule> ScriptInterface::find_rule_by_id( const std::string& id ) const
-{
-    vector<ptr<Rule> >::const_iterator i = rules_.begin();
-    while ( i != rules_.end() && (*i)->get_id() != id )
-    {        
-        ++i;
-    }
-    
-    return i != rules_.end() ? *i : ptr<Rule>();
-}
-
-const std::vector<ptr<Rule> >& ScriptInterface::get_rules() const
-{   
-    return rules_;
 }
 
 void ScriptInterface::push_environment( ptr<Environment> environment )
@@ -264,21 +252,20 @@ const path::Path& ScriptInterface::get_initial_directory() const
     return initial_directory_;
 }
 
-void ScriptInterface::create_rule( ptr<Rule> rule )
+void ScriptInterface::create_prototype( ptr<TargetPrototype> target_prototype )
 {
-    SWEET_ASSERT( rule );
+    SWEET_ASSERT( target_prototype );
     
-    lua_.create( rule );
-    lua_.members( rule )
-        .type( SWEET_STATIC_TYPEID(Rule) )
-        .metatable( rule_metatable_ )
-        .this_pointer( rule.get() )
-        ( lua::PTR_KEYWORD, value(rule) )
+    lua_.members( target_prototype )
+        .type( SWEET_STATIC_TYPEID(TargetPrototype) )
+        .metatable( target_prototype_metatable_ )
+        .this_pointer( target_prototype.get() )
+        ( lua::PTR_KEYWORD, value(target_prototype) )
         ( "id", &Target::get_id )
         ( "path", &Target::get_path )
         ( "directory", &Target::get_directory )
-        ( "parent", &Target::get_parent )
-        ( "rule", &Target::get_rule )
+        ( "parent", &ScriptInterface::get_parent, this, _1 )
+        ( "prototype", &Target::get_prototype )
         ( "set_bind_type", &Target::set_bind_type )
         ( "get_bind_type", &Target::get_bind_type )
         ( "set_required_to_exist", &Target::set_required_to_exist )
@@ -291,21 +278,21 @@ void ScriptInterface::create_rule( ptr<Rule> rule )
         ( "set_filename", &Target::set_filename )
         ( "get_filename", &Target::get_filename )
         ( "set_working_directory", &Target::set_working_directory )
-        ( "get_working_directory", &Target::get_working_directory )
-        ( "get_targets", &Target::get_targets )
+        ( "get_working_directory", &ScriptInterface::get_working_directory, this, _1 )
+        ( "get_targets", raw(&ScriptInterface::get_targets), this )
         ( "add_dependency", &Target::add_dependency )
-        ( "get_dependencies", &Target::get_dependencies )
+        ( "get_dependencies", raw(&ScriptInterface::get_dependencies), this )
     ;
     
-    lua_.members( rule )
-        ( "__index", rule )
+    lua_.members( target_prototype )
+        ( "__index", target_prototype )
     ;
 }
 
-void ScriptInterface::destroy_rule( Rule* rule )
+void ScriptInterface::destroy_prototype( TargetPrototype* target_prototype )
 {
-    SWEET_ASSERT( rule );
-    lua_.destroy( rule );
+    SWEET_ASSERT( target_prototype );
+    lua_.destroy( target_prototype );
 }
 
 void ScriptInterface::create_scanner( ptr<Scanner> scanner )
@@ -328,9 +315,14 @@ void ScriptInterface::destroy_scanner( Scanner* scanner )
 
 void ScriptInterface::create_target( ptr<Target> target )
 {
-    SWEET_ASSERT( target );    
-    lua_.create( target );
-    recover_target( target );
+    SWEET_ASSERT( target );
+
+    if ( !target->is_referenced_by_script() )
+    {
+        lua_.create( target );
+        target->set_referenced_by_script( true );
+        recover_target( target );
+    }
 }
 
 void ScriptInterface::recover_target( ptr<Target> target )
@@ -344,23 +336,20 @@ void ScriptInterface::recover_target( ptr<Target> target )
     ;
 }
 
-void ScriptInterface::update_target( ptr<Target> target, ptr<Rule> rule )
+void ScriptInterface::update_target( ptr<Target> target, ptr<TargetPrototype> target_prototype )
 {
     SWEET_ASSERT( target );
-    if ( rule )
+    if ( target_prototype )
     {
-        lua_.members( target )
-            .metatable( rule )
-        ;
-
-        const char* INIT_FUNCTION = "init";
-        if ( lua_.is_function(target, INIT_FUNCTION) )
+        if ( target_prototype->get_bind_type() != BIND_NULL )
         {
-            Environment* environment = get_environment().get();
-            SWEET_ASSERT( environment );
-            environment->get_environment_thread().call( "init", target )
-                ( target )
-            .end();
+            lua_.members( target )
+                .metatable( target_prototype )
+            ;        
+        }
+        else
+        {
+            build_tool_->warning( "Undefined prototype '%s' for the target '%s'", target_prototype->get_id().c_str(), target->get_path().c_str() );
         }
     }
     else
@@ -380,56 +369,43 @@ void ScriptInterface::destroy_target( Target* target )
 {
     SWEET_ASSERT( target );
     lua_.destroy( target );
+    target->set_referenced_by_script( false );
 }
 
-ptr<Rule> ScriptInterface::rule( const std::string& id, int bind_type )
-{
-    if ( bind_type < BIND_PHONY || bind_type >= BIND_TYPE_COUNT )
-    {
-        SWEET_ERROR( InvalidBindTypeError("Invalid bind type (%d)", bind_type) );
-    }
+ptr<TargetPrototype> ScriptInterface::target_prototype( const std::string& id, int bind_type )
+{   
+    SWEET_ASSERT( !id.empty() );
+    SWEET_ASSERT( bind_type >= BIND_NULL && bind_type < BIND_TYPE_COUNT );
 
-    ptr<Rule> rule;    
-
-    vector<ptr<Rule> >::const_iterator i = rules_.begin(); 
-    while ( i != rules_.end() && (*i)->get_id() != id )
+    vector<ptr<TargetPrototype> >::const_iterator i = target_prototypes_.begin(); 
+    while ( i != target_prototypes_.end() && (*i)->get_id() != id )
     {
         ++i;
     }
 
-    if ( i == rules_.end() )
+    ptr<TargetPrototype> target_prototype;
+    if ( i == target_prototypes_.end() )
     {
-        rule.reset( new Rule(id, BindType(bind_type), build_tool_), Deleter<Rule>(&ScriptInterface::destroy_rule, this) );
-        rules_.push_back( rule );
-        create_rule( rule );
+        target_prototype.reset( new TargetPrototype(id, BindType(bind_type), build_tool_), Deleter<TargetPrototype>(&ScriptInterface::destroy_prototype, this) );
+        target_prototypes_.push_back( target_prototype );
     }
     else
     {
-        rule = *i;
-    }
-
-    return rule;
-}
-
-ptr<Target> ScriptInterface::target( const std::string& id, Graph* graph )
-{
-    ptr<Target> target( new Target(id, graph), Deleter<Target>(&ScriptInterface::destroy_target, this) );
-    create_target( target );
-    return target;
-}
-
-ptr<Target> ScriptInterface::target( const std::string& id, ptr<Rule> rule, Graph* graph )
-{
-    ptr<Target> target( new Target(id, graph), Deleter<Target>(&ScriptInterface::destroy_target, this) );
-    create_target( target );
-    return target;
+        target_prototype = *i;
+    }    
+    return target_prototype;
 }
 
 ptr<Target> ScriptInterface::find_target( const std::string& id )
 {
     Environment* environment = get_environment().get();
     SWEET_ASSERT( environment );
-    return build_tool_->get_graph()->find_target( id, environment->get_working_directory() );
+    ptr<Target> target = build_tool_->get_graph()->find_target( id, environment->get_working_directory() );
+    if ( target && !target->is_referenced_by_script() )
+    {
+        create_target( target );
+    }
+    return target;
 }
 
 std::string ScriptInterface::absolute( const std::string& path, const path::Path& working_directory )
@@ -498,12 +474,18 @@ std::string ScriptInterface::initial( const std::string& path ) const
 
 std::string ScriptInterface::home( const std::string& path ) const
 {
-#if defined BUILD_PLATFORM_MSVC || defined BUILD_PLATFORM_MINGW
-    const char* USERPROFILE = "USERPROFILE";
-    const char* home = ::getenv( USERPROFILE );
+#if defined (BUILD_OS_WINDOWS)
+    const char* HOME = "USERPROFILE";
+#elif defined (BUILD_OS_MACOSX)
+    const char* HOME = "HOME";
+#else
+#error "ScriptInterface::home() is not implemented for this platform"
+#endif
+    
+    const char* home = ::getenv( HOME );
     if ( !home )
     {
-        SWEET_ERROR( EnvironmentVariableNotFoundError("The environment varaible '%s' could not be found", USERPROFILE) );
+        SWEET_ERROR( EnvironmentVariableNotFoundError("The environment variable '%s' could not be found", HOME) );
     }        
     
     if ( path::Path(path).is_absolute() )
@@ -515,9 +497,17 @@ std::string ScriptInterface::home( const std::string& path ) const
     absolute_path /= path;
     absolute_path.normalize();
     return absolute_path.string();
-#else
-#error "ScriptInterface::home() is not implemented for this platform"
-#endif
+}
+
+std::string ScriptInterface::anonymous() const
+{
+    Environment* environment = get_environment().get();
+    SWEET_ASSERT( environment );
+    ptr<Target> working_directory = environment->get_working_directory();
+    SWEET_ASSERT( working_directory );
+    char anonymous [256];
+    unsigned int length = sprintf( anonymous, "$$%d", working_directory->anonymous() );
+    return string( anonymous, length );
 }
 
 bool ScriptInterface::is_absolute( const std::string& path )
@@ -664,6 +654,11 @@ void ScriptInterface::rm( const std::string& path )
     return os_interface_->rm( absolute(path) );
 }
 
+std::string ScriptInterface::operating_system()
+{
+    return os_interface_->operating_system();
+}
+
 std::string ScriptInterface::hostname()
 {
     return os_interface_->hostname();
@@ -724,199 +719,393 @@ void ScriptInterface::wait()
     build_tool_->get_scheduler()->wait();
 }
 
-bool ScriptInterface::load_xml( const std::string& filename, const std::string& initial )
+void ScriptInterface::clear()
+{
+    Environment* environment = environments_.back().get();
+    ptr<Target> working_directory = environment->get_working_directory();
+    Graph* graph = build_tool_->get_graph();
+    graph->clear();
+    working_directory = graph->target( working_directory->get_path() );
+    environment->set_working_directory( working_directory );
+}
+
+Target* ScriptInterface::load_xml( const std::string& filename )
 {
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( build_tool_->get_graph() );
 
-    bool load = true;    
-    if ( exists(filename) )
+    ptr<Target> cache_target = build_tool_->get_graph()->load_xml( absolute(filename) );
+    if ( cache_target )
     {
-        Graph* graph = build_tool_->get_graph();
-        Target* cache_target = graph->load_xml( filename );
-        if ( cache_target && !cache_target->is_outdated() )
-        {
-            ptr<Target> initial_target = graph->find_target( initial, ptr<Target>() );
-            if ( !initial_target )
-            {
-                SWEET_ERROR( InitialTargetNotFoundError("No initial target found at '%s'", initial.c_str()) );
-            }
-            graph->bind( initial_target );
-            load = false;
-        }
+        create_target( cache_target );
     }
-
-    if ( load )
-    {
-        Environment* environment = environments_.back().get();
-        ptr<Target> working_directory = environment->get_working_directory();
-        Graph* graph = build_tool_->get_graph();
-        graph->clear( filename );
-        working_directory = graph->target( working_directory->get_path() );
-        environment->set_working_directory( working_directory );
-    }
-
-    return load;
+    return cache_target.get();
 }
 
-void ScriptInterface::save_xml( const std::string& filename )
+void ScriptInterface::save_xml()
 {
     SWEET_ASSERT( build_tool_ );
-    build_tool_->get_graph()->save_xml( filename );
+    build_tool_->get_graph()->save_xml();
 }
 
-bool ScriptInterface::load_binary( const std::string& filename, const std::string& initial )
+Target* ScriptInterface::load_binary( const std::string& filename )
 {
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( build_tool_->get_graph() );
+        
+    ptr<Target> cache_target = build_tool_->get_graph()->load_binary( absolute(filename) );
+    if ( cache_target )
+    {
+        create_target( cache_target );
+    }
+    return cache_target.get();
+}
+
+void ScriptInterface::save_binary()
+{
+    SWEET_ASSERT( build_tool_ );
+    build_tool_->get_graph()->save_binary();
+}
+
+ptr<Target> ScriptInterface::get_parent( ptr<Target> target )
+{
+    SWEET_ASSERT( target );
     
-    bool load = true;    
-    if ( exists(filename) )
+    ptr<Target> parent;
+    if ( target )
     {
-        Graph* graph = build_tool_->get_graph();
-        Target* cache_target = graph->load_binary( filename );
-        if ( cache_target && !cache_target->is_outdated() )
+        parent = target->get_parent();
+        if ( parent && !parent->is_referenced_by_script() )
         {
-            ptr<Target> initial_target = graph->find_target( initial, ptr<Target>() );
-            if ( !initial_target )
-            {
-                SWEET_ERROR( InitialTargetNotFoundError("No initial target found at '%s'", initial.c_str()) );
-            }
-            graph->bind( initial_target );
-            load = false;
+            create_target( parent );
         }
     }
-
-    if ( load )
-    {
-        Environment* environment = environments_.back().get();
-        ptr<Target> working_directory = environment->get_working_directory();
-        Graph* graph = build_tool_->get_graph();
-        graph->clear( filename );
-        working_directory = graph->target( working_directory->get_path() );
-        environment->set_working_directory( working_directory );
-    }
-
-    return load;
+    return parent;
 }
 
-void ScriptInterface::save_binary( const std::string& filename )
+ptr<Target> ScriptInterface::get_working_directory( ptr<Target> target )
 {
-    SWEET_ASSERT( build_tool_ );
-    build_tool_->get_graph()->save_binary( filename );
+    SWEET_ASSERT( target );
+    
+    ptr<Target> working_directory;
+    if ( target )
+    {
+        working_directory = target->get_working_directory();
+        if ( !working_directory->is_referenced_by_script() )
+        {
+            create_target( working_directory );
+        }
+    }
+    return working_directory;
+}
+
+int ScriptInterface::target_prototype__( lua_State* lua_state )
+{
+    SWEET_ASSERT( lua_state );
+    
+    try
+    {
+        const int TARGET_PROTOTYPE_PARAMETER = 1;
+        if ( !lua_istable(lua_state, TARGET_PROTOTYPE_PARAMETER) )
+        {
+            SWEET_ERROR( lua::RuntimeError("TargetPrototype call's first and only parameter is not a table") );
+        }
+        
+        ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+        SWEET_ASSERT( script_interface );
+
+        lua_rawgeti( lua_state, TARGET_PROTOTYPE_PARAMETER, 1 );
+        if ( !lua_isstring(lua_state, -1) )
+        {
+            SWEET_ERROR( lua::RuntimeError("TargetPrototype call's table expects a string to identify the prototype in the 1st field of the table") );
+        }
+        string id = lua_tostring( lua_state, -1 );
+        lua_pop( lua_state, 1 );
+        
+        lua_rawgeti( lua_state, TARGET_PROTOTYPE_PARAMETER, 2 );
+        if ( !lua_isnumber(lua_state, -1) )
+        {
+            SWEET_ERROR( lua::RuntimeError("TargetPrototype call's table expects a bind type in the 2nd field of the table") );
+        }
+        int bind_type = lua_tointeger( lua_state, -1 );
+        lua_pop( lua_state, 1 );
+        
+        if ( bind_type < BIND_PHONY || bind_type >= BIND_TYPE_COUNT )
+        {
+            SWEET_ERROR( InvalidBindTypeError("Invalid bind type (%d)", bind_type) );
+        }
+
+        ptr<TargetPrototype> target_prototype = script_interface->target_prototype( id, bind_type );
+        SWEET_ASSERT( target_prototype );        
+        lua_pushvalue( lua_state, TARGET_PROTOTYPE_PARAMETER );
+        lua_create_object_with_existing_table( lua_state, target_prototype.get() );
+        script_interface->create_prototype( target_prototype );
+
+        LuaConverter<ptr<TargetPrototype> >::push( lua_state, target_prototype );
+        return 1;
+    }
+    
+    catch ( const std::exception& exception )
+    {
+        lua_pushstring( lua_state, exception.what() );
+        return lua_error( lua_state );
+    }
+}
+
+struct GetTargetsTargetReferencedByScript
+{
+    ScriptInterface* script_interface_;
+    
+    GetTargetsTargetReferencedByScript( ScriptInterface* script_interface )
+    : script_interface_( script_interface )
+    {
+        SWEET_ASSERT( script_interface_ );
+    }
+    
+    bool operator()( ptr<Target> target ) const
+    {
+        SWEET_ASSERT( target );
+        if ( !target->is_referenced_by_script() )
+        {
+            script_interface_->create_target( target );
+        }
+        return true;
+    }
+};
+
+int ScriptInterface::get_targets( lua_State* lua_state )
+{
+    SWEET_ASSERT( lua_state );
+
+    try
+    {
+        ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+        SWEET_ASSERT( script_interface );
+
+        const int TARGET_PARAMETER = 1;
+        ptr<Target> target = LuaConverter<ptr<Target> >::to( lua_state, TARGET_PARAMETER );
+        if ( !target )
+        {
+            SWEET_ERROR( lua::RuntimeError("Target is null when iterating over children") );
+        }
+
+        const vector<ptr<Target> >& dependencies = target->get_targets();
+        lua_push_iterator( lua_state, dependencies.begin(), dependencies.end(), GetTargetsTargetReferencedByScript(script_interface) );
+        return 1;
+    }
+
+    catch ( const std::exception& exception )
+    {
+        lua_pushstring( lua_state, exception.what() );
+        return lua_error( lua_state );        
+    }
+}
+
+struct GetDependenciesTargetReferencedByScript
+{
+    ScriptInterface* script_interface_;
+    
+    GetDependenciesTargetReferencedByScript( ScriptInterface* script_interface )
+    : script_interface_( script_interface )
+    {
+        SWEET_ASSERT( script_interface_ );
+    }
+    
+    bool operator()( Target* target ) const
+    {
+        SWEET_ASSERT( target );
+        if ( !target->is_referenced_by_script() )
+        {
+            script_interface_->create_target( target->ptr_from_this() );
+        }
+        return true;
+    }
+};
+
+int ScriptInterface::get_dependencies( lua_State* lua_state )
+{
+    SWEET_ASSERT( lua_state );
+
+    try
+    {
+        ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+        SWEET_ASSERT( script_interface );
+
+        const int TARGET_PARAMETER = 1;
+        ptr<Target> target = LuaConverter<ptr<Target> >::to( lua_state, TARGET_PARAMETER );
+        if ( !target )
+        {
+            SWEET_ERROR( lua::RuntimeError("Target is null when iterating over dependencies") );
+        }
+
+        const vector<Target*>& dependencies = target->get_dependencies();
+        lua_push_iterator( lua_state, dependencies.begin(), dependencies.end(), GetDependenciesTargetReferencedByScript(script_interface) );
+        return 1;
+    }
+
+    catch ( const std::exception& exception )
+    {
+        lua_pushstring( lua_state, exception.what() );
+        return lua_error( lua_state );        
+    }
 }
 
 int ScriptInterface::absolute_( lua_State* lua_state )
 {
     SWEET_ASSERT( lua_state );
 
-    const int PATH = 1;
-    if ( lua_type(lua_state, PATH) != LUA_TSTRING )
+    try
     {
-        SWEET_ERROR( lua::RuntimeError("The first parameter of 'absolute()' is not a string as expected") );
-    }
-    std::string path = lua_tostring( lua_state, PATH );
-    
-    const int WORKING_DIRECTORY = 2;
-    path::Path working_directory;    
-    if ( !lua_isnoneornil(lua_state, WORKING_DIRECTORY) )
-    {
-        if ( lua_type(lua_state, WORKING_DIRECTORY) != LUA_TSTRING )
+        const int PATH = 1;
+        if ( lua_type(lua_state, PATH) != LUA_TSTRING )
         {
-            SWEET_ERROR( lua::RuntimeError("The second parameter of 'absolute()' is not a string as expected") );
+            SWEET_ERROR( lua::RuntimeError("The first parameter of 'absolute()' is not a string as expected") );
         }
-        working_directory = path::Path( lua_tostring(lua_state, WORKING_DIRECTORY) );
+        std::string path = lua_tostring( lua_state, PATH );
+        
+        const int WORKING_DIRECTORY = 2;
+        path::Path working_directory;    
+        if ( !lua_isnoneornil(lua_state, WORKING_DIRECTORY) )
+        {
+            if ( lua_type(lua_state, WORKING_DIRECTORY) != LUA_TSTRING )
+            {
+                SWEET_ERROR( lua::RuntimeError("The second parameter of 'absolute()' is not a string as expected") );
+            }
+            working_directory = path::Path( lua_tostring(lua_state, WORKING_DIRECTORY) );
+        }
+        
+        ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+        SWEET_ASSERT( script_interface );
+        std::string absolute_path = script_interface->absolute( path, working_directory );
+        lua_pushlstring( lua_state, absolute_path.c_str(), absolute_path.length() );
+        return 1;
     }
-    
-    ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( script_interface );
-    std::string absolute_path = script_interface->absolute( path, working_directory );
-    lua_pushlstring( lua_state, absolute_path.c_str(), absolute_path.length() );
-    return 1;
+
+    catch ( const std::exception& exception )
+    {
+        lua_pushstring( lua_state, exception.what() );
+        return lua_error( lua_state );        
+    }
 }
 
 int ScriptInterface::relative_( lua_State* lua_state )
 {
     SWEET_ASSERT( lua_state );
 
-    const int PATH = 1;
-    const int WORKING_DIRECTORY = 2;
+    try
+    {
+        const int PATH = 1;
+        const int WORKING_DIRECTORY = 2;
 
-    if ( lua_type(lua_state, PATH) != LUA_TSTRING )
-    {
-        SWEET_ERROR( lua::RuntimeError("The first parameter of 'relative()' is not a string as expected") );
-    }
-    std::string path = lua_tostring( lua_state, PATH );
-    
-    path::Path working_directory;    
-    if ( !lua_isnoneornil(lua_state, WORKING_DIRECTORY) )
-    {
-        if ( lua_type(lua_state, WORKING_DIRECTORY) != LUA_TSTRING )
+        if ( lua_type(lua_state, PATH) != LUA_TSTRING )
         {
-            SWEET_ERROR( lua::RuntimeError("The second parameter of 'relative()' is not a string as expected") );
+            SWEET_ERROR( lua::RuntimeError("The first parameter of 'relative()' is not a string as expected") );
         }
-        working_directory = path::Path( lua_tostring(lua_state, WORKING_DIRECTORY) );
+        std::string path = lua_tostring( lua_state, PATH );
+        
+        path::Path working_directory;    
+        if ( !lua_isnoneornil(lua_state, WORKING_DIRECTORY) )
+        {
+            if ( lua_type(lua_state, WORKING_DIRECTORY) != LUA_TSTRING )
+            {
+                SWEET_ERROR( lua::RuntimeError("The second parameter of 'relative()' is not a string as expected") );
+            }
+            working_directory = path::Path( lua_tostring(lua_state, WORKING_DIRECTORY) );
+        }
+        
+        ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+        SWEET_ASSERT( script_interface );
+        std::string relative_path = script_interface->relative( path, working_directory );
+        lua_pushlstring( lua_state, relative_path.c_str(), relative_path.length() );
+        return 1;
     }
-    
-    ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( script_interface );
-    std::string relative_path = script_interface->relative( path, working_directory );
-    lua_pushlstring( lua_state, relative_path.c_str(), relative_path.length() );
-    return 1;
+
+    catch ( const std::exception& exception )
+    {
+        lua_pushstring( lua_state, exception.what() );
+        return lua_error( lua_state );        
+    }
 }
 
 int ScriptInterface::root_( lua_State* lua_state )
 {
     SWEET_ASSERT( lua_state );
 
-    std::string path;
-    if ( lua_gettop(lua_state) > 0 && !lua_isnoneornil(lua_state, -1) )
+    try
     {
-        path = lua_tostring( lua_state, -1 );
-        lua_pop( lua_state, 1 );
+        std::string path;
+        if ( lua_gettop(lua_state) > 0 && !lua_isnoneornil(lua_state, -1) )
+        {
+            path = LuaConverter<std::string>::to( lua_state, -1 );        
+            lua_pop( lua_state, 1 );
+        }
+        
+        ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+        SWEET_ASSERT( script_interface );
+        std::string absolute_path = script_interface->root( path );
+        lua_pushlstring( lua_state, absolute_path.c_str(), absolute_path.length() );
+        return 1;
     }
-    
-    ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( script_interface );
-    std::string absolute_path = script_interface->root( path );
-    lua_pushlstring( lua_state, absolute_path.c_str(), absolute_path.length() );
-    return 1;
+
+    catch ( const std::exception& exception )
+    {
+        lua_pushstring( lua_state, exception.what() );
+        return lua_error( lua_state );        
+    }
 }
 
 int ScriptInterface::initial_( lua_State* lua_state )
 {
     SWEET_ASSERT( lua_state );
 
-    std::string path;
-    if ( lua_gettop(lua_state) > 0 && !lua_isnoneornil(lua_state, -1) )
+    try
     {
-        path = lua_tostring( lua_state, -1 );
-        lua_pop( lua_state, 1 );
+        std::string path;
+        if ( lua_gettop(lua_state) > 0 && !lua_isnoneornil(lua_state, -1) )
+        {
+            path = LuaConverter<std::string>::to( lua_state, -1 );        
+            lua_pop( lua_state, 1 );
+        }
+        
+        ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+        SWEET_ASSERT( script_interface );
+        std::string absolute_path = script_interface->initial( path );
+        lua_pushlstring( lua_state, absolute_path.c_str(), absolute_path.length() );
+        return 1;
     }
-    
-    ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( script_interface != NULL );
-    std::string absolute_path = script_interface->initial( path );
-    lua_pushlstring( lua_state, absolute_path.c_str(), absolute_path.length() );
-    return 1;
+
+    catch ( const std::exception& exception )
+    {
+        lua_pushstring( lua_state, exception.what() );
+        return lua_error( lua_state );        
+    }
 }
 
 int ScriptInterface::home_( lua_State* lua_state )
 {
     SWEET_ASSERT( lua_state );
 
-    std::string path;
-    if ( lua_gettop(lua_state) > 0 && !lua_isnoneornil(lua_state, -1) )
+    try
     {
-        path = lua_tostring( lua_state, -1 );
-        lua_pop( lua_state, 1 );
+        std::string path;
+        if ( lua_gettop(lua_state) > 0 && !lua_isnoneornil(lua_state, -1) )
+        {
+            path = LuaConverter<std::string>::to( lua_state, -1 );        
+            lua_pop( lua_state, 1 );
+        }
+        
+        ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+        SWEET_ASSERT( script_interface );
+        std::string absolute_path = script_interface->home( path );
+        lua_pushlstring( lua_state, absolute_path.c_str(), absolute_path.length() );
+        return 1;
     }
-    
-    ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( script_interface != NULL );
-    std::string absolute_path = script_interface->home( path );
-    lua_pushlstring( lua_state, absolute_path.c_str(), absolute_path.length() );
-    return 1;
+
+    catch ( const std::exception& exception )
+    {
+        lua_pushstring( lua_state, exception.what() );
+        return lua_error( lua_state );        
+    }
 }
 
 int ScriptInterface::getenv_( lua_State* lua_state )
@@ -949,11 +1138,11 @@ int ScriptInterface::getenv_( lua_State* lua_state )
     return 1;
 }
 
-int ScriptInterface::target_from_graph( lua_State* lua_state )
-{   
+int ScriptInterface::target( lua_State* lua_state )
+{
     SWEET_ASSERT( lua_state );
     
-    try 
+    try
     {
         ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
         SWEET_ASSERT( script_interface );
@@ -967,73 +1156,57 @@ int ScriptInterface::target_from_graph( lua_State* lua_state )
         ptr<Target> working_directory = environment->get_working_directory();
         SWEET_ASSERT( working_directory );
 
-        const int RULE_PARAMETER = 1;
-        ptr<Rule> rule = LuaConverter<ptr<Rule> >::to( lua_state, 1 );
-        if ( !rule )
+        const int ID_PARAMETER = 1;
+        bool anonymous = false;
+        string id = LuaConverter<string>::to( lua_state, ID_PARAMETER );
+        if ( id.empty() )
         {
-            SWEET_ERROR( lua::RuntimeError("Rule is null when constructing a target") );
+            anonymous = true;
+            id = script_interface->anonymous();
         }
 
-        const int TARGET_OR_ID_PARAMETER = 2;
-        if ( lua_istable(lua_state, TARGET_OR_ID_PARAMETER) )
-        {        
-            //
-            // Target constructors that are passed a table argument are 
-            // ignored if the graph has been loaded from cache.  This is 
-            // because these targets are assumed to be creating targets 
-            // during a buildfile load that will have already been loaded 
-            // from the cache.
-            //
-            if ( !script_interface->build_tool_->get_graph()->is_loaded_from_cache() )
-            {
-                string id;
-                lua_getfield( lua_state, TARGET_OR_ID_PARAMETER, "id" );
-                if ( !lua_isnil(lua_state, -1) )
+        const int PROTOTYPE_PARAMETER = 2;
+        ptr<TargetPrototype> target_prototype = LuaConverter<ptr<TargetPrototype> >::to( lua_state, PROTOTYPE_PARAMETER );
+
+        ptr<Target> target = graph->target( id, target_prototype, working_directory );        
+        if ( !target->is_referenced_by_script() )
+        {
+            const int TABLE_PARAMETER = 3;
+            if ( !lua_isnoneornil(lua_state, TABLE_PARAMETER) )
+            {        
+                if ( !lua_istable(lua_state, TABLE_PARAMETER) )
                 {
-                    if ( !lua_isstring(lua_state, -1) )
-                    {
-                        SWEET_ERROR( lua::RuntimeError("Target id is not a string when constructing a target") );
-                    }
-                    id = lua_tostring( lua_state, -1 );
+                    SWEET_ERROR( lua::RuntimeError("Table or nothing expected as third parameter when creating a target") );
                 }
-                lua_pop( lua_state, 1 );
-
-                lua_pushstring( lua_state, "id" );
-                lua_pushnil( lua_state );
-                lua_rawset( lua_state, TARGET_OR_ID_PARAMETER );
-
-                ptr<Target> target( new Target(id, graph) );
-                graph->insert_target( target, environment->get_working_directory() );
-                lua_pushvalue( lua_state, TARGET_OR_ID_PARAMETER );
+                
+                lua_pushvalue( lua_state, TABLE_PARAMETER );
                 lua_create_object_with_existing_table( lua_state, target.get() );
-                script_interface->recover_target( target );
-                target->set_rule( rule );
+                target->set_referenced_by_script( true );
+            // @todo
+            //  I don't think I need to call Target::set_prototype() from 
+            //  ScriptInterface::target() when a Target has just been created
+            //  because the Graph will have set the TargetPrototype when it created the
+            //  Target and it will be setup correctly in the script when 
+            //  ScriptInterface::update_target() is called a bit later on.
+                target->set_prototype( target_prototype );
                 target->set_working_directory( working_directory );
-
-                if ( !id.empty() )
+                script_interface->recover_target( target );
+                script_interface->update_target( target, target_prototype );
+                
+                if ( !anonymous )
                 {
                     working_directory->add_dependency( target );
                 }
             }
-            else            
+            else
             {
-                lua_pushnil( lua_state );
+                script_interface->create_target( target );
+                script_interface->recover_target( target );
+                script_interface->update_target( target, target_prototype );
             }
         }
-        else if ( lua_isstring(lua_state, TARGET_OR_ID_PARAMETER) )
-        {
-            string id = lua_tostring( lua_state, -1 );
-            lua_pop( lua_state, 1 );
-            ptr<Target> target = graph->target( id, rule, working_directory );
-            LuaConverter<ptr<Target> >::push( lua_state, target );
-        }
-        else if ( lua_isnoneornil(lua_state, TARGET_OR_ID_PARAMETER) )
-        {
-            string id;
-            ptr<Target> target = graph->target( id, rule, working_directory );
-            LuaConverter<ptr<Target> >::push( lua_state, target );
-        }
-
+        
+        LuaConverter<ptr<Target> >::push( lua_state, target );        
         return 1;
     }
 
@@ -1203,6 +1376,10 @@ int ScriptInterface::scan( lua_State* lua_state )
         {
             const int SCANNER_PROTOTYPE_PARAMETER = 2;
             ptr<Scanner> scanner = LuaConverter<ptr<Scanner> >::to( lua_state, SCANNER_PROTOTYPE_PARAMETER );
+            if ( !scanner )
+            {
+                SWEET_ERROR( NullScannerError("The scan() function was called on '%s' without a valid Scanner", target->get_filename().c_str()) );
+            }
 
             const int ARGUMENTS_PARAMETER = 3;
             ptr<Arguments> arguments;

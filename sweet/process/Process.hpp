@@ -8,6 +8,10 @@
 
 #include "declspec.hpp"
 
+#if defined(BUILD_OS_MACOSX)
+#include <sys/types.h>
+#endif
+
 namespace sweet
 {
 
@@ -23,15 +27,23 @@ enum ProcessFlags
     PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR = 0x02
 };
 
-
 /**
 // An operating system process.
 */
 class SWEET_PROCESS_DECLSPEC Process
 {
     int flags_; ///< The ProcessFlags for this Process.
+
+#if defined(BUILD_OS_WINDOWS)
     void* process_; ///< The handle to this Process.
     void* stdout_; ///< The handle to the pipe used to read from stdout and stderr for this Process.
+#endif
+
+#if defined(BUILD_OS_MACOSX)
+    pid_t process_;
+    int stdout_;
+    int exit_code_;
+#endif
 
     public:
         Process();

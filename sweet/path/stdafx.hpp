@@ -12,5 +12,6 @@
 
 #include <sweet/assert/assert.hpp>
 
+#if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
-
+#endif

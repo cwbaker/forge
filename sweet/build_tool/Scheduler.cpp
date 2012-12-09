@@ -1,6 +1,6 @@
 //
 // Scheduler.cpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -60,11 +60,19 @@ bool Scheduler::is_traversing() const
     return traversing_;
 }
 
-void Scheduler::execute( const path::Path& path )
+void Scheduler::load( const path::Path& path )
 {
     buildfile( path );
     while ( dispatch_results() )
     {        
+    }
+}
+
+void Scheduler::command( const path::Path& path, const std::string& function )
+{
+    call( path, function );
+    while ( dispatch_results() )
+    {
     }
 }
 
@@ -118,6 +126,28 @@ void Scheduler::buildfile( const path::Path& path )
     }    
 }
 
+void Scheduler::call( const path::Path& path, const std::string& function )
+{
+    if ( !function.empty() )
+    {
+        ptr<Environment> environment = allocate_environment( build_tool_->get_graph()->target(path.branch().string()) );
+
+        try
+        {
+            process_begin( environment );
+            environment->get_environment_thread().resume( function.c_str() )
+            .end();
+            process_end( environment );
+        }
+
+        catch ( const std::exception& exception )
+        {
+            build_tool_->error( "%s", exception.what() );
+            destroy_environment( environment );
+        }
+    }
+}
+
 void Scheduler::preorder_visit( const lua::LuaValue& function, ptr<Target> target )
 {
     SWEET_ASSERT( target );
@@ -127,7 +157,7 @@ void Scheduler::preorder_visit( const lua::LuaValue& function, ptr<Target> targe
     try
     {
         process_begin( environment );
-        environment->get_environment_thread().call( function )
+        environment->get_environment_thread().resume( function )
             ( target )
         .end();
         process_end( environment );
@@ -325,15 +355,15 @@ void Scheduler::push_scan_finished()
 void Scheduler::execute( const std::string& command, const std::string& command_line, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Environment> environment )
 {
     thread::ScopedLock lock( results_mutex_ );
-    ++jobs_;
     build_tool_->get_executor()->execute( command, command_line, scanner, arguments, environment );
+    ++jobs_;
 }
 
 void Scheduler::scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment )
 {
     thread::ScopedLock lock( results_mutex_ );
-    ++jobs_;
     build_tool_->get_executor()->scan( target, scanner, arguments, working_directory, environment );
+    ++jobs_;
 }
 
 void Scheduler::wait()
@@ -368,7 +398,7 @@ int Scheduler::preorder( const lua::LuaValue& function, ptr<Target> target )
             if ( !target->is_visited() )
             {
                 target->set_visited( true );
-                if ( target->get_working_directory() )
+                if ( target->is_referenced_by_script() && target->get_working_directory() )
                 {
                     Scheduler* scheduler = build_tool_->get_scheduler();
                     scheduler->preorder_visit( function_, target->ptr_from_this() );
@@ -514,7 +544,7 @@ int Scheduler::postorder( const lua::LuaValue& function, ptr<Target> target )
                     }
                 }
 
-                if ( target->get_working_directory() )
+                if ( target->is_referenced_by_script() && target->get_working_directory() )
                 {
                     target->set_height( height );
                     jobs_.push_back( Job(target, height) );
@@ -598,6 +628,8 @@ void Scheduler::free_environment( ptr<Environment> environment )
 void Scheduler::destroy_environment( ptr<Environment> environment )
 {
     SWEET_ASSERT( environment );
+
+    build_tool_->get_script_interface()->pop_environment();
 
     Job* job = environment->get_job();
     if ( job )

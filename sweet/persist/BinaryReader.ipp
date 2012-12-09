@@ -106,14 +106,14 @@ void BinaryReader::read( std::istream& istream, const char* name, const char* ch
 template <class Type> 
 void BinaryReader::enter( const char* format, int version, Type& object )
 {
-    Reader::enter( format, version, object );
+    Reader<BinaryReader>::enter( format, version, object );
     m_resolver.enter( format, version, object );
 }
 
 template <class Type> 
 void BinaryReader::declare( const char* name, int flags )
 {
-    Reader::declare<Type>( name, flags );
+    Reader<BinaryReader>::declare<Type>( name, flags );
     m_resolver.declare<Type>( name, flags );
 }
 

@@ -1,7 +1,3 @@
-//
-// TestParser.cpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
 
 #include <sweet/unit/UnitTest.h>
 #include <sweet/cmdline/Parser.hpp>

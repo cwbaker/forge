@@ -1,6 +1,6 @@
 //
 // Target.hpp
-// Copyright (c) 2007 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_BUILD_TOOL_TARGET_HPP_INCLUDED
@@ -21,20 +21,20 @@ namespace sweet
 namespace build_tool
 {
 
-class Rule;
+class TargetPrototype;
 class Graph;
 class BuildTool;
 
 /**
 // A Target.
 */
-class SWEET_BUILD_TOOL_DECLSPEC Target : public enable_ptr_from_this<Target>
+class SWEET_BUILD_TOOL_DECLSPEC Target : public pointer::enable_ptr_from_this<Target>
 {
     std::string id_; ///< The identifier of this Target.
     mutable std::string path_; ///< The full path to this Target in the Target namespace.
     mutable std::string directory_; ///< The branch path to this Target in the Target namespace.
     Graph* graph_; ///< The Graph that this Target is part of.
-    ptr<Rule> rule_; ///< The Rule for this Target or null if this Target has no Rule.
+    ptr<TargetPrototype> prototype_; ///< The TargetPrototype for this Target or null if this Target has no TargetPrototype.
     int bind_type_; ///< How this Target should bind to files.
     std::time_t timestamp_; ///< The timestamp for this Target.
     std::time_t last_write_time_; ///< The last write time of the file that this Target is bound to.
@@ -43,6 +43,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public enable_ptr_from_this<Target>
     bool changed_; ///< Whether or not this Target's timestamp has changed since the last time it was bound to a file.
     bool bound_to_file_; ///< Whether or not this Target is bound to a file.
     bool bound_to_dependencies_; ///< Whether or not this Target is bound to its dependencies.
+    bool referenced_by_script_; ///< Whether or not this Target is referenced by a scripting object.  
     bool required_to_exist_; ///< Whether or not this Target is required to be bound to an existing file.
     std::string filename_; ///< The filename of this Target.
     weak_ptr<Target> working_directory_; ///< The Target that relative paths expressed when this Target is visited are relative to.
@@ -53,6 +54,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public enable_ptr_from_this<Target>
     int visited_revision_; ///< The visited revision the last time this Target was visited.
     int successful_revision_; ///< The successful revision the last time this Target was successfully visited.
     int height_; ///< The height of this Target in the current or most recent dependency graph traversal.
+    int anonymous_; ///< The anonymous index for this Target that will generate the next anonymous identifier requested from this Target.
 
     public:
         Target();
@@ -64,8 +66,8 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public enable_ptr_from_this<Target>
         const std::string& get_directory() const;
         Graph* get_graph() const;
 
-        void set_rule( ptr<Rule> rule );
-        ptr<Rule> get_rule() const;
+        void set_prototype( ptr<TargetPrototype> target_prototype );
+        ptr<TargetPrototype> get_prototype() const;
 
         void set_bind_type( int bind_type );
         int get_bind_type() const;
@@ -76,6 +78,9 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public enable_ptr_from_this<Target>
         void bind_as_source_file();
         void bind_as_intermediate_file();
         void bind_as_generated_file();
+
+        void set_referenced_by_script( bool referenced_by_script );
+        bool is_referenced_by_script() const;
 
         void set_required_to_exist( bool required_to_exist );
         bool is_required_to_exist() const;
@@ -123,6 +128,8 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public enable_ptr_from_this<Target>
 
         void set_height( int height );
         int get_height() const;
+        
+        int anonymous();
 
         template <class Archive> void persist( Archive& archive );
 };

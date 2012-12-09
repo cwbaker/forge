@@ -3,6 +3,7 @@
 #include "FileChecker.hpp"
 #include <sweet/assert/assert.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <fstream>
 
 using std::vector;
 using namespace sweet::build_tool;

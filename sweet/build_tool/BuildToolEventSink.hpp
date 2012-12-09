@@ -1,6 +1,6 @@
 //
 // BuildToolEventSink.hpp
-// Copyright (c) 2010 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2010 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_BUILD_TOOL_BUILDTOOLEVENTSINK_HPP_INCLUDED

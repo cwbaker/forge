@@ -6,9 +6,12 @@
 #include "stdafx.hpp"
 #include "assert.hpp"
 #include <sweet/build.hpp>
-#include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#if defined(BUILD_OS_WINDOWS)
+#include <windows.h>
+#endif
 
 namespace sweet
 {
@@ -21,7 +24,9 @@ namespace assert
 */
 void sweet_break()
 {
+#if defined(BUILD_OS_WINDOWS)
     DebugBreak();
+#endif
 }
 
 /**
@@ -39,8 +44,8 @@ void sweet_break()
 */
 void sweet_assert( bool expression, const char* description, const char* file, int line )
 {
+#if defined(BUILD_OS_WINDOWS)
     int error = ::GetLastError();
-
     if ( !expression )
     {
         char message [1024];
@@ -48,8 +53,8 @@ void sweet_assert( bool expression, const char* description, const char* file, i
         message[sizeof(message) - 1] = 0;
         ::fputs( message, stderr );
     }
-
     ::SetLastError( error );
+#endif
 }
 
 }

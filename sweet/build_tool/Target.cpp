@@ -1,12 +1,12 @@
 //
 // Target.cpp
-// Copyright (c) 2007 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include "Target.hpp"
 #include "Error.hpp"
-#include "Rule.hpp"
+#include "TargetPrototype.hpp"
 #include "Graph.hpp"
 #include "BuildTool.hpp"
 #include "ScriptInterface.hpp"
@@ -21,12 +21,12 @@ using namespace sweet::build_tool;
 // Constructor.
 */
 Target::Target()
-: enable_ptr_from_this(),
+: pointer::enable_ptr_from_this<Target>(),
   id_(),
   path_(),
   directory_(),
   graph_( NULL ),
-  rule_(),
+  prototype_(),
   bind_type_( BIND_NULL ),
   timestamp_( 0 ),
   last_write_time_( 0 ),
@@ -35,6 +35,7 @@ Target::Target()
   changed_( false ),
   bound_to_file_( false ),
   bound_to_dependencies_( false ),
+  referenced_by_script_( false ),
   required_to_exist_( false ),
   filename_(),
   working_directory_(),
@@ -44,7 +45,8 @@ Target::Target()
   visiting_( false ),
   visited_revision_( 0 ),
   successful_revision_( 0 ),
-  height_( -1 )
+  height_( -1 ),
+  anonymous_( 0 )
 {
 }
 
@@ -58,12 +60,12 @@ Target::Target()
 //  The Graph that this Target is part of.
 */
 Target::Target( const std::string& id, Graph* graph )
-: enable_ptr_from_this(),
+: pointer::enable_ptr_from_this<Target>(),
   id_( id ),
   path_(),
   directory_(),
   graph_( graph ),
-  rule_(),
+  prototype_(),
   bind_type_( BIND_NULL ),
   timestamp_( 0 ),
   last_write_time_( 0 ),
@@ -72,6 +74,7 @@ Target::Target( const std::string& id, Graph* graph )
   changed_( false ),
   bound_to_file_( false ),
   bound_to_dependencies_( false ),
+  referenced_by_script_( false ),
   required_to_exist_( false ),
   filename_(),
   working_directory_(),
@@ -81,7 +84,8 @@ Target::Target( const std::string& id, Graph* graph )
   visiting_( false ),
   visited_revision_( 0 ),
   successful_revision_( 0 ),
-  height_( -1 )
+  height_( -1 ),
+  anonymous_( 0 )
 {
     SWEET_ASSERT( graph_ );
 }
@@ -95,11 +99,15 @@ Target::Target( const std::string& id, Graph* graph )
 void Target::recover( Graph* graph )
 {
     SWEET_ASSERT( graph );    
-    SWEET_ASSERT( !graph_ );
+    SWEET_ASSERT( graph_ == NULL || graph_ == graph );
+
     graph_ = graph;
 
-    graph->get_build_tool()->get_script_interface()->recover_target( ptr_from_this() );
-    graph->get_build_tool()->get_script_interface()->update_target( ptr_from_this(), get_rule() );
+    if ( referenced_by_script_ )
+    {
+        graph->get_build_tool()->get_script_interface()->recover_target( ptr_from_this() );
+        graph->get_build_tool()->get_script_interface()->update_target( ptr_from_this(), get_prototype() );
+    }
 
     for ( vector<ptr<Target> >::const_iterator i = targets_.begin(); i != targets_.end(); ++i )
     {
@@ -109,7 +117,6 @@ void Target::recover( Graph* graph )
         target->recover( graph );
     }
 }
-
 
 /**
 // Get the id of this Target.
@@ -195,31 +202,34 @@ Graph* Target::get_graph() const
 }
 
 /**
-// Set the Rule for this Target.
+// Set the TargetPrototype for this Target.
 //
-// @param rule
-//  The Rule to set this Target to have or null to set this Target to have
-//  no Rule.
+// @param target_prototype
+//  The TargetPrototype to set this Target to have or null to set this Target to have
+//  no TargetPrototype.
 */
-void Target::set_rule( ptr<Rule> rule )
+void Target::set_prototype( ptr<TargetPrototype> target_prototype )
 {
-    SWEET_ASSERT( !rule_ || rule_ == rule );    
-    if ( !rule_ || rule_ != rule )
+    SWEET_ASSERT( !prototype_ || prototype_ == target_prototype );    
+    if ( !prototype_ || prototype_ != target_prototype )
     {
-        rule_ = rule;
-        graph_->get_build_tool()->get_script_interface()->update_target( ptr_from_this(), rule );
+        prototype_ = target_prototype;
+        if ( is_referenced_by_script() )
+        {
+            graph_->get_build_tool()->get_script_interface()->update_target( ptr_from_this(), target_prototype );
+        }
     }
 }
 
 /**
-// Get the Rule for this Target.
+// Get the TargetPrototype for this Target.
 //
 // @return
-//  The Rule or null if this Target has no Rule.
+//  The TargetPrototype or null if this Target has no TargetPrototype.
 */
-ptr<Rule> Target::get_rule() const
+ptr<TargetPrototype> Target::get_prototype() const
 {
-    return rule_;
+    return prototype_;
 }
 
 /**
@@ -247,7 +257,7 @@ void Target::set_bind_type( int bind_type )
 */
 int Target::get_bind_type() const
 {
-    return bind_type_ == BIND_NULL && rule_ ? rule_->get_bind_type() : bind_type_;
+    return bind_type_ == BIND_NULL && prototype_ ? prototype_->get_bind_type() : bind_type_;
 }
 
 /**
@@ -439,7 +449,6 @@ void Target::bind_as_intermediate_file()
     }
 }
 
-
 /**
 // Bind this Target to a generated file.
 //
@@ -468,6 +477,32 @@ void Target::bind_as_generated_file()
         
         bound_to_dependencies_ = true;
     }
+}
+
+/**
+// Set whether or not this Target is referenced by a scripting object.
+//
+// Targets that are referenced by scripting objects are passed to the 
+// scripting interface for additional clean up when they are destroyed.
+//
+// @param referenced_by_script
+//  True to set this Target as being referenced by a scripting object or false
+//  otherwise.
+*/
+void Target::set_referenced_by_script( bool referenced_by_script )
+{
+    referenced_by_script_ = referenced_by_script;
+}
+
+/**
+// Is this Target referenced by a scripting object?
+//
+// @return
+//  True if this Target is referenced by a scripting object otherwise false.
+*/
+bool Target::is_referenced_by_script() const
+{
+    return referenced_by_script_;
 }
 
 /**
@@ -846,9 +881,9 @@ std::string Target::generate_failed_dependencies_message() const
     {
         message += "'" + get_id() + "'";
     }
-    else if ( get_rule() != 0 )
+    else if ( get_prototype() != 0 )
     {
-        message += get_rule()->get_id();
+        message += get_prototype()->get_id();
     }
     else
     {
@@ -878,9 +913,9 @@ std::string Target::generate_failed_dependencies_message() const
         {
             message += "'" + dependency->get_id() + "'";
         }
-        else if ( dependency->get_rule() != 0 )
+        else if ( dependency->get_prototype() != 0 )
         {
-            message += dependency->get_rule()->get_id();
+            message += dependency->get_prototype()->get_id();
         }
         else
         {
@@ -904,9 +939,9 @@ std::string Target::generate_failed_dependencies_message() const
             {
                 message += ", '" + dependency->get_id() + "'";
             }
-            else if ( dependency->get_rule() != 0 )
+            else if ( dependency->get_prototype() != 0 )
             {
-                message += ", " + dependency->get_rule()->get_id();
+                message += ", " + dependency->get_prototype()->get_id();
             }
             else
             {
@@ -1035,6 +1070,20 @@ void Target::set_height( int height )
 int Target::get_height() const
 {
     return height_;
+}
+
+/**
+// Get the next anonymous index from this Target.
+//
+// Returns the next index that can be used to generate an anonymous identifier
+// for the children of this Target.  Each call increments the anonymous index.
+//
+// @return
+//  The next anonymous index.
+*/
+int Target::anonymous()
+{
+    return anonymous_++;
 }
 
 /**

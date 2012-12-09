@@ -1,12 +1,18 @@
 //
 // OsInterface.cpp
-// Copyright (c) 2010 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2010 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include "OsInterface.hpp"
 #include "Error.hpp"
+
+#if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
+#elif defined(BUILD_OS_MACOSX)
+#include <unistd.h>
+#include <time.h>
+#endif
 
 using namespace sweet;
 using namespace sweet::build_tool;
@@ -15,8 +21,9 @@ using namespace sweet::build_tool;
 // Constructor.
 */
 OsInterface::OsInterface()
-: initial_tick_count_( static_cast<float>(::GetTickCount()) )
+: initial_tick_count_( 0.0f )
 {
+    initial_tick_count_ = ticks();
 }
 
 /**
@@ -231,14 +238,31 @@ void OsInterface::rm( const std::string& path )
 }
 
 /**
-// Get the hostname of the this computer.
+// Get a string that identifies the host operating system.
+//
+// @return
+//  The string "windows" on Windows or the string "macosx" on MacOSX.
+*/
+std::string OsInterface::operating_system()
+{
+#if defined(BUILD_OS_WINDOWS)
+    return "windows";
+#elif defined(BUILD_OS_MACOSX)
+    return "macosx";
+#else
+#error "OsInterface::operating_system() is not implemented for this platform"
+#endif
+}
+
+/**
+// Get the hostname of this computer.
 //
 // @return
 //  The hostname of this computer.
 */
 std::string OsInterface::hostname()
 {
-#if defined BUILD_PLATFORM_MSVC || defined BUILD_PLATFORM_MINGW
+#if defined(BUILD_OS_WINDOWS)
     char hostname [1024];
     DWORD length = sizeof(hostname);
 
@@ -251,6 +275,9 @@ std::string OsInterface::hostname()
     
     hostname[sizeof(hostname) - 1] = 0;
     return std::string( hostname );
+#elif defined(BUILD_OS_MACOSX)
+    SWEET_ASSERT( false );
+    return std::string("localhost");
 #else
 #error "OsInterface::hostname() is not implemented for this platform"
 #endif
@@ -264,7 +291,7 @@ std::string OsInterface::hostname()
 */
 std::string OsInterface::whoami()
 {
-#if defined BUILD_PLATFORM_MSVC || defined BUILD_PLATFORM_MINGW
+#if defined(BUILD_OS_WINDOWS)
     char username [1024];
     DWORD length = sizeof(username);
 
@@ -277,6 +304,9 @@ std::string OsInterface::whoami()
     
     username[sizeof(username) - 1] = 0;
     return std::string( username );
+#elif defined(BUILD_OS_MACOSX)
+    SWEET_ASSERT( false );
+    return std::string("guest");
 #else
 #error "OsInterface::whoami() is not implemented for this platform"
 #endif
@@ -295,7 +325,7 @@ std::string OsInterface::whoami()
 void OsInterface::putenv( const std::string& attribute, const std::string& value )
 {
     std::string assignment = attribute + "=" + value;
-    _putenv( assignment.c_str() );
+    ::putenv( const_cast<char*>(assignment.c_str()) );
 }
 
 /**
@@ -322,9 +352,13 @@ const char* OsInterface::getenv( const char* name )
 */
 void OsInterface::sleep( float milliseconds )
 {
-#if defined BUILD_PLATFORM_MSVC || defined BUILD_PLATFORM_MINGW
+#if defined(BUILD_OS_WINDOWS)
     SWEET_ASSERT( milliseconds >= 0.0f );
     ::Sleep( static_cast<DWORD>(milliseconds) );
+#elif defined(BUILD_OS_MACOSX)
+    SWEET_ASSERT( false );
+    const float MICROSECONDS_PER_MILLISECOND = 1000.0f;
+    usleep( milliseconds * MICROSECONDS_PER_MILLISECOND );
 #else
 #error "OsInterface::sleep() is not implemented for this platform"
 #endif
@@ -338,8 +372,10 @@ void OsInterface::sleep( float milliseconds )
 */
 float OsInterface::ticks()
 {    
-#if defined BUILD_PLATFORM_MSVC || defined BUILD_PLATFORM_MINGW
+#if defined(BUILD_OS_WINDOWS)
     return static_cast<float>( ::GetTickCount() ) - initial_tick_count_;
+#elif defined(BUILD_OS_MACOSX)
+    return static_cast<float>( (clock() - initial_tick_count_) * 1000 / CLOCKS_PER_SEC );
 #else
 #error "OsInterface::ticks() is not implemented for this platform"
 #endif

@@ -8,7 +8,10 @@
 #include "ScopedLock.hpp"
 #include <sweet/assert/assert.hpp>
 #include <limits.h>
+
+#if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
+#endif
 
 using namespace sweet::thread;
 
@@ -16,11 +19,21 @@ using namespace sweet::thread;
 // Constructor.
 */
 Condition::Condition()
+#if defined(BUILD_OS_WINDOWS)
 : m_mutex(),
   m_queue( ::CreateSemaphore(0, 0, INT_MAX, 0) ),
   m_waiting( 0 )
+#elif defined(BUILD_OS_MACOSX)
+  //condition_()
+#endif  
 {
+#if defined(BUILD_OS_WINDOWS)
     SWEET_ASSERT( m_queue );
+
+#elif defined(BUILD_OS_MACOSX)
+    int result = pthread_cond_init( &condition_, NULL );
+    SWEET_ASSERT( result == 0 );
+#endif
 }
 
 /**
@@ -28,11 +41,16 @@ Condition::Condition()
 */
 Condition::~Condition()
 {
+#if defined(BUILD_OS_WINDOWS)
     if ( m_queue != INVALID_HANDLE_VALUE )
     {
         ::CloseHandle( m_queue );
         m_queue = INVALID_HANDLE_VALUE;
     }
+
+#elif defined(BUILD_OS_MACOSX)
+    pthread_cond_destroy( &condition_ );
+#endif
 }
 
 /**
@@ -44,6 +62,7 @@ Condition::~Condition()
 */
 void Condition::wait( ScopedLock& lock )
 {
+#if defined(BUILD_OS_WINDOWS)
     m_mutex.lock();
     ++m_waiting;
     m_mutex.unlock();
@@ -58,6 +77,10 @@ void Condition::wait( ScopedLock& lock )
     m_mutex.unlock();
 
     lock.lock();
+
+#elif defined(BUILD_OS_MACOSX)
+    pthread_cond_wait( &condition_, lock.pthread_mutex() );
+#endif
 }
 
 /**
@@ -67,6 +90,7 @@ void Condition::wait( ScopedLock& lock )
 */
 void Condition::notify_one()
 {
+#if defined(BUILD_OS_WINDOWS)
     m_mutex.lock();
     int waiting = m_waiting;
     m_mutex.unlock();
@@ -76,6 +100,11 @@ void Condition::notify_one()
         DWORD result = ::ReleaseSemaphore( m_queue, 1, 0 );
         SWEET_ASSERT( result != 0 );
     }
+
+#elif defined(BUILD_OS_MACOSX)
+    int result = pthread_cond_signal( &condition_ );
+    SWEET_ASSERT( result == 0 );
+#endif
 }
 
 /**
@@ -83,6 +112,7 @@ void Condition::notify_one()
 */
 void Condition::notify_all()
 {
+#if defined(BUILD_OS_WINDOWS)
     m_mutex.lock();
     int waiting = m_waiting;
     m_mutex.unlock();
@@ -92,5 +122,9 @@ void Condition::notify_all()
         DWORD result = ::ReleaseSemaphore( m_queue, waiting, 0 );
         SWEET_ASSERT( result != 0 );
     }
-}
 
+#elif defined(BUILD_OS_MACOSX)
+    int result = pthread_cond_broadcast( &condition_ );
+    SWEET_ASSERT( result == 0 );
+#endif
+}

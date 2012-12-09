@@ -7,7 +7,12 @@
 #define SWEET_THREAD_CONDITION_HPP_INCLUDED
 
 #include "declspec.hpp"
+
+#if defined(BUILD_OS_WINDOWS)
 #include "Mutex.hpp"
+#elif defined(BUILD_OS_MACOSX)
+#include <pthread.h>
+#endif
 
 namespace sweet
 {
@@ -22,9 +27,14 @@ class ScopedLock;
 */
 class SWEET_THREAD_DECLSPEC Condition
 {
+#if defined(BUILD_OS_WINDOWS)
     Mutex m_mutex; ///< Ensures exclusive access to this Condition.
     void* m_queue; ///< The queue semaphore.
     unsigned int m_waiting; ///< The number of threads waiting on this Condition.
+
+#elif defined(BUILD_OS_MACOSX)
+    pthread_cond_t condition_;
+#endif
 
     public:
         Condition();

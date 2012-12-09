@@ -1,6 +1,6 @@
 //
 // BuildTool.hpp
-// Copyright (c) 2007 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_BUILD_TOOL_BUILDTOOL_HPP_INCLUDED
@@ -23,7 +23,7 @@ class Executor;
 class Scheduler;
 class OsInterface;
 class File;
-class Rule;
+class TargetPrototype;
 class Graph;
 
 /**
@@ -58,9 +58,9 @@ class SWEET_BUILD_TOOL_DECLSPEC BuildTool
         void set_maximum_parallel_jobs( int maximum_parallel_jobs );
         int get_maximum_parallel_jobs() const;
 
-        void assign( const std::vector<std::string>& assignments );
         void search_up_for_root_directory( const std::string& directory );
-        void execute( const std::string& filename );
+        void assign( const std::vector<std::string>& assignments_and_commands );
+        void execute( const std::string& filename, const std::vector<std::string>& assignments_and_commands );
         void execute( const char* start, const char* finish );
         void output( const char* text );
         void warning( const char* format, ... );

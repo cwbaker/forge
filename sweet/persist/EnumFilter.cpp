@@ -8,6 +8,11 @@
 #include "Error.hpp"
 #include "types.hpp"
 #include <stdlib.h>
+#include <stdio.h>
+
+#if defined(BUILD_OS_WINDOWS)
+#define snprintf _snprintf
+#endif
 
 using namespace sweet::persist;
 
@@ -67,7 +72,8 @@ const std::string& EnumFilter::to_archive( int value ) const
     else
     {
         char number [11];
-        m_string.assign( _itoa(value, number, 10) );
+        snprintf( number, sizeof(number), "%d", value );
+        m_string.assign( number );
     }
 
     return m_string;

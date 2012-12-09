@@ -47,8 +47,8 @@ SUITE( TestScanner )
             "   end; \n"
             "}; \n"
             " \n"
-            "SourceFile = Rule( \"SourceFile\", BIND_SOURCE_FILE ); \n"
-            "local local_includes_are_matched = SourceFile( 'local_includes_are_matched' ); \n"
+            "SourceFilePrototype = TargetPrototype { 'SourceFilePrototype', BIND_SOURCE_FILE }; \n"
+            "local local_includes_are_matched = target( 'local_includes_are_matched', SourceFilePrototype ); \n"
             "scan( local_includes_are_matched, local_include_scanner ); \n"
             "wait(); \n"
             "assert( matched, 'Local include failed to match' ); \n"
@@ -76,8 +76,8 @@ SUITE( TestScanner )
             "   end; \n"
             "}; \n"
             " \n"
-            "SourceFile = Rule( \"SourceFile\", BIND_SOURCE_FILE ); \n"
-            "local global_includes_are_matched = SourceFile( 'global_includes_are_matched' ); \n"
+            "SourceFilePrototype = TargetPrototype { 'SourceFilePrototype', BIND_SOURCE_FILE }; \n"
+            "local global_includes_are_matched = target( 'global_includes_are_matched', SourceFilePrototype ); \n"
             "scan( global_includes_are_matched, global_include_scanner ); \n"
             "wait(); \n"
             "assert( matched, 'Global include failed to match' ); \n"
@@ -104,8 +104,8 @@ SUITE( TestScanner )
             "   end; \n"
             "}; \n"
             " \n"
-            "SourceFile = Rule( \"SourceFile\", BIND_SOURCE_FILE ); \n"
-            "local unchanged_files_are_not_scanned = SourceFile( 'unchanged_files_are_not_scanned' ); \n"
+            "SourceFilePrototype = TargetPrototype { 'SourceFilePrototype', BIND_SOURCE_FILE }; \n"
+            "local unchanged_files_are_not_scanned = target( 'unchanged_files_are_not_scanned', SourceFilePrototype ); \n"
             "scan( unchanged_files_are_not_scanned, hello_world_scanner ); \n"
             "scan( unchanged_files_are_not_scanned, hello_world_scanner ); \n"
             "wait(); \n"
@@ -136,8 +136,8 @@ SUITE( TestScanner )
             "   end; \n"
             "}; \n"
             " \n"
-            "SourceFile = Rule( \"SourceFile\", BIND_SOURCE_FILE ); \n"
-            "local initial_lines_setting_is_honored = SourceFile( 'initial_lines_setting_is_honored' ); \n"
+            "SourceFilePrototype = TargetPrototype { 'SourceFilePrototype', BIND_SOURCE_FILE }; \n"
+            "local initial_lines_setting_is_honored = target( 'initial_lines_setting_is_honored', SourceFilePrototype ); \n"
             "hello_world_scanner:set_initial_lines( 2 ); \n"
             "scan( initial_lines_setting_is_honored, hello_world_scanner ); \n"
             "wait(); \n"
@@ -173,8 +173,8 @@ SUITE( TestScanner )
             "   end; \n"
             "}; \n"
             " \n"
-            "SourceFile = Rule( \"SourceFile\", BIND_SOURCE_FILE ); \n"
-            "local later_lines_setting_is_honored = SourceFile( 'later_lines_setting_is_honored' ); \n"
+            "SourceFilePrototype = TargetPrototype { 'SourceFilePrototype', BIND_SOURCE_FILE }; \n"
+            "local later_lines_setting_is_honored = target( 'later_lines_setting_is_honored', SourceFilePrototype ); \n"
             "hello_world_scanner:set_initial_lines( 5 ); \n"
             "hello_world_scanner:set_later_lines( 2 ); \n"
             "scan( later_lines_setting_is_honored, hello_world_scanner ); \n"
@@ -189,9 +189,6 @@ SUITE( TestScanner )
     
     TEST_FIXTURE( ErrorChecker, scanning_a_file_that_does_not_exist_fails_gracefully )
     {
-        const char* expected_message =
-            "The scanned file 'D:/sweet/sweet_build_tool/sweet/build_tool/build_tool_test/scanning_a_file_that_does_not_exist_fails_gracefully' was not found"
-        ;
         const char* script = 
             "local matches = 0; \n"
             " \n"
@@ -201,14 +198,12 @@ SUITE( TestScanner )
             "   end; \n"
             "}; \n"
             " \n"
-            "SourceFile = Rule( \"SourceFile\", BIND_SOURCE_FILE ); \n"
-            "local scanning_a_file_that_does_not_exist_fails_gracefully = SourceFile( 'scanning_a_file_that_does_not_exist_fails_gracefully' ); \n"
+            "SourceFilePrototype = TargetPrototype { 'SourceFilePrototype', BIND_SOURCE_FILE }; \n"
+            "local scanning_a_file_that_does_not_exist_fails_gracefully = target( 'scanning_a_file_that_does_not_exist_fails_gracefully', SourceFilePrototype ); \n"
             "scan( scanning_a_file_that_does_not_exist_fails_gracefully, hello_world_scanner ); \n"
             "wait(); \n"
-        ;
-        
+        ;        
         test( script );
-        CHECK_EQUAL( expected_message, message );
         CHECK( errors == 1 );  
     }
 }

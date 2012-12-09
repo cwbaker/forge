@@ -9,7 +9,7 @@ Executable {
         "assert/assert"
     };
 
-    Cc {
+    Source {
         pch = "stdafx.hpp";
         "Application.cpp",
         "main.cpp"

@@ -2,20 +2,13 @@
 Executable {
     id = "build_tool_test";
 
-    Cc {
-        pch = "stdafx.hpp";
-        "main.cpp",
-        "ErrorChecker.cpp",
-        "FileChecker.cpp",
-        "TestDirectoryApi.cpp",
-        "TestGraph.cpp",
-        "TestPostorder.cpp",
-        "TestPreorder.cpp",
-        "TestScanner.cpp"
+    settings = {
+        architectures = { "x86_64" };        
     };
 
     libraries = {    
         "build_tool/build_tool",
+        "cmdline/cmdline",
         "lua/lua",
         "persist/persist",
         "thread/thread",
@@ -35,4 +28,16 @@ Executable {
         boost_library( "boost_system" ),
         boost_library( "boost_thread" )
     };    
+
+    Source {
+        pch = "stdafx.hpp";
+        "main.cpp",
+        "ErrorChecker.cpp",
+        "FileChecker.cpp",
+        "TestDirectoryApi.cpp",
+        "TestGraph.cpp",
+        "TestPostorder.cpp",
+        "TestPreorder.cpp",
+        "TestScanner.cpp"
+    };
 }

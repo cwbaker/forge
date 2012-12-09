@@ -1,6 +1,6 @@
 //
 // Arguments.hpp
-// Copyright (c) 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2011 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_BUILD_TOOL_ARGUMENTS_HPP_INCLUDED

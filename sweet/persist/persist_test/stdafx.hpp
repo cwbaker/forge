@@ -11,9 +11,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-/*
-#include <typeinfo.h>
-*/
 #include <typeinfo>
 #include <float.h>
 
@@ -24,13 +21,16 @@
 #include <list>
 #include <deque>
 #include <set>
-#include <hash_set>
 #include <map>
-#include <hash_map>
 #include <stack>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+
+#if defined(BUILD_OS_WINDOWS)
+#include <hash_set>
+#include <hash_map>
+#endif
 
 #include <sweet/assert/assert.hpp>
 #include <sweet/error/error.hpp>

@@ -8,7 +8,7 @@ using namespace sweet::lua;
 
 static void print( const string& message )
 {
-    printf( message.c_str() );
+    printf( "%s", message.c_str() );
 }
 
 void lua_hello_world_example()

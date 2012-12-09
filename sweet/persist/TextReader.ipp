@@ -70,7 +70,7 @@ void TextReader::read( const char* name, const char* child_name, Type (&values)[
 template <class Type> 
 void TextReader::enter( const char* format, int version, Type& object )
 {
-    Reader::enter( format, version, object );
+    Reader<TextReader>::enter( format, version, object );
     m_resolver.enter( format, version, object );
 }
 
@@ -78,7 +78,7 @@ template <class Type>
 void 
 TextReader::declare( const char* name, int flags )
 {
-    Reader::declare<Type>( name, flags );
+    Reader<TextReader>::declare<Type>( name, flags );
     m_resolver.declare<Type>( name, flags );
 }
 

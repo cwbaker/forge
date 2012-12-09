@@ -7,7 +7,7 @@ Library {
         "error/error"
     };
 
-    Cc {
+    Source {
         pch = "stdafx.hpp";
         "Condition.cpp",
         "Mutex.cpp",

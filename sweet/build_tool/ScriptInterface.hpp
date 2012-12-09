@@ -1,6 +1,6 @@
 //
 // ScriptInterface.hpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_BUILD_TOOL_SCRIPTINTERFACE_HPP_INCLUDED
@@ -23,7 +23,7 @@ namespace build_tool
 class Environment;
 class OsInterface;
 class Scanner;
-class Rule;
+class TargetPrototype;
 class Arguments;
 class Graph;
 class Target;
@@ -38,13 +38,13 @@ class ScriptInterface
     OsInterface* os_interface_; ///< The OsInterface to use to interface with the operating system.
     BuildTool* build_tool_; ///< The BuildTool that this ScriptInterface is part of.
     lua::Lua lua_; ///< The Lua virtual machine.
-    lua::LuaObject rule_metatable_; ///< The LuaObject that acts as a metatable for Rules.
-    lua::LuaObject rule_prototype_; ///< The LuaObject that acts as a prototype for Rules.
+    lua::LuaObject target_prototype_metatable_; ///< The LuaObject that acts as a metatable for TargetPrototypes.
+    lua::LuaObject target_prototype_prototype_; ///< The LuaObject that acts as a prototype for TargetPrototypes.
     lua::LuaObject scanner_metatable_; ///< The LuaObject that acts as a metatable for Scanners.
     lua::LuaObject scanner_prototype_; ///< The LuaObject that acts as a prototype for Scanners.
     lua::LuaObject target_metatable_; ///< The LuaObject that acts as a metatable for Targets.
     lua::LuaObject target_prototype_; ///< The LuaObject that acts as a prototype for Targets.
-    std::vector<ptr<Rule> > rules_; ///< The Rules that have been loaded in.
+    std::vector<ptr<TargetPrototype> > target_prototypes_; ///< The TargetPrototypes that have been loaded in.
     std::vector<ptr<Environment> > environments_; ///< The stack of Environments.
     path::Path root_directory_; ///< The full path to the root directory.
     path::Path initial_directory_; ///< The full path to the initial directory.
@@ -53,8 +53,6 @@ class ScriptInterface
         ScriptInterface( OsInterface* os_interface, BuildTool* build_tool );
 
         lua::Lua& get_lua();
-        ptr<Rule> find_rule_by_id( const std::string& id ) const;
-        const std::vector<ptr<Rule> >& get_rules() const;
 
         void push_environment( ptr<Environment> environment );
         void pop_environment();        
@@ -66,25 +64,23 @@ class ScriptInterface
         void set_initial_directory( const path::Path& initial_directory );
         const path::Path& get_initial_directory() const;
 
-        void create_rule( ptr<Rule> rule );
-        void destroy_rule( Rule* rule );
+        void create_prototype( ptr<TargetPrototype> target_prototype );
+        void destroy_prototype( TargetPrototype* target_prototype );
         void create_scanner( ptr<Scanner> scanner );
         void destroy_scanner( Scanner* scanner );
         void create_target( ptr<Target> target );
         void recover_target( ptr<Target> target );
-        void update_target( ptr<Target> target, ptr<Rule> rule );
+        void update_target( ptr<Target> target, ptr<TargetPrototype> target_prototype );
         void destroy_target( Target* target );
         
-        ptr<Rule> rule( const std::string& id, int bind_type );
-        ptr<Target> target( const std::string& id, Graph* graph );
-        ptr<Target> target( const std::string& id, ptr<Rule> rule, Graph* graph );
-        ptr<Target> target_from_graph( const std::string& id, ptr<Rule> rule );
+        ptr<TargetPrototype> target_prototype( const std::string& id, int bind_type );
         ptr<Target> find_target( const std::string& path );
         std::string absolute( const std::string& path, const path::Path& working_directory = path::Path() );
         std::string relative( const std::string& path, const path::Path& working_directory = path::Path() );
         std::string root( const std::string& path ) const;
         std::string initial( const std::string& path ) const;
         std::string home( const std::string& path ) const;
+        std::string anonymous() const;
 
         bool is_absolute( const std::string & path );
         bool is_relative( const std::string & path );
@@ -110,6 +106,7 @@ class ScriptInterface
         void rmdir( const std::string& path );
         void cp( const std::string& from, const std::string& to );
         void rm( const std::string& path );
+        std::string operating_system();
         std::string hostname();
         std::string whoami();
         void putenv( const std::string& attribute, const std::string& value );
@@ -122,19 +119,25 @@ class ScriptInterface
         void print_dependencies( ptr<Target> target );
         void print_namespace( ptr<Target> target );
         void wait();
-        bool load_xml( const std::string& filename, const std::string& initial );
-        void save_xml( const std::string& filename );
-        bool load_binary( const std::string& filename, const std::string& initial );
-        void save_binary( const std::string& filename );
+        void clear();
+        Target* load_xml( const std::string& filename );
+        void save_xml();
+        Target* load_binary( const std::string& filename );
+        void save_binary();
 
     private:
+        ptr<Target> get_parent( ptr<Target> target );
+        ptr<Target> get_working_directory( ptr<Target> target );
+        static int target_prototype__( lua_State* lua_state );
+        static int get_targets( lua_State* lua_state );
+        static int get_dependencies( lua_State* lua_state );
         static int absolute_( lua_State* lua_state );
         static int relative_( lua_State* lua_state );
         static int root_( lua_State* lua_state );
         static int initial_( lua_State* lua_state );
         static int home_( lua_State* lua_state );
         static int getenv_( lua_State* lua_state );
-        static int target_from_graph( lua_State* lua_state );
+        static int target( lua_State* lua_state );
         static int scanner( lua_State* lua_state );
         static int preorder( lua_State* lua_state );
         static int postorder( lua_State* lua_state );
@@ -147,7 +150,7 @@ class ScriptInterface
 }
 
 SWEET_LUA_TYPE_CONVERSION( sweet::build_tool::Scanner, LuaByReference );
-SWEET_LUA_TYPE_CONVERSION( sweet::build_tool::Rule, LuaByReference );
+SWEET_LUA_TYPE_CONVERSION( sweet::build_tool::TargetPrototype, LuaByReference );
 SWEET_LUA_TYPE_CONVERSION( sweet::build_tool::Target, LuaByReference );
 
 #endif

@@ -57,7 +57,7 @@ template <class Archive> void Graph::exit( Archive& archive )
 */
 template <class Archive> void Graph::persist( Archive& archive )
 {
-    const int BUILD_GRAPH_VERSION = 7;
+    const int BUILD_GRAPH_VERSION = 8;
     archive.enter( "Sweet Build Graph", BUILD_GRAPH_VERSION, *this );
     if ( archive.version() != BUILD_GRAPH_VERSION )
     {
@@ -78,39 +78,43 @@ template <class Archive> void Graph::persist( Archive& archive )
 template <class Archive> void Target::persist( Archive& archive )
 {
     archive.value( "id", id_ );
-    archive.value( "rule", rule_ );
+    archive.value( "prototype", prototype_ );
     archive.value( "bind_type", bind_type_ );
     archive.value( "last_write_time", last_write_time_ );
     archive.value( "last_scan_time", last_scan_time_ );
+    archive.value( "referenced_by_script", referenced_by_script_ );
     archive.value( "filename", filename_ );
     archive.refer( "working_directory", working_directory_ );
     archive.value( "targets", "target", targets_ );
     archive.refer( "dependencies", "dependency", dependencies_ );
-    sweet::lua::persist<Target, lua::LuaByReference>( archive, "object", *this );
+    if ( referenced_by_script_ )
+    {
+        sweet::lua::persist<Target, lua::LuaByReference>( archive, "object", *this );
+    }
 }
 
 /**
-// Save a Rule to an Archive.
+// Save a TargetPrototype to an Archive.
 //
 // @param archive
-//  The Archive to save the Rule in.
+//  The Archive to save the TargetPrototype in.
 //
 // @param mode
 //  The Mode to use when saving (must be MODE_VALUE).
 //
 // @param name
-//  The name of the attribute to save the Rule in.
+//  The name of the attribute to save the TargetPrototype in.
 //
-// @param rule
-//  The Rule to save.
+// @param target_prototype
+//  The TargetPrototype to save.
 */
-template <class Archive> void save( Archive& archive, int mode, const char* name, ptr<Rule>& rule )
+template <class Archive> void save( Archive& archive, int mode, const char* name, ptr<TargetPrototype>& target_prototype )
 {
     SWEET_ASSERT( mode == sweet::persist::MODE_VALUE );
 
-    if ( rule )
+    if ( target_prototype )
     {
-        std::string id = rule->get_id();
+        std::string id = target_prototype->get_id();
         archive.value( name, id );
     }
     else
@@ -121,24 +125,24 @@ template <class Archive> void save( Archive& archive, int mode, const char* name
 }
 
 /**
-// Load a Rule from an Archive.
+// Load a TargetPrototype from an Archive.
 //
 // @param archive
-//  The Archive to load the Rule from.
+//  The Archive to load the TargetPrototype from.
 //
 // @param mode
 //  The Mode to use when loading (must be MODE_VALUE).
 //
 // @param name
-//  The name of the attribute to load the Rule from.
+//  The name of the attribute to load the TargetPrototype from.
 //
-// @param rule
-//  The Rule to load into (assumed to be null).
+// @param target_prototype
+//  The TargetPrototype to load into (assumed to be null).
 */
-template <class Archive> void load( Archive& archive, int mode, const char* name, ptr<Rule>& rule )
+template <class Archive> void load( Archive& archive, int mode, const char* name, ptr<TargetPrototype>& target_prototype )
 {
     SWEET_ASSERT( mode == sweet::persist::MODE_VALUE );
-    SWEET_ASSERT( !rule );
+    SWEET_ASSERT( !target_prototype );
 
     std::string id;
     archive.value( name, id );
@@ -147,23 +151,23 @@ template <class Archive> void load( Archive& archive, int mode, const char* name
     {
         BuildTool* build_tool = reinterpret_cast<BuildTool*>( archive.get_context(SWEET_STATIC_TYPEID(BuildTool)) );
         SWEET_ASSERT( build_tool );
-        rule = build_tool->get_script_interface()->rule( id, BIND_PHONY );
+        target_prototype = build_tool->get_script_interface()->target_prototype( id, BIND_NULL );
     }
 }
 
 /**
-// Resolve a Rule that has been loaded from an Archive.
+// Resolve a TargetPrototype that has been loaded from an Archive.
 //
 // @param archive
-//  The Archive to resolve the Rule from (ignored).
+//  The Archive to resolve the TargetPrototype from (ignored).
 //
 // @param mode
 //  The Mode to use when resolving (ignored).
 //
-// @param rule
-//  The Rule to load into (ignored).
+// @param target_prototype
+//  The TargetPrototype to load into (ignored).
 */
-template <class Archive> void resolve( Archive& archive, int mode, ptr<Rule>& rule )
+template <class Archive> void resolve( Archive& archive, int mode, ptr<TargetPrototype>& target_prototype )
 {
 }
 

@@ -15,7 +15,6 @@ SUITE( TestWidePath )
     {
         WidePath drive_test( L"D:/sweet/persist-0.0.1/path/src/test" );
         CHECK( drive_test.string() == L"D:/sweet/persist-0.0.1/path/src/test" );
-        CHECK( drive_test.native_string() == L"D:\\sweet\\persist-0.0.1\\path\\src\\test" );
         CHECK( drive_test.branch().string() == L"D:/sweet/persist-0.0.1/path/src" );
         CHECK( drive_test.drive() == L"D:" );
         CHECK( drive_test.leaf() == L"test" );
@@ -29,7 +28,6 @@ SUITE( TestWidePath )
     {
         WidePath root_test( L"/sweet/sweet-persist-0.0.1/path/src/test/zzcb.xml" );
         CHECK( root_test.string() == L"/sweet/sweet-persist-0.0.1/path/src/test/zzcb.xml" );
-        CHECK( root_test.native_string() == L"\\sweet\\sweet-persist-0.0.1\\path\\src\\test\\zzcb.xml" );
         CHECK( root_test.branch().string() == L"/sweet/sweet-persist-0.0.1/path/src/test" );
         CHECK( root_test.leaf() == L"zzcb.xml" );
         CHECK( root_test.basename() == L"zzcb" );
@@ -42,7 +40,6 @@ SUITE( TestWidePath )
     {
         WidePath relative_test( L"path/src/test" );
         CHECK( relative_test.string() == L"path/src/test" );
-        CHECK( relative_test.native_string() == L"path\\src\\test" );
         CHECK( relative_test.branch().string() == L"path/src" );
         CHECK( relative_test.leaf() == L"test" );
         CHECK( relative_test.basename() == L"test" );
@@ -94,5 +91,22 @@ SUITE( TestWidePath )
         CHECK( normalize_test.string() == L"/stuff/only/in/the/middle" );
 
         WidePath current_working_directory_test = current_working_directory();
+    }
+
+    TEST( TestNative )
+    {
+        WidePath drive_test( L"D:/sweet/persist-0.0.1/path/src/test" );
+        WidePath root_test( L"/sweet/sweet-persist-0.0.1/path/src/test/zzcb.xml" );
+        WidePath relative_test( L"path/src/test" );
+
+#if defined(BUILD_OS_WINDOWS)
+        CHECK( drive_test.native_string() == L"D:\\sweet\\persist-0.0.1\\path\\src\\test" );
+        CHECK( root_test.native_string() == L"\\sweet\\sweet-persist-0.0.1\\path\\src\\test\\zzcb.xml" );
+        CHECK( relative_test.native_string() == L"path\\src\\test" );        
+#else
+        CHECK( drive_test.native_string() == L"D:/sweet/persist-0.0.1/path/src/test" );
+        CHECK( root_test.native_string() == L"/sweet/sweet-persist-0.0.1/path/src/test/zzcb.xml" );
+        CHECK( relative_test.native_string() == L"path/src/test" );        
+#endif
     }
 }

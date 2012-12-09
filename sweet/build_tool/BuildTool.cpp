@@ -1,6 +1,6 @@
 //
 // BuildTool.cpp
-// Copyright (c) 2007 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -14,9 +14,12 @@
 #include "Graph.hpp"
 
 using std::string;
+using std::vector;
 using namespace sweet;
 using namespace sweet::lua;
 using namespace sweet::build_tool;
+
+static const char* ROOT_FILENAME = "build.lua";
 
 /**
 // Constructor.
@@ -194,15 +197,38 @@ int BuildTool::get_maximum_parallel_jobs() const
 }
 
 /**
-// Extract assignments from \e assignments and use them to assign values to 
-// global variables.
+// Find the root directory by searching up the directory hierarchy from the
+// initial directory until a directory that contains file 'build.lua' is
+// found.
+//
+// @param directory
+//  The directory to start the search from.
+*/
+void BuildTool::search_up_for_root_directory( const std::string& directory )
+{
+    boost::filesystem::path root_directory( directory );
+    while ( !root_directory.empty() && !os_interface_->exists((root_directory / ROOT_FILENAME).string()) )
+    {
+        root_directory = root_directory.branch_path();
+    }
+    if ( !os_interface_->exists((root_directory / ROOT_FILENAME).string()) )
+    {
+        SWEET_ERROR( RootFileNotFoundError("The file '%s' could not be found to identify the root directory", ROOT_FILENAME) );
+    }
+    script_interface_->set_root_directory( root_directory.string() );
+}
+
+/**
+// Extract assignments from \e assignments_and_commands and use them to 
+// assign values to global variables.
 //
 // This is used to accept variable assignments on the command line and have 
-// them available for scripts to use for configuration when they execute.
+// them available for scripts to use for configuration when commands are
+// executed.
 //
 // @param assignments
-//  The assignments to make to global variables before the setup script is
-//  run (e.g. 'variant=release' etc).
+//  The assignments specified on the command line used to create global 
+//  variables before any scripts are loaded (e.g. 'variant=release' etc).
 */
 void BuildTool::assign( const std::vector<std::string>& assignments )
 {
@@ -221,38 +247,20 @@ void BuildTool::assign( const std::vector<std::string>& assignments )
 }
 
 /**
-// Find the root directory by searching up the directory hierarchy from the
-// initial directory until a directory that contains root file 'build.lua' is
-// found.
-*/
-void BuildTool::search_up_for_root_directory( const std::string& directory )
-{
-    const char* ROOT_FILENAME = "build.lua";
-    boost::filesystem::path root_directory( directory );
-    while ( !root_directory.empty() && !os_interface_->exists((root_directory / ROOT_FILENAME).string()) )
-    {
-        root_directory = root_directory.branch_path();
-    }
-    if ( !os_interface_->exists((root_directory / ROOT_FILENAME).string()) )
-    {
-        SWEET_ERROR( RootFileNotFoundError("The file '%s' could not be found to identify the root directory", ROOT_FILENAME) );
-    }
-    script_interface_->set_root_directory( root_directory.string() );
-}
-
-/**
 // Execute \e filename.
 //
 // @param filename
 //  The path to the script file to execute or an empty string to take the
 //  default action of executing the root file 'build.lua'.
+//
+// @param commands
+//  The functions to call once the root file has been loaded.
 */
-void BuildTool::execute( const std::string& filename )
+void BuildTool::execute( const std::string& filename, const std::vector<std::string>& commands )
 {
     path::Path path( filename );
     if ( path.empty() )
     {
-        const char* ROOT_FILENAME = "build.lua";
         path = script_interface_->get_root_directory() / string( ROOT_FILENAME );
     }
     else if ( path.is_relative() )
@@ -260,7 +268,12 @@ void BuildTool::execute( const std::string& filename )
         path = script_interface_->get_initial_directory() / filename;
         path.normalize();
     }
-    scheduler_->execute( path );
+    
+    scheduler_->load( path );
+    for ( vector<string>::const_iterator command = commands.begin(); command != commands.end(); ++command )
+    {
+        scheduler_->command( path, *command );
+    }
 }
 
 /**

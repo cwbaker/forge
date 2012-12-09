@@ -5,25 +5,6 @@ buildfile "build_tool_test/build_tool_test.build";
 Library {
     id = "build_tool";
     
-    Cc {
-        pch = "stdafx.hpp";
-        "BuildTool.cpp",
-        "BuildToolEventSink.cpp",
-        "Error.cpp", 
-        "Executor.cpp",
-        "Graph.cpp",
-        "Job.cpp",
-        "OsInterface.cpp",
-        "Pattern.cpp", 
-        "Rule.cpp",
-        "Scanner.cpp",
-        "Scheduler.cpp", 
-        "Arguments.cpp",
-        "ScriptInterface.cpp",
-        "Target.cpp",
-        "Environment.cpp"
-    };
-
     libraries = {
         "assert/assert",
         "error/error",
@@ -43,4 +24,23 @@ Library {
         boost_library( "boost_system" ),
         boost_library( "boost_thread" )
     };    
+
+    Source {
+        pch = "stdafx.hpp";
+        "BuildTool.cpp",
+        "BuildToolEventSink.cpp",
+        "Error.cpp", 
+        "Executor.cpp",
+        "Graph.cpp",
+        "Job.cpp",
+        "OsInterface.cpp",
+        "Pattern.cpp", 
+        "Scanner.cpp",
+        "Scheduler.cpp", 
+        "Arguments.cpp",
+        "ScriptInterface.cpp",
+        "Target.cpp",
+        "TargetPrototype.cpp",
+        "Environment.cpp"
+    };
 }

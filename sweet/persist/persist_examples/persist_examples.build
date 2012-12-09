@@ -10,7 +10,7 @@ Executable {
         "assert/assert"
     };
 
-    Cc {
+    Source {
         "main.cpp",
         "persist_cyclic_references_example.cpp",
         "persist_filters_example.cpp",

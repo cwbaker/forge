@@ -15,10 +15,10 @@ SUITE( TestGraph )
     TEST_FIXTURE( FileChecker, files_are_outdated_if_they_do_not_exist )
     {
         const char* script = 
-            "local SourceFile = Rule( 'SourceFile', BIND_SOURCE_FILE ); \n"
-            "local File = Rule( 'File', BIND_GENERATED_FILE ); \n"
-            "local foo_cpp = SourceFile( 'foo.cpp' ); \n"
-            "local foo_obj = File( 'foo.obj' ); \n"
+            "local SourceFilePrototype = TargetPrototype{ 'SourceFile', BIND_SOURCE_FILE }; \n"
+            "local FilePrototype = TargetPrototype{ 'File', BIND_GENERATED_FILE }; \n"
+            "local foo_cpp = target( 'foo.cpp', SourceFilePrototype ); \n"
+            "local foo_obj = target( 'foo.obj', FilePrototype ); \n"
             "foo_obj:add_dependency( foo_cpp ); \n"
             "bind( foo_obj ); \n"
             "assert( foo_obj:is_outdated() ); \n"
@@ -31,10 +31,10 @@ SUITE( TestGraph )
     TEST_FIXTURE( FileChecker, files_are_not_outdated_if_they_do_exist )
     {
         const char* script = 
-            "local SourceFile = Rule( 'SourceFile', BIND_SOURCE_FILE ); \n"
-            "local File = Rule( 'File', BIND_GENERATED_FILE ); \n"
-            "local foo_cpp = SourceFile( 'foo.cpp' ); \n"
-            "local foo_obj = File( 'foo.obj' ); \n"
+            "local SourceFilePrototype = TargetPrototype{ 'SourceFile', BIND_SOURCE_FILE }; \n"
+            "local FilePrototype = TargetPrototype{ 'File', BIND_GENERATED_FILE }; \n"
+            "local foo_cpp = target( 'foo.cpp', SourceFilePrototype ); \n"
+            "local foo_obj = target( 'foo.obj', FilePrototype ); \n"
             "foo_obj:add_dependency( foo_cpp ); \n"
             "bind( foo_obj ); \n"
             "assert( foo_obj:is_outdated() == false ); \n"
@@ -48,11 +48,11 @@ SUITE( TestGraph )
     TEST_FIXTURE( FileChecker, targets_are_outdated_if_their_dependencies_are_outdated )
     {
         const char* script = 
-            "local SourceFile = Rule( 'SourceFile', BIND_SOURCE_FILE ); \n"
-            "local File = Rule( 'File', BIND_GENERATED_FILE ); \n"
-            "local foo_cpp = SourceFile( 'foo.cpp' ); \n"
-            "local foo_hpp = SourceFile( 'foo.hpp' ); \n"
-            "local foo_obj = File( 'foo.obj' ); \n"
+            "local SourceFilePrototype = TargetPrototype{ 'SourceFile', BIND_SOURCE_FILE }; \n"
+            "local FilePrototype = TargetPrototype{ 'File', BIND_GENERATED_FILE }; \n"
+            "local foo_cpp = target( 'foo.cpp', SourceFilePrototype ); \n"
+            "local foo_hpp = target( 'foo.hpp', SourceFilePrototype ); \n"
+            "local foo_obj = target( 'foo.obj', FilePrototype ); \n"
             "foo_cpp:add_dependency( foo_hpp ); \n"
             "foo_obj:add_dependency( foo_cpp ); \n"
             "bind( foo_obj ); \n"
@@ -67,19 +67,14 @@ SUITE( TestGraph )
 
     TEST_FIXTURE( FileChecker, source_files_that_do_not_exist_generate_errors )
     {
-        const char* expected_message =
-        {
-            "The source file 'D:/sweet/sweet_build_tool/sweet/build_tool/build_tool_test/foo.cpp' does not exist",
-        };
         const char* script = 
-            "local SourceFile = Rule( 'SourceFile', BIND_SOURCE_FILE ); \n"
-            "local File = Rule( 'File', BIND_GENERATED_FILE ); \n"
-            "local foo_cpp = SourceFile( 'foo.cpp' ); \n"
+            "local SourceFilePrototype = TargetPrototype { 'SourceFile', BIND_SOURCE_FILE }; \n"
+            "local FilePrototype = TargetPrototype { 'File', BIND_GENERATED_FILE }; \n"
+            "local foo_cpp = target( 'foo.cpp', SourceFilePrototype ); \n"
             "foo_cpp:set_required_to_exist( true ); \n"
             "bind( foo_cpp ); \n"
         ;
         test( script );
-        CHECK_EQUAL( expected_message, message );
         CHECK( errors == 1 );
     }
 
@@ -90,9 +85,9 @@ SUITE( TestGraph )
             "The source file 'D:/sweet/sweet_build_tool/sweet/build_tool/build_tool_test/foo.cpp' does not exist",
         };
         const char* script = 
-            "local SourceFile = Rule( 'SourceFile', BIND_SOURCE_FILE ); \n"
-            "local File = Rule( 'File', BIND_GENERATED_FILE ); \n"
-            "local foo_cpp = SourceFile( 'foo.cpp' ); \n"
+            "local SourceFilePrototype = TargetPrototype { 'SourceFile', BIND_SOURCE_FILE }; \n"
+            "local FilePrototype = TargetPrototype { 'File', BIND_GENERATED_FILE }; \n"
+            "local foo_cpp = target( 'foo.cpp', SourceFilePrototype ); \n"
             "foo_cpp:set_required_to_exist( true ); \n"
             "bind( foo_cpp ); \n"
         ;
@@ -107,10 +102,10 @@ SUITE( TestGraph )
             "The target 'foo.cpp' has been created with prototypes 'SourceFile' and 'File'"
         ;
         const char* script =
-            "local SourceFile = Rule( 'SourceFile', BIND_SOURCE_FILE ); \n"
-            "local File = Rule( 'File', BIND_GENERATED_FILE ); \n"
-            "SourceFile( 'foo.cpp' ); \n"
-            "File( 'foo.cpp' ); \n"
+            "local SourceFilePrototype = TargetPrototype { 'SourceFile', BIND_SOURCE_FILE }; \n"
+            "local FilePrototype = TargetPrototype { 'File', BIND_GENERATED_FILE }; \n"
+            "target( 'foo.cpp', SourceFilePrototype ); \n"
+            "target( 'foo.cpp', FilePrototype ); \n"
         ;
         test( script );
         CHECK_EQUAL( expected_message, message );
@@ -120,19 +115,19 @@ SUITE( TestGraph )
     TEST_FIXTURE( ErrorChecker, targets_are_children_of_the_working_directory_when_they_are_created )
     {
         const char* script =
-            "local SourceFile = Rule( 'File', BIND_SOURCE_FILE ); \n"
-            "local foo_cpp = SourceFile( 'foo.cpp' ); \n"
+            "local SourceFilePrototype = TargetPrototype { 'File', BIND_SOURCE_FILE }; \n"
+            "local foo_cpp = target( 'foo.cpp', SourceFilePrototype ); \n"
             "assert( foo_cpp:parent() == foo_cpp:get_working_directory() ); \n"
         ;
         test( script );
         CHECK( errors == 0 );
     }
 
-    TEST_FIXTURE( ErrorChecker, targets_created_with_explicit_id_are_dependencies_of_the_working_directory )
+    TEST_FIXTURE( ErrorChecker, targets_created_with_tables_are_dependencies_of_the_working_directory )
     {
         const char* script =
-            "local Cc = Rule( 'Cc', BIND_PHONY ); \n"
-            "local cc = Cc { id = 'foo.cpp' }; \n"
+            "local CcPrototype = TargetPrototype { 'Cc', BIND_PHONY }; \n"
+            "local cc = target( 'foo.cpp', CcPrototype, {} ); \n"
             "local working_directory = find_target( pwd() ); \n"
             "local found = false; \n"
             "for dependency in working_directory:get_dependencies() do \n"
@@ -146,11 +141,11 @@ SUITE( TestGraph )
         CHECK( errors == 0 );
     }
     
-    TEST_FIXTURE( ErrorChecker, targets_created_with_strings_are_not_dependencies_of_the_working_directory )
+    TEST_FIXTURE( ErrorChecker, targets_created_without_tables_are_not_dependencies_of_the_working_directory )
     {
         const char* script =
-            "local SourceFile = Rule( 'SourceFile', BIND_SOURCE_FILE ); \n"
-            "local source_file = SourceFile( 'foo.cpp' ); \n"
+            "local SourceFilePrototype = TargetPrototype { 'SourceFile', BIND_SOURCE_FILE }; \n"
+            "local source_file = target( '', SourceFilePrototype ); \n"
             "local working_directory = find_target( pwd() ); \n"
             "local found = false; \n"
             "for dependency in working_directory:get_dependencies() do \n"

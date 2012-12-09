@@ -1,6 +1,6 @@
 //
 // Scheduler.hpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_BUILD_TOOL_SCHEDULER_HPP_INCLUDED
@@ -59,9 +59,12 @@ class Scheduler
         void set_traversing( bool traversing );
         bool is_traversing() const;
 
-        void execute( const path::Path& path );
-        void execute( const char* start, const char* finish );
-        void buildfile( const path::Path& path );        
+        void load( const path::Path& path );
+        void command( const path::Path& path, const std::string& command );
+        void execute( const path::Path& path, const std::string& function );
+        void execute( const char* start, const char* finish );        
+        void buildfile( const path::Path& path );
+        void call( const path::Path& path, const std::string& function );
         void preorder_visit( const lua::LuaValue& function, ptr<Target> target );
         void postorder_visit( const lua::LuaValue& function, Job* job );
         void execute_finished( int exit_code, ptr<Environment> environment );

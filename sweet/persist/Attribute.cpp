@@ -170,9 +170,11 @@ int Attribute::integer() const
     
     switch ( m_type )
     {
+        /*
         case TYPE_ADDRESS:
             value = reinterpret_cast<int>( m_value.m_address );
             break;
+        */
 
         case TYPE_BOOLEAN:
             value = m_value.m_boolean ? 1 : 0;
@@ -211,9 +213,11 @@ unsigned int Attribute::unsigned_integer() const
     
     switch ( m_type )
     {
+        /*
         case TYPE_ADDRESS:
             value = reinterpret_cast<unsigned int>( m_value.m_address );
             break;
+        */
 
         case TYPE_BOOLEAN:
             value = m_value.m_boolean ? 1 : 0;
@@ -253,9 +257,11 @@ double Attribute::real() const
 
     switch ( m_type )
     {
+        /*
         case TYPE_ADDRESS:
             value = static_cast<double>( reinterpret_cast<unsigned int>(m_value.m_address) );
             break;
+        */
 
         case TYPE_BOOLEAN:
             value = m_value.m_boolean ? 1.0 : 0.0;

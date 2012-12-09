@@ -8,6 +8,10 @@
 
 #include "declspec.hpp"
 
+#if defined(BUILD_OS_MACOSX)
+#include <pthread.h>
+#endif
+
 namespace sweet
 {
 
@@ -28,6 +32,10 @@ class SWEET_THREAD_DECLSPEC ScopedLock
         ~ScopedLock();
         void lock();
         void unlock();
+
+#if defined(BUILD_OS_MACOSX)
+        pthread_mutex_t* pthread_mutex() const;
+#endif
 
     private:
         ScopedLock( const ScopedLock& lock );

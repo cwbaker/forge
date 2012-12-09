@@ -1,20 +1,22 @@
 //
 // Scanner.cpp
-// Copyright (c) 2007 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include "Scanner.hpp"
 #include "Pattern.hpp"
 #include <sweet/assert/assert.hpp>
+#include <algorithm>
 
+using std::max;
 using namespace sweet;
 using namespace sweet::build_tool;
 
 Scanner::Scanner( unsigned int patterns_reserve, BuildTool* build_tool )
 : build_tool_( build_tool ),
-  initial_lines_( 128 ),
-  later_lines_( 128 ),
+  initial_lines_( 0 ),
+  later_lines_( 0 ),
   patterns_()
 {
     SWEET_ASSERT( build_tool_ );
@@ -30,11 +32,7 @@ Scanner::Scanner( unsigned int patterns_reserve, BuildTool* build_tool )
 */
 void Scanner::set_initial_lines( int initial_lines )
 {
-    if ( initial_lines < 0 )
-    {
-        initial_lines = 0;
-    }
-    initial_lines_ = initial_lines;
+    initial_lines_ = max( 0, initial_lines );
 }
 
 /**
@@ -59,11 +57,7 @@ int Scanner::get_initial_lines() const
 */
 void Scanner::set_later_lines( int later_lines )
 {
-    if ( later_lines < 0 )
-    {
-        later_lines = 0;
-    }
-    later_lines_ = later_lines;
+    later_lines_ = max( 0, later_lines );
 }
 
 /**

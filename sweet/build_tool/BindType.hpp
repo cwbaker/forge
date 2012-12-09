@@ -1,6 +1,6 @@
 //
 // BindType.hpp
-// Copyright (c) 2007 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_BUILD_TOOL_BINDTYPE_HPP_INCLUDED
@@ -18,7 +18,7 @@ namespace build_tool
 */
 enum BindType
 {
-    BIND_NULL, ///< Targets take their bind type from their Rule's bind type.
+    BIND_NULL, ///< Targets take their bind type from their TargetPrototype or a TargetPrototype that is serialized but not defined in script.
     BIND_PHONY, ///< Targets are not associated with a file.
     BIND_DIRECTORY, ///< Targets are associated with directories.
     BIND_SOURCE_FILE, ///< Targets are associated with a source file.

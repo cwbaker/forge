@@ -1,6 +1,6 @@
 //
 // Executor.cpp
-// Copyright (c) 2008 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -61,7 +61,8 @@ void Executor::execute( const std::string& command, const std::string& command_l
     {
         start();
         thread::ScopedLock lock( jobs_mutex_ );
-        jobs_.push_back( boost::bind(&Executor::thread_execute, this, command, command_line, environment->get_directory().string(), scanner, arguments, environment->get_working_directory(), environment) );
+        ptr<process::Process> process( new Process(command.c_str(), command_line.c_str(), environment->get_directory().string().c_str(), PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR) );
+        jobs_.push_back( boost::bind(&Executor::thread_execute, this, process, scanner, arguments, environment->get_working_directory(), environment) );
         jobs_ready_condition_.notify_all();
     }
 }
@@ -111,19 +112,18 @@ void Executor::thread_process()
     }
 }
 
-void Executor::thread_execute( const std::string& command, const std::string& command_line, const std::string& directory, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment )
+void Executor::thread_execute( ptr<Process> process, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment )
 {
     SWEET_ASSERT( build_tool_ );
+    SWEET_ASSERT( process );
     
     try
     {
-        process::Process process( command.c_str(), command_line.c_str(), directory.c_str(), PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR );
-
         char buffer [1024];        
         char* pos = buffer;
         char* end = buffer + sizeof(buffer) - 1;
 
-        size_t read = process.read( pos, end - pos );
+        size_t read = process->read( pos, end - pos );
         while ( read > 0 )
         {
             char* start = buffer;
@@ -151,7 +151,7 @@ void Executor::thread_execute( const std::string& command, const std::string& co
             }
             
             pos = buffer + (finish - start);
-            read = process.read( pos, end - pos );
+            read = process->read( pos, end - pos );
         }
 
         if ( pos > buffer )
@@ -160,8 +160,8 @@ void Executor::thread_execute( const std::string& command, const std::string& co
             build_tool_->get_scheduler()->push_output( string(buffer, pos), scanner, arguments, working_directory );
         }
 
-        process.wait();
-        build_tool_->get_scheduler()->push_execute_finished( process.exit_code(), environment );
+        process->wait();
+        build_tool_->get_scheduler()->push_execute_finished( process->exit_code(), environment );
     }
 
     catch ( const std::exception& exception )
@@ -193,7 +193,7 @@ void Executor::thread_scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Argume
             int unmatched_lines = 0;
             int maximum_unmatched_lines = scanner->get_initial_lines();
 
-            while ( ::fgets(buffer, sizeof(buffer) - 1, file) != 0 && unmatched_lines < maximum_unmatched_lines )
+            while ( ::fgets(buffer, sizeof(buffer) - 1, file) != 0 && unmatched_lines <= maximum_unmatched_lines )
             {
                 buffer [sizeof(buffer) - 1] = '\0';
 
@@ -214,7 +214,7 @@ void Executor::thread_scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Argume
                     unmatched_lines = 0;
                     maximum_unmatched_lines = scanner->get_later_lines();
                 }
-                else
+                else if ( maximum_unmatched_lines > 0 )
                 {
                     ++unmatched_lines;
                 }
@@ -246,6 +246,7 @@ void Executor::start()
     if ( threads_.empty() )
     {
         thread::ScopedLock lock( jobs_mutex_ );
+        done_ = false;
         threads_.reserve( maximum_parallel_jobs_ );
         for ( size_t i = 0; i < maximum_parallel_jobs_; ++i )
         {

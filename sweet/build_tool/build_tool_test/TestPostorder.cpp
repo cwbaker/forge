@@ -17,8 +17,8 @@ SUITE( TestPostorder )
             "[string \"BuildTool\"]:3: Error in postorder visit (in postorder for 'error_in_postorder_visit')"
         ;
         const char* script = 
-            "ErrorInPostorderVisit = Rule( \"ErrorInPostorderVisit\", BIND_PHONY ); \n"
-            "local error_in_postorder_visit = ErrorInPostorderVisit( 'error_in_postorder_visit' ); \n"
+            "ErrorInPostorderVisit = TargetPrototype { 'ErrorInPostorderVisit', BIND_PHONY }; \n"
+            "local error_in_postorder_visit = target( 'error_in_postorder_visit', ErrorInPostorderVisit ); \n"
             "postorder( function(target) error('Error in postorder visit') end, error_in_postorder_visit ); \n"
         ;        
         test( script );
@@ -32,8 +32,8 @@ SUITE( TestPostorder )
             "[string \"BuildTool\"]:3: attempt to index global 'foo' (a nil value) (in postorder for 'unexpected_error_in_postorder_visit')"
         ;
         const char* script = 
-            "UnexpectedErrorInPostorderVisit = Rule( \"UnexpectedErrorInPostorderVisit\", BIND_PHONY ); \n"
-            "local unexpected_error_in_postorder_visit = UnexpectedErrorInPostorderVisit( 'unexpected_error_in_postorder_visit' ); \n"
+            "UnexpectedErrorInPostorderVisit = TargetPrototype { 'UnexpectedErrorInPostorderVisit', BIND_PHONY }; \n"
+            "local unexpected_error_in_postorder_visit = target( 'unexpected_error_in_postorder_visit', UnexpectedErrorInPostorderVisit ); \n"
             "postorder( function(target) foo.bar = 2; end, unexpected_error_in_postorder_visit ); \n"
         ;        
         test( script );
@@ -47,8 +47,8 @@ SUITE( TestPostorder )
             "Postorder called from within another preorder or postorder traversal (in postorder for 'recursive_postorder_error')"
         ;
         const char* script = 
-            "RecursivePostorderError = Rule( \"RecursivePostorderError\", BIND_PHONY ); \n"
-            "local recursive_postorder_error = RecursivePostorderError( 'recursive_postorder_error' ); \n"
+            "RecursivePostorderError = TargetPrototype { 'RecursivePostorderError', BIND_PHONY }; \n"
+            "local recursive_postorder_error = target( 'recursive_postorder_error', RecursivePostorderError ); \n"
             "postorder( function(target) postorder(function(target) end, recursive_postorder_error) end, recursive_postorder_error ); \n"
         ;
         test( script );
@@ -62,8 +62,8 @@ SUITE( TestPostorder )
             "Postorder called from within another preorder or postorder traversal (in postorder for 'recursive_postorder_error')"
         ;
         const char* script = 
-            "RecursivePostorderError = Rule( \"RecursivePostorderError\", BIND_PHONY ); \n"
-            "local recursive_postorder_error = RecursivePostorderError( 'recursive_postorder_error' ); \n"
+            "RecursivePostorderError = TargetPrototype { 'RecursivePostorderError', BIND_PHONY }; \n"
+            "local recursive_postorder_error = target( 'recursive_postorder_error', RecursivePostorderError ); \n"
             "postorder( function(target) postorder(function(target) end, recursive_postorder_error) end, recursive_postorder_error ); \n"
         ;
         test( script );

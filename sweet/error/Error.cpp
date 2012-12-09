@@ -1,13 +1,17 @@
 //
 // Error.cpp
-// Copyright (c) 2001 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2001 - 2012 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include <sweet/error/Error.hpp>
 #include <sweet/assert/assert.hpp>
+#include <memory.h>
 #include <stdio.h>
+
+#if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
+#endif
 
 using namespace sweet::error;
 
@@ -82,7 +86,7 @@ const char* Error::what() const throw ()
 //  A variable length argument list that matches that arguments in @e 
 //  format.
 */
-void Error::append( const char* format, va_list& args )
+void Error::append( const char* format, va_list args )
 {
     if ( format )
     {
@@ -93,7 +97,7 @@ void Error::append( const char* format, va_list& args )
             ++pos;
         }
 
-        _vsnprintf( pos, end - pos, format, args );
+        vsnprintf( pos, end - pos, format, args );
         text_[sizeof(text_) - 1] = '\0';
     }
 }
@@ -115,7 +119,7 @@ void Error::append( const char* text )
             ++pos;
         }
 
-        _snprintf( pos, end - pos, text );
+        strncpy( pos, text, end - pos );
         text_[sizeof(text_) - 1] = '\0';
     }
 }
@@ -138,11 +142,15 @@ void Error::append( const char* text )
 const char* Error::format( int oserror, char* buffer, unsigned int length )
 {
     SWEET_ASSERT( buffer );
+#if defined(BUILD_OS_WINDOWS)    
     int actual_length = ::FormatMessageA( FORMAT_MESSAGE_FROM_SYSTEM, 0, oserror, 0, buffer, static_cast<int>(length), 0 );
     while ( actual_length > 0 && (buffer[actual_length] == '\n' || buffer[actual_length] == '\r' || buffer[actual_length] == '.' || buffer[actual_length] == 0) )
     {
         buffer[actual_length] = 0;
         --actual_length;
     }
+#elif defined(BUILD_OS_MACOSX)
+    strerror_r( oserror, buffer, length );
+#endif
     return buffer;
 }
