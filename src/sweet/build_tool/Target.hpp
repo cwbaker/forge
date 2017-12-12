@@ -110,6 +110,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public pointer::enable_ptr_from_this<Ta
         bool is_dependency( ptr<Target> target ) const;
         bool is_buildable() const;
         std::string generate_failed_dependencies_message() const;
+        Target* dependency( int n ) const;
         const std::vector<Target*>& get_dependencies() const;
 
         void set_visiting( bool visiting );

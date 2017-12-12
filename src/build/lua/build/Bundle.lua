@@ -21,7 +21,7 @@ function BundlePrototype.build( bundle )
                 end
             end
 
-            local provisioning_profile = _G.provisioning_profile or bundle.settings.ios.provisioning_profile;
+            local provisioning_profile = _G.provisioning_profile or bundle.settings.provisioning_profile;
             if provisioning_profile then
                 local embedded_provisioning_profile = "%s/embedded.mobileprovision" % {bundle:get_filename()};
                 rm( embedded_provisioning_profile );
@@ -29,9 +29,10 @@ function BundlePrototype.build( bundle )
             end
 
             local command_line = {
-                'xcrun --sdk %s codesign' % ios.SDK_BY_PLATFORM[platform];
+                'xcrun --sdk %s codesign' % ios.sdkroot_by_target_and_platform( bundle, platform );
                 '-s "%s"' % {_G.signing_identity or bundle.settings.ios.signing_identity};
                 '--force';
+                '--no-strict';
                 '-vv';
                 '"%s"' % bundle:get_filename();
             };
@@ -47,6 +48,11 @@ function BundlePrototype.build( bundle )
 
             putenv( "CODESIGN_ALLOCATE", bundle.settings.ios.codesign_allocate );
             build.system( xcrun, table.concat(command_line, " ") );
+
+            local ios_deploy = bundle.settings.ios.ios_deploy;
+            if ios_deploy then 
+                build.system( ios_deploy, [[ios-deploy -b "%s"]] % bundle:get_filename() );
+            end
         end
     end
 end

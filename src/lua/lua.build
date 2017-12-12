@@ -6,8 +6,10 @@ Library "liblua" {
     };
         
     Cc {
-        defines = { 
-            "_CRT_SECURE_NO_DEPRECATE"
+        defines = build.switch { 
+            operating_system();
+            windows = { "_CRT_SECURE_NO_DEPRECATE" };
+            macosx = { "LUA_USE_POSIX", "LUA_USE_DLOPEN" };
         };
         "lapi.c",
         "lcode.c",

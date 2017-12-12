@@ -1,10 +1,13 @@
 
 ios = {};
 
-ios.SDK_BY_PLATFORM = {
-    ios = "iphoneos8.0";
-    ios_simulator = "iphonesimulator8.0";
-};
+function ios.sdkroot_by_target_and_platform( target, platform )
+    local sdkroot = target.settings.sdkroot or "iphoneos";
+    if platform == "ios_simulator" then 
+        sdkroot = string.gsub( sdkroot, "iphoneos", "iphonesimulator" );
+    end
+    return sdkroot;
+end
 
 function ios.configure( settings )
     local function autodetect_iphoneos_sdk_version()
@@ -35,7 +38,7 @@ function ios.configure( settings )
         local xcodebuild = "/usr/bin/xcodebuild";
         local arguments = "xcodebuild -version";
         local result = execute( xcodebuild, arguments, Scanner {
-            [ [[Xcode ([0-9]+)\.([0-9]+)\.([0-9]+)]] ] = function( major, minor, patch )
+            [ [[Xcode ([0-9]+)\.([0-9]+)]] ] = function( major, minor )
                 xcode_version = "%02d%02d" % { tonumber(major), tonumber(minor) };
             end;
             [ [[Build version ([A-Za-z0-9]+)]] ] = function( build_version )
@@ -62,6 +65,13 @@ function ios.configure( settings )
         return os_version;
     end
 
+    local function autodetect_ios_deploy()
+        local ios_deploy = home( "bin/ios-deploy" );
+        if exists(ios_deploy) then 
+            return ios_deploy;
+        end
+    end
+
     if operating_system() == "macosx" then
         local local_settings = build.local_settings;
         if not local_settings.ios then
@@ -72,7 +82,6 @@ function ios.configure( settings )
             local_settings.ios = {
                 xcrun = "/usr/bin/xcrun";
                 signing_identity = "iPhone Developer";
-                provisioning_profile = home( "sweet/sweet_software/dev.mobileprovision" );
                 codesign_allocate = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/codesign_allocate";
                 sdk_name = "iphoneos";
                 sdk_version = sdk_version;
@@ -80,6 +89,7 @@ function ios.configure( settings )
                 xcode_version = xcode_version;
                 xcode_build_version = xcode_build_version;
                 os_version = os_version;
+                ios_deploy = autodetect_ios_deploy();
             };
         end
     end
@@ -167,15 +177,9 @@ function ios.cc( target )
         "-fasm-blocks"
     };
 
-    -- Add these to compile for iOS
-    if platform == "ios" then 
-        local sysroot = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.0.sdk";
-        table.insert( flags, "-miphoneos-version-min=6.1" );
-        table.insert( flags, "-isysroot %s" % sysroot );
-    elseif platform == "ios_simulator" then 
-        local sysroot = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator8.0.sdk";
-        table.insert( flags, "-miphoneos-version-min=6.1" );
-        table.insert( flags, "-isysroot %s" % sysroot );
+    local iphoneos_deployment_target = target.settings.iphoneos_deployment_target;
+    if iphoneos_deployment_target then 
+        table.insert( flags, "-miphoneos-version-min=%s" % iphoneos_deployment_target );
     end
 
     local language = target.language or "c++";
@@ -220,7 +224,7 @@ function ios.cc( target )
         table.insert( flags, "-fno-stack-protector" );
     end
 
-    local sdk = ios.SDK_BY_PLATFORM[platform];
+    local sdkroot = ios.sdkroot_by_target_and_platform( target, platform );
     local ccflags = table.concat( flags, " " );
     local cppdefines = table.concat( defines, " " );
     local cppdirs = table.concat( include_directories, " " );
@@ -229,7 +233,7 @@ function ios.cc( target )
         if target.precompiled_header:is_outdated() then
             print( leaf(target.precompiled_header.source) );
             local xcrun = target.settings.ios.xcrun;
-            build.system( xcrun, [[xcrun --sdk %s clang %s %s %s -o %s "%s"]] % {sdk, ccflags, cppdirs, cppdefines, target.precompiled_header:get_filename(), target.precompiled_header.source} );
+            build.system( xcrun, [[xcrun --sdk %s clang %s %s %s -o %s "%s"]] % {sdkroot, ccflags, cppdirs, cppdefines, target.precompiled_header:get_filename(), target.precompiled_header.source} );
         end        
     end
     
@@ -239,13 +243,13 @@ function ios.cc( target )
             if dependency:prototype() == nil then
                 print( leaf(dependency.source) );
                 local xcrun = target.settings.ios.xcrun;
-                build.system( xcrun, [[xcrun --sdk %s clang %s %s %s -o %s "%s"]] % {sdk, ccflags, cppdirs, cppdefines, dependency:get_filename(), absolute(dependency.source)} );
+                build.system( xcrun, [[xcrun --sdk %s clang %s %s %s -o %s "%s"]] % {sdkroot, ccflags, cppdirs, cppdefines, dependency:get_filename(), absolute(dependency.source)} );
             elseif dependency.results then
                 for _, result in ipairs(dependency.results) do
                     if result:is_outdated() then
                         print( leaf(result.source) );
                         local xcrun = target.settings.ios.xcrun;
-                        build.system( xcrun, [[xcrun --sdk %s clang %s %s %s -o %s "%s"]] % {sdk, ccflags, cppdirs, cppdefines, result:get_filename(), absolute(result.source)} );
+                        build.system( xcrun, [[xcrun --sdk %s clang %s %s %s -o %s "%s"]] % {sdkroot, ccflags, cppdirs, cppdefines, result:get_filename(), absolute(result.source)} );
                     end
                 end
             end
@@ -278,7 +282,7 @@ function ios.build_library( target )
     end
     
     if #objects > 0 then
-        local sdk = ios.SDK_BY_PLATFORM[platform];
+        local sdk = ios.sdkroot_by_target_and_platform( target, platform );
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, " " );
 
@@ -325,17 +329,15 @@ function ios.build_executable( target )
         "-stdlib=libstdc++"
     };
 
-    -- Add these to compile for iOS
-    local sysroot;
-    if platform == "ios" then 
-        sysroot = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.0.sdk";
-        table.insert( flags, "-mios-version-min=6.1" );
-        table.insert( flags, "-isysroot %s" % sysroot );
-    elseif platform == "ios_simulator" then 
-        sysroot = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator8.0.sdk";
-        table.insert( flags, "-mios-simulator-version-min=6.1" );
-        table.insert( flags, "-isysroot %s" % sysroot );
+    local iphoneos_deployment_target = target.settings.iphoneos_deployment_target;
+    if iphoneos_deployment_target then 
+        if platform == "ios" then 
+            table.insert( flags, "-mios-version-min=%s" % iphoneos_deployment_target );
+        elseif platform == "ios_simulator" then
+            table.insert( flags, "-mios-simulator-version-min=%s" % iphoneos_deployment_target );
+        end
     end
+
     table.insert( flags, "-ObjC" );
     table.insert( flags, "-all_load" );
 
@@ -347,6 +349,10 @@ function ios.build_executable( target )
     if target.settings.verbose_linking then
         table.insert( flags, "-Wl,--verbose=31" );
     end   
+
+    if target.settings.generate_map_file then
+        table.insert( flags, [[-Wl,-map,"%s"]] % native( "%s/%s.map" % {obj_directory(target), target:id()}) );
+    end
 
     if target.settings.strip and not target.settings.generate_dsym_bundle then
         table.insert( flags, "-Wl,-dead_strip" );
@@ -361,6 +367,11 @@ function ios.build_executable( target )
     if target.libraries then
         for _, library in ipairs(target.libraries) do
             table.insert( libraries, "-l%s_%s" % {library:id(), variant} );
+        end
+    end
+    if target.settings.third_party_libraries then
+        for _, library in ipairs(target.settings.third_party_libraries) do
+            table.insert( libraries, "-l%s" % library );
         end
     end
     if target.third_party_libraries then
@@ -396,7 +407,7 @@ function ios.build_executable( target )
     end
 
     if #objects > 0 then
-        local sdk = ios.SDK_BY_PLATFORM[platform];
+        local sdkroot = ios.sdkroot_by_target_and_platform( target, platform );
         local ldflags = table.concat( flags, " " );
         local lddirs = table.concat( library_directories, " " );        
         local ldobjects = table.concat( objects, " " );
@@ -405,7 +416,7 @@ function ios.build_executable( target )
         print( leaf(target:get_filename()) );
         pushd( "%s/%s" % {obj_directory(target), target.architecture} );
         local xcrun = target.settings.ios.xcrun;
-        build.system( xcrun, "xcrun --sdk %s clang++ %s %s %s %s" % {sdk, ldflags, lddirs, ldobjects, ldlibs} );
+        build.system( xcrun, "xcrun --sdk %s clang++ %s %s %s %s" % {sdkroot, ldflags, lddirs, ldobjects, ldlibs} );
         popd();
     end
 end;
@@ -423,7 +434,7 @@ function ios.lipo_executable( target )
         end
     end
     print( leaf(target:get_filename()) );
-    local sdk = ios.SDK_BY_PLATFORM[platform];
+    local sdk = ios.sdkroot_by_target_and_platform( target, platform );
     executables = table.concat( executables, [[" "]] );
     local xcrun = target.settings.ios.xcrun;
     build.system( xcrun, [[xcrun --sdk %s lipo -create -output "%s" "%s"]] % {sdk, target:get_filename(), executables} );

@@ -4,7 +4,7 @@ PlistPrototype = TargetPrototype { "Plist" };
 function PlistPrototype.build( plist )
     if plist:is_outdated() then
         local command_line = {
-            'xcrun --sdk %s plutil' % ios.SDK_BY_PLATFORM[platform];
+            'xcrun --sdk %s plutil' % ios.sdkroot_by_target_and_platform( plist, platform );
             '-convert binary1';
             '-o "%s"' % plist:get_filename();
             '"%s"' % plist.source:get_filename();

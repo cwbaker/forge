@@ -1,6 +1,6 @@
 //
 // Process.cpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved
+// Copyright (c) 2008 - 2014 Charles Baker.  All rights reserved
 //
 
 #include "stdafx.hpp"
@@ -289,9 +289,14 @@ void Process::wait()
     SWEET_ASSERT( process_ != 0 );
 
     pid_t result = waitpid( process_, &exit_code_, 0 );
+    while ( result < 0 && errno == EINTR )
+    {
+        result = waitpid( process_, &exit_code_, 0 );
+    }
     if ( result != process_ )
     {
-        SWEET_ERROR( WaitForProcessFailedError("Waiting for a process failed - errno=%d", errno) );
+        char buffer [1024];
+        SWEET_ERROR( WaitForProcessFailedError("Waiting for a process failed - %s", Error::format(errno, buffer, sizeof(buffer))) );
     }
     process_ = 0;
 
@@ -368,9 +373,14 @@ unsigned int Process::read( void* buffer, unsigned int length )
     SWEET_ASSERT( stdout_ != 0 );
 
     int bytes = ::read( stdout_, buffer, length );
+    while ( bytes < 0 && errno == EINTR )
+    {
+        bytes = ::read( stdout_, buffer, length );
+    }
     if ( bytes == -1 )
     {
-        SWEET_ERROR( ReadingPipeFailedError("Reading from a child process failed - errno=%d", errno) );        
+        char buffer [1024];
+        SWEET_ERROR( ReadingPipeFailedError("Reading from a child process failed - %s", Error::format(errno, buffer, sizeof(buffer))) );        
     }
     return bytes;
 #endif

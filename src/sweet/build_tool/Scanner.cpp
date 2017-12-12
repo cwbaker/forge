@@ -17,6 +17,7 @@ Scanner::Scanner( unsigned int patterns_reserve, BuildTool* build_tool )
 : build_tool_( build_tool ),
   initial_lines_( 0 ),
   later_lines_( 0 ),
+  maximum_matches_( 0 ),
   patterns_()
 {
     SWEET_ASSERT( build_tool_ );
@@ -42,7 +43,7 @@ void Scanner::set_initial_lines( int initial_lines )
 // @return
 //  The maximum number of unmatched lines allowed at the start of a file.
 */
-int Scanner::get_initial_lines() const
+int Scanner::initial_lines() const
 {
     return initial_lines_;
 }
@@ -68,9 +69,32 @@ void Scanner::set_later_lines( int later_lines )
 //  The maximum number of unmatched lines allowed after at least one matched 
 //  line.
 */
-int Scanner::get_later_lines() const
+int Scanner::later_lines() const
 {
     return later_lines_;
+}
+
+/**
+// Set the maximum number of matches to find before stopping scanning.
+//
+// @param maximum_matches
+//  The maximum number of matches to find before stopping scanning or 0 to 
+//  find as many matches as possible.
+*/
+void Scanner::set_maximum_matches( int maximum_matches )
+{
+    maximum_matches_ = max( 0, maximum_matches );
+}
+
+/**
+// Return the maximum number of matches to find before scanning is stopped.
+//
+// @return
+//  The maximum number of matches.
+*/
+int Scanner::maximum_matches() const
+{
+    return maximum_matches_;
 }
 
 /**

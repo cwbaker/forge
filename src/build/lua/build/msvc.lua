@@ -38,7 +38,7 @@ function msvc.configure( settings )
         if not local_settings.msvc then
             local_settings.updated = true;
             local_settings.msvc = {
-                visual_studio_directory = autodetect_visual_studio_directory() or "C:/Program Files/Microsoft Visual Studio 12.0";
+                visual_studio_directory = autodetect_visual_studio_directory() or "C:/Program Files (x86)/Microsoft Visual Studio 12.0";
                 windows_sdk_directory = autodetect_windows_sdk_directory();
             };
         end
@@ -59,7 +59,6 @@ function msvc.initialize( settings )
         local visual_studio_directory = settings.msvc.visual_studio_directory;
         
         local path = {
-            getenv( "PATH" ),
             [[%s\Common7\IDE]] % visual_studio_directory,
             [[%s\VC\BIN]] % visual_studio_directory,
             [[%s\Common7\Tools]] % visual_studio_directory,
@@ -351,8 +350,13 @@ function msvc.build_executable( target )
             libraries = "%s %s.lib" % { libraries, basename(library:get_filename()) };
         end
     end
+    if target.settings.third_party_libraries then
+        for _, library in ipairs(target.settings.third_party_libraries) do
+            libraries = "%s %s.lib" % { libraries, basename(library) };
+        end
+    end
     if target.third_party_libraries then
-        for _, library in ipairs(target.third_party_libraries) do
+        for _, library in ipairs(target.settings.third_party_libraries) do
             libraries = "%s %s.lib" % { libraries, basename(library) };
         end
     end
@@ -410,6 +414,17 @@ function msvc.build_executable( target )
             objects = objects.." "..embedded_manifest_res;
             ldflags = ldflags.." /incremental";
             
+            local logging = {
+                "msvc.build_executable()",
+                "msld = '%s'" % msld,
+                "link%s%s%s%s%s" % {ldflags, lddirs, objects, libraries, ldlibs},
+                "PATH = '%s'" % getenv("PATH"),
+                "INCLUDE = '%s'" % getenv("INCLUDE"),
+                "LIB = '%s'" % getenv("LIB"),
+                "LIBPATH = '%s'" % getenv("LIBPATH"),
+            };
+            print( table.concat(logging, "\n") );
+
             build.system( msld, "link"..ldflags..lddirs..objects..libraries..ldlibs );
             build.system( msmt, "mt /nologo /out:\""..embedded_manifest.."\" /manifest "..intermediate_manifest );
             build.system( msrc, "rc /Fo\""..embedded_manifest_res.."\" "..embedded_manifest_rc, IgnoreOutputScanner );

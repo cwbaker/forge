@@ -52,7 +52,7 @@ lua::LuaThread& Environment::get_environment_thread()
 
 /**
 // Reset the working directory stack to contain only the directory represented
-// by \e directory.
+// by the Target \e directory.
 //
 // @param directory
 //  The Target that represents the directory to set the working directory 

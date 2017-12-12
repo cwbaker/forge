@@ -26,6 +26,7 @@ class Mutex;
 class SWEET_THREAD_DECLSPEC ScopedLock
 {
     Mutex& m_mutex;
+    bool m_locked;
 
     public:
         ScopedLock( Mutex& mutex );

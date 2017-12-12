@@ -366,6 +366,11 @@ function android.build_executable( target )
             table.insert( libraries, "-l%s_%s_%s" % {library:id(), platform, variant} );
         end
     end
+    if target.settings.third_party_libraries then
+        for _, library in ipairs(target.settings.third_party_libraries) do
+            table.insert( libraries, "-l%s" % library );
+        end
+    end
     if target.third_party_libraries then
         for _, library in ipairs(target.third_party_libraries) do
             table.insert( libraries, "-l%s" % library );

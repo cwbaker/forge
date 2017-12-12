@@ -858,6 +858,21 @@ std::string Target::generate_failed_dependencies_message() const
 }
 
 /**
+// Get the \e nth dependency of this Target.
+//
+// @param n
+//  The index of the dependency to return.
+//
+// @return
+//  The \e nth dependency of this Target or null if \e n is out of range of 
+//  this Target's dependencies.
+*/
+Target* Target::dependency( int n ) const
+{
+    return n >= 0 && n < int(dependencies_.size()) ? dependencies_[n] : NULL;
+}
+
+/**
 // Get the dependencies of this Target.
 //
 // The dependencies of a Target are the other Targets that must be built 

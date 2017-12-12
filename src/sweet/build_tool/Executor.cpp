@@ -191,9 +191,12 @@ void Executor::thread_scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Argume
             char buffer [SCANNER_MAXIMUM_LINE_LENGTH + 1];
 
             int unmatched_lines = 0;
-            int maximum_unmatched_lines = scanner->get_initial_lines();
+            int maximum_unmatched_lines = scanner->initial_lines();
 
-            while ( ::fgets(buffer, sizeof(buffer) - 1, file) != 0 && unmatched_lines <= maximum_unmatched_lines )
+            int matches = 0;
+            int maximum_matches = scanner->maximum_matches();
+
+            while ( ::fgets(buffer, sizeof(buffer) - 1, file) != 0 && unmatched_lines <= maximum_unmatched_lines && matches <= maximum_matches )
             {
                 buffer [sizeof(buffer) - 1] = '\0';
 
@@ -212,7 +215,11 @@ void Executor::thread_scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Argume
                 if ( matched )
                 {
                     unmatched_lines = 0;
-                    maximum_unmatched_lines = scanner->get_later_lines();
+                    maximum_unmatched_lines = scanner->later_lines();
+                    if ( maximum_matches > 0 )
+                    {
+                        ++matches;
+                    }
                 }
                 else if ( maximum_unmatched_lines > 0 )
                 {

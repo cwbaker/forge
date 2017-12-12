@@ -3,7 +3,7 @@ XibPrototype = TargetPrototype { "Xib" };
 
 function XibPrototype.build( xib )
     if xib:is_outdated() then
-        local sdk = ios.SDK_BY_PLATFORM[platform];
+        local sdk = ios.sdkroot_by_target_and_platform( xib, platform );
         local xcrun = xib.settings.ios.xcrun;
         for dependency in xib:get_dependencies() do 
             if dependency:is_outdated() and dependency:prototype() == nil then                

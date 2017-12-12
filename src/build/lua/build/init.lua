@@ -184,6 +184,7 @@ end
 
 -- Return a value from a table using the first key as a lookup.
 function build.switch( values )
+    assert( values[1] ~= nil, "No value passed to `build.switch()`" );
     return values[values[1]];
 end
 

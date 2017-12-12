@@ -205,8 +205,22 @@ int Graph::get_successful_revision() const
 // \e working_directory or the root directory.  
 //
 // If a ".." element is encountered then the relative parent is moved up a 
-// level otherwise a new target is added with that identifier as a child of 
+// level otherwise a new Target is added with that identifier as a child of 
 // the current relative parent and the next element is considered.
+//
+// If \e id refers to an already existing Target that doesn't have a 
+// TargetPrototype set then the existing Target is updated to have 
+// \e target_prototype as its TargetPrototype and \e working_directory as its
+// working directory.  The working directory is updated to allow Targets for 
+// C/C++ libraries to be lazily created as plain file Targets by depending 
+// executables before the libraries themselves are defined.  When the library
+// is lazily defined by the executable reference the working directory is the
+// working directory for the executable.  When the library is defined it 
+// specifies the correct TargetPrototype and working directory.
+//
+// If \e id refers to an already existing Target that already has a 
+// TargetPrototype set then an error is generated as it is not clear which
+// TargetPrototype applies.
 //
 // @param id
 //  The identifier of the Target to find or create.
@@ -274,6 +288,7 @@ ptr<Target> Graph::target( const std::string& id, ptr<TargetPrototype> target_pr
     if ( target_prototype && target->get_prototype() == NULL )
     {
         target->set_prototype( target_prototype );
+        target->set_working_directory( working_directory );
     }
 
     if ( target->get_working_directory() == NULL )
@@ -505,13 +520,14 @@ void Graph::clear()
 */
 void Graph::recover()
 {
-    SWEET_ASSERT( !filename_.empty() );
     SWEET_ASSERT( root_target_ );
-
     root_target_->recover( this );
-    cache_target_ = target( filename_, ptr<TargetPrototype>(), ptr<Target>() );
-    cache_target_->set_filename( filename_ );
-    bind( cache_target_ );
+    if ( !filename_.empty() )
+    {
+        cache_target_ = target( filename_, ptr<TargetPrototype>(), ptr<Target>() );
+        cache_target_->set_filename( filename_ );
+        bind( cache_target_ );
+    }
 }
 
 /**

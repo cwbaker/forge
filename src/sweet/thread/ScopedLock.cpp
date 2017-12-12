@@ -16,7 +16,8 @@ using namespace sweet::thread;
 //  The Mutex to lock and unlock.
 */
 ScopedLock::ScopedLock( Mutex& mutex )
-: m_mutex( mutex )
+: m_mutex( mutex ),
+  m_locked( true )
 {
     m_mutex.lock();
 }
@@ -26,7 +27,10 @@ ScopedLock::ScopedLock( Mutex& mutex )
 */
 ScopedLock::~ScopedLock()
 {
-    m_mutex.unlock();
+    if ( m_locked )
+    {
+        m_mutex.unlock();
+    }
 }
 
 /**
@@ -35,6 +39,7 @@ ScopedLock::~ScopedLock()
 void ScopedLock::lock()
 {
     m_mutex.lock();
+    m_locked = true;
 }
 
 /**
@@ -42,6 +47,7 @@ void ScopedLock::lock()
 */
 void ScopedLock::unlock()
 {
+    m_locked = false;
     m_mutex.unlock();
 }
 

@@ -252,11 +252,41 @@ local function generate_configuration( xcodeproj, configuration, id, settings )
         buildSettings = {
             ARCHS = "%s";
             VALID_ARCHS = "%s";
+            ONLY_ACTIVE_ARCH = YES;
+]]
+    % { configuration.uuid, id, archs, archs }
+    );
+
+    if settings.sdkroot then 
+        xcodeproj:write([[
+            SDKROOT = "%s";
+]]
+    % settings.sdkroot
+    );
+    end
+
+    if settings.iphoneos_deployment_target then 
+        xcodeproj:write([[
+            IPHONEOS_DEPLOYMENT_TARGET = "%s";
+]]
+    % settings.iphoneos_deployment_target
+    );
+    end
+
+    if settings.targeted_device_family then 
+        xcodeproj:write([[
+            TARGETED_DEVICE_FAMILY = "%s";
+]]
+    % settings.targeted_device_family
+    );
+    end
+
+    xcodeproj:write([[ 
         };
         name = %s;
     };
 ]]
-    % { configuration.uuid, id, archs, archs, configuration.variant }
+    % configuration.variant
     );
 end
 
@@ -406,6 +436,7 @@ end
 -- The "xcode_build" command entry point (global) this is used by generated
 -- Xcode projects to trigger a build or clean.
 function xcode_build()
+    local architectures = getenv( "ARCHS" );
     if platform == "ios" and architectures and string.find(architectures, "i386") then 
         platform = "ios_simulator";
     end

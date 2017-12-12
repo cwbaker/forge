@@ -69,6 +69,10 @@ build.default_settings = {
             };
             framework_directories = {
             };
+            sdkroot = "iphoneos";
+            iphoneos_deployment_target = "7.0";
+            targeted_device_family = "1,2";
+            provisioning_profile = home( "sweet/sweet_software/dev.mobileprovision" );
         };
 
         ["ios_simulator"] = {
@@ -80,6 +84,12 @@ build.default_settings = {
             };
             framework_directories = {
             };
+            -- The "sdkroot" settings is replaced with "iphonesimulator" at 
+            -- build time when building for the simulator.
+            sdkroot = "iphoneos"; 
+            iphoneos_deployment_target = "7.0";
+            targeted_device_family = "1,2";
+            provisioning_profile = home( "sweet/sweet_software/dev.mobileprovision" );
         };
 
         ["llvmgcc"] = {
@@ -98,6 +108,14 @@ build.default_settings = {
             variants = {
                 "debug", "debug_dll", "release", "release_dll", "shipping", "shipping_dll"
             };
+            third_party_libraries = {
+                "advapi32",
+                "gdi32",
+                "kernel32",
+                "user32",
+                "ws2_32",
+                "wsock32"
+            };
         };
 
         ["msvc"] = {
@@ -106,6 +124,14 @@ build.default_settings = {
             };
             variants = {
                 "debug", "debug_dll", "release", "release_dll", "shipping", "shipping_dll"
+            };
+            third_party_libraries = {
+                "advapi32",
+                "gdi32",
+                "kernel32",
+                "user32",
+                "ws2_32",
+                "wsock32"
             };
         };
     };

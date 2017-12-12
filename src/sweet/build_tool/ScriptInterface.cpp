@@ -98,9 +98,11 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
     scanner_prototype_.members()
         .type( SWEET_STATIC_TYPEID(Scanner) )
         ( "set_initial_lines", &Scanner::set_initial_lines )
-        ( "get_initial_lines", &Scanner::get_initial_lines )
+        ( "initial_lines", &Scanner::initial_lines )
         ( "set_later_lines", &Scanner::set_later_lines )
-        ( "get_later_lines", &Scanner::get_later_lines )
+        ( "later_lines", &Scanner::later_lines )
+        ( "set_maximum_matches", &Scanner::set_maximum_matches )
+        ( "maximum_matches", &Scanner::maximum_matches )
     ;
 
     target_metatable_.members()
@@ -129,6 +131,7 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "get_targets", raw(&ScriptInterface::get_targets), this )
         ( "add_dependency", &Target::add_dependency )
         ( "remove_dependency", &Target::remove_dependency )
+        ( "dependency", raw(&ScriptInterface::dependency), this )
         ( "get_dependencies", raw(&ScriptInterface::get_dependencies), this )
     ;
 
@@ -282,6 +285,7 @@ void ScriptInterface::create_prototype( ptr<TargetPrototype> target_prototype )
         ( "get_targets", raw(&ScriptInterface::get_targets), this )
         ( "add_dependency", &Target::add_dependency )
         ( "remove_dependency", &Target::remove_dependency )
+        ( "dependency", raw(&ScriptInterface::dependency), this )
         ( "get_dependencies", raw(&ScriptInterface::get_dependencies), this )
     ;
     
@@ -949,6 +953,44 @@ int ScriptInterface::get_targets( lua_State* lua_state )
     }
 }
 
+int ScriptInterface::dependency( lua_State* lua_state )
+{
+    SWEET_ASSERT( lua_state );
+
+    const int TARGET = 1;
+    const int INDEX = 2;
+    ptr<Target> target = LuaConverter<ptr<Target> >::to( lua_state, TARGET );
+    if ( !target )
+    {
+        SWEET_ERROR( RuntimeError("Null Target passed to 'Target.dependency()'") );
+        return lua_error( lua_state );
+    }
+
+    int index = lua_isnumber( lua_state, INDEX ) ? lua_tointeger( lua_state, INDEX ) : 1;
+    if ( index < 1 )
+    {
+        SWEET_ERROR( RuntimeError("Index of less than 1 passed to 'Target.dependency()'; index=%d", index) );
+        return lua_error( lua_state );
+    }
+
+    Target* dependency = target->dependency( index - 1 );
+    if ( dependency )
+    {
+        if ( !dependency->is_referenced_by_script() )
+        {
+            ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+            SWEET_ASSERT( script_interface );
+            script_interface->create_target( dependency->ptr_from_this() );
+        }
+        LuaConverter<ptr<Target> >::push( lua_state, dependency->ptr_from_this() );
+    }
+    else
+    {
+        lua_pushnil( lua_state );
+    }
+    return 1;
+}
+
 struct GetDependenciesTargetReferencedByScript
 {
     ScriptInterface* script_interface_;
@@ -983,7 +1025,7 @@ int ScriptInterface::get_dependencies( lua_State* lua_state )
         ptr<Target> target = LuaConverter<ptr<Target> >::to( lua_state, TARGET_PARAMETER );
         if ( !target )
         {
-            SWEET_ERROR( RuntimeError("Target is null when iterating over dependencies") );
+            SWEET_ERROR( RuntimeError("Null Target passed to 'Target.get_dependencies()'") );
         }
 
         const vector<Target*>& dependencies = target->get_dependencies();

@@ -1,8 +1,3 @@
-//
-// Mutex.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_THREAD_MUTEX_HPP_INCLUDED
 #define SWEET_THREAD_MUTEX_HPP_INCLUDED
 
@@ -10,7 +5,7 @@
 
 #if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
-#elif defined(BUILD_OS_MACOSX)
+#else
 #include <pthread.h>
 #endif
 
@@ -25,11 +20,10 @@ namespace thread
 */
 class SWEET_THREAD_DECLSPEC Mutex
 {
-#if defined(BUILD_OS_WINDOWS)
-    CRITICAL_SECTION m_critical_section; ///< The Windows CRITICAL_SECTION that is used to implement the mutex.
-    bool m_locked; ///< Whether or not this Mutex is locked.
-#elif defined(BUILD_OS_MACOSX)
-    pthread_mutex_t mutex_;
+#ifdef BUILD_OS_WINDOWS
+    CRITICAL_SECTION m_critical_section; ///< The Windows CRITICAL_SECTION that is used to implement this Mutex.
+#else
+    pthread_mutex_t mutex_; ///< The POSIX mutex used to implement this Mutex.
 #endif
 
 public:
@@ -38,7 +32,7 @@ public:
     void lock();
     void unlock();
 
-#if defined(BUILD_OS_MACOSX)
+#ifndef BUILD_OS_WINDOWS
     pthread_mutex_t* pthread_mutex();
 #endif
 

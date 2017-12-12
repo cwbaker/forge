@@ -13,6 +13,7 @@
 #include <windows.h>
 #elif defined(BUILD_OS_ANDROID)
 #include <android/log.h>
+#include <signal.h>
 #endif
 
 /**
@@ -24,6 +25,8 @@ void sweet_break()
     DebugBreak();
 #elif defined(BUILD_OS_MACOSX)
     asm( "int $3" );
+#elif defined(BUILD_OS_ANDROID)
+    raise( SIGABRT );
 #endif
 }
 
