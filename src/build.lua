@@ -27,7 +27,13 @@ function initialize()
             root( "../%s_%s/lib" % {platform, variant} ),
         };
         sln = root( "../sweet_build_tool.sln" );
-        xcodeproj = root( "../sweet_build_tool.xcodeproj" );
+        xcodeproj = {
+            filename = root( "../sweet_build_tool.xcodeproj" );
+            targets = {
+                "sweet/build_tool/build",
+                "sweet/build_tool/build_tool_test"
+            };
+        };
     };
 
     if operating_system() == "windows" then    
