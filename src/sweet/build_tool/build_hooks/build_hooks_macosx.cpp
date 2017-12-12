@@ -6,10 +6,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/uio.h>
+#include <sys/stat.h>
 
 #define DYLD_INTERPOSE(_replacement,_replacee) \
-   __attribute__((used)) static struct{ const void* replacement; const void* replacee; } _interpose_##_replacee \
-            __attribute__ ((section ("__DATA,__interpose"))) = { (const void*)(unsigned long)&_replacement, (const void*)(unsigned long)&_replacee };
+    __attribute__((used)) static struct{ const void* replacement; const void* replacee; } _interpose_##_replacee \
+    __attribute__ ((section ("__DATA,__interpose"))) = { (const void*)(unsigned long)&_replacement, (const void*)(unsigned long)&_replacee };
 
 static const int FILE_DESCRIPTOR = 3;
 
@@ -34,61 +35,35 @@ int open_interpose( const char* filename, int oflag, ... )
 
     if ( fd >= 0 )
     {
-        if ( (oflag & (O_WRONLY | O_RDWR)) == 0 )
+        struct stat stat;
+        if ( fstat(fd, &stat) == 0 && (stat.st_mode & S_IFREG) != 0 ) 
         {
-            struct iovec iovecs[] =
+            if ( (oflag & (O_WRONLY | O_RDWR)) == 0 )
             {
-                { (void*) "== read '", 9 },
-                { (void*) filename, strlen(filename) },
-                { (void*) "'\n", 2 }
-            };
-            writev( FILE_DESCRIPTOR, iovecs, 3 );
-        }
-        else
-        {
-            struct iovec iovecs[] =
+                struct iovec iovecs[] =
+                {
+                    { (void*) "== read '", 9 },
+                    { (void*) filename, strlen(filename) },
+                    { (void*) "'\n", 2 }
+                };
+                writev( FILE_DESCRIPTOR, iovecs, 3 );
+            }
+            else
             {
-                { (void*) "== write '", 10 },
-                { (void*) filename, strlen(filename) },
-                { (void*) "'\n", 2 }
-            };
-            writev( FILE_DESCRIPTOR, iovecs, 3 );
+                struct iovec iovecs[] =
+                {
+                    { (void*) "== write '", 10 },
+                    { (void*) filename, strlen(filename) },
+                    { (void*) "'\n", 2 }
+                };
+                writev( FILE_DESCRIPTOR, iovecs, 3 );
+            }
         }
     }
 
     return fd;
 }
 DYLD_INTERPOSE( open_interpose, open );
-
-FILE* fopen_interpose( const char* filename, const char* mode )
-{
-    FILE* file = fopen( filename, mode );
-    if ( file )
-    {
-        if ( mode[0] == 'r' )
-        {
-            struct iovec iovecs[] =
-            {
-                { (void*) "== read '", 9 },
-                { (void*) filename, strlen(filename) },
-                { (void*) "'\n", 2 }
-            };
-            writev( FILE_DESCRIPTOR, iovecs, 3 );
-        }
-        else
-        {
-            struct iovec iovecs[] =
-            {
-                { (void*) "== write '", 10 },
-                { (void*) filename, strlen(filename) },
-                { (void*) "'\n", 2 }
-            };
-            writev( FILE_DESCRIPTOR, iovecs, 3 );
-        }
-    }
-    return file;
-}
-DYLD_INTERPOSE( fopen_interpose, fopen );
 
 #ifdef __x86_64__
 extern int open$NOCANCEL( const char* filename, int oflag, ... );
@@ -110,25 +85,29 @@ int open$NOCANCEL_interpose( const char* filename, int oflag, ... )
 
     if ( fd >= 0 )
     {
-        if ( (oflag & (O_WRONLY | O_RDWR)) == 0 )
+        struct stat stat;
+        if ( fstat(fd, &stat) == 0 && (stat.st_mode & S_IFREG) != 0 ) 
         {
-            struct iovec iovecs[] =
+            if ( (oflag & (O_WRONLY | O_RDWR)) == 0 )
             {
-                { (void*) "== read '", 9 },
-                { (void*) filename, strlen(filename) },
-                { (void*) "'\n", 2 }
-            };
-            writev( FILE_DESCRIPTOR, iovecs, 3 );
-        }
-        else
-        {
-            struct iovec iovecs[] =
+                struct iovec iovecs[] =
+                {
+                    { (void*) "== read '", 9 },
+                    { (void*) filename, strlen(filename) },
+                    { (void*) "'\n", 2 }
+                };
+                writev( FILE_DESCRIPTOR, iovecs, 3 );
+            }
+            else
             {
-                { (void*) "== write '", 10 },
-                { (void*) filename, strlen(filename) },
-                { (void*) "'\n", 2 }
-            };
-            writev( FILE_DESCRIPTOR, iovecs, 3 );
+                struct iovec iovecs[] =
+                {
+                    { (void*) "== write '", 10 },
+                    { (void*) filename, strlen(filename) },
+                    { (void*) "'\n", 2 }
+                };
+                writev( FILE_DESCRIPTOR, iovecs, 3 );
+            }
         }
     }
 
