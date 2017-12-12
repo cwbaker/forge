@@ -4,7 +4,6 @@ require "build";
 require "build/clang";
 require "build/mingw";
 require "build/msvc";
-require "build/boost";
 require "build/Parser";
 require "build/visual_studio";
 require "build/xcode";
@@ -40,7 +39,6 @@ function initialize()
         xcode.initialize( settings );
     end
 
-    boost.initialize( settings );
     parser.initialize( settings );
 end
 
