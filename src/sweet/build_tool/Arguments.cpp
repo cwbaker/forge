@@ -4,7 +4,6 @@
 //
 
 #include "Arguments.hpp"
-#include <sweet/lua/AddParameter.hpp>
 #include <sweet/assert/assert.hpp>
 #include <lua/lua.hpp>
 
@@ -39,11 +38,12 @@ Arguments::~Arguments()
     }
 }
 
-void Arguments::push_arguments( lua::AddParameter& add_parameter )
+int Arguments::push_arguments( lua_State* lua_state )
 {
-    SWEET_ASSERT( lua_state_ );
-    for ( vector<int>::const_iterator i = arguments_.begin(); i != arguments_.end(); ++i )
+    SWEET_ASSERT( lua_state );
+    for ( auto i = arguments_.begin(); i != arguments_.end(); ++i )
     {
-        add_parameter.reference( LUA_REGISTRYINDEX, *i );
+        lua_rawgeti( lua_state, LUA_REGISTRYINDEX, *i );
     }
+    return int(arguments_.size());
 }

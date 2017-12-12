@@ -12,6 +12,7 @@
 #include "Scheduler.hpp"
 #include <sweet/process/Process.hpp>
 #include <sweet/process/Environment.hpp>
+#include <sweet/assert/assert.hpp>
 #include <stdlib.h>
 
 #if defined BUILD_OS_WINDOWS

@@ -6,7 +6,10 @@
 #include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
 #include <lua/lua.hpp>
+#include <algorithm>
+#include <memory.h>
 
+using std::max;
 using namespace sweet::luaxx;
 
 namespace sweet
@@ -438,6 +441,176 @@ void* luaxx_check( lua_State* lua, int position, const char* tname )
     void* object = luaxx_to( lua, position, tname );
     luaL_argcheck( lua, object != nullptr, position, "this pointer not set or C++ object has been destroyed" );
     return object;
+}
+
+/**
+// Do a Lua stack trace.
+//
+// This function is pushed onto the stack for each Lua and LuaThread object 
+// that is created.  Its position is passed to lua_pcall() when this 
+// AddParameter object makes its call to Lua.  If an error occurs during the 
+// execution of the call this function is called with the string describing 
+// the error at the top of the stack.
+//
+// This function then walks back up the Lua stack recording each function that
+// has been called from the error occuring back up to the first call into
+// the Lua virtual machine from C++.
+//
+// It then returns all of this information concatenated into a single string 
+// that is passed back to the application as the value at the top of the Lua
+// stack.
+//
+// @param lua_state
+//  The lua_State to do a stack trace for.
+//
+// @return
+//  Always returns 1.
+*/
+int luaxx_stack_trace_for_call( lua_State* lua_state )
+{
+    const int STACK_TRACE_BEGIN = 0;
+    const int STACK_TRACE_END = 6;
+
+    lua_Debug debug;
+    memset( &debug, 0, sizeof(debug) );
+    
+    lua_pushliteral( lua_state, ".\nstack trace:" );
+
+    int level = STACK_TRACE_BEGIN;
+    while ( level < STACK_TRACE_END && lua_getstack(lua_state, level, &debug) )
+    {
+        lua_getinfo( lua_state, "Snl", &debug );
+    
+    //
+    // Source and line number.
+    //
+        lua_pushliteral( lua_state, "\n  " );        
+        if ( debug.currentline > 0 )
+        {
+            lua_pushfstring( lua_state, "%s(%d) : ", debug.source, debug.currentline );
+        }
+        else
+        {
+            lua_pushfstring( lua_state, "%s(1) : ", debug.source );
+        }
+
+    //
+    // Application provided name or other implicit location information.
+    //
+        if ( *debug.namewhat != '\0' )
+        {
+            lua_pushfstring( lua_state, "in function " LUA_QS, debug.name );
+        }
+        else 
+        {
+            switch ( *debug.what )
+            {
+                case 'm':
+                    lua_pushfstring( lua_state, "main");
+                    break;
+
+                default:
+                    lua_pushfstring( lua_state, "in function <%s(%d)>", debug.source, debug.linedefined );
+            }
+        }
+
+        lua_concat( lua_state, lua_gettop(lua_state) );
+        ++level;
+    }
+
+    lua_concat( lua_state, lua_gettop(lua_state) );
+    return 1;
+}
+
+/**
+// Do a Lua stack trace after lua_resume() has been called to call a function
+// and that function has failed.
+//
+// This function walks back up the Lua stack recording each function that had 
+// been called from the error occuring back up to the first call into
+// Lua from C++.
+//
+// @param lua_state
+//  The lua_State to do a stack trace for.
+//
+// @param stack_trace_enabled
+//  True to do a stack trace or false to just retrieve the error message from
+//  the top of the stack.
+//
+// @param message
+//  The buffer to put the stack trace message into.
+//
+// @param length
+//  The maximum length of the stack trace message (in bytes).
+//
+// @return
+//  Returns the string passed in \e message for convenience.
+*/
+const char* luaxx_stack_trace_for_resume( lua_State* lua_state, bool stack_trace_enabled, char* message, int length )
+{
+    SWEET_ASSERT( lua_state != NULL );
+    SWEET_ASSERT( message != NULL );
+    SWEET_ASSERT( length > 0 );
+
+    int written = 0;
+    memset( message, 0, length );
+    written += snprintf( message + written, max(length - written, 0), "%s", lua_isstring(lua_state, -1) ? lua_tostring(lua_state, -1) : "Unknown error" );
+
+    if ( stack_trace_enabled )
+    {
+        static const int STACK_TRACE_BEGIN = 0;
+        static const int STACK_TRACE_END   = 6;
+
+        written += snprintf( message + written, max(length - written, 0), ".\nstack trace:" );
+
+        lua_Debug debug;
+        memset( &debug, 0, sizeof(debug) );
+
+        int level = STACK_TRACE_BEGIN;
+        while ( level < STACK_TRACE_END && length - written > 0 && lua_getstack(lua_state, level, &debug) )
+        {
+            lua_getinfo( lua_state, "Snl", &debug );
+        
+        //
+        // Source and line number.
+        //
+            written += snprintf( message + written, max(length - written, 0), "\n  " );        
+            if ( debug.currentline > 0 )
+            {
+                written += snprintf( message + written, max(length - written, 0), "%s(%d) : ", debug.source, debug.currentline );
+            }
+            else
+            {
+                written += snprintf( message + written, max(length - written, 0), "%s(1) : ", debug.source );
+            }
+
+        //
+        // Application provided name or other implicit location information.
+        //
+            if ( *debug.namewhat != '\0' )
+            {
+                written += snprintf( message + written, max(length - written, 0), "in function " LUA_QS, debug.name );
+            }
+            else 
+            {
+                switch ( *debug.what )
+                {
+                    case 'm':
+                        written += snprintf( message + written, max(length - written, 0), "main");
+                        break;
+
+                    default:
+                        written += snprintf( message + written, max(length - written, 0), "in function <%s(%d)>", debug.source, debug.linedefined );
+                        break;
+                }
+            }
+
+            ++level;
+        }
+    }
+
+    message [length - 1] = 0;
+    return message;
 }
 
 }

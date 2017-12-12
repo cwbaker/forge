@@ -30,7 +30,7 @@ class Arguments
     public:
         Arguments( lua_State* lua_state, int begin, int end );
         ~Arguments();
-        void push_arguments( lua::AddParameter& add_parameter );
+        int push_arguments( lua_State* lua_state );
 };
 
 }

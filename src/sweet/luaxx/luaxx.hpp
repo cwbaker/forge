@@ -23,6 +23,8 @@ void luaxx_strengthen( lua_State* lua, void* object );
 bool luaxx_push( lua_State* lua, void* object );
 void* luaxx_to( lua_State* lua, int position, const char* tname );
 void* luaxx_check( lua_State* l, int position, const char* tname );
+int luaxx_stack_trace_for_call( lua_State* lua );
+const char* luaxx_stack_trace_for_resume( lua_State* lua_state, bool stack_trace_enabled, char* message, int length );
 
 template <class Type> int luaxx_gc( lua_State* lua );
 template <class Type> void luaxx_newuserdata( lua_State* lua, const Type& value, const char* tname );

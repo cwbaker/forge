@@ -8,6 +8,8 @@
 #include "BuildTool.hpp"
 #include "Graph.hpp"
 #include "path_functions.hpp"
+#include <sweet/lua/Lua.hpp>
+#include <lua/lua.hpp>
 
 using namespace sweet;
 using namespace sweet::build_tool;
@@ -24,13 +26,29 @@ using namespace sweet::build_tool;
 */
 Context::Context( const boost::filesystem::path& directory, BuildTool* build_tool )
 : build_tool_( build_tool ),
-  context_thread_( *build_tool->lua() ),
+  lua_state_( nullptr ),
+  lua_state_reference_( LUA_NOREF ),
   working_directory_( NULL ), 
   directories_(), 
   job_( NULL ),
-  exit_code_( 0 )
+  exit_code_( 0 ),
+  buildfile_calling_context_( nullptr )
 {
     reset_directory( directory );
+    lua_State* lua_state = build_tool->lua()->get_lua_state();
+    lua_state_ = lua_newthread( lua_state );
+    lua_state_reference_ = luaL_ref( lua_state, LUA_REGISTRYINDEX );
+}
+
+Context::~Context()
+{
+    lua_State* lua_state = build_tool_->lua()->get_lua_state();
+    if ( lua_state )
+    {
+        luaL_unref( lua_state, LUA_REGISTRYINDEX, lua_state_reference_ );
+        lua_state_ = nullptr;
+        lua_state_reference_ = LUA_NOREF;
+    }
 }
 
 /**
@@ -39,9 +57,87 @@ Context::Context( const boost::filesystem::path& directory, BuildTool* build_too
 // @return
 //  The LuaThread that this Context uses to make script calls.
 */
-lua::LuaThread& Context::context_thread()
+// lua::LuaThread& Context::context_thread()
+// {
+//     return context_thread_;
+// }
+
+lua_State* Context::lua_state() const
 {
-    return context_thread_;
+    // return context_thread_.get_lua_state();
+    return lua_state_;
+}
+
+/**
+// Get the current working directory.
+//
+// @return
+//  The current working directory.
+*/
+const boost::filesystem::path& Context::directory() const
+{
+    SWEET_ASSERT( !directories_.empty() );
+    return directories_.back();
+}
+
+/**
+// Get the Target that represents the current working directory.
+//
+// @return
+//  The Target that represents the current working directory.
+*/
+Target* Context::working_directory() const
+{
+    return working_directory_;
+}
+
+/**
+// Get the current Job for this Context.
+//
+// @return
+//  The current Job or null if this Context doesn't have a current Job.
+*/
+Job* Context::job() const
+{
+    return job_;
+}
+
+/**
+// Get the exit code that is currently set for this Context.
+//
+// @return
+//  The exit code.
+*/
+int Context::exit_code() const
+{
+    return exit_code_;
+}
+
+/**
+// Prepend the working directory to \e path to create an absolute path.
+//
+// @return
+//  The absolute path created by prepending the working directory to 
+//  \e path.
+*/
+boost::filesystem::path Context::absolute( const boost::filesystem::path& path ) const
+{
+    return sweet::build_tool::absolute( path, directory() );
+}
+
+/**
+// Express \e path as a path relative to the working directory.
+//
+// @return
+//  The path to \e path expressed relative to the working directory.
+*/
+boost::filesystem::path Context::relative( const boost::filesystem::path& path ) const
+{
+    if ( path.is_relative() )
+    {
+        return path;
+    }
+    return sweet::build_tool::relative( path, directory() );        
 }
 
 /**
@@ -149,29 +245,6 @@ void Context::pop_directory()
 }
 
 /**
-// Get the current working directory.
-//
-// @return
-//  The current working directory.
-*/
-const boost::filesystem::path& Context::directory() const
-{
-    SWEET_ASSERT( !directories_.empty() );
-    return directories_.back();
-}
-
-/**
-// Get the Target that represents the current working directory.
-//
-// @return
-//  The Target that represents the current working directory.
-*/
-Target* Context::working_directory() const
-{
-    return working_directory_;
-}
-
-/**
 // Set the current Job for this Context.
 //
 // @param job
@@ -181,17 +254,6 @@ Target* Context::working_directory() const
 void Context::set_job( Job* job )
 {
     job_ = job;
-}
-
-/**
-// Get the current Job for this Context.
-//
-// @return
-//  The current Job or null if this Context doesn't have a current Job.
-*/
-Job* Context::job() const
-{
-    return job_;
 }
 
 /**
@@ -205,40 +267,12 @@ void Context::set_exit_code( int exit_code )
     exit_code_ = exit_code;
 }
 
-/**
-// Get the exit code that is currently set for this Context.
-//
-// @return
-//  The exit code.
-*/
-int Context::exit_code() const
+void Context::set_buildfile_calling_context( Context* context )
 {
-    return exit_code_;
+    buildfile_calling_context_ = context;
 }
 
-/**
-// Prepend the working directory to \e path to create an absolute path.
-//
-// @return
-//  The absolute path created by prepending the working directory to 
-//  \e path.
-*/
-boost::filesystem::path Context::absolute( const boost::filesystem::path& path ) const
+Context* Context::buildfile_calling_context()
 {
-    return sweet::build_tool::absolute( path, directory() );
-}
-
-/**
-// Express \e path as a path relative to the working directory.
-//
-// @return
-//  The path to \e path expressed relative to the working directory.
-*/
-boost::filesystem::path Context::relative( const boost::filesystem::path& path ) const
-{
-    if ( path.is_relative() )
-    {
-        return path;
-    }
-    return sweet::build_tool::relative( path, directory() );        
+    return buildfile_calling_context_;
 }

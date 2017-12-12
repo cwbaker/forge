@@ -8,6 +8,8 @@
 #include <mutex>
 #include <condition_variable>
 
+struct lua_State;
+
 namespace sweet
 {
 
@@ -27,7 +29,6 @@ class Arguments;
 class Filter;
 class Target;
 class BuildTool;
-class BuildfileEventSink;
 
 /**
 // Handle general processing and calls into Lua from loading buildfiles,
@@ -37,7 +38,6 @@ class BuildfileEventSink;
 class Scheduler
 {
     BuildTool* build_tool_; ///< The BuildTool that this Scheduler is part of.
-    BuildfileEventSink* buildfile_event_sink_; ///< The LuaThreadEventSink that handles `buildfile()` coroutines finishing.
     std::vector<Context*> active_contexts_; ///< The stack of Contexts that are currently executing Lua scripts.
     std::mutex results_mutex_; ///< The mutex that ensures exclusive access to the results queue.
     std::condition_variable results_condition_; ///< The Condition that is used to wait for results.
@@ -47,7 +47,6 @@ class Scheduler
 
     public:
         Scheduler( BuildTool* build_tool );
-        ~Scheduler();
 
         void load( const boost::filesystem::path& path );
         void command( const boost::filesystem::path& path, const std::string& command );
@@ -81,6 +80,8 @@ class Scheduler
         void destroy_context( Context* context );
         void push_context( Context* context );
         int pop_context( Context* context );
+        void dofile( lua_State* lua_state, const char* filename );
+        void resume( lua_State* lua_state, int parameters );
 };
 
 }

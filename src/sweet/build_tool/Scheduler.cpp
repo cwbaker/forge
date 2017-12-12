@@ -15,12 +15,12 @@
 #include "Error.hpp"
 #include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
 #include <sweet/process/Environment.hpp>
-#include <sweet/lua/LuaThreadEventSink.hpp>
-#include <sweet/lua/LuaThread.hpp>
+#include <sweet/luaxx/luaxx.hpp>
 #include <list>
 #include <string>
 #include <memory>
 #include <algorithm>
+#include <lua/lua.hpp>
 
 using std::sort;
 using std::list;
@@ -29,45 +29,11 @@ using std::string;
 using std::unique_ptr;
 using namespace sweet;
 using namespace sweet::lua;
+using namespace sweet::luaxx;
 using namespace sweet::build_tool;
-
-namespace sweet
-{
-
-namespace build_tool
-{
-
-class BuildfileEventSink : public lua::LuaThreadEventSink
-{
-    Scheduler* scheduler_;
-
-public:
-    BuildfileEventSink( Scheduler* scheduler )
-    : scheduler_( scheduler )
-    {
-        SWEET_ASSERT( scheduler_ );
-    }
-
-    void lua_thread_returned( LuaThread* /*thread*/, void* ccontext )
-    {
-        Context* context = reinterpret_cast<Context*>( ccontext );
-        scheduler_->buildfile_finished( context, true );
-    }
-
-    void lua_thread_errored( LuaThread* /*thread*/, void* ccontext )
-    {
-        Context* context = reinterpret_cast<Context*>( ccontext );
-        scheduler_->buildfile_finished( context, false );
-    }
-};
-
-}
-
-}
 
 Scheduler::Scheduler( BuildTool* build_tool )
 : build_tool_( build_tool ),
-  buildfile_event_sink_( nullptr ),
   active_contexts_(),
   results_mutex_(),
   results_condition_(),
@@ -76,12 +42,6 @@ Scheduler::Scheduler( BuildTool* build_tool )
   failures_( 0 )
 {
     SWEET_ASSERT( build_tool_ );
-    buildfile_event_sink_ = new BuildfileEventSink( this );
-}
-
-Scheduler::~Scheduler()
-{
-    delete buildfile_event_sink_;
 }
 
 void Scheduler::load( const boost::filesystem::path& path )
@@ -90,8 +50,8 @@ void Scheduler::load( const boost::filesystem::path& path )
 
     Context* context = allocate_context( build_tool_->graph()->target(path.parent_path().generic_string()) );
     process_begin( context );
-    context->context_thread().resume( path.string().c_str(), path.filename().string().c_str() )
-    .end();
+    lua_State* lua_state = context->lua_state();
+    dofile( lua_state, path.string().c_str() );
     process_end( context );
 
     while ( dispatch_results() )
@@ -114,10 +74,13 @@ int Scheduler::buildfile( const boost::filesystem::path& path )
 
     Context* calling_context = active_contexts_.back();
     Context* context = allocate_context( build_tool_->graph()->target(path.parent_path().generic_string()) );
+    context->set_buildfile_calling_context( calling_context );
     process_begin( context );
-    context->context_thread().resume( path.string().c_str(), path.filename().string().c_str() )
-    .end( buildfile_event_sink_, calling_context );
-    bool yielded = context->context_thread().get_state() == LUA_THREAD_SUSPENDED;
+
+    lua_State* lua_state = context->lua_state();
+    SWEET_ASSERT( lua_state );
+    dofile( lua_state, path.string().c_str() );
+    bool yielded = lua_status( lua_state ) == LUA_YIELD;
     int errors = process_end( context );
     return yielded ? -1 : errors;
 }
@@ -128,8 +91,10 @@ void Scheduler::call( const boost::filesystem::path& path, const std::string& fu
     {
         Context* context = allocate_context( build_tool_->graph()->target(path.parent_path().generic_string()) );
         process_begin( context );
-        context->context_thread().resume( function.c_str() )
-        .end();
+        lua_State* lua_state = context->lua_state();
+        SWEET_ASSERT( lua_state );
+        lua_getglobal( lua_state, function.c_str() );
+        resume( lua_state, 0 );
         process_end( context );
     }
 }
@@ -142,9 +107,11 @@ void Scheduler::postorder_visit( int function, Job* job )
     {
         Context* context = allocate_context( job->working_directory(), job );
         process_begin( context );
-        context->context_thread().resume( LUA_REGISTRYINDEX, function )
-            ( job->target() )
-        .end();
+
+        lua_State* lua_state = context->lua_state();
+        lua_rawgeti( lua_state, LUA_REGISTRYINDEX, function );
+        luaxx_push( lua_state, job->target() );
+        resume( lua_state, 1 );
         
         int errors = process_end( context );
         if ( errors > 0 )
@@ -168,9 +135,9 @@ void Scheduler::execute_finished( int exit_code, Context* context, process::Envi
     SWEET_ASSERT( context );
 
     process_begin( context );
-    context->context_thread().resume()
-        ( exit_code )
-    .end();
+    lua_State* lua_state = context->lua_state();
+    lua_pushinteger( lua_state, exit_code );
+    resume( lua_state, 1 );
     process_end( context );
 
     // The environment is deleted here for symmetry with its construction in 
@@ -190,12 +157,12 @@ void Scheduler::filter_finished( Filter* filter, Arguments* arguments )
 void Scheduler::buildfile_finished( Context* context, bool success )
 {
     SWEET_ASSERT( context );
-    if ( context->context_thread().get_state() == LUA_THREAD_SUSPENDED )
+    if ( lua_status(context->lua_state()) == LUA_YIELD )
     {
         process_begin( context );
-        context->context_thread().resume()
-            ( success ? 0 : 1 )
-        .end();
+        lua_State* lua_state = context->lua_state();
+        lua_pushinteger( lua_state, success ? 0 : 1 );
+        resume( lua_state, 1 );
         process_end( context );    
     }
 }
@@ -207,13 +174,14 @@ void Scheduler::output( const std::string& output, Filter* filter, Arguments* ar
     {
         Context* context = allocate_context( working_directory );
         process_begin( context );
-        lua::AddParameter add_parameter = context->context_thread().call( LUA_REGISTRYINDEX, filter->reference() );
-        add_parameter( output );
+        lua_State* lua_state = context->lua_state();
+        lua_pushlstring( lua_state, output.c_str(), output.size() );
+        int parameters = 1;
         if ( arguments )
         {
-            arguments->push_arguments( add_parameter );
+            parameters += arguments->push_arguments( lua_state );
         }
-        add_parameter.end();                
+        resume( lua_state, parameters );
         process_end( context );
     }
     else
@@ -519,19 +487,130 @@ int Scheduler::process_end( Context* context )
 
     active_contexts_.pop_back();
     int errors = build_tool_->error_policy().pop_errors();
-    LuaThreadState state = context->context_thread().get_state();
-    if ( errors == 0 && state != lua::LUA_THREAD_ERROR )
+    lua_State* lua_state = context->lua_state();
+    if ( lua_status(lua_state) != LUA_YIELD )
     {
-        if ( state == lua::LUA_THREAD_READY )
+        bool successful = errors == 0 && lua_status( lua_state ) == LUA_OK;
+        Context* buildfile_calling_context = context->buildfile_calling_context();
+        if ( buildfile_calling_context )
         {
-            context->context_thread().fire_returned();
-            free_context( context );
+            buildfile_finished( buildfile_calling_context, successful );
+        }
+        if ( successful )
+        {
+            free_context( context );            
+        }
+        else
+        {
+            destroy_context( context );
+        }
+    } 
+    return errors;
+}
+
+void Scheduler::dofile( lua_State* lua_state, const char* filename )
+{
+    SWEET_ASSERT( lua_state );
+    SWEET_ASSERT( filename );
+    int result = luaL_loadfile( lua_state, filename );
+    switch ( result )
+    {
+        case LUA_OK:
+        {
+            resume( lua_state, 0 );
+            break;
+        }
+
+        case LUA_ERRSYNTAX:
+        {
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "Syntax error loading '%s'", filename );
+            break;
+        }
+
+        case LUA_ERRMEM:
+        {
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "Out of memory loading '%s'", filename );
+            break;
+        }
+
+        case LUA_ERRGCMM:
+        {
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "Error running garbage collection metamethod loading '%s'", filename );
+            break;
+        }
+
+        case LUA_ERRFILE:
+        {
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "File not found loading '%s'", filename );
+            break;
+        }
+
+        default:
+        {
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "Unexpected error loading '%s'", filename );
+            break;
         }
     }
-    else
+}
+
+void Scheduler::resume( lua_State* lua_state, int parameters )
+{
+    SWEET_ASSERT( lua_state );
+    SWEET_ASSERT( parameters >= 0 );
+
+    int result = lua_resume( lua_state, nullptr, parameters );
+    switch ( result )
     {
-        context->context_thread().fire_errored();
-        destroy_context( context );
-    }
-    return errors;
+        case 0:
+            break;
+
+        case LUA_YIELD:
+            break;            
+
+        case LUA_ERRRUN:
+        {
+            char message [1024];
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "%s", luaxx_stack_trace_for_resume(lua_state, build_tool_->stack_trace_enabled(), message, sizeof(message)) );
+            break;
+        }
+
+        case LUA_ERRMEM:
+        {
+            char message [1024];
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "Out of memory - %s", luaxx_stack_trace_for_resume(lua_state, build_tool_->stack_trace_enabled(), message, sizeof(message)) );
+            break;
+        }
+
+        case LUA_ERRERR:
+        {
+            char message [1024];
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "Error handler failed - %s", luaxx_stack_trace_for_resume(lua_state, build_tool_->stack_trace_enabled(), message, sizeof(message)) );
+            break;
+        }
+        
+        case -1:
+        {
+            char message [1024];
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "Execution failed due to an unhandled C++ exception - %s", luaxx_stack_trace_for_resume(lua_state, build_tool_->stack_trace_enabled(), message, sizeof(message)) );
+            break;
+        }
+
+        default:
+        {
+            SWEET_ASSERT( false );
+            char message [1024];
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "Execution failed in an unexpected way - %s", luaxx_stack_trace_for_resume(lua_state, build_tool_->stack_trace_enabled(), message, sizeof(message)) );
+            break;
+        }
+    }    
 }
