@@ -1,32 +1,30 @@
 
 local App = build.TargetPrototype( "ios.App" );
 
-function App.create( _, id )
-    local settings = build.current_settings();
-    local app = build.Target( id, App );
+function App.create( settings, id )
+    local app = build.Target( ("%s.app"):format(id), App );
     app:set_filename( ("%s/%s.app"):format(settings.bin, id) );
     app.settings = settings;
+    build.default_target( app );
     build.push_settings {
-        bin = ("%s/%s.app"):format( settings.bin, id );
-        data = ("%s/%s.app"):format( settings.bin, id );
+        bin = app:filename();
+        data = app:filename();
     };
-    working_directory():add_dependency( app );
     return app;
 end
 
 function App.call( app, definition )
-    if platform == "ios" then
-        local entitlements = definition.entitlements;
-        if entitlements then 
-            app.entitlements = ("%s/%s"):format( obj_directory(app), "Entitlements.plist" );
-            table.insert( definition, Generate(app.entitlements, entitlements) );
-        end
+    local entitlements = definition.entitlements;
+    if entitlements then 
+        app.entitlements = ("%s/%s"):format( obj_directory(app), "Entitlements.plist" );
+        table.insert( definition, Generate(app.entitlements, entitlements) );
+    end
 
-        local resource_rules = definition.resource_rules;
-        if resource_rules then 
-            app.resource_rules = ("%s/ResourceRules.plist"):format( settings.bin, app:get_filename() );
-            table.insert( definition, Copy(app.resource_rules, resource_rules) );
-        end
+    local resource_rules = definition.resource_rules;
+    if resource_rules then 
+        assertf( is_file(resource_rules), "The resource rules file '%s' does not exist", tostring(resource_rules) );
+        app.resource_rules = ("%s/ResourceRules.plist"):format( app:filename() );
+        table.insert( definition, Copy(app.resource_rules, resource_rules) );
     end
 
     local working_directory = working_directory();
@@ -43,13 +41,13 @@ function App.build( app )
         if app.settings.generate_dsym_bundle then 
             local executable;
             for dependency in app:get_dependencies() do 
-                if dependency:prototype() == LipoPrototype then 
-                    executable = dependency:get_filename();
+                if dependency:prototype() == Lipo then 
+                    executable = dependency:filename();
                     break;
                 end
             end
             if executable then 
-                build.system( xcrun, ([[xcrun dsymutil -o "%s.dSYM" "%s"]]):format(app:get_filename(), executable) );
+                build.system( xcrun, ([[xcrun dsymutil -o "%s.dSYM" "%s"]]):format(app:filename(), executable) );
                 if app.settings.strip then 
                     build.system( xcrun, ([[xcrun strip "%s"]]):format(executable) );
                 end
@@ -58,7 +56,7 @@ function App.build( app )
 
         local provisioning_profile = _G.provisioning_profile or app.settings.provisioning_profile;
         if provisioning_profile then
-            local embedded_provisioning_profile = ("%s/embedded.mobileprovision"):format( app:get_filename() );
+            local embedded_provisioning_profile = ("%s/embedded.mobileprovision"):format( app:filename() );
             rm( embedded_provisioning_profile );
             cp( provisioning_profile, embedded_provisioning_profile );
         end
@@ -69,7 +67,7 @@ function App.build( app )
             "--force";
             "--no-strict";
             "-vv";
-            ('"%s"'):format( app:get_filename() );
+            ('"%s"'):format( app:filename() );
         };
         local entitlements = app.entitlements;
         if entitlements then 
@@ -87,7 +85,7 @@ function App.build( app )
 end
 
 function App.clean( app )
-    rmdir( app:get_filename() );
+    rmdir( app:filename() );
 end
 
 ios.App = App;

@@ -77,7 +77,7 @@ function windows.build_library( target )
         local prototype = dependency:prototype();
         if prototype == Cc or prototype == Cxx then
             for object in dependency:get_dependencies() do
-                table.insert( objects, relative(object:get_filename()) );
+                table.insert( objects, relative(object:filename()) );
             end
         end
     end
@@ -85,15 +85,15 @@ function windows.build_library( target )
     if #objects > 0 then
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
-        local msar = ("%s/VC/bin/lib.exe"):format( target.settings.windows.visual_studio_directory );
-        print( leaf(target:get_filename()) );
-        build.system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:get_filename()), arobjects) );
+        local msar = ("%s/VC/bin/lib.exe"):format( target.settings.msvc.visual_studio_directory );
+        print( leaf(target:filename()) );
+        build.system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:filename()), arobjects) );
     end
     popd();
 end;
 
 function windows.clean_library( target )
-    rm( target:get_filename() );
+    rm( target:filename() );
     rmdir( obj_directory(target) );
 end;
 
@@ -112,19 +112,19 @@ function windows.build_executable( target )
                 table.insert( objects, obj_name(object:id()) );
             end
         elseif prototype == StaticLibrary or prototype == DynamicLibrary then
-            table.insert( libraries, ('%s.lib'):format(basename(dependency:get_filename())) );
+            table.insert( libraries, ('%s.lib'):format(basename(dependency:filename())) );
         end
     end
 
     msvc.append_link_libraries( target, libraries );
 
     if #objects > 0 then
-        local msld = ("%s/VC/bin/link.exe"):format( target.settings.windows.visual_studio_directory );
-        local msmt = ("%s/bin/x86/mt.exe"):format( target.settings.windows.windows_sdk_directory );
-        local msrc = ("%s/bin/x86/rc.exe"):format( target.settings.windows.windows_sdk_directory );
+        local msld = ("%s/VC/bin/link.exe"):format( target.settings.msvc.visual_studio_directory );
+        local msmt = ("%s/bin/x86/mt.exe"):format( target.settings.msvc.windows_sdk_directory );
+        local msrc = ("%s/bin/x86/rc.exe"):format( target.settings.msvc.windows_sdk_directory );
         local intermediate_manifest = ('%s%s_intermediate.manifest'):format( obj_directory(target), target:id() );
 
-        print( leaf(target:get_filename()) );
+        print( leaf(target:filename()) );
         pushd( ("%s%s"):format(obj_directory(target), target.architecture) );
         if target.settings.incremental_linking then
             local embedded_manifest = ("%s_embedded.manifest"):format( target:id() );
@@ -175,14 +175,14 @@ function windows.build_executable( target )
 
             build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
             sleep( 100 );
-            build.system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(native(target:get_filename()), intermediate_manifest) );
+            build.system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(native(target:filename()), intermediate_manifest) );
         end
         popd();
     end
 end;
 
 function windows.clean_executable( target )
-    local filename = target:get_filename();
+    local filename = target:filename();
     rm( filename );
     rm( ("%s/%s.ilk"):format(branch(filename), basename(filename)) );
     rmdir( obj_directory(target) );
@@ -215,24 +215,24 @@ function windows.obj_name( name )
     return ("%s.obj"):format( basename(name) );
 end
 
-function windows.lib_name( name )
-    return ("%s.lib"):format( name );
+function windows.lib_name( name, architecture )
+    return ("%s_%s.lib"):format( name, architecture );
 end
 
-function windows.exp_name( name )
-    return ("%s.exp"):format( name );
+function windows.exp_name( name, architecture )
+    return ("%s_%s.exp"):format( name, architecture );
 end
 
-function windows.dll_name( name )
-    return ("%s.dll"):format( name );
+function windows.dll_name( name, architecture )
+    return ("%s_%s.dll"):format( name, architecture );
 end
 
-function windows.exe_name( name )
-    return ("%s.exe"):format( name );
+function windows.exe_name( name, architecture )
+    return ("%s_%s.exe"):format( name, architecture );
 end
 
-function windows.ilk_name( name )
-    return ("%s.ilk"):format( name );
+function windows.ilk_name( name, architecture )
+    return ("%s_%s.ilk"):format( name, architecture );
 end
 
 function windows.module_name( name, architecture )

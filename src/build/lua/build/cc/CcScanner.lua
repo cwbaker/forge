@@ -3,8 +3,8 @@ local global_include;
 
 local function local_include( target, match )
     local filename = ("%s%s"):format( target:directory(), match );
-    if exists(filename) then
-        local header = file( filename );
+    if is_file(filename) then
+        local header = build.SourceFile( filename );
         target:add_dependency( header );
         return true;
     end
@@ -15,8 +15,8 @@ local function global_include( target, match )
     if settings then
         for _, include_directory in ipairs(settings.include_directories) do 
             local filename = ("%s/%s"):format( include_directory, match );
-            if exists( filename ) then
-                local header = file( filename );
+            if is_file( filename ) then
+                local header = build.SourceFile( filename );
                 target:add_dependency( header );
                 return true;
             end

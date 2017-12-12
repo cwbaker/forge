@@ -142,7 +142,7 @@ local function generate_files( vcproj, file, level )
         vcproj:write( '</Filter>' );
     else
         vcproj:write( string.rep("    ", level) );
-        vcproj:write( ('<File RelativePath="%s" />\n'):format(native(relative(file.target:get_filename()))) );
+        vcproj:write( ('<File RelativePath="%s" />\n'):format(native(relative(file.target:filename()))) );
     end
 end
 

@@ -1,13 +1,11 @@
 
 Generate = build.TargetPrototype( "Generate" );
 
-function Generate.create( _, filename, template, settings )
+function Generate.create( settings, filename, template )
     local template_file = file( template );
     template_file:set_required_to_exist( true );
 
-    local settings = settings or build.current_settings();
     filename = build.interpolate( filename, settings );
-
     local generated_file = file( filename, Generate );
     generated_file.template = template;
     generated_file.settings = settings;
@@ -18,20 +16,20 @@ function Generate.create( _, filename, template, settings )
 end
 
 function Generate.generate( generated_file )
-    print( leaf(generated_file:get_filename()) );
+    print( leaf(generated_file:filename()) );
     local template = assert( loadfile(native(absolute(generated_file.template))) );
     local success, output = pcall( template, generated_file );
     assertf( success, "Executing '%s' failed - %s", generated_file.template, output );
 
-    local output_file = io.open( generated_file:get_filename(), "wb" );
-    assertf( output_file, "Opening '%s' to write generated text failed", generated_file:get_filename() );
+    local output_file = io.open( generated_file:filename(), "wb" );
+    assertf( output_file, "Opening '%s' to write generated text failed", generated_file:filename() );
     output_file:write( output );
     output_file:close();
     output_file = nil;
 end
 
 function Generate.static_depend( generated_file )
-    local filename = generated_file:get_filename();
+    local filename = generated_file:filename();
     if not exists(filename) and platform ~= "" then
         local directory = branch( filename );
         if not exists(directory) then 
@@ -48,5 +46,5 @@ function Generate.build( generated_file )
 end
 
 function Generate.clean( generated_file )
-    rm( generated_file:get_filename() );
+    rm( generated_file:filename() );
 end

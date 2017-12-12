@@ -1,7 +1,7 @@
 
 local platforms_by_operating_system = {
-    windows = { "android", "mingw", "msvc" };
-    macosx = { "android", "clang", "ios", "ios_simulator", "llvmgcc" };
+    windows = { "android", "windows" };
+    macosx = { "android", "ios", "ios_simulator", "macosx" };
 };
 
 local path_separator_by_operating_system = {
@@ -9,7 +9,7 @@ local path_separator_by_operating_system = {
     macosx = ":";
 };
 
-build.default_settings = {
+return {
     bin = root();
     lib = root();
     obj = root();
@@ -17,6 +17,8 @@ build.default_settings = {
     classes = root();
     data = root();
     root = root();
+
+    buildfile = root( "project.build" );
 
     path_separator = path_separator_by_operating_system [operating_system()];
 

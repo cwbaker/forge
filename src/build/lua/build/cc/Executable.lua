@@ -1,14 +1,13 @@
 
 local Executable = build.TargetPrototype( "Executable" );
 
-function Executable.create( _, id, architecture, settings )
-    local settings = settings or build.current_settings();
+function Executable.create( settings, id, architecture )
     local executable = build.Target( ("%s_%s"):format(id, architecture), Executable );
     executable.settings = settings;
     executable.architecture = architecture;
     executable:set_filename( ("%s/%s"):format(settings.bin, exe_name(id, architecture)) );
-    executable:add_dependency( Directory(branch(executable:get_filename())) );
-    working_directory():add_dependency( executable );
+    executable:add_dependency( Directory(branch(executable:filename())) );
+    build.default_target( executable );
     return executable;
 end
 

@@ -24,7 +24,7 @@ for _, architecture in ipairs(settings.architectures) do
         };    
     };
 
-    if platform == "msvc" or platform == "mingw" then
+    if platform == "windows" then
         libUnitTest {
             Cxx (architecture) {
                 "Win32/TimeHelpers.cpp"
@@ -32,7 +32,7 @@ for _, architecture in ipairs(settings.architectures) do
         };
     end
 
-    if platform == "android" or platform == "clang" then
+    if platform == "macosx" then
         libUnitTest {
             Cxx (architecture) {
                 "Posix/SignalTranslator.cpp",

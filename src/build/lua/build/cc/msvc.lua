@@ -99,7 +99,7 @@ end;
 function msvc.append_defines( target, flags )
     table.insert( flags, ('/DBUILD_PLATFORM_%s'):format(upper(platform)) );
     table.insert( flags, ('/DBUILD_VARIANT_%s'):format(upper(variant)) );
-    table.insert( flags, ('/DBUILD_LIBRARY_SUFFIX="\\".lib\\""') );
+    table.insert( flags, ('/DBUILD_LIBRARY_SUFFIX="\\"_%s.lib\\""'):format(target.architecture) );
     table.insert( flags, ('/DBUILD_MODULE_%s'):format(upper(string.gsub(target.module:id(), "-", "_"))) );
     table.insert( flags, ('/DBUILD_LIBRARY_TYPE_%s'):format(upper(target.settings.library_type)) );
 
@@ -223,7 +223,7 @@ function msvc.append_link_flags( target, flags )
         table.insert( flags, ("/subsystem:%s"):format(target.settings.subsystem) );
     end
 
-    table.insert( flags, ("/out:%s"):format(native(target:get_filename())) );
+    table.insert( flags, ("/out:%s"):format(native(target:filename())) );
     if target:prototype() == DynamicLibrary then
         table.insert( flags, "/dll" );
         table.insert( flags, ("/implib:%s"):format(native(lib_name(("%s/%s"):format(target.settings.lib, target:id())))) );

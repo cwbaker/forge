@@ -1,8 +1,7 @@
 
 local Plist = build.TargetPrototype( "Plist" );
 
-function Plist.create( _, filename, input, settings )
-    local settings = settings or build.current_settings();
+function Plist.create( settings, filename, input )
     local plist = build.File( build.interpolate(filename, settings), Plist );
     plist.settings = settings;
     plist:add_dependency( build.SourceFile(input, settings) );
@@ -15,8 +14,8 @@ function Plist.build( plist )
         local command_line = {
             ('xcrun --sdk %s plutil'):format( ios.sdkroot_by_target_and_platform(plist, platform) );
             '-convert binary1';
-            ('-o "%s"'):format( plist:get_filename() );
-            ('"%s"'):format( plist:dependency():get_filename() );
+            ('-o "%s"'):format( plist:filename() );
+            ('"%s"'):format( plist:dependency():filename() );
         };
         local xcrun = plist.settings.ios.xcrun;
         build.system( xcrun, table.concat(command_line, " ") );
@@ -24,7 +23,7 @@ function Plist.build( plist )
 end
 
 function Plist.clean( plist )
-    rm( plist:get_filename() );
+    rm( plist:filename() );
 end
 
 xcode.Plist = Plist;

@@ -1,9 +1,9 @@
 
 local Java = build.TargetPrototype( "Java" );
 
-function Java.create( _, definition, settings )
+function Java.create( settings, definition )
     local java = build.Target( anonymous(), Java, definition );
-    java.settings = settings or build.current_settings();
+    java.settings = settings;
     java:set_filename( ("%s/Java.%s.timestamp"):format(build.classes_directory(java), java:id()) );
     java:add_dependency( Directory(build.classes_directory(java)) );
 
@@ -33,9 +33,9 @@ function Java.build( java )
         for dependency in java:get_dependencies() do 
             local prototype = dependency:prototype();
             if prototype == nil then
-                table.insert( source_files, relative(dependency:get_filename()) );
+                table.insert( source_files, relative(dependency:filename()) );
             elseif prototype == Jar then
-                table.insert( jars, relative(dependency:get_filename()) );
+                table.insert( jars, relative(dependency:filename()) );
             end
         end
 
@@ -72,8 +72,8 @@ function Java.build( java )
 
             build.system( javac, ('javac -Xlint:unchecked -d "%s" -sourcepath "%s" -classpath "%s" -target 1.5 -bootclasspath "%s" -encoding UTF-8 -g -source 1.5 %s'):format(output, table.concat(sourcepaths, ":"), classpath, table.concat(jars, ":"), table.concat(source_files, " ")) );
 
-            local timestamp_file = io.open( java:get_filename(), "wb" );
-            assertf( timestamp_file, "Opening '%s' to write generated text failed", java:get_filename() );
+            local timestamp_file = io.open( java:filename(), "wb" );
+            assertf( timestamp_file, "Opening '%s' to write generated text failed", java:filename() );
             timestamp_file:write( ("# Timestamp for '%s'"):format(java:path()) );
             timestamp_file:close();
             timestamp_file = nil;
@@ -82,7 +82,7 @@ function Java.build( java )
 end
 
 function Java.clean( java )
-    rm( java:get_filename() );
+    rm( java:filename() );
     rmdir( build.classes_directory(java) )
 end
 

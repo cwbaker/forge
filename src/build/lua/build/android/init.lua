@@ -175,7 +175,7 @@ function android.cc( target )
     for dependency in target:get_dependencies() do
         if dependency:is_outdated() then
             print( leaf(dependency.source) );
-            build.system( gcc, ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, dependency:get_filename(), dependency.source), GccScanner );
+            build.system( gcc, ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, dependency:filename(), dependency.source), GccScanner );
         end    
     end
 end
@@ -191,37 +191,37 @@ function android.build_library( target )
         local prototype = compile:prototype();
         if prototype == Cc or prototype == Cxx then
             for object in compile:get_dependencies() do
-                table.insert( objects, relative(object:get_filename()) )
+                table.insert( objects, relative(object:filename()) )
             end
         end
     end
     
     if #objects > 0 then
-        print( leaf(target:get_filename()) );
+        print( leaf(target:filename()) );
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
         local ar = ("%s/bin/arm-linux-androideabi-ar"):format( android.toolchain_directory(target.settings, target.architecture) );
-        build.system( ar, ('ar %s "%s" "%s"'):format(arflags, native(target:get_filename()), arobjects) );
+        build.system( ar, ('ar %s "%s" "%s"'):format(arflags, native(target:filename()), arobjects) );
     end
     popd();
 end
 
 function android.clean_library( target )
-    rm( target:get_filename() );
+    rm( target:filename() );
     rmdir( obj_directory(target) );
 end
 
 function android.build_executable( target )
     local flags = { 
         ("--sysroot=%s"):format( android.platform_directory(target.settings, target.architecture) ),
-        ("-Wl,-soname,%s"):format( leaf(target:get_filename()) ),
+        ("-Wl,-soname,%s"):format( leaf(target:filename()) ),
         "-shared",
         "-no-canonical-prefixes",
         "-Wl,--no-undefined",
         "-Wl,-z,noexecstack",
         "-Wl,-z,relro",
         "-Wl,-z,now",
-        ('-o "%s"'):format( native(target:get_filename()) )
+        ('-o "%s"'):format( native(target:filename()) )
     };
     gcc.append_link_flags( target, flags );
     gcc.append_library_directories( target, flags );
@@ -239,7 +239,7 @@ function android.build_executable( target )
         if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
             for object in dependency:get_dependencies() do
                 if object:prototype() == nil then
-                    table.insert( objects, relative(object:get_filename()) );
+                    table.insert( objects, relative(object:filename()) );
                 end
             end
         elseif prototype == StaticLibrary or prototype == DynamicLibrary then
@@ -251,7 +251,7 @@ function android.build_executable( target )
 
     if target.system_libraries then 
         for _, library in ipairs(target.system_libraries) do 
-            local destination = ("%s/lib%s.so"):format( branch(target:get_filename()), library );
+            local destination = ("%s/lib%s.so"):format( branch(target:filename()), library );
             if not exists(destination) then 
                 print( ("lib%s.so"):format(library) );
                 for _, directory in ipairs(android.library_directories(target.settings, target.architecture)) do
@@ -271,15 +271,48 @@ function android.build_executable( target )
         local ldlibs = table.concat( libraries, " " );
         local gxx = ("%s/bin/arm-linux-androideabi-g++"):format( android.toolchain_directory(target.settings, target.architecture) );
 
-        print( leaf(target:get_filename()) );
+        print( leaf(target:filename()) );
         build.system( gxx, ('arm-linux-androideabi-g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
     end
     popd();
 end 
 
 function android.clean_executable( target )
-    rm( target:get_filename() );
+    rm( target:filename() );
     rmdir( obj_directory(target) );
+end
+
+-- Deploy the fist Android .apk package found in the dependencies of the 
+-- current working directory.
+function android.deploy( directory )
+    local sdk_directory = build.settings.android.sdk_directory;
+    if sdk_directory then 
+        local directory = directory or find_target( initial() );
+        local apk = nil;
+        for dependency in directory:get_dependencies() do
+            if dependency:prototype() == android.Apk then 
+                apk = dependency;
+                break;
+            end
+        end
+        assertf( apk, "No android.Apk target found as a dependency of '%s'", directory:path() );
+        local adb = ("%s/platform-tools/adb"):format( sdk_directory );
+        assertf( is_file(adb), "No 'adb' executable found at '%s'", adb );
+
+        local device_connected = false;
+        local AdbGetStateScanner = Scanner {
+            [ [[(.*)]] ] = function( state )
+                device_connected = state == "device";
+            end
+        };
+        build.system( adb, ('adb get-state'), AdbGetStateScanner );
+        if device_connected then
+            printf( "Deploying '%s'...", apk:filename() );
+            build.system( adb, ('adb install -r "%s"'):format(apk:filename()) );
+        end
+    else
+        printf( ios_deploy, "No 'ios-deploy' executable specified in settings" );
+    end
 end
 
 function android.obj_directory( target )

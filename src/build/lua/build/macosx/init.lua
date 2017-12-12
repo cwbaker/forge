@@ -49,7 +49,7 @@ function macosx.cc( target )
     for dependency in target:get_dependencies() do
         if dependency:is_outdated() then
             print( leaf(dependency.source) );
-            build.system( xcrun, ('xcrun --sdk macosx clang %s -o "%s" "%s"'):format(ccflags, dependency:get_filename(), absolute(dependency.source)) );
+            build.system( xcrun, ('xcrun --sdk macosx clang %s -o "%s" "%s"'):format(ccflags, dependency:filename(), absolute(dependency.source)) );
         end    
     end
 end
@@ -65,24 +65,23 @@ function macosx.build_library( target )
         local prototype = compile:prototype();
         if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
             for object in compile:get_dependencies() do
-                table.insert( objects, relative(object:get_filename()) );
+                table.insert( objects, relative(object:filename()) );
             end
         end
     end
     
     if #objects > 0 then
-        print( leaf(target:get_filename()) );
+        print( leaf(target:filename()) );
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
         local xcrun = target.settings.macosx.xcrun;
-        build.system( xcrun, ('xcrun --sdk macosx libtool %s -o "%s" "%s"'):format(arflags, native(target:get_filename()), arobjects) );
+        build.system( xcrun, ('xcrun --sdk macosx libtool %s -o "%s" "%s"'):format(arflags, native(target:filename()), arobjects) );
     end
     popd();
 end
 
 function macosx.clean_library( target )
-    rm( target:get_filename() );
-    rmdir( obj_directory(target) );
+    rm( target:filename() );
 end
 
 function macosx.build_executable( target )
@@ -101,7 +100,7 @@ function macosx.build_executable( target )
         if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
             for object in dependency:get_dependencies() do
                 if object:prototype() == nil then
-                    table.insert( objects, relative(object:get_filename()) );
+                    table.insert( objects, relative(object:filename()) );
                 end
             end
         elseif prototype == StaticLibrary or prototype == DynamicLibrary then
@@ -117,15 +116,14 @@ function macosx.build_executable( target )
         local ldlibs = table.concat( libraries, " " );
         local xcrun = target.settings.macosx.xcrun;
 
-        print( leaf(target:get_filename()) );
+        print( leaf(target:filename()) );
         build.system( xcrun, ('xcrun --sdk macosx clang++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
     end
     popd();
 end
 
 function macosx.clean_executable( target )
-    rm( target:get_filename() );
-    rmdir( obj_directory(target) );
+    rm( target:filename() );
 end
 
 function macosx.lipo_executable( target )
@@ -133,13 +131,13 @@ function macosx.lipo_executable( target )
     for executable in target:get_dependencies() do 
         local prototype = executable:prototype();
         if prototype == Executable or prototype == DynamicLibrary then
-            table.insert( executable, executable:get_filename() );
+            table.insert( executable, executable:filename() );
         end
     end
     executables = table.concat( executables, '" "' );
-    print( leaf(target:get_filename()) );
+    print( leaf(target:filename()) );
     local xcrun = target.settings.macosx.xcrun;
-    build.system( xcrun, ('xcrun lipo -create "%s" -output "%s"'):format(executables, target:get_filename()) );
+    build.system( xcrun, ('xcrun lipo -create "%s" -output "%s"'):format(executables, target:filename()) );
 end
 
 function macosx.obj_directory( target )

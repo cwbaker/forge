@@ -929,8 +929,21 @@ int ScriptInterface::filename( lua_State* lua_state )
     const int INDEX = 2;
 
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
-    int index = lua_isnumber( lua_state, INDEX ) ? lua_tointeger( lua_state, INDEX ) : 0;
-    if ( index >= 0 && index < int(target->filenames().size()) )
+    if ( !target )
+    {
+        SWEET_ERROR( RuntimeError("Nil Target passed to 'Target.filename()'") );
+        return lua_error( lua_state );
+    }
+
+    int index = lua_isnumber( lua_state, INDEX ) ? lua_tointeger( lua_state, INDEX ) : 1;
+    if ( index < 1 )
+    {
+        SWEET_ERROR( RuntimeError("Index of less than 1 passed to 'Target.filename()'; index=%d", index) );
+        return lua_error( lua_state );
+    }
+    --index;
+
+    if ( index < int(target->filenames().size()) )
     {
         const std::string& filename = target->filename( index );
         lua_pushlstring( lua_state, filename.c_str(), filename.length() );
@@ -1001,7 +1014,7 @@ int ScriptInterface::dependency( lua_State* lua_state )
     Target* target = LuaConverter<Target* >::to( lua_state, TARGET );
     if ( !target )
     {
-        SWEET_ERROR( RuntimeError("Null Target passed to 'Target.dependency()'") );
+        SWEET_ERROR( RuntimeError("Nil Target passed to 'Target.dependency()'") );
         return lua_error( lua_state );
     }
 
@@ -1011,10 +1024,11 @@ int ScriptInterface::dependency( lua_State* lua_state )
         SWEET_ERROR( RuntimeError("Index of less than 1 passed to 'Target.dependency()'; index=%d", index) );
         return lua_error( lua_state );
     }
+    --index;
 
-    Target* dependency = target->dependency( index - 1 );
-    if ( dependency )
+    if ( index < target->get_dependencies().size() )
     {
+        Target* dependency = target->dependency( index );
         if ( !dependency->is_referenced_by_script() )
         {
             ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );

@@ -129,7 +129,7 @@ function ios.cc( target )
     for dependency in target:get_dependencies() do
         if dependency:is_outdated() then
             print( leaf(dependency.source) );
-            build.system( xcrun, ('xcrun --sdk %s clang %s -o "%s" "%s"'):format(sdkroot, ccflags, dependency:get_filename(), absolute(dependency.source)) );
+            build.system( xcrun, ('xcrun --sdk %s clang %s -o "%s" "%s"'):format(sdkroot, ccflags, dependency:filename(), absolute(dependency.source)) );
         end    
     end
 end;
@@ -145,7 +145,7 @@ function ios.build_library( target )
         local prototype = dependency:prototype();
         if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
             for object in dependency:get_dependencies() do
-                table.insert( objects, relative(object:get_filename()) );
+                table.insert( objects, relative(object:filename()) );
             end
         end
     end
@@ -156,14 +156,14 @@ function ios.build_library( target )
         local arobjects = table.concat( objects, [[" "]] );
         local xcrun = target.settings.ios.xcrun;
 
-        print( leaf(target:get_filename()) );
-        build.system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, native(target:get_filename()), arobjects) );
+        print( leaf(target:filename()) );
+        build.system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, native(target:filename()), arobjects) );
     end
     popd();
 end;
 
 function ios.clean_library( target )
-    rm( target:get_filename() );
+    rm( target:filename() );
     rmdir( obj_directory(target) );
 end;
 
@@ -192,7 +192,7 @@ function ios.build_executable( target )
         local prototype = dependency:prototype();
         if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
             for object in dependency:get_dependencies() do
-                table.insert( objects, relative(object:get_filename()) );
+                table.insert( objects, relative(object:filename()) );
             end
         elseif prototype == StaticLibrary or prototype == DynamicLibrary then
             table.insert( libraries, ("-l%s"):format(dependency:id()) );
@@ -208,27 +208,48 @@ function ios.build_executable( target )
         local ldlibs = table.concat( libraries, " " );
         local xcrun = target.settings.ios.xcrun;
 
-        print( leaf(target:get_filename()) );
+        print( leaf(target:filename()) );
         build.system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
     end
     popd();
 end
 
 function ios.clean_executable( target )
-    rm( target:get_filename() );
+    rm( target:filename() );
     rmdir( obj_directory(target) );
 end
 
 function ios.lipo_executable( target )
     local executables = {};
     for executable in target:get_dependencies() do 
-        table.insert( executables, executable:get_filename() );
+        table.insert( executables, executable:filename() );
     end
-    print( leaf(target:get_filename()) );
+    print( leaf(target:filename()) );
     local sdk = ios.sdkroot_by_target_and_platform( target, platform );
     executables = table.concat( executables, [[" "]] );
     local xcrun = target.settings.ios.xcrun;
-    build.system( xcrun, ('xcrun --sdk %s lipo -create -output "%s" "%s"'):format(sdk, target:get_filename(), executables) );
+    build.system( xcrun, ('xcrun --sdk %s lipo -create -output "%s" "%s"'):format(sdk, target:filename(), executables) );
+end
+
+-- Deploy the fist iOS .app bundle found in the dependencies of the current
+-- working directory.
+function ios.deploy( directory )
+    local ios_deploy = build.settings.ios.ios_deploy;
+    if ios_deploy then 
+        local directory = directory or find_target( initial() );
+        local app = nil;
+        for dependency in directory:get_dependencies() do
+            if dependency:prototype() == ios.App then 
+                app = dependency;
+                break;
+            end
+        end
+        assertf( app, "No ios.App target found as a dependency of '%s'", directory:path() );
+        assertf( is_file(ios_deploy), "No 'ios-deploy' executable found at '%s'", ios_deploy );
+        build.system( ios_deploy, ('ios-deploy --timeout 1 --bundle "%s"'):format(app:filename()) );
+    else
+        printf( ios_deploy, "No 'ios-deploy' executable specified in settings" );
+    end
 end
 
 function ios.obj_directory( target )

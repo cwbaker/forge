@@ -1,8 +1,7 @@
 
 local R = build.TargetPrototype( "android.R" );
 
-function R.create( _, definition, settings )
-    local settings = settings or build.current_settings();
+function R.create( settings, definition )
     local gen_directory = ("%s/%s"):format( settings.gen, relative(working_directory():path(), root()) );
     local resource = build.Target( anonymous(), R );
     resource.settings = settings;
@@ -58,12 +57,12 @@ end
 
 function R.clean( resource )
     for dependency in resource:get_dependencies() do 
-        rm( dependency:get_filename() );
+        rm( dependency:filename() );
     end
 end
 
 function R.clobber( resource )
-    rmdir( resource:get_filename() );
+    rmdir( resource:filename() );
 end
 
 android.R = R;

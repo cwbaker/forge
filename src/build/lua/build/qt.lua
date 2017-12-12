@@ -32,14 +32,14 @@ function QtMocPrototype.static_depend( qtmoc )
 end
 
 function QtMocPrototype.build( qtmoc )
-    if not exists(qtmoc:get_filename()) or qtmoc:is_outdated() then
+    if not exists(qtmoc:filename()) or qtmoc:is_outdated() then
         local moc = build.settings.qt.moc;
-        build.system( moc, ('moc %s -o %s'):format(qtmoc[1], relative(qtmoc:get_filename())) );
+        build.system( moc, ('moc %s -o %s'):format(qtmoc[1], relative(qtmoc:filename())) );
     end
 end
 
 function QtMocPrototype.clean( qtmoc )
-    rm( qtmoc:get_filename() );
+    rm( qtmoc:filename() );
 end
 
 function QtMoc( definition )

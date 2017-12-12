@@ -1,14 +1,13 @@
 
 local StaticLibrary = build.TargetPrototype( "StaticLibrary" );
 
-function StaticLibrary.create( _, id, architecture, settings )
-    local settings = settings or build.current_settings();
+function StaticLibrary.create( settings, id, architecture )
     local static_library = build.Target( ("%s_%s"):format(id, architecture), StaticLibrary );
     static_library.settings = settings;
     static_library.architecture = architecture;
     static_library:set_filename( ("%s/%s"):format(settings.lib, lib_name(id, architecture)) );
-    static_library:add_dependency( Directory(branch(static_library:get_filename())) );
-    working_directory():add_dependency( static_library );
+    static_library:add_dependency( Directory(branch(static_library:filename())) );
+    build.default_target( static_library );
     return static_library;
 end
 

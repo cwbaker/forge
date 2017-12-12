@@ -1,8 +1,7 @@
 
 local Lipo = build.TargetPrototype( "Lipo" );
 
-function Lipo.create( _, id, settings )
-    local settings = settings or build.current_settings();
+function Lipo.create( settings, id )
     local lipo = build.Target( id, Lipo );
     lipo.settings = settings;
     lipo:set_filename( ("%s/%s"):format(settings.bin, id) );

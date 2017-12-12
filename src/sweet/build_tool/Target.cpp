@@ -267,17 +267,19 @@ void Target::bind()
 // time so that this Target will always be newer than any of the Targets that 
 // depend on it.
 //
-// If the file exists and is a directory then the timestamp is set to the 
-// earliest possible time so that it won't cause any of the Targets that 
-// depend on this Target to be outdated (as they simply require that the 
-// directory exists).
+// If the file exists and is a directory with no dependencies then the 
+// timestamp is set to the earliest possible time so that it won't cause any
+// of the Targets that depend on this Target to be outdated (as they simply 
+// require that the directory exists).
 //
-// If the file exists and is a file then the timestamp of this Target is 
-// set to the last write time of the file so that Targets that depend on this 
-// Target will be outdated if they are older than this Target.  Additionally
-// if the last write time of the file is different to the last write time 
-// already stored in this Target then this Target is marked as having 
-// changed so that it can be scanned if necessary.
+// If the file exists and is a directory with dependencies then the time
+//
+// If the file exists and is a file or a directory with dependencies then the
+// timestamp of this Target is set to the last write time of the file so that
+// Targets that depend on this Target will be outdated if they are older than
+// this Target.  Additionally if the last write time of the file or directory
+// is different to the last write time already stored in this Target then this
+// Target is marked as having changed so that it can be scanned if necessary.
 //
 // Otherwise the file doesn't exist or if this Target's filename is an empty 
 // string the timestamp of this Target is set to the earliest possible time 
@@ -299,7 +301,7 @@ void Target::bind_to_file()
                 OsInterface* os_interface = graph_->get_build_tool()->get_os_interface();
                 if ( os_interface->exists(*filename) )
                 {
-                    if ( os_interface->is_regular(*filename) )
+                    if ( !dependencies_.empty() || os_interface->is_regular(*filename) )
                     {
                         time_t last_write_time = os_interface->last_write_time( *filename );
                         latest_last_write_time = max( last_write_time, latest_last_write_time );
@@ -594,18 +596,17 @@ void Target::set_filename( const std::string& filename, int index )
 /**
 // Get the filename that this Target is bound to.
 //
-// @param index
+// @param n
 //  The index of the filename to return (assumed to be within the valid range
-//  of filenames added to this Target).
+//  of filenames added to this Target; [0, #filenames)).
 //
 // @return
-//  The name of the file that this Target is bound to or an empty string if 
-//  this Target isn't bound to a file.
+//  The nth filename that this Target is bound to.
 */
-const std::string& Target::filename( int index ) const
+const std::string& Target::filename( int n ) const
 {
-    SWEET_ASSERT( index >= 0 && index < filenames_.size() );
-    return filenames_[index];
+    SWEET_ASSERT( n >= 0 && n < filenames_.size() );
+    return filenames_[n];
 }
 
 /**
@@ -944,15 +945,16 @@ std::string Target::generate_failed_dependencies_message() const
 // Get the \e nth dependency of this Target.
 //
 // @param n
-//  The index of the dependency to return.
+//  The index of the dependency to return (assumed to be within the valid 
+//  range of dependencies added to this Target; [0, #dependencies)).
 //
 // @return
-//  The \e nth dependency of this Target or null if \e n is out of range of 
-//  this Target's dependencies.
+//  The \e nth dependency of this Target.
 */
 Target* Target::dependency( int n ) const
 {
-    return n >= 0 && n < int(dependencies_.size()) ? dependencies_[n] : NULL;
+    SWEET_ASSERT( n >= 0 && n < int(dependencies_.size()) );
+    return dependencies_[n];
 }
 
 /**

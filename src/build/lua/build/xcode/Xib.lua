@@ -1,8 +1,7 @@
 
 local Xib = build.TargetPrototype( "Xib" );
 
-function Xib.create( _, definition, settings )
-    local settings = settings or build.current_settings();
+function Xib.create( settings, definition )
     local xib = build.Target( "", Xib, definition );
     xib.settings = settings;
     local directory = Directory( settings.data );
@@ -30,8 +29,8 @@ function Xib.build( xib )
             if dependency:is_outdated() and dependency:prototype() == nil then                
                 build.system( xcrun, ([[xcrun --sdk %s ibtool --output-format binary1 --compile "%s" "%s"]]):format(
                     sdk, 
-                    dependency:get_filename(),
-                    dependency:dependency():get_filename()
+                    dependency:filename(),
+                    dependency:dependency():filename()
                 ) );
             end
         end

@@ -1,16 +1,15 @@
 
 local Apk = build.TargetPrototype( "android.Apk" );
 
-function Apk.create( _, id )
-    local settings = build.current_settings();
-    local package = build.Target( id, Apk );
+function Apk.create( settings, id )
+    local package = build.Target( ("%s.apk"):format(id), Apk );
     package:set_filename( ("%s/%s.apk"):format(settings.bin, id) );
     package.settings = settings;
+    build.default_target( package );
     build.push_settings {
         bin = ("%s/%s"):format( settings.bin, id );
         data = ("%s/%s"):format( settings.bin, id );
     };
-    working_directory():add_dependency( package );
     return package;
 end
 
@@ -29,12 +28,12 @@ function Apk.build( package )
         local aapt = ("%s/aapt"):format( settings.android.build_tools_directory );
         local resources = table.concat( settings.resources, " -S " );
         local android_jar = ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
-        build.system( aapt, ('aapt package --auto-add-overlay -f -M AndroidManifest.xml -S %s -I "%s" -F "%s.unaligned"'):format(resources, android_jar, package:get_filename()) );
+        build.system( aapt, ('aapt package --auto-add-overlay -f -M AndroidManifest.xml -S %s -I "%s" -F "%s.unaligned"'):format(resources, android_jar, package:filename()) );
 
-        pushd( ("%s/%s"):format(branch(package:get_filename()), package:id()) );
+        pushd( ("%s/%s"):format(branch(package:filename()), basename(package:id())) );
         for file in find("") do 
             if is_file(file) then
-                build.system( aapt, ('aapt add -f "%s.unaligned" "%s"'):format(relative(package:get_filename()), relative(file)) );
+                build.system( aapt, ('aapt add -f "%s.unaligned" "%s"'):format(relative(package:filename()), relative(file)) );
             end
         end
 
@@ -42,17 +41,17 @@ function Apk.build( package )
         local key = _G.key or "androiddebugkey";
         local keypass = _G.keypass or "android";
         local keystore = _G.keystore or relative( ("%s/debug.keystore"):format(package:get_working_directory():path()) );
-        build.system( jarsigner, ("jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s -storepass %s %s.unaligned %s"):format(keystore, keypass, relative(package:get_filename()), key) );
+        build.system( jarsigner, ("jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s -storepass %s %s.unaligned %s"):format(keystore, keypass, relative(package:filename()), key) );
 
         local zipalign = ("%s/tools/zipalign"):format( settings.android.sdk_directory );
-        build.system( zipalign, ("zipalign -f 4 %s.unaligned %s"):format(relative(package:get_filename()), relative(package:get_filename())) );
+        build.system( zipalign, ("zipalign -f 4 %s.unaligned %s"):format(relative(package:filename()), relative(package:filename())) );
         popd();
     end
 end
 
 function Apk.clean( package )
-    rm( ("%s.unaligned"):format(package:get_filename()) );
-    rm( package:get_filename() );
+    rm( ("%s.unaligned"):format(package:filename()) );
+    rm( package:filename() );
 end
 
 android.Apk = Apk;

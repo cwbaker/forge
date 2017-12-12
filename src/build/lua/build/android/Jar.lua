@@ -1,8 +1,7 @@
 
 local Jar = build.TargetPrototype( "Jar" );
 
-function Jar.create( _, id, settings )
-    local settings = settings or build.current_settings();
+function Jar.create( settings, id )
     local jar = build.Target( id, Jar );
     jar:set_filename( ("%s/%s"):format(settings.lib, id) );
     jar.settings = settings;
@@ -46,7 +45,7 @@ end
 
 function Jar.build( jar )
     if jar:is_outdated() then
-        print( leaf(jar:get_filename()) );
+        print( leaf(jar:filename()) );
         local jar_ = native( ("%s/bin/jar"):format(jar.settings.android.jdk_directory) );
         local directory = build.classes_directory( jar );
         pushd( directory );
@@ -58,13 +57,13 @@ function Jar.build( jar )
             end
         end
 
-        build.system( jar_, ('jar cvf "%s" "%s"'):format(jar:get_filename(), table.concat(classes, [[" "]])) );
+        build.system( jar_, ('jar cvf "%s" "%s"'):format(jar:filename(), table.concat(classes, [[" "]])) );
         popd();
     end    
 end
 
 function Jar.clean( jar )
-    rm( jar:get_filename() );
+    rm( jar:filename() );
 end
 
 android.Jar = Jar;

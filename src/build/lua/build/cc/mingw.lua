@@ -161,12 +161,12 @@ function mingw.cc( target )
         if dependency:is_outdated() and dependency ~= target.precompiled_header then
             if dependency:prototype() == nil then
                 print( leaf(dependency.source) );
-                build.system( gcc, ([[gcc %s %s %s -o "%s" "%s"]]):format(cppdirs, cppdefines, ccflags, relative(dependency:get_filename()), dependency.source), GccScanner );
+                build.system( gcc, ([[gcc %s %s %s -o "%s" "%s"]]):format(cppdirs, cppdefines, ccflags, relative(dependency:filename()), dependency.source), GccScanner );
             elseif dependency.results then
                 for _, result in ipairs(dependency.results) do
                     if result:is_outdated() then
                         print( leaf(result.source) );
-                        build.system( gcc, ([[gcc %s %s %s -o "%s" "%s"]]):format(cppdirs, cppdefines, ccflags, relative(dependency:get_filename()), result.source), GccScanner );
+                        build.system( gcc, ([[gcc %s %s %s -o "%s" "%s"]]):format(cppdirs, cppdefines, ccflags, relative(dependency:filename()), result.source), GccScanner );
                     end
                 end
             end
@@ -190,30 +190,30 @@ function mingw.build_library( target )
             
             for object in dependency:get_dependencies() do
                 if object:prototype() == nil and object ~= dependency.precompiled_header then
-                    table.insert( objects, relative(object:get_filename()) );
+                    table.insert( objects, relative(object:filename()) );
                 end
             end
         end
     end
     
     if #objects > 0 then
-        print( leaf(target:get_filename()) );
+        print( leaf(target:filename()) );
         local ar = ("%s/bin/ar.exe"):format( target.settings.mingw.mingw_directory );
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
-        build.system( ar, ('ar %s "%s" "%s"'):format(arflags, native(target:get_filename()), arobjects) );
+        build.system( ar, ('ar %s "%s" "%s"'):format(arflags, native(target:filename()), arobjects) );
     end
     popd();
 end
 
 function mingw.clean_library( target )
-    rm( target:get_filename() );
+    rm( target:filename() );
     rmdir( obj_directory(target) );
 end
 
 function mingw.build_executable( target )
     local flags = {
-        ('-o "%s"'):format( native(target:get_filename()) ),
+        ('-o "%s"'):format( native(target:filename()) ),
     };
 
     if target:prototype() == DynamicLibrary then
@@ -267,7 +267,7 @@ function mingw.build_executable( target )
         if prototype == Cc or prototype == Cxx then
             for object in dependency:get_dependencies() do
                 if object:prototype() == nil and object ~= dependency.precompiled_header then
-                    table.insert( objects, relative(object:get_filename()) );
+                    table.insert( objects, relative(object:filename()) );
                 end
             end
         elseif prototype == StaticLibrary or prototype == DynamicLibrary then
@@ -293,14 +293,14 @@ function mingw.build_executable( target )
         local lddirs = table.concat( library_directories, " " );        
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, " " );
-        print( leaf(target:get_filename()) );
+        print( leaf(target:filename()) );
         build.system( gxx, ('g++ %s %s "%s" %s'):format(ldflags, lddirs, ldobjects, ldlibs) );
     end
     popd();
 end 
 
 function mingw.clean_executable( target )
-    rm( target:get_filename() );
+    rm( target:filename() );
     rmdir( obj_directory(target) );
 end
 

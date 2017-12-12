@@ -1,11 +1,12 @@
 
 local Dex = build.TargetPrototype( "android.Dex" );
 
-function Dex.create( _, id, settings )
-    local settings = settings or build.current_settings();
+function Dex.create( settings, id )
     local dex = build.Target( "", Dex, definition );
     dex:set_filename( ("%s/%s.dex"):format(settings.bin, id) );
     dex.settings = settings;
+    dex:add_dependency( Directory(dex:directory()) );
+    dex:add_dependency( Directory(build.classes_directory(dex)) );
     build.add_jar_dependencies( dex, settings.jars );
     return dex;
 end
@@ -20,19 +21,19 @@ end
 
 function Dex.build( dex )
     if dex:is_outdated() then
-        print( leaf(dex:get_filename()) );
+        print( leaf(dex:filename()) );
 
         local jars = {};
         if dex.settings.android.proguard_enabled then 
             local proguard = ("%s/tools/proguard/bin/proguard.sh"):format( dex.settings.android.sdk_directory );
-            build.system( proguard, ('proguard.sh -printmapping \"%s/%s.map\" @proguard.cfg'):format(obj_directory(dex), leaf(dex:get_filename())) );
-            table.insert( jars, ('\"%s/classes.dex\"'):format(build.classes_directory(dex)) );
+            build.system( proguard, ('proguard.sh -printmapping \"%s/%s.map\" @proguard.cfg'):format(build.classes_directory(dex), leaf(dex:filename())) );
+            table.insert( jars, ('\"%s/classes.jar\"'):format(build.classes_directory(dex)) );
         else
             table.insert( jars, build.classes_directory(dex) );
         end
         for dependency in dex:get_dependencies() do 
             if dependency:prototype() == Jar then 
-                table.insert( jars, relative(dependency:get_filename()) );
+                table.insert( jars, relative(dependency:filename()) );
             end
         end
         if dex.third_party_jars then 
@@ -50,12 +51,12 @@ function Dex.build( dex )
         if operating_system() == "windows" then
             dx = ("%s.bat"):format( dx );
         end
-        build.shell( ('\"%s\" --dex --verbose --output=\"%s\" %s'):format(dx, dex:get_filename(), table.concat(jars, " ")) );
+        build.shell( ('\"%s\" --dex --verbose --output=\"%s\" %s'):format(dx, dex:filename(), table.concat(jars, " ")) );
     end    
 end
 
 function Dex.clean( dex )
-    rm( dex:get_filename() );
+    rm( dex:filename() );
 end
 
 android.Dex = Dex;

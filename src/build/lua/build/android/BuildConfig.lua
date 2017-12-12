@@ -1,8 +1,7 @@
 
 local BuildConfig = build.TargetPrototype( "android.BuildConfig" );
 
-function BuildConfig.create( _, package, settings )
-    local settings = settings or build.current_settings();
+function BuildConfig.create( settings, package )
     local gen_directory = ("%s/%s"):format( settings.gen, relative(working_directory():path(), root()) );
     local build_config = build.File( ("%s/%s/BuildConfig.java"):format(gen_directory, string.gsub(package, "%.", "/")), BuildConfig );
     build_config.settings = settings;
@@ -26,10 +25,10 @@ public final class BuildConfig {
             debug = tostring( build_config.settings.debug );
         };
 
-        print( leaf(build_config:get_filename()) );
+        print( leaf(build_config:filename()) );
         local output = build.interpolate( build_config_template, variables );
-        local output_file = io.open( build_config:get_filename(), "wb" );
-        assert( output_file, ("Opening '%s' to write generated text failed"):format(build_config:get_filename()) );
+        local output_file = io.open( build_config:filename(), "wb" );
+        assert( output_file, ("Opening '%s' to write generated text failed"):format(build_config:filename()) );
         output_file:write( output );
         output_file:close();
         output_file = nil;
@@ -37,7 +36,7 @@ public final class BuildConfig {
 end
 
 function BuildConfig.clean( build_config )
-    rm( build_config:get_filename() );
+    rm( build_config:filename() );
 end
 
 android.BuildConfig = BuildConfig;

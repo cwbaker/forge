@@ -4,12 +4,12 @@ local function call( cc, definition )
     local settings = cc.settings;
     local architecture = cc.architecture;
     for _, value in ipairs(definition) do
-        local source = file( value );
+        local source = build.SourceFile( value );
         source:set_required_to_exist( true );
         source.unit = cc;
         source.settings = settings;
 
-        local object = file( ("%s/%s/%s/%s"):format(obj_directory(cc), architecture, relative(source:branch()), obj_name(value)) );
+        local object = build.File( ("%s/%s/%s/%s"):format(obj_directory(cc), architecture, relative(source:branch()), obj_name(value)) );
         object.source = value;
         object:add_dependency( source );
         object:add_dependency( Directory(object:branch()) );
@@ -31,29 +31,20 @@ local function build_( cc_ )
     end
 end
 
-local function clean( cc )
-    for dependency in cc:get_dependencies() do
-        if dependency:prototype() == nil then
-            rm( dependency:path() );
-        end
-    end
-end
-
 local function create_target_prototype( id, language )
-    local function create( target_prototype, architecture, settings )
+    local target_prototype = build.TargetPrototype( id );
+    local function create( settings, architecture )
         local cc = build.Target( anonymous(), target_prototype );
-        cc.settings = settings or build.current_settings();
+        cc.settings = settings;
         cc.architecture = architecture;
         cc.language = language;
         return cc;
     end
     
-    local target_prototype = build.TargetPrototype( id );
     target_prototype.create = create;
     target_prototype.call = call;
     target_prototype.depend = depend;
     target_prototype.build = build_;
-    target_prototype.clean = clean;
     return target_prototype;
 end
 

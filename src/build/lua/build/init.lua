@@ -16,12 +16,38 @@ function errorf( format, ... )
     error( string.format(format, ...) );
 end
 
+-- Provide buildfile() that restores the settings stack position.
+local original_buildfile = buildfile;
+function buildfile( ... )
+    local position = build.save_settings();
+    pcall( original_buildfile, ... );
+    build.restore_settings( position );
+end
+
 build = {};
+
+function build.matches( value, ... )
+    for i = 1, select("#", ...) do 
+        if string.match(value, select(i, ...)) then
+            return true;
+        end
+    end
+    return false;
+end
+
+function build.platform_matches( ... )
+    return platform == "" or build.matches( platform, ... );
+end
+
+function build.variant_matches( ... )
+    return variant == "" or build.matches( variant, ... );
+end
 
 function build.default_create_function( target_prototype, ... )
     local create = target_prototype.create;
     if create then 
-        return create( target_prototype, ... );
+        local settings = build.current_settings();
+        return create( settings, ... );
     else
         local id = select( 1, ... );
         local definition = select( 2, ... );
@@ -48,7 +74,7 @@ end
 
 function build.TargetPrototype( id, create_function )
     local target_prototype = TargetPrototype { id };
-    getmetatable( target_prototype ).__call = build.default_create_function;
+    getmetatable( target_prototype ).__call = create_function or build.default_create_function;
     return target_prototype;
 end
 
@@ -60,6 +86,7 @@ end
 
 function build.File( filename, target_prototype, definition )
     local target_ = file( filename, target_prototype, definition );
+    target_:set_cleanable( true );
     getmetatable( target_ ).__call = build.default_call_function;
     return target_;
 end
@@ -92,7 +119,7 @@ function build.initialize( project_settings )
     set_maximum_parallel_jobs( jobs );
 
     -- Set default settings (all other settings inherit from this table).
-    local default_settings = build.default_settings;
+    local default_settings = dofile( build.script("build/default_settings") );
     build.merge_settings( default_settings, project_settings );
 
     local local_settings = {};
@@ -127,7 +154,7 @@ function build.initialize( project_settings )
         error( string.format("The library type '%s' is not 'static' or 'dynamic'", tostring(settings.library_type)) );
     end
 
-    build.default_settings.cache = root( ("%s/%s_%s.cache"):format(settings.obj, platform, variant) );
+    default_settings.cache = root( ("%s/%s_%s.cache"):format(settings.obj, platform, variant) );
     _G.settings = settings;
     build.default_settings = default_settings;
     build.local_settings = local_settings;
@@ -166,6 +193,23 @@ function build.version_code( version )
     return math.ceil( os.difftime(version_time, reference_time) / SECONDS_PER_HALF_DAY );
 end
 
+-- Add a target to the current directory's target so that it will be built 
+-- when a build is invoked from that directory.
+function build.default_target( default_target )
+    local directory = working_directory();
+    directory:add_dependency( default_target );
+end
+
+-- Add targets to the current directory's target so that they will be built 
+-- when a build is invoked from that directory.
+function build.default_targets( default_targets )
+
+    local directory = working_directory();
+    for _, default_target in ipairs(default_targets) do
+        directory:add_dependency( target(root(default_target)) );
+    end
+end
+
 -- Visit a target by calling a member function /pass/ if it has one.
 function build.visit( pass, ... )
     local args = {...};
@@ -190,6 +234,18 @@ function build.depend_visit( target )
         if id:find(".+%.[chi]p?p?") or id:find(".+%.mm?") then
             scan( target, CcScanner );
         end
+    end
+end
+
+-- Visit a target by calling a member function "clean" if it exists or if
+-- there is no "clean" function and the target is not marked as a source file
+-- that must exist then its associated file is deleted.
+function build.clean_visit( target )
+    local fn = target.clean;
+    if fn then 
+        fn( target );
+    elseif target:cleanable() and target:filename() ~= "" then 
+        rm( target:filename() );
     end
 end
 
@@ -231,10 +287,10 @@ function build.dump( t )
     print( tostring(t) );
     if t ~= nil then
         if getmetatable(t) ~= nil then
-            print( "  prototype="..tostring(getmetatable(t).__index) );
+            printf( "  prototype=", tostring(getmetatable(t).__index) );
         end
         for k, v in pairs(t) do
-            print( "  "..tostring(k).." -> "..tostring(v) );
+            printf( "  %s -> %s", tostring(k), tostring(v) );
         end
     end
 end
@@ -333,23 +389,13 @@ end
 -- Load the dependency graph from the file specified by /settings.cache/ and
 -- running depend and bind passes over the target specified by /goal/ and its
 -- dependencies.
-function build.load( goal )
-    assert( initialize and type(initialize) == "function", "The 'initialize' function is not defined" );
-    assert( buildfiles and type(buildfiles) == "function", "The 'buildfiles' function is not defined" );
-
-    local initialize_start = ticks();
-    if not build.initialized then
-        initialize();
-        build.initialized = true;
-    end
-    local initialize_finish = ticks();
-
-    local load_start = initialize_finish;
+function build.load( goal, force )
+    local load_start = ticks();
     local cache_target = load_binary( settings.cache, initial(goal) );
-    if cache_target == nil or cache_target:is_outdated() or build.local_settings.updated then
+    if cache_target == nil or cache_target:is_outdated() or build.local_settings.updated or force then
         clear();
         build.push_settings( build.settings );
-        buildfiles();
+        buildfile( settings.buildfile );
         build.pop_settings();
 
         local root_target = find_target( root() );
@@ -382,7 +428,6 @@ function build.load( goal )
     local bind_finish = ticks();
 
     return 
-        initialize_finish - initialize_start, 
         load_finish - load_start, 
         depend_finish - depend_start, 
         bind_finish - bind_start
@@ -431,32 +476,46 @@ build.settings_stack = {};
 
 function build.push_settings( settings )
     local settings_stack = build.settings_stack;
+    local back = #settings_stack;
     if settings then
-        if #settings_stack > 0 then
-            setmetatable( settings, {__index = settings_stack[#settings_stack]} );
+        if back > 0 then
+            setmetatable( settings, {__index = settings_stack[back]} );
         end
     else
-        assert( #settings_stack > 0 );
-        settings = settings_stack[#settings_stack];
+        assert( back > 0 );
+        settings = settings_stack[back];
     end
     table.insert( settings_stack, settings );
     return settings;
 end
 
-function build.pop_settings( settings )
-    table.remove( build.settings_stack );
+function build.pop_settings()
+    local settings_stack = build.settings_stack;
+    assert( #settings_stack > 0 );
+    table.remove( settings_stack );
 end
 
-function build.current_settings( settings )
+function build.current_settings()
     local settings_stack = build.settings_stack;
-    if #settings_stack > 0 then
-        if settings then 
-            setmetatable( settings, {__index = settings_stack[#settings_stack]} );
-        else
-            settings = settings_stack[#settings_stack];
-        end
+    local back = #settings_stack;
+    if back > 0 then
+        return settings_stack[back];
+    else 
+        return build.settings;
     end
-    return settings;
+end
+
+function build.save_settings()
+    return #build.settings_stack;
+end
+
+function build.restore_settings( position )
+    local settings_stack = build.settings_stack;
+    local top_position = #settings_stack;
+    while top_position > position do
+        table.remove( settings_stack, top_position );
+        top_position = top_position - 1;
+    end 
 end
 
 function build.add_library_dependencies( executable, libraries )

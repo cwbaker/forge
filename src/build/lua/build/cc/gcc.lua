@@ -147,7 +147,7 @@ function gcc.append_link_flags( target, flags )
         table.insert( flags, ('-exported_symbols_list "%s"'):format(absolute(target.settings.exported_symbols_list)) );
     end
 
-    table.insert( flags, ('-o "%s"'):format(native(target:get_filename())) );
+    table.insert( flags, ('-o "%s"'):format(native(target:filename())) );
 end
 
 function gcc.append_link_libraries( target, libraries )

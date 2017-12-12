@@ -220,6 +220,7 @@ Process::Process( const char* command, const char* arguments, const char* direct
     result = posix_spawn( &pid, command, &file_actions, NULL, &splitter.arguments()[0], environ );
     fchdir( original_working_directory );
     close( original_working_directory );
+    posix_spawn_file_actions_destroy( &file_actions );
 
     if ( result != 0 )
     {
