@@ -768,8 +768,6 @@ end
 -- Recursively walk the dependencies of *target* until a target with a 
 -- filename or the maximum level limit is reached.
 function build.walk_dependencies( target, start, finish, maximum_level )
-    local start = start or 1;
-    local finish = finish or math.maxinteger;
     local maximum_level = maximum_level or math.maxinteger;
     local function walk_dependencies_recursively( target, level )
         for _, dependency in target:dependencies() do 
@@ -783,15 +781,13 @@ function build.walk_dependencies( target, start, finish, maximum_level )
         end
     end
     return coroutine.wrap( function() 
-        for index, dependency in target:dependencies() do 
-            if index >= start and index <= finish then 
-                local phony = dependency:filename() == "";
-                if not phony then
-                    coroutine.yield( dependency, level );
-                end
-                if phony then 
-                    walk_dependencies_recursively( dependency, 0 );
-                end
+        for index, dependency in target:dependencies(start, finish) do 
+            local phony = dependency:filename() == "";
+            if not phony then
+                coroutine.yield( dependency, level );
+            end
+            if phony then 
+                walk_dependencies_recursively( dependency, 0 );
             end
         end
     end );

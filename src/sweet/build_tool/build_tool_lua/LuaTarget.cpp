@@ -252,8 +252,8 @@ struct GetTargetsTargetReferencedByScript
 {
     LuaTarget* script_interface_;
     
-    GetTargetsTargetReferencedByScript( LuaTarget* lua_target_api )
-    : script_interface_( lua_target_api )
+    GetTargetsTargetReferencedByScript( LuaTarget* lua_target )
+    : script_interface_( lua_target )
     {
         SWEET_ASSERT( script_interface_ );
     }
@@ -275,15 +275,15 @@ int LuaTarget::targets( lua_State* lua_state )
 
     try
     {
-        LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-        SWEET_ASSERT( lua_target_api );
+        LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+        SWEET_ASSERT( lua_target );
 
         const int TARGET = 1;
         Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
         luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
 
         const vector<Target*>& dependencies = target->targets();
-        lua_push_iterator( lua_state, dependencies.begin(), dependencies.end(), GetTargetsTargetReferencedByScript(lua_target_api) );
+        lua_push_iterator( lua_state, dependencies.begin(), dependencies.end(), GetTargetsTargetReferencedByScript(lua_target) );
         return 1;
     }
 
@@ -312,9 +312,9 @@ int LuaTarget::any_dependency( lua_State* lua_state )
     {
         if ( !dependency->referenced_by_script() )
         {
-            LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-            SWEET_ASSERT( lua_target_api );
-            lua_target_api->create_target( dependency );
+            LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+            SWEET_ASSERT( lua_target );
+            lua_target->create_target( dependency );
         }
         LuaConverter<Target*>::push( lua_state, dependency );
     }
@@ -329,18 +329,23 @@ int LuaTarget::any_dependencies_iterator( lua_State* lua_state )
 {
     const int TARGET = 1;
     const int INDEX = 2;
+    const int FINISH = lua_upvalueindex( 1 );
+    const int LUA_TARGET = lua_upvalueindex( 2 );
+
+    int finish = lua_tointeger( lua_state, FINISH );
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
     int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
-    if ( target )
+
+    if ( target && index <= finish )
     {
         Target* dependency = target->any_dependency( index - 1 );
         if ( dependency )
         {
             if ( !dependency->referenced_by_script() )
             {
-                LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-                SWEET_ASSERT( lua_target_api );
-                lua_target_api->create_target( dependency );
+                LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, LUA_TARGET) );
+                SWEET_ASSERT( lua_target );
+                lua_target->create_target( dependency );
             }
             lua_pushinteger( lua_state, index );
             LuaConverter<Target*>::push( lua_state, dependency );
@@ -353,15 +358,25 @@ int LuaTarget::any_dependencies_iterator( lua_State* lua_state )
 int LuaTarget::any_dependencies( lua_State* lua_state )
 {
     const int TARGET = 1;
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
-    luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
+    const int START = 2;
+    const int FINISH = 3;
 
-    LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( lua_target_api );    
-    lua_pushlightuserdata( lua_state, lua_target_api );
-    lua_pushcclosure( lua_state, &LuaTarget::any_dependencies_iterator, 1 );
+    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    luaL_argcheck( lua_state, target, TARGET, "expected target table" );
+
+    int start = luaL_optinteger( lua_state, START, 1 );
+    luaL_argcheck( lua_state, start >= 1, START, "expected start >= 1" );
+
+    int finish = luaL_optinteger( lua_state, FINISH, INT_MAX );
+    luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );
+
+    LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+    SWEET_ASSERT( lua_target );    
+    lua_pushinteger( lua_state, finish );
+    lua_pushlightuserdata( lua_state, lua_target );
+    lua_pushcclosure( lua_state, &LuaTarget::any_dependencies_iterator, 2 );
     LuaConverter<Target*>::push( lua_state, target );
-    lua_pushinteger( lua_state, 0 );
+    lua_pushinteger( lua_state, start - 1 );
     return 3;
 }
 
@@ -383,9 +398,9 @@ int LuaTarget::explicit_dependency( lua_State* lua_state )
     {
         if ( !dependency->referenced_by_script() )
         {
-            LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-            SWEET_ASSERT( lua_target_api );
-            lua_target_api->create_target( dependency );
+            LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+            SWEET_ASSERT( lua_target );
+            lua_target->create_target( dependency );
         }
         LuaConverter<Target*>::push( lua_state, dependency );
     }
@@ -400,18 +415,23 @@ int LuaTarget::explicit_dependencies_iterator( lua_State* lua_state )
 {
     const int TARGET = 1;
     const int INDEX = 2;
+    const int FINISH = lua_upvalueindex( 1 );
+    const int LUA_TARGET = lua_upvalueindex( 2 );
+
+    int finish = lua_tointeger( lua_state, FINISH );
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
     int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
-    if ( target )
+
+    if ( target && index <= finish )
     {
         Target* dependency = target->explicit_dependency( index - 1 );
         if ( dependency )
         {
             if ( !dependency->referenced_by_script() )
             {
-                LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-                SWEET_ASSERT( lua_target_api );
-                lua_target_api->create_target( dependency );
+                LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, LUA_TARGET) );
+                SWEET_ASSERT( lua_target );
+                lua_target->create_target( dependency );
             }
             lua_pushinteger( lua_state, index );
             LuaConverter<Target*>::push( lua_state, dependency );
@@ -424,15 +444,25 @@ int LuaTarget::explicit_dependencies_iterator( lua_State* lua_state )
 int LuaTarget::explicit_dependencies( lua_State* lua_state )
 {
     const int TARGET = 1;
+    const int START = 2;
+    const int FINISH = 3;
+
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
     luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
 
-    LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( lua_target_api );    
-    lua_pushlightuserdata( lua_state, lua_target_api );
-    lua_pushcclosure( lua_state, &LuaTarget::explicit_dependencies_iterator, 1 );
+    int start = luaL_optinteger( lua_state, START, 1 );
+    luaL_argcheck( lua_state, start >= 1, START, "expected start >= 1" );
+
+    int finish = luaL_optinteger( lua_state, FINISH, INT_MAX );
+    luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );
+
+    LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+    SWEET_ASSERT( lua_target );    
+    lua_pushinteger( lua_state, finish );
+    lua_pushlightuserdata( lua_state, lua_target );
+    lua_pushcclosure( lua_state, &LuaTarget::explicit_dependencies_iterator, 2 );
     LuaConverter<Target*>::push( lua_state, target );
-    lua_pushinteger( lua_state, 0 );
+    lua_pushinteger( lua_state, start - 1 );
     return 3;
 }
 
@@ -454,9 +484,9 @@ int LuaTarget::implicit_dependency( lua_State* lua_state )
     {
         if ( !dependency->referenced_by_script() )
         {
-            LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-            SWEET_ASSERT( lua_target_api );
-            lua_target_api->create_target( dependency );
+            LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+            SWEET_ASSERT( lua_target );
+            lua_target->create_target( dependency );
         }
         LuaConverter<Target*>::push( lua_state, dependency );
     }
@@ -471,18 +501,23 @@ int LuaTarget::implicit_dependencies_iterator( lua_State* lua_state )
 {
     const int TARGET = 1;
     const int INDEX = 2;
+    const int FINISH = lua_upvalueindex( 1 );
+    const int LUA_TARGET = lua_upvalueindex( 2 );
+
+    int finish = lua_tointeger( lua_state, FINISH );
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
     int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
-    if ( target )
+
+    if ( target && index <= finish )
     {
         Target* dependency = target->implicit_dependency( index - 1 );
         if ( dependency )
         {
             if ( !dependency->referenced_by_script() )
             {
-                LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-                SWEET_ASSERT( lua_target_api );
-                lua_target_api->create_target( dependency );
+                LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, LUA_TARGET) );
+                SWEET_ASSERT( lua_target );
+                lua_target->create_target( dependency );
             }
             lua_pushinteger( lua_state, index );
             LuaConverter<Target*>::push( lua_state, dependency );
@@ -495,15 +530,25 @@ int LuaTarget::implicit_dependencies_iterator( lua_State* lua_state )
 int LuaTarget::implicit_dependencies( lua_State* lua_state )
 {
     const int TARGET = 1;
+    const int START = 2;
+    const int FINISH = 3;
+
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
     luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
 
-    LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( lua_target_api );    
-    lua_pushlightuserdata( lua_state, lua_target_api );
-    lua_pushcclosure( lua_state, &LuaTarget::implicit_dependencies_iterator, 1 );
+    int start = luaL_optinteger( lua_state, START, 1 );
+    luaL_argcheck( lua_state, start >= 1, START, "expected start >= 1" );
+
+    int finish = luaL_optinteger( lua_state, FINISH, INT_MAX );
+    luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );
+
+    LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+    SWEET_ASSERT( lua_target );    
+    lua_pushinteger( lua_state, finish );
+    lua_pushlightuserdata( lua_state, lua_target );
+    lua_pushcclosure( lua_state, &LuaTarget::implicit_dependencies_iterator, 2 );
     LuaConverter<Target*>::push( lua_state, target );
-    lua_pushinteger( lua_state, 0 );
+    lua_pushinteger( lua_state, start - 1 );
     return 3;
 }
 
@@ -525,9 +570,9 @@ int LuaTarget::ordering_dependency( lua_State* lua_state )
     {
         if ( !dependency->referenced_by_script() )
         {
-            LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-            SWEET_ASSERT( lua_target_api );
-            lua_target_api->create_target( dependency );
+            LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+            SWEET_ASSERT( lua_target );
+            lua_target->create_target( dependency );
         }
         LuaConverter<Target*>::push( lua_state, dependency );
     }
@@ -542,18 +587,22 @@ int LuaTarget::ordering_dependencies_iterator( lua_State* lua_state )
 {
     const int TARGET = 1;
     const int INDEX = 2;
+    const int FINISH = lua_upvalueindex( 1 );
+    const int LUA_TARGET = lua_upvalueindex( 2 );
+
+    int finish = lua_tointeger( lua_state, FINISH );
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
     int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
-    if ( target )
+    if ( target && index <= finish )
     {
         Target* dependency = target->ordering_dependency( index - 1 );
         if ( dependency )
         {
             if ( !dependency->referenced_by_script() )
             {
-                LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-                SWEET_ASSERT( lua_target_api );
-                lua_target_api->create_target( dependency );
+                LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, LUA_TARGET) );
+                SWEET_ASSERT( lua_target );
+                lua_target->create_target( dependency );
             }
             lua_pushinteger( lua_state, index );
             LuaConverter<Target*>::push( lua_state, dependency );
@@ -566,15 +615,22 @@ int LuaTarget::ordering_dependencies_iterator( lua_State* lua_state )
 int LuaTarget::ordering_dependencies( lua_State* lua_state )
 {
     const int TARGET = 1;
+    const int START = 2;
+    const int FINISH = 3;
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
     luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
+    int start = luaL_optinteger( lua_state, START, 1 );
+    luaL_argcheck( lua_state, start >= 1, START, "expected start >= 1" );
+    int finish = luaL_optinteger( lua_state, FINISH, INT_MAX );
+    luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );
 
-    LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( lua_target_api );    
-    lua_pushlightuserdata( lua_state, lua_target_api );
-    lua_pushcclosure( lua_state, &LuaTarget::ordering_dependencies_iterator, 1 );
+    LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+    SWEET_ASSERT( lua_target );    
+    lua_pushinteger( lua_state, finish );
+    lua_pushlightuserdata( lua_state, lua_target );
+    lua_pushcclosure( lua_state, &LuaTarget::ordering_dependencies_iterator, 2 );
     LuaConverter<Target*>::push( lua_state, target );
-    lua_pushinteger( lua_state, 0 );
+    lua_pushinteger( lua_state, start - 1 );
     return 3;
 }
 
