@@ -125,7 +125,7 @@ void Target::recover( Graph* graph )
     if ( referenced_by_script_ )
     {
         graph->build_tool()->recover_target_lua_binding( this );
-        graph->build_tool()->update_target_lua_binding( this, prototype() );
+        graph->build_tool()->update_target_lua_binding( this );
     }
 
     for ( vector<Target*>::const_iterator i = targets_.begin(); i != targets_.end(); ++i )
@@ -189,16 +189,22 @@ const std::string& Target::branch() const
             vector<Target*>::const_reverse_iterator i = targets_to_root.rbegin();
             ++i;
 
-            if ( i == targets_to_root.rend() || (*i)->id().find(fs::BasicPathTraits<char>::DRIVE) == std::string::npos )
+            const char DRIVE = ':';
+            if ( (*i)->id().find(DRIVE) != std::string::npos )
             {
-                branch_ += "/";
+                Target* target = *i;
+                SWEET_ASSERT( target );
+                branch_ += target->id();
+                ++i;
             }
+            branch_ += "/";
 
             while ( i != targets_to_root.rend() )
             {
                 Target* target = *i;
                 SWEET_ASSERT( target != 0 );
-                branch_ += target->id() + "/";
+                branch_ += target->id();
+                branch_ += "/";
                 ++i;
             }
         }
@@ -248,7 +254,7 @@ void Target::set_prototype( TargetPrototype* target_prototype )
         prototype_ = target_prototype;
         if ( referenced_by_script() )
         {
-            graph_->build_tool()->update_target_lua_binding( this, target_prototype );
+            graph_->build_tool()->update_target_lua_binding( this );
         }
     }
 }

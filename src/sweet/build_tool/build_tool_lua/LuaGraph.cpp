@@ -115,13 +115,13 @@ Target* LuaGraph::add_target( lua_State* lua_state )
             target->set_prototype( target_prototype );
             target->set_working_directory( working_directory );
             build_tool->recover_target_lua_binding( target );
-            build_tool->update_target_lua_binding( target, target_prototype );
+            build_tool->update_target_lua_binding( target );
         }
         else
         {
             build_tool->create_target_lua_binding( target );
             build_tool->recover_target_lua_binding( target );
-            build_tool->update_target_lua_binding( target, target_prototype );
+            build_tool->update_target_lua_binding( target );
         }
     }
     return target;

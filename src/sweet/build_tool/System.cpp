@@ -1,11 +1,11 @@
 //
 // System.cpp
-// Copyright (c) Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker.` All rights reserved.
 //
 
 #include "System.hpp"
 #include "Error.hpp"
-#include <sweet/fs/fs.hpp>
+#include <sweet/assert/assert.hpp>
 
 #if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
@@ -110,7 +110,10 @@ std::time_t System::last_write_time( const std::string& path )
 */
 boost::filesystem::directory_iterator System::ls( const std::string& path )
 {
-    return boost::filesystem::exists(path) ? boost::filesystem::directory_iterator( path ) : boost::filesystem::directory_iterator();
+    return boost::filesystem::exists( path ) ? 
+        boost::filesystem::directory_iterator( path ) : 
+        boost::filesystem::directory_iterator()
+    ;
 }
 
 /**
@@ -125,7 +128,10 @@ boost::filesystem::directory_iterator System::ls( const std::string& path )
 */
 boost::filesystem::recursive_directory_iterator System::find( const std::string& path )
 {
-    return boost::filesystem::exists(path) ? boost::filesystem::recursive_directory_iterator( path ) : boost::filesystem::recursive_directory_iterator();
+    return boost::filesystem::exists( path ) ? 
+        boost::filesystem::recursive_directory_iterator( path ) : 
+        boost::filesystem::recursive_directory_iterator()
+    ;
 }
 
 /**
@@ -140,13 +146,13 @@ std::string System::executable()
     char path [MAX_PATH + 1];
     int size = ::GetModuleFileNameA( NULL, path, sizeof(path) );
     path [sizeof(path) - 1] = 0;
-    return string( path );
+    return boost::filesystem::path( string(path, size) ).generic_string();
 #elif defined(BUILD_OS_MACOSX)
     uint32_t size = 0;
     _NSGetExecutablePath( NULL, &size );
     char path [size];
     _NSGetExecutablePath( path, &size );
-    return string( path );
+    return boost::filesystem::path( string(path, size) ).generic_string();
 #endif
 }
 
@@ -164,7 +170,7 @@ std::string System::home()
 #endif
     
     const char* home = ::getenv( HOME );
-    return home ? string( home ) : string();
+    return home ? boost::filesystem::path( string(home) ).generic_string() : string();
 }
 
 /**
@@ -176,71 +182,6 @@ std::string System::home()
 void System::mkdir( const std::string& path )
 {
     boost::filesystem::create_directories( path );
-}
-
-/**
-// Recursively copy a directory and its contents to another directory only
-// copying newer files.
-//
-// Directories and files that start with a '.' aren't recursed into or 
-// copied so that directory hierarchies beneath .svn can be ignored.
-//
-// @param from
-//  The directory to copy from.
-//
-// @param to
-//  The directory to copy to.
-*/
-void System::cpdir( const std::string& from, const std::string& to )
-{
-    using namespace boost::filesystem;
-
-    fs::Path from_path( from );
-    fs::Path to_path( to );
-
-    if ( exists(from_path.string()) )
-    {
-        recursive_directory_iterator i = recursive_directory_iterator( from_path.string() );
-        recursive_directory_iterator end;
-
-        while ( i != end )
-        {
-            SWEET_ASSERT( i != end );
-            const boost::filesystem::path& source = i->path();
-            if ( !source.empty() && source.filename().string().at(0) != '.' )
-            {
-                fs::Path destination = to_path / from_path.relative( source.string() );
-                if ( is_directory(source.string()) )
-                {
-                    if ( !exists(destination.string()) )
-                    {
-                        create_directories( destination.string() );
-                    }
-                }
-                else if ( !exists(destination.string()) || last_write_time(source.string()) > last_write_time(destination.string()) )
-                {
-                    boost::filesystem::path destination_directory = destination.branch().string();
-                    if ( !exists(destination_directory.string()) )
-                    {
-                        create_directories( destination_directory );
-                    }
-
-                    if ( exists(destination.string()) )
-                    {
-                        remove( destination.string() );
-                    }
-
-                    copy_file( *i, destination.string() );
-                }
-            }
-            else
-            {
-                i.no_push();
-            }
-
-            ++i;
-        }
-    }
 }
 
 /**

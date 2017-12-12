@@ -35,7 +35,7 @@ Application::Application( int argc, char** argv )
     bool help = false;
     bool version = false;
     std::string filename = "";
-    std::string directory = boost::filesystem::initial_path<boost::filesystem::path>().string();
+    std::string directory = boost::filesystem::initial_path<boost::filesystem::path>().generic_string();
     int warning_level = 0;
     bool stack_trace_enabled = false;
     std::vector<std::string> assignments_and_commands;

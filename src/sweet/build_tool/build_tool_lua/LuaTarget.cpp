@@ -71,6 +71,7 @@ void LuaTarget::create_target( Target* target )
         lua_->create( target );
         target->set_referenced_by_script( true );
         recover_target( target );
+        update_target( target );
     }
 }
 
@@ -84,9 +85,11 @@ void LuaTarget::recover_target( Target* target )
     ;
 }
 
-void LuaTarget::update_target( Target* target, TargetPrototype* target_prototype )
+void LuaTarget::update_target( Target* target )
 {
     SWEET_ASSERT( target );
+
+    TargetPrototype* target_prototype = target->prototype();
     if ( target_prototype )
     {
         lua_->members( target )
@@ -292,7 +295,7 @@ int LuaTarget::dependencies_iterator( lua_State* lua_state )
     const int TARGET = 1;
     const int INDEX = 2;
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
-    int index = lua_tointeger( lua_state, INDEX );
+    int index = static_cast<int>( lua_tointeger(lua_state, INDEX) );
     if ( target )
     {
         Target* dependency = target->dependency( index - 1 );

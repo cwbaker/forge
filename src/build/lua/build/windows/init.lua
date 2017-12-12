@@ -37,31 +37,32 @@ function windows.cc( target )
     local sources_by_directory = {};
     for _, dependency in target:dependencies() do
         if dependency:outdated() then
-            local directory = branch( dependency.source );
+            local directory = build.branch( dependency.source );
             local sources = sources_by_directory[directory];
             if not sources then 
                 sources = {};
                 sources_by_directory[directory] = sources;
             end
             table.insert( sources, dependency.source );
-            objects_by_source[leaf(dependency.source)] = dependency;
+            objects_by_source[build.leaf(dependency.source)] = dependency;
             dependency:clear_implicit_dependencies();
         end    
     end
 
     for directory, sources in pairs(sources_by_directory) do
         if #sources > 0 then
-            local output_directory = native( ("%s%s/%s/"):format(obj_directory(target), target.architecture, directory) );
+            local output_directory = build.native( ("%s%s/%s/"):format(obj_directory(target), target.architecture, directory) );
             local ccflags = table.concat( flags, " " );
             local source = table.concat( sources, '" "' );
             local cl = msvc.visual_studio_tool( target, "cl.exe" );
             local environment = msvc.environments_by_architecture[target.architecture];
+            printf( "cc(), pwd='%s'", build.pwd() );
             build.system( 
                 cl, 
                 ('cl %s /Fo%s "%s"'):format(ccflags, output_directory, source), 
                 environment, 
                 nil,
-                msvc.dependencies_filter(output_directory, absolute(directory))
+                msvc.dependencies_filter(output_directory, build.absolute(directory))
             );
         end
     end
@@ -76,13 +77,13 @@ function windows.build_library( target )
         table.insert( flags, "/ltcg" );
     end
     
-    pushd( ("%s%s"):format(obj_directory(target), target.architecture) );
+    build.pushd( ("%s%s"):format(obj_directory(target), target.architecture) );
     local objects = {};
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx then
             for _, object in dependency:dependencies() do
-                table.insert( objects, relative(object:filename()) );
+                table.insert( objects, build.relative(object:filename()) );
             end
         end
     end
@@ -92,15 +93,15 @@ function windows.build_library( target )
         local arobjects = table.concat( objects, '" "' );
         local msar = msvc.visual_studio_tool( target, "lib.exe" );
         local environment = msvc.environments_by_architecture[target.architecture];
-        print( leaf(target:filename()) );
-        build.system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:filename()), arobjects), environment );
+        print( build.leaf(target:filename()) );
+        build.system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, build.native(target:filename()), arobjects), environment );
     end
-    popd();
+    build.popd();
 end;
 
 function windows.clean_library( target )
-    rm( target:filename() );
-    rmdir( obj_directory(target) );
+    build.rm( target:filename() );
+    build.rmdir( obj_directory(target) );
 end;
 
 function windows.build_executable( target )
@@ -118,7 +119,7 @@ function windows.build_executable( target )
                 table.insert( objects, obj_name(object:id()) );
             end
         elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
-            table.insert( libraries, ('%s.lib'):format(basename(dependency:filename())) );
+            table.insert( libraries, ('%s.lib'):format(build.basename(dependency:filename())) );
         end
     end
 
@@ -130,16 +131,16 @@ function windows.build_executable( target )
         local msrc = msvc.windows_sdk_tool( target, "rc.exe" );
         local intermediate_manifest = ('%s%s_intermediate.manifest'):format( obj_directory(target), target:id() );
 
-        print( leaf(target:filename()) );
-        pushd( ("%s%s"):format(obj_directory(target), target.architecture) );
+        print( build.leaf(target:filename()) );
+        build.pushd( ("%s%s"):format(obj_directory(target), target.architecture) );
         if target.settings.incremental_linking then
             local embedded_manifest = ("%s_embedded.manifest"):format( target:id() );
             local embedded_manifest_rc = ("%s_embedded_manifest.rc"):format( target:id() );
             local embedded_manifest_res = ("%s_embedded_manifest.res"):format( target:id() );
 
-            if not exists(embedded_manifest_rc) then        
-                local rc = io.open( absolute(embedded_manifest_rc), "wb" );
-                assertf( rc, "Opening '%s' to write manifest failed", absolute(embedded_manifest_rc) );
+            if not build.exists(embedded_manifest_rc) then        
+                local rc = io.open( build.absolute(embedded_manifest_rc), "wb" );
+                assertf( rc, "Opening '%s' to write manifest failed", build.absolute(embedded_manifest_rc) );
                 if target:prototype() == Executable then
                     rc:write( ('1 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "%s_embedded.manifest"'):format(target:id()) );
                 else
@@ -154,7 +155,7 @@ function windows.build_executable( target )
             local ldobjects = table.concat( objects, '" "' );
             local environment = msvc.environments_by_architecture[target.architecture];
 
-            if exists(embedded_manifest) ~= true then
+            if build.exists(embedded_manifest) ~= true then
                 build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
                 build.system( msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest), environment );
                 build.system( msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
@@ -179,44 +180,44 @@ function windows.build_executable( target )
 
             build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
             sleep( 100 );
-            build.system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(native(target:filename()), intermediate_manifest), environment );
+            build.system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(build.native(target:filename()), intermediate_manifest), environment );
         end
-        popd();
+        build.popd();
     end
 end;
 
 function windows.clean_executable( target )
     local filename = target:filename();
-    rm( filename );
-    rm( ("%s/%s.ilk"):format(branch(filename), basename(filename)) );
-    rmdir( obj_directory(target) );
+    build.rm( filename );
+    build.rm( ("%s/%s.ilk"):format(build.branch(filename), build.basename(filename)) );
+    build.rmdir( obj_directory(target) );
 end
 
 function windows.lipo_executable( target )
 end
 
 function windows.obj_directory( target )
-    return ("%s/%s/"):format( target.settings.obj, relative(target:working_directory():path(), root()) );
+    return ("%s/%s/"):format( target.settings.obj, build.relative(target:working_directory():path(), build.root()) );
 end
 
 function windows.cc_name( name )
-    return ("%s.c"):format( basename(name) );
+    return ("%s.c"):format( build.basename(name) );
 end
 
 function windows.cxx_name( name )
-    return ("%s.cpp"):format( basename(name) );
+    return ("%s.cpp"):format( build.basename(name) );
 end
 
 function windows.pch_name( name )
-    return ("%s.pch"):format( basename(name) );
+    return ("%s.pch"):format( build.basename(name) );
 end
 
 function windows.pdb_name( name )
-    return ("%s.pdb"):format( basename(name) );
+    return ("%s.pdb"):format( build.basename(name) );
 end
 
 function windows.obj_name( name )
-    return ("%s.obj"):format( basename(name) );
+    return ("%s.obj"):format( build.basename(name) );
 end
 
 function windows.lib_name( name, architecture )

@@ -14,6 +14,10 @@
 #include <sweet/process/Environment.hpp>
 #include <stdlib.h>
 
+#if defined BUILD_OS_WINDOWS
+#include <windows.h>
+#endif
+
 using std::max;
 using std::find;
 using std::string;
@@ -121,7 +125,7 @@ void Executor::thread_execute( const std::string& command, const std::string& co
 
         Process process;
         process.executable( command.c_str() );
-        process.directory( context->directory().string().c_str() );
+        process.directory( working_directory->path().c_str() );
         process.environment( environment );
         process.start_suspended( true );
 

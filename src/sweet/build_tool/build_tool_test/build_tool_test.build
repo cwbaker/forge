@@ -13,7 +13,6 @@ for _, architecture in ipairs(settings.architectures) do
             "sweet/build_tool/build_tool_lua/build_tool_lua",
             "sweet/build_tool/build_tool",
             "sweet/cmdline/cmdline",
-            "sweet/fs/fs",
             "sweet/lua/lua",
             "sweet/persist/persist",
             "sweet/process/process",

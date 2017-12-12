@@ -32,7 +32,6 @@ class System
         std::string executable();
         std::string home();
         void mkdir( const std::string& path );
-        void cpdir( const std::string& from, const std::string& to );
         void rmdir( const std::string& path );
         void cp( const std::string& from, const std::string& to );
         void rm( const std::string& path );

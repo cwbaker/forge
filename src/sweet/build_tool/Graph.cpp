@@ -10,6 +10,7 @@
 #include "BuildTool.hpp"
 #include "Scheduler.hpp"
 #include "System.hpp"
+#include "path_functions.hpp"
 #include "persist.hpp"
 #include <sweet/assert/assert.hpp>
 #include <memory>
@@ -18,6 +19,7 @@ using std::list;
 using std::vector;
 using std::string;
 using std::unique_ptr;
+using std::transform;
 using namespace sweet;
 using namespace sweet::lua;
 using namespace sweet::build_tool;
@@ -237,6 +239,14 @@ TargetPrototype* Graph::target_prototype( const std::string& id )
 // TargetPrototype set then an error is generated as it is not clear which
 // TargetPrototype applies.
 //
+// Any drive portion of the path is forced to uppercase to avoid drives 
+// appearing as upper- or lowercase when the build tool is run from different
+// environments on Windows doesn't create separate target hierarchies.
+//
+// Skip over any '/' character that occurs to indicate the root 
+// directory in an absolute path as this character is not expected to 
+// occur as a target identifier.
+//
 // @param id
 //  The identifier of the Target to find or create.
 //
@@ -253,44 +263,32 @@ TargetPrototype* Graph::target_prototype( const std::string& id )
 */
 Target* Graph::target( const std::string& id, TargetPrototype* target_prototype, Target* working_directory )
 {
-    fs::Path path( id );
+    boost::filesystem::path path( id );
     Target* target = working_directory && path.is_relative() ? working_directory : root_target_;
     SWEET_ASSERT( target );
 
     if ( !id.empty() )
     {
-        fs::Path::const_iterator i = path.begin();
+        boost::filesystem::path::const_iterator i = path.begin();
+
+        if ( path.has_root_name() )
+        {
+            string element = i->generic_string();
+            transform( element.begin(), element.end(), element.begin(), toupper );
+            target = find_or_create_target_by_element( target, element );
+            ++i;
+        }
+
+        if ( path.is_absolute() )
+        {
+            SWEET_ASSERT( i->generic_string() == "/" );
+            ++i;
+        }
+
         while ( i != path.end() )
         {
-            const string& element = *i;
+            target = find_or_create_target_by_element( target, i->generic_string() );
             ++i;
-                   
-            if ( element == "." )
-            {
-                // Target is unchanged for a single "." element.
-            }
-            else if ( element == ".." )
-            {
-                SWEET_ASSERT( target );
-                SWEET_ASSERT( target->parent() );
-                SWEET_ASSERT( target->parent()->graph() == this );
-                target = target->parent();
-            }
-            else
-            {
-                Target* next_target = target->find_target_by_id( element );
-                if ( !next_target )
-                {
-                    unique_ptr<Target> new_target( new Target(element, this) );
-                    next_target = new_target.get();
-                    target->add_target( new_target.release(), target );
-                    if ( i != path.end() )
-                    {
-                        next_target->set_working_directory( target );
-                    }
-                }
-                target = next_target;
-            }
         }
     }
     else
@@ -340,34 +338,111 @@ Target* Graph::target( const std::string& id, TargetPrototype* target_prototype,
 Target* Graph::find_target( const std::string& id, Target* working_directory )
 {
     Target* target = NULL;
-
     if ( !id.empty() )
     {
-        fs::Path path( id );
+        boost::filesystem::path path( id );
         target = working_directory && path.is_relative() ? working_directory : root_target_;
+        boost::filesystem::path::const_iterator i = path.begin();
         SWEET_ASSERT( target );
 
-        fs::Path::const_iterator i = path.begin();
-        while ( i != path.end() && target )
-        {       
-            if ( *i == "." )
-            {
-                // Target is unchanged for a single "." element.
-            }
-            else if ( *i == ".." )
-            {
-                target = target->parent();
-            }
-            else
-            {
-                target = target->find_target_by_id( *i );
-            }
+        if ( path.has_root_name() )
+        {
+            string element = i->generic_string();
+            transform( element.begin(), element.end(), element.begin(), toupper );
+            target = find_or_create_target_by_element( target, element );
+            ++i;
+        }
 
+        if ( path.is_absolute() )
+        {
+            SWEET_ASSERT( i->generic_string() == "/" );
+            ++i;
+        }
+
+        while ( i != path.end() && target )
+        {
+            target = find_target_by_element( target, i->generic_string() );
             ++i;
         }    
     }
-
     return target;
+}
+
+/**
+// Find a child target of \e target with an identifier matching \e element.
+//
+// @param target
+//  The target to find or create a child target of.
+//
+// @param element
+//  The identifier to find or create the child target with.
+//
+// @return
+//  The found target.
+*/
+Target* Graph::find_target_by_element( Target* target, const std::string& element )
+{
+    SWEET_ASSERT( target );
+    SWEET_ASSERT( !element.empty() );
+
+    Target* found_target = NULL;
+    if ( element == "." )
+    {
+        found_target = target;
+    }
+    else if ( element == ".." )
+    {
+        found_target = target->parent();
+    }
+    else
+    {
+        found_target = target->find_target_by_id( element );
+    }
+    return found_target;
+}
+
+/**
+// Find or create a child target of \e target with an identifier matching 
+// \e element.
+//
+// @param target
+//  The target to find or create a child target of.
+//
+// @param element
+//  The identifier to find or create the child target with.
+//
+// @return
+//  The found or created target.
+*/
+Target* Graph::find_or_create_target_by_element( Target* target, const std::string& element )
+{
+    SWEET_ASSERT( target );
+    SWEET_ASSERT( !element.empty() );
+
+    Target* found_target = NULL;
+    if ( element == "." )
+    {
+        found_target = target;
+    }
+    else if ( element == ".." )
+    {
+        SWEET_ASSERT( target );
+        SWEET_ASSERT( target->parent() );
+        SWEET_ASSERT( target->parent()->graph() == this );
+        found_target = target->parent();
+    }
+    else
+    {
+        found_target = target->find_target_by_id( element );
+        if ( !found_target )
+        {
+            unique_ptr<Target> new_target( new Target(element, this) );
+            found_target = new_target.get();
+            target->add_target( new_target.release(), target );
+            found_target->set_working_directory( target );
+        }
+    }
+    return found_target;
 }
 
 /**
@@ -381,11 +456,11 @@ void Graph::buildfile( const std::string& filename )
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( root_target_ );
      
-    fs::Path path( build_tool_->absolute(filename) );
+    boost::filesystem::path path( build_tool_->absolute(filename) );
     SWEET_ASSERT( path.is_absolute() );
     
-    Target* buildfile_target = Graph::target( path.string(), NULL, NULL );
-    buildfile_target->set_filename( path.string() );
+    Target* buildfile_target = Graph::target( path.generic_string(), NULL, NULL );
+    buildfile_target->set_filename( path.generic_string() );
     if ( cache_target_ )
     {
         cache_target_->add_explicit_dependency( buildfile_target );
@@ -577,6 +652,7 @@ void Graph::recover()
 Target* Graph::load_xml( const std::string& filename )
 {
     SWEET_ASSERT( !filename.empty() );
+    SWEET_ASSERT( boost::filesystem::path(filename).is_absolute() );
     SWEET_ASSERT( build_tool_ );
 
     filename_ = filename;
@@ -584,12 +660,10 @@ Target* Graph::load_xml( const std::string& filename )
 
     if ( build_tool_->system()->exists(filename) )
     {
-        fs::Path path( filename );
-        SWEET_ASSERT( path.is_absolute() );
         sweet::persist::XmlReader reader( build_tool_->error_policy() );
         enter( reader );
         Graph graph;
-        reader.read( path.string().c_str(), "graph", graph );
+        reader.read( filename.c_str(), "graph", graph );
         exit( reader );
         swap( graph );
     }
@@ -609,10 +683,9 @@ void Graph::save_xml()
 
     if ( !filename_.empty() )
     {
-        fs::Path path( filename_ );
         sweet::persist::XmlWriter writer( build_tool_->error_policy() );
         enter( writer );
-        writer.write( path.string().c_str(), "graph", *this );
+        writer.write( filename_.c_str(), "graph", *this );
         exit( writer );
     }
     else
@@ -634,6 +707,7 @@ void Graph::save_xml()
 Target* Graph::load_binary( const std::string& filename )
 {
     SWEET_ASSERT( !filename.empty() );
+    SWEET_ASSERT( boost::filesystem::path(filename).is_absolute() );
     SWEET_ASSERT( build_tool_ );
     
     filename_ = filename;
@@ -641,12 +715,10 @@ Target* Graph::load_binary( const std::string& filename )
 
     if ( build_tool_->system()->exists(filename) )
     {
-        fs::Path path( filename );
-        SWEET_ASSERT( path.is_absolute() );
         sweet::persist::BinaryReader reader( build_tool_->error_policy() );
         enter( reader );
         Graph graph;
-        reader.read( path.string().c_str(), "graph", graph );
+        reader.read( filename.c_str(), "graph", graph );
         exit( reader );
         swap( graph );
     }
@@ -664,10 +736,9 @@ void Graph::save_binary()
 
     if ( !filename_.empty() )
     {
-        fs::Path path( filename_ );
         sweet::persist::BinaryWriter writer( build_tool_->error_policy() );
         enter( writer );
-        writer.write( path.string().c_str(), "graph", *this );
+        writer.write( filename_.c_str(), "graph", *this );
         exit( writer );
     }
     else
@@ -683,7 +754,7 @@ void Graph::save_binary()
 //  The Target to begin printing from or null to print from the root Target of
 //  this Graph.
 //
-// @param path
+// @param directory
 //  The path to display filenames relative to.
 */
 void Graph::print_dependencies( Target* target, const std::string& directory )
@@ -740,7 +811,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             }
         }
         
-        void print( Target* target, const fs::Path& directory, int level )
+        void print( Target* target, const boost::filesystem::path& directory, int level )
         {
             SWEET_ASSERT( target );
             SWEET_ASSERT( level >= 0 );
@@ -776,9 +847,9 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             {
                 timestamp = target->last_write_time();
                 time = ::localtime( &timestamp );
-                fs::Path filename = directory.relative( fs::Path(target->filename(0)) );
+                boost::filesystem::path filename = sweet::build_tool::relative( boost::filesystem::path(target->filename(0)), directory );
                 printf( " '%s' %04d-%02d-%02d %02d:%02d:%02d", 
-                    filename.string().c_str(),
+                    filename.generic_string().c_str(),
                     time->tm_year + 1900, 
                     time->tm_mon + 1, 
                     time->tm_mday, 
@@ -815,7 +886,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
     bind( target );
     RecursivePrinter recursive_printer( this );
-    recursive_printer.print( target ? target : root_target_, fs::Path(directory), 0 );
+    recursive_printer.print( target ? target : root_target_, boost::filesystem::path(directory), 0 );
     printf( "\n\n" );
 }
 

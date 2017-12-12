@@ -1,6 +1,6 @@
 //
 // Scheduler.cpp
-// Copyright (c) Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
 #include "Scheduler.hpp"
@@ -52,7 +52,7 @@ Scheduler::~Scheduler()
     }
 }
 
-void Scheduler::load( const fs::Path& path )
+void Scheduler::load( const boost::filesystem::path& path )
 {
     buildfile( path );
     while ( dispatch_results() )
@@ -60,7 +60,7 @@ void Scheduler::load( const fs::Path& path )
     }
 }
 
-void Scheduler::command( const fs::Path& path, const std::string& function )
+void Scheduler::command( const boost::filesystem::path& path, const std::string& function )
 {
     call( path, function );
     while ( dispatch_results() )
@@ -86,22 +86,22 @@ void Scheduler::execute( const char* start, const char* finish )
     }
 }
 
-void Scheduler::buildfile( const fs::Path& path )
+void Scheduler::buildfile( const boost::filesystem::path& path )
 {
     SWEET_ASSERT( path.is_absolute() );
 
-    Context* context = allocate_context( build_tool_->graph()->target(path.branch().string()) );
+    Context* context = allocate_context( build_tool_->graph()->target(path.parent_path().generic_string()) );
     process_begin( context );
-    context->context_thread().resume( path.string().c_str(), path.leaf().c_str() )
+    context->context_thread().resume( path.string().c_str(), path.filename().string().c_str() )
     .end();
     process_end( context );
 }
 
-void Scheduler::call( const fs::Path& path, const std::string& function )
+void Scheduler::call( const boost::filesystem::path& path, const std::string& function )
 {
     if ( !function.empty() )
     {
-        Context* context = allocate_context( build_tool_->graph()->target(path.branch().string()) );
+        Context* context = allocate_context( build_tool_->graph()->target(path.parent_path().generic_string()) );
         process_begin( context );
         context->context_thread().resume( function.c_str() )
         .end();
@@ -415,7 +415,7 @@ Context* Scheduler::allocate_context( Target* working_directory, Job* job )
         free_contexts_.reserve( free_contexts_.size() + DEFAULT_ENVIRONMENTS_GROW_BY );
         for ( int i = 0; i < DEFAULT_ENVIRONMENTS_GROW_BY; ++i )
         {
-            unique_ptr<Context> context( new Context(fs::Path(""), build_tool_) );
+            unique_ptr<Context> context( new Context(boost::filesystem::path(""), build_tool_) );
             free_contexts_.push_back( context.get() );
             contexts_.push_back( context.release() );
         }

@@ -314,17 +314,17 @@ end
 function msvc.append_link_libraries( target, flags )
     if target.settings.third_party_libraries then
         for _, library in ipairs(target.settings.third_party_libraries) do
-            table.insert( flags, ("%s.lib"):format(basename(library)) );
+            table.insert( flags, ("%s.lib"):format(build.basename(library)) );
         end
     end
     if target.third_party_libraries then
         for _, library in ipairs(target.settings.third_party_libraries) do
-            table.insert( flags, ("%s.lib"):format(basename(library)) );
+            table.insert( flags, ("%s.lib"):format(build.basename(library)) );
         end
     end
     if target.system_libraries then
         for _, library in ipairs(target.system_libraries) do
-            table.insert( flags, ("%s.lib"):format(basename(library)) );
+            table.insert( flags, ("%s.lib"):format(build.basename(library)) );
         end
     end
 end
@@ -335,7 +335,7 @@ function msvc.dependencies_filter( output_directory, source_directory )
     local directories = { source_directory };
 
     -- Strip the backslash delimited prefix from _include_path_ and return the
-    -- remaining portion.  This remaining portion is the correct build.relative path to
+    -- remaining portion.  This remaining portion is the correct relative path to
     -- a header.
     local function relative_include_path( include_path )
         local position = 1;
@@ -370,12 +370,12 @@ function msvc.dependencies_filter( output_directory, source_directory )
                 path = ("%s/%s"):format( directory, relative_include_path(path) );
             end
 
-            local within_source_tree = build.relative( path, root() ):find( "..", 1, true ) == nil;
-            if within_source_tree then 
+            local within_source_tree = build.relative( path, build.root() ):find( "..", 1, true ) == nil;
+            if within_source_tree then
                 local header = build.SourceFile( path );
                 object:add_dependency( header );
             end
-            current_directory = branch( path );
+            current_directory = build.branch( path );
         else
             local SOURCE_FILE_PATTERN = "^[%w_]+%.[%w_]+[\n\r]*$";
             local start, finish = line:find( SOURCE_FILE_PATTERN );

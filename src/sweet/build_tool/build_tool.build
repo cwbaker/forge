@@ -44,7 +44,8 @@ for _, architecture in ipairs(settings.architectures) do
             "Scheduler.cpp", 
             "System.cpp",
             "Target.cpp",
-            "TargetPrototype.cpp"
+            "TargetPrototype.cpp",
+            "path_functions.cpp"
         };
     }
 end

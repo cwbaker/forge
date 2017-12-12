@@ -1,12 +1,13 @@
 //
 // Context.cpp
-// Copyright (c) Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
 #include "Context.hpp"
 #include "Target.hpp"
 #include "BuildTool.hpp"
 #include "Graph.hpp"
+#include "path_functions.hpp"
 
 using namespace sweet;
 using namespace sweet::lua;
@@ -22,7 +23,7 @@ using namespace sweet::build_tool;
 // @param build_tool
 //  The BuildTool that this Context is part of.
 */
-Context::Context( const fs::Path& directory, BuildTool* build_tool )
+Context::Context( const boost::filesystem::path& directory, BuildTool* build_tool )
 : build_tool_( build_tool ),
   context_thread_( *build_tool->lua() ),
   working_directory_( NULL ), 
@@ -67,7 +68,7 @@ void Context::reset_directory_to_target( Target* directory )
 //  The directory to set the working directory stack to contain (assumed
 //  to be absolute or empty).
 */
-void Context::reset_directory( const fs::Path& directory )
+void Context::reset_directory( const boost::filesystem::path& directory )
 {
     SWEET_ASSERT( directory.empty() || directory.is_absolute() );
     directories_.clear();
@@ -85,7 +86,7 @@ void Context::reset_directory( const fs::Path& directory )
 // @param directory
 //  The directory to change the current working directory to.
 */
-void Context::change_directory( const fs::Path& directory )
+void Context::change_directory( const boost::filesystem::path& directory )
 {
     SWEET_ASSERT( !directories_.empty() );
 
@@ -115,7 +116,7 @@ void Context::change_directory( const fs::Path& directory )
 // @param directory
 //  The directory to change the current working directory to.
 */
-void Context::push_directory( const fs::Path& directory )
+void Context::push_directory( const boost::filesystem::path& directory )
 {
     SWEET_ASSERT( !directories_.empty() );
 
@@ -154,7 +155,7 @@ void Context::pop_directory()
 // @return
 //  The current working directory.
 */
-const fs::Path& Context::directory() const
+const boost::filesystem::path& Context::directory() const
 {
     SWEET_ASSERT( !directories_.empty() );
     return directories_.back();
@@ -214,4 +215,27 @@ void Context::set_exit_code( int exit_code )
 int Context::exit_code() const
 {
     return exit_code_;
+}
+
+/**
+// Prepend the working directory to \e path to create an absolute path.
+//
+// @return
+//  The absolute path created by prepending the working directory to 
+//  \e path.
+*/
+boost::filesystem::path Context::absolute( const boost::filesystem::path& path ) const
+{
+    return sweet::build_tool::absolute( path, directory() );
+}
+
+/**
+// Express \e path as a path relative to the working directory.
+//
+// @return
+//  The path to \e path expressed relative to the working directory.
+*/
+boost::filesystem::path Context::relative( const boost::filesystem::path& path ) const
+{
+    return sweet::build_tool::relative( path, directory() );
 }

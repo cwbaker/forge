@@ -52,7 +52,7 @@ template <class Archive> void Graph::exit( Archive& archive )
 */
 template <class Archive> void Graph::persist( Archive& archive )
 {
-    const int BUILD_GRAPH_VERSION = 17;
+    const int BUILD_GRAPH_VERSION = 18;
     archive.enter( "Sweet Build Graph", BUILD_GRAPH_VERSION, *this );
     if ( archive.version() != BUILD_GRAPH_VERSION )
     {

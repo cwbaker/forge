@@ -38,7 +38,7 @@ public:
 
     void create_target( Target* target );
     void recover_target( Target* target );
-    void update_target( Target* target, TargetPrototype* target_prototype );
+    void update_target( Target* target );
     void destroy_target( Target* target );
     void register_functions( lua::AddMember& add_member );
 

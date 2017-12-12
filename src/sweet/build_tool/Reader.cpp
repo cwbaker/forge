@@ -12,7 +12,9 @@
 #include <stdlib.h>
 #include <memory>
 
-#if defined(BUILD_OS_MACOSX)
+#if defined(BUILD_OS_WINDOWS)
+#include <windows.h>
+#elif defined(BUILD_OS_MACOSX)
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>

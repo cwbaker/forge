@@ -65,7 +65,7 @@ int LuaSystem::sleep( lua_State* lua_state )
     BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
     SWEET_ASSERT( build_tool );
     const int MILLISECONDS = 1;
-    float milliseconds = luaL_checknumber( lua_state, MILLISECONDS );
+    float milliseconds = static_cast<float>( luaL_checknumber(lua_state, MILLISECONDS) );
     build_tool->system()->sleep( milliseconds );
     return 0;
 }

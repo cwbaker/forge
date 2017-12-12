@@ -15,7 +15,6 @@ for _, architecture in ipairs(settings.architectures) do
             "sweet/build_tool/build_tool",
             "sweet/build_tool/build_tool_lua/build_tool_lua",
             "sweet/cmdline/cmdline",
-            "sweet/fs/fs",
             "sweet/lua/lua",
             "lua/liblua",
             "sweet/process/process",

@@ -13,10 +13,10 @@
 #include "Graph.hpp"
 #include "Target.hpp"
 #include "Context.hpp"
+#include "path_functions.hpp"
 #include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
 #include <sweet/build_tool/build_tool_lua/LuaTarget.hpp>
 #include <sweet/build_tool/build_tool_lua/LuaTargetPrototype.hpp>
-#include <sweet/fs/fs.hpp>
 
 using std::string;
 using std::vector;
@@ -53,7 +53,7 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
   home_directory_(),
   executable_directory_()
 {
-    SWEET_ASSERT( fs::Path(initial_directory).is_absolute() );
+    SWEET_ASSERT( boost::filesystem::path(initial_directory).is_absolute() );
 
     lua_ = new lua::Lua( error_policy_ );
     lua_build_tool_ = new LuaBuildTool( this, lua_ );
@@ -63,10 +63,10 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
     scheduler_ = new Scheduler( this );
     graph_ = new Graph( this );
 
-    root_directory_ = initial_directory;
-    initial_directory_ = initial_directory;
-    home_directory_ = fs::Path( system_->home() );
-    executable_directory_ = fs::Path( system_->executable() ).branch();
+    root_directory_ = make_drive_uppercase( initial_directory );
+    initial_directory_ = make_drive_uppercase( initial_directory );
+    home_directory_ = make_drive_uppercase( system_->home() );
+    executable_directory_ = make_drive_uppercase( system_->executable() ).parent_path();
 }
 
 /**
@@ -177,82 +177,86 @@ lua::Lua* BuildTool::lua() const
     return lua_;
 }
 
-const fs::Path& BuildTool::root() const
+const boost::filesystem::path& BuildTool::root() const
 {
     return root_directory_;
 }
 
-fs::Path BuildTool::root( const fs::Path& path ) const
+boost::filesystem::path BuildTool::root( const boost::filesystem::path& path ) const
 {
-    if ( fs::Path(path).is_absolute() )
+    if ( boost::filesystem::path(path).is_absolute() )
     {
         return path;
     }
 
-    fs::Path absolute_path( root_directory_ );
+    boost::filesystem::path absolute_path( root_directory_ );
     absolute_path /= path;
     absolute_path.normalize();
     return absolute_path.string();
 }
 
-const fs::Path& BuildTool::initial() const
+const boost::filesystem::path& BuildTool::initial() const
 {
     return initial_directory_;
 }
 
-fs::Path BuildTool::initial( const fs::Path& path ) const
+boost::filesystem::path BuildTool::initial( const boost::filesystem::path& path ) const
 {
-    if ( fs::Path(path).is_absolute() )
+    if ( boost::filesystem::path(path).is_absolute() )
     {
         return path;
     }
 
-    fs::Path absolute_path( initial_directory_ );
+    boost::filesystem::path absolute_path( initial_directory_ );
     absolute_path /= path;
     absolute_path.normalize();
     return absolute_path.string();
 }
 
-const fs::Path& BuildTool::home() const
+const boost::filesystem::path& BuildTool::home() const
 {
     return home_directory_;
 }
 
-fs::Path BuildTool::home( const fs::Path& path ) const
+boost::filesystem::path BuildTool::home( const boost::filesystem::path& path ) const
 {
-    if ( fs::Path(path).is_absolute() )
+    if ( boost::filesystem::path(path).is_absolute() )
     {
         return path;
     }
 
-    fs::Path absolute_path( home_directory_ );
+    boost::filesystem::path absolute_path( home_directory_ );
     absolute_path /= path;
     absolute_path.normalize();
     return absolute_path.string();
 }
 
-const fs::Path& BuildTool::executable() const
+const boost::filesystem::path& BuildTool::executable() const
 {
     return executable_directory_;
 }
 
-fs::Path BuildTool::executable( const fs::Path& path ) const
+boost::filesystem::path BuildTool::executable( const boost::filesystem::path& path ) const
 {
-    if ( fs::Path(path).is_absolute() )
+    if ( boost::filesystem::path(path).is_absolute() )
     {
         return path;
     }
     
-    fs::Path absolute_path( executable_directory_ );
+    boost::filesystem::path absolute_path( executable_directory_ );
     absolute_path /= path;
     absolute_path.normalize();
     return absolute_path.string();
 }
 
-fs::Path BuildTool::absolute( const fs::Path& path ) const
+boost::filesystem::path BuildTool::absolute( const boost::filesystem::path& path ) const
 {
-    const fs::Path& base_path = context()->directory();
-    return fs::absolute( path, base_path );
+    return context()->absolute( path );
+}
+
+boost::filesystem::path BuildTool::relative( const boost::filesystem::path& path ) const
+{
+    return context()->relative( path );
 }
 
 /**
@@ -372,7 +376,7 @@ void BuildTool::search_up_for_root_directory( const std::string& directory )
     {
         SWEET_ERROR( RootFileNotFoundError("The file '%s' could not be found to identify the root directory", ROOT_FILENAME) );
     }
-    root_directory_ = fs::Path( root_directory.string() );
+    root_directory_ = make_drive_uppercase( root_directory.generic_string() );
 }
 
 /**
@@ -415,7 +419,7 @@ void BuildTool::assign( const std::vector<std::string>& assignments )
 */
 void BuildTool::execute( const std::string& filename, const std::vector<std::string>& commands )
 {
-    fs::Path path( filename );
+    boost::filesystem::path path( filename );
     if ( path.empty() )
     {
         path = root_directory_ / string( ROOT_FILENAME );
@@ -464,10 +468,10 @@ void BuildTool::recover_target_lua_binding( Target* target )
     lua_build_tool_->lua_target()->recover_target( target );
 }
 
-void BuildTool::update_target_lua_binding( Target* target, TargetPrototype* target_prototype )
+void BuildTool::update_target_lua_binding( Target* target )
 {
     SWEET_ASSERT( lua_build_tool_ );
-    lua_build_tool_->lua_target()->update_target( target, target_prototype );
+    lua_build_tool_->lua_target()->update_target( target );
 }
 
 void BuildTool::destroy_target_lua_binding( Target* target )

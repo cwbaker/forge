@@ -49,6 +49,8 @@ class Graph
         TargetPrototype* target_prototype( const std::string& id );
         Target* target( const std::string& id, TargetPrototype* target_prototype = NULL, Target* working_directory = NULL );
         Target* find_target( const std::string& path, Target* working_directory );
+        Target* find_target_by_element( Target* target, const std::string& element );
+        Target* find_or_create_target_by_element( Target* target, const std::string& element );
                 
         void buildfile( const std::string& filename );
         int bind( Target* target = NULL );        

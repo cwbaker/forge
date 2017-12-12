@@ -1,7 +1,7 @@
 #ifndef SWEET_BUILD_TOOL_BUILDTOOL_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_BUILDTOOL_HPP_INCLUDED
 
-#include <sweet/fs/BasicPath.hpp>
+#include <boost/filesystem/path.hpp>
 #include <string>
 #include <vector>
 
@@ -51,10 +51,10 @@ class BuildTool
     Executor* executor_; ///< The executor that schedules threads to process commands.
     Scheduler* scheduler_; ///< The scheduler that schedules environments to process jobs in the dependency graph.
     Graph* graph_; ///< The dependency graph of targets used to determine which targets are outdated.
-    fs::Path root_directory_; ///< The full path to the root directory.
-    fs::Path initial_directory_; ///< The full path to the initial directory.
-    fs::Path home_directory_; ///< The full path to the user's home directory.
-    fs::Path executable_directory_; ///< The full path to the build executable directory.
+    boost::filesystem::path root_directory_; ///< The full path to the root directory.
+    boost::filesystem::path initial_directory_; ///< The full path to the initial directory.
+    boost::filesystem::path home_directory_; ///< The full path to the user's home directory.
+    boost::filesystem::path executable_directory_; ///< The full path to the build executable directory.
 
     public:
         BuildTool( const std::string& initial_directory, error::ErrorPolicy& error_policy, BuildToolEventSink* event_sink );
@@ -70,15 +70,16 @@ class BuildTool
         lua::Lua* lua() const;
         LuaBuildTool* lua_build_tool() const;
 
-        const fs::Path& root() const;
-        fs::Path root( const fs::Path& path ) const;
-        const fs::Path& initial() const;
-        fs::Path initial( const fs::Path& path ) const;
-        const fs::Path& home() const;
-        fs::Path home( const fs::Path& path ) const;
-        const fs::Path& executable() const;
-        fs::Path executable( const fs::Path& path ) const;
-        fs::Path absolute( const fs::Path& path ) const;
+        const boost::filesystem::path& root() const;
+        boost::filesystem::path root( const boost::filesystem::path& path ) const;
+        const boost::filesystem::path& initial() const;
+        boost::filesystem::path initial( const boost::filesystem::path& path ) const;
+        const boost::filesystem::path& home() const;
+        boost::filesystem::path home( const boost::filesystem::path& path ) const;
+        const boost::filesystem::path& executable() const;
+        boost::filesystem::path executable( const boost::filesystem::path& path ) const;
+        boost::filesystem::path absolute( const boost::filesystem::path& path ) const;
+        boost::filesystem::path relative( const boost::filesystem::path& path ) const;
 
         void set_warning_level( int warning_level );
         int warning_level() const;
@@ -96,7 +97,7 @@ class BuildTool
 
         void create_target_lua_binding( Target* target );
         void recover_target_lua_binding( Target* target );
-        void update_target_lua_binding( Target* target, TargetPrototype* target_prototype );
+        void update_target_lua_binding( Target* target );
         void destroy_target_lua_binding( Target* target );
         void create_target_prototype_lua_binding( TargetPrototype* target_prototype );
         void destroy_target_prototype_lua_binding( TargetPrototype* target_prototype );
