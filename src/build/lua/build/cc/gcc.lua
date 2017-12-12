@@ -206,8 +206,11 @@ function gcc.process_dependencies( target )
         while line do 
             while start do 
                 local filename = line:sub( start, finish ):gsub( "\\ ", " " );
-                local header = build.SourceFile( filename );
-                target:add_dependency( header );
+                local within_source_tree = relative( filename, root() ):find( "..", 1, true ) == nil;
+                if within_source_tree then
+                    local header = build.SourceFile( filename );
+                    target:add_dependency( header );
+                end
                 start, finish = extract( line, line:find(START, (finish or #line) + 1) );
             end
             line = file:read();

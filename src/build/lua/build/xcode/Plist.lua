@@ -12,13 +12,13 @@ end
 function Plist.build( plist )
     if plist:outdated() then
         local command_line = {
-            ('xcrun --sdk %s plutil'):format( ios.sdkroot_by_target_and_platform(plist, platform) );
+            'plutil';
             '-convert binary1';
             ('-o "%s"'):format( plist:filename() );
             ('"%s"'):format( plist:dependency():filename() );
         };
-        local xcrun = plist.settings.ios.xcrun;
-        build.system( xcrun, table.concat(command_line, " ") );
+        local plutil = plist.settings.ios.plutil;
+        build.system( plutil, table.concat(command_line, " ") );
     end
 end
 

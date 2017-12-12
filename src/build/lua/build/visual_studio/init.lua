@@ -10,7 +10,7 @@ local function uuid()
     local uuids = {};
     local uuidgen = ("%s/bin/x64/uuidgen.exe"):format( settings.msvc.windows_sdk_directory );
     local arguments = "uuidgen";
-    build.system( uuidgen, arguments, function(line)
+    build.system( uuidgen, arguments, nil, function(line)
         local uuid = line:match( "[%w-_]+" );
         if uuid then 
             table.insert( uuids, uuid );
@@ -20,16 +20,79 @@ local function uuid()
     return upper( uuids[1] );
 end
 
-local function find_projects( target, projects )
+-- Recursively add a directory and its parents to the hierarchy to display in
+-- the solution.
+local function add_directory( directories, target )
+    if target then 
+        local directory = directories [target:path()];
+        if directory == nil then
+            directory = { target = target; children = {} };
+            directories[target:path()] = directory;
+            if target:parent() then
+                local parent = add_directory( directories, target:parent() );
+                if parent then 
+                    table.insert( parent.children, directory );
+                end
+            end
+        end
+        return directory;
+    end
+end
+
+-- Add a target to the projects to generate and recursively add its parent
+-- directories to the hierarchy to display in the solution.
+local function add_project( projects, directories, target )
+    local project = projects[target:path()];
+    if project == nil then
+        project = { target = target };
+        projects[target:path()] = project;
+        if target:parent() then
+            local parent = add_directory( directories, target:parent() );
+            table.insert( parent.children, project );
+        end
+    end
+    return project;
+end
+
+-- Find `Executable`, `StaticLibrary`, and `DynamicLibrary` targets to 
+-- generate projects and a directory hierarchy for.
+local function find_projects( target, projects, directories )
 	local prototype = target:prototype();
 	if prototype == build.Executable or prototype == build.StaticLibrary or prototype == build.DynamicLibrary then 
-		table.insert( projects, target );
+        add_project( projects, directories, target );
 	end
 	for dependency in target:dependencies() do 
-		find_projects( dependency, projects );
+		find_projects( dependency, projects, directories );
 	end
 end
 
+-- Prune directories with only a single child by replacing them with their
+-- single child.
+local function prune( directory )
+    if directory and directory.children then
+        if #directory.children == 1 then
+            local pruned_child = directory.children[1];
+            directory.uuid = pruned_child.uuid;
+            directory.target = pruned_child.target;
+            directory.children = pruned_child.children;
+        else
+            for _, child in ipairs(directory.children) do 
+                prune( child );
+            end
+        end
+    end
+end
+
+-- Generate UUIDs to identify projects and directories.
+local function generate_uuids( objects )
+    for _, object in pairs(objects) do
+        object.uuid = uuid();
+    end
+end
+
+-- Generate a Visual Studio solution with projects for all of the 
+-- `Executable`, `StaticLibrary`, and `DynamicLibrary` targets that are 
+-- recursively dependencies of the root directory.
 function solution()
     platform = "";
     variant = "";
@@ -38,20 +101,25 @@ function solution()
     assertf( all, "No target found at '%s' to generate Visual Studio solution", root() );
     assertf( build.settings.sln, "The solution filename is not specified by settings.sln" );
 
+    local directories = {};
     local projects = {};
-    find_projects( all, projects );
+    find_projects( all, projects, directories );
+    generate_uuids( projects );
+    generate_uuids( directories );
+    prune( directories[all:path()] );
 
     local fs = build.fs;
-    for _, project in ipairs(projects) do 
-    	project.uuid = uuid();
-    	pushd( project:working_directory():path() );
+    for _, project in pairs(projects) do 
+        local target = project.target;
+        target.uuid = project.uuid;
+    	pushd( target:working_directory():path() );
 		local DEFAULT_SOURCE = { "^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java$" };
 		local files = fs.ls( pwd(), DEFAULT_SOURCE );
-		build.visual_studio.vcxproj.generate( project, files );
+		build.visual_studio.vcxproj.generate( target, files );
 		popd();
     end
 
-    build.visual_studio.sln.generate( build.settings.sln, projects );
+    build.visual_studio.sln.generate( build.settings.sln, projects, directories[all:path()].children );
 end
 
 _G.sln = solution;

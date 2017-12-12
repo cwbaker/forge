@@ -1318,6 +1318,12 @@ int ScriptInterface::execute( lua_State* lua_state )
         unique_ptr<process::Environment> environment;
         if ( !lua_isnoneornil(lua_state, ENVIRONMENT_PARAMETER) )
         {
+            if ( !lua_istable(lua_state, ENVIRONMENT_PARAMETER) )
+            {
+                lua_pushstring( lua_state, "Expected an environment table or nil as 3rd parameter" );
+                return lua_error( lua_state );
+            }
+            
             environment.reset( new process::Environment );
             lua_pushnil( lua_state );
             while ( lua_next(lua_state, ENVIRONMENT_PARAMETER) )

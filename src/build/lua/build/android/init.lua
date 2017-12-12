@@ -97,26 +97,22 @@ end
 
 function android.initialize( settings )
     if build.platform_matches("android") then
-        -- Make sure that the environment variable VS_UNICODE_OUTPUT is not set.  
-        -- Visual Studio sets this to signal its tools to communicate back to 
-        -- Visual Studio using named pipes rather than stdout so that unicode output 
-        -- works better but this then prevents the build tool from intercepting
-        -- and collating this output.
-        -- See http://blogs.msdn.com/freik/archive/2006/04/05/569025.aspx.
-        putenv( "VS_UNICODE_OUTPUT", "" );
-
         if operating_system() == "windows" then
             local path = {
                 ("%s/bin"):format( android.toolchain_directory(settings, "armv5") )
             };
-            putenv( "PATH", table.concat(path, ";") );
+            android.environment = {
+                PATH = table.concat( path, ";" );
+            };
         else
             local path = {
                 "/usr/bin",
                 "/bin",
                 ("%s/bin"):format( android.toolchain_directory(settings, "armv5") )
             };
-            putenv( "PATH", table.concat(path, ":") );
+            android.environment = {
+                PATH = table.concat( path, ":" );
+            };
         end
 
         settings.android.proguard_enabled = settings.android.proguard_enabled or variant == "shipping";
@@ -168,7 +164,7 @@ function android.cc( target )
     for dependency in target:dependencies() do
         if dependency:outdated() then
             print( leaf(dependency.source) );
-            build.system( gcc_, ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, dependency:filename(), dependency.source) );
+            build.system( gcc_, ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, dependency:filename(), dependency.source), android.environment );
             gcc.process_dependencies( dependency );
         end
     end
@@ -195,7 +191,7 @@ function android.build_library( target )
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
         local ar = ("%s/bin/arm-linux-androideabi-ar"):format( android.toolchain_directory(target.settings, target.architecture) );
-        build.system( ar, ('ar %s "%s" "%s"'):format(arflags, native(target:filename()), arobjects) );
+        build.system( ar, ('ar %s "%s" "%s"'):format(arflags, native(target:filename()), arobjects), android.environment );
     end
     popd();
 end
@@ -266,7 +262,7 @@ function android.build_executable( target )
         local gxx = ("%s/bin/arm-linux-androideabi-g++"):format( android.toolchain_directory(target.settings, target.architecture) );
 
         print( leaf(target:filename()) );
-        build.system( gxx, ('arm-linux-androideabi-g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
+        build.system( gxx, ('arm-linux-androideabi-g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), android.environment );
     end
     popd();
 end 
@@ -300,7 +296,7 @@ function android.deploy( directory )
         build.system( adb, ('adb get-state'), adb_get_state_filter );
         if device_connected then
             printf( "Deploying '%s'...", apk:filename() );
-            build.system( adb, ('adb install -r "%s"'):format(apk:filename()) );
+            build.system( adb, ('adb install -r "%s"'):format(apk:filename()), android.environment );
         end
     end
 end

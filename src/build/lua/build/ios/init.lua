@@ -80,6 +80,8 @@ function ios.configure( settings )
                 xcrun = "/usr/bin/xcrun";
                 signing_identity = "iPhone Developer";
                 codesign_allocate = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/codesign_allocate";
+                codesign = "/usr/bin/codesign";
+                plutil = "/usr/bin/plutil";
                 sdk_name = "iphoneos";
                 sdk_version = sdk_version;
                 sdk_build_version = sdk_build_version;

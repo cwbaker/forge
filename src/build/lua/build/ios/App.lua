@@ -62,7 +62,7 @@ function App.build( app )
         end
 
         local command_line = {
-            ("xcrun --sdk %s codesign"):format( ios.sdkroot_by_target_and_platform(app, platform) );
+            "codesign";
             ('-s "%s"'):format( _G.signing_identity or app.settings.ios.signing_identity );
             "--force";
             "--no-strict";
@@ -79,8 +79,11 @@ function App.build( app )
             table.insert( command_line, ('--resource-rules "%s"'):format(resource_rules) );
         end
 
-        putenv( "CODESIGN_ALLOCATE", app.settings.ios.codesign_allocate );
-        build.system( xcrun, table.concat(command_line, " ") );
+        local environment = {
+            CODESIGN_ALLOCATE = app.settings.ios.codesign_allocate;
+        };
+        local codesign = app.settings.ios.codesign;
+        build.system( codesign, table.concat(command_line, " "), environment );
     end
 end
 
