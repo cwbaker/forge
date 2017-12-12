@@ -93,6 +93,7 @@ class Target
         void set_filename( const std::string& filename, int index = 0 );
         const std::string& filename( int index = 0 ) const;
         const std::vector<std::string>& filenames() const;
+        std::string directory( int index = 0 ) const;
 
         void set_working_directory( Target* target );
         Target* working_directory() const;
@@ -120,10 +121,12 @@ class Target
         Target* dependency( int n ) const;
         Target* binding_dependency( int n ) const;
         Target* explicit_dependency( int n ) const;
+        Target* implicit_dependency( int n ) const;
         Target* ordering_dependency( int n ) const;
 
         bool buildable() const;
-        std::string generate_failed_dependencies_message() const;
+        std::string error_identifier() const;
+        std::string failed_dependencies() const;
 
         void set_visiting( bool visiting );
         bool visiting() const;

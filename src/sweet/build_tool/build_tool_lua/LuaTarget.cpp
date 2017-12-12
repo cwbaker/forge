@@ -131,6 +131,7 @@ void LuaTarget::register_functions( lua::AddMember& add_member )
         ( "set_filename", raw(&LuaTarget::set_filename) )
         ( "filename", raw(&LuaTarget::filename) )
         ( "filenames", &Target::filenames )
+        ( "directory", raw(&LuaTarget::directory) )
         ( "set_working_directory", &Target::set_working_directory )
         ( "working_directory", &LuaTarget::target_working_directory, this, _1 )
         ( "targets", raw(&LuaTarget::targets), this )
@@ -207,8 +208,32 @@ int LuaTarget::filename( lua_State* lua_state )
 
     if ( index < int(target->filenames().size()) )
     {
-        const std::string& filename = target->filename( index );
+        const string& filename = target->filename( index );
         lua_pushlstring( lua_state, filename.c_str(), filename.length() );
+    }
+    else
+    {
+        lua_pushlstring( lua_state, "", 1 );
+    }
+    return 1;
+}
+
+int LuaTarget::directory( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int INDEX = 2;
+
+    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
+
+    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
+    luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
+    --index;
+
+    if ( index < int(target->filenames().size()) )
+    {
+        string directory = target->directory( index );
+        lua_pushlstring( lua_state, directory.c_str(), directory.length() );
     }
     else
     {

@@ -7,7 +7,7 @@ function BuildConfig.create( settings, package )
     local build_config = build.File( ("%s/%s/BuildConfig.java"):format(gen_directory, string.gsub(package, "%.", "/")), BuildConfig );
     build_config.settings = settings;
     build_config.package = package;
-    build_config:add_ordering_dependency( build.Directory(build_config:branch()) );
+    build_config:add_ordering_dependency( build.Directory(build_config:directory()) );
     return build_config;
 end
 

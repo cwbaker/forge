@@ -640,6 +640,24 @@ const std::vector<std::string>& Target::filenames() const
 }
 
 /**
+// Get the directory portion of the \e nth filename that this Target is bound 
+// to.
+//
+// @param n
+//  The index of the filename to return the directory portion of (assumed to 
+//  be within that valid range of filenames added to this Target; [0, 
+//  #filenames)).
+//
+// @return
+//  The directory portion of the nth filename that this Target is bound to.
+*/
+std::string Target::directory( int n ) const
+{
+    SWEET_ASSERT( n >= 0 && n < int(filenames_.size()) );
+    return boost::filesystem::path( filenames_[n] ).parent_path().generic_string();
+}
+
+/**
 // Set the working_directory of this Target.
 //
 // The working directory is the Target that specifies the directory that files
@@ -1116,6 +1134,26 @@ Target* Target::explicit_dependency( int n ) const
 }
 
 /**
+// Get the nth implicit dependency of this Target.
+//
+// @param n
+//  The index of the implicit dependency to return (assumed to be > 0).
+//
+// @return
+//  The \e nth implicit dependency of this Target or null if 'n' is outside 
+//  the range of implicit dependencies.
+*/
+Target* Target::implicit_dependency( int n ) const
+{
+    SWEET_ASSERT( n >= 0 );
+    if ( n >= 0 && n < int(implicit_dependencies_.size()) )
+    {
+        return implicit_dependencies_[n];
+    }
+    return NULL;
+}
+
+/**
 // Get the nth ordering dependency of this Target.
 //
 // @param n
@@ -1154,13 +1192,37 @@ bool Target::buildable() const
 }
 
 /**
+// Generate a string containing the prototype of this Target and its full 
+// path for use in error reporting.
+//
+// @return
+//  A string that identifies this Target for error reporting.
+*/
+std::string Target::error_identifier() const
+{
+    char buffer [1024];
+    if ( prototype_ )
+    {
+        snprintf( buffer, sizeof(buffer), "%s '%s'", prototype_->id().c_str(), path().c_str() );
+        buffer [sizeof(buffer) - 1] = 0;
+        return string( buffer );
+    }
+    else
+    {
+        snprintf( buffer, sizeof(buffer), "'%s'", path().c_str() );
+        buffer [sizeof(buffer) - 1] = 0;
+        return string( buffer );
+    }
+}
+
+/**
 // Generate a string containing the dependencies of this Target that failed 
 // in the current traversal.
 //
 // @return
 //  A string containing the failed dependencies.
 */
-std::string Target::generate_failed_dependencies_message() const
+std::string Target::failed_dependencies() const
 {
     SWEET_ASSERT( !buildable() );
 

@@ -5,7 +5,7 @@ function Dex.create( settings, id )
     local dex = build.Target( "", Dex, definition );
     dex:set_filename( ("%s/%s.dex"):format(settings.bin, id) );
     dex.settings = settings;
-    dex:add_ordering_dependency( build.Directory(dex:branch()) );
+    dex:add_ordering_dependency( build.Directory(dex:directory()) );
     dex:add_ordering_dependency( build.Directory(build.classes_directory(dex)) );
     build.add_jar_dependencies( dex, settings.jars );
     return dex;

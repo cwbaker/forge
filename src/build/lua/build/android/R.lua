@@ -19,7 +19,7 @@ function R.call( resource, definition, settings )
     for _, package in ipairs(definition.packages) do
         local r_java = build.File( ("%s/%s/R.java"):format(gen_directory, string.gsub(package, "%.", "/")) );
         r_java.settings = settings;
-        r_java:add_ordering_dependency( Directory(r_java:branch()) );
+        r_java:add_ordering_dependency( Directory(r_java:directory()) );
         r_java:set_built( true );
         resource:add_dependency( r_java );
     end

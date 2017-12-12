@@ -43,7 +43,6 @@ class BuildTool
 {
     error::ErrorPolicy& error_policy_;
     BuildToolEventSink* event_sink_; ///< The EventSink for this BuildTool or null if this BuildTool has no EventSink.
-    int warning_level_; ///< The warning level to report warnings at.
     lua::Lua* lua_; ///< The Lua virtual machine.
     LuaBuildTool* lua_build_tool_; ///< The Lua bindings to the build tool library.
     System* system_; ///< The System that provides access to the operating system.
@@ -81,8 +80,6 @@ class BuildTool
         boost::filesystem::path absolute( const boost::filesystem::path& path ) const;
         boost::filesystem::path relative( const boost::filesystem::path& path ) const;
 
-        void set_warning_level( int warning_level );
-        int warning_level() const;
         void set_stack_trace_enabled( bool stack_trace_enabled );
         bool stack_trace_enabled() const;
         void set_maximum_parallel_jobs( int maximum_parallel_jobs );
@@ -102,8 +99,7 @@ class BuildTool
         void create_target_prototype_lua_binding( TargetPrototype* target_prototype );
         void destroy_target_prototype_lua_binding( TargetPrototype* target_prototype );
 
-        void output( const char* text );
-        void warning( const char* format, ... );
+        void output( const char* format, ... );
         void error( const char* format, ... );
 };
 

@@ -182,7 +182,7 @@ void Scheduler::postorder_visit( const lua::LuaValue& function, Job* job )
     }
     else
     {
-        build_tool_->error( "%s", job->target()->generate_failed_dependencies_message().c_str() );
+        build_tool_->error( "%s", job->target()->failed_dependencies().c_str() );
         job->target()->set_successful( false );
         job->set_state( JOB_COMPLETE );
     }    
@@ -334,11 +334,13 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
         const lua::LuaValue& function_;
         BuildTool* build_tool_;
         list<Job> jobs_;
+        int failures_;
         
         Postorder( const lua::LuaValue& function, BuildTool* build_tool )
         : function_( function ),
           build_tool_( build_tool ),
-          jobs_()
+          jobs_(),
+          failures_( 0 )
         {
             SWEET_ASSERT( build_tool_ );
             build_tool_->graph()->begin_traversal();
@@ -390,6 +392,11 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
             return jobs_.empty();
         }
 
+        int failures() const
+        {
+            return failures_;
+        }
+
         void visit( Target* target )
         {
             SWEET_ASSERT( target );
@@ -410,8 +417,9 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
                     }
                     else
                     {
-                        build_tool_->warning( "Ignoring cyclic dependency from '%s' to '%s'", target->id().c_str(), dependency->id().c_str() );
+                        build_tool_->error( "Cyclic dependency from %s to %s in postorder traversal", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
                         dependency->set_successful( true );
+                        ++failures_;
                     }
 
                     ++i;
@@ -439,25 +447,26 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
         return 0;
     }
     
-    failures_ = 0;
     Postorder postorder( function, build_tool_ );
     postorder.visit( target ? target : graph->root_target() );
-
-    postorder.remove_complete_jobs();
-    while ( !postorder.empty() )
+    failures_ = postorder.failures();
+    if ( failures_ == 0 )
     {
         postorder.remove_complete_jobs();
-        Job* job = postorder.pull_job();
-        while ( job )
+        while ( !postorder.empty() )
         {
-            postorder_visit( function, job );
             postorder.remove_complete_jobs();
-            job = postorder.pull_job();
+            Job* job = postorder.pull_job();
+            while ( job )
+            {
+                postorder_visit( function, job );
+                postorder.remove_complete_jobs();
+                job = postorder.pull_job();
+            }
+            dispatch_results();
         }
-        dispatch_results();
+        wait();
     }
-
-    wait();
     return failures_;
 }
 

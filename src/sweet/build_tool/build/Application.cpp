@@ -36,7 +36,6 @@ Application::Application( int argc, char** argv )
     bool version = false;
     std::string filename = "";
     std::string directory = boost::filesystem::initial_path<boost::filesystem::path>().generic_string();
-    int warning_level = 0;
     bool stack_trace_enabled = false;
     std::vector<std::string> assignments_and_commands;
 
@@ -45,7 +44,6 @@ Application::Application( int argc, char** argv )
         ( "help", "h", "Print this message and exit", &help )
         ( "version", "v", "Print the version and exit", &version )
         ( "file", "f", "Set the script file to load", &filename )
-        ( "warn", "W", "Set the warning level", &warning_level )
         ( "stack-trace", "s", "Enable stack traces in error messages", &stack_trace_enabled )
         ( &assignments_and_commands )
     ;
@@ -90,7 +88,6 @@ Application::Application( int argc, char** argv )
     
         error::ErrorPolicy error_policy;
         BuildTool build_tool( directory, error_policy, this );
-        build_tool.set_warning_level( warning_level );
         build_tool.set_stack_trace_enabled( stack_trace_enabled );
         build_tool.search_up_for_root_directory( directory );
         build_tool.assign( assignments );

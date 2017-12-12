@@ -9,7 +9,7 @@ function Css.create( settings, filename, scss_filename, definition )
     scss:set_required_to_exist( true );
     css:add_dependency( scss );
 
-    local directory = build.Directory( css:branch() );
+    local directory = build.Directory( css:directory() );
     css:add_ordering_dependency( directory );
 
     return css;

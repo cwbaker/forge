@@ -9,7 +9,7 @@ function Html.create( settings, filename )
     source:set_required_to_exist( true );
     html:add_dependency( source );
 
-    local directory = build.Directory( html:branch() );
+    local directory = build.Directory( html:directory() );
     html:add_ordering_dependency( directory );
 
     local working_directory = build.working_directory();

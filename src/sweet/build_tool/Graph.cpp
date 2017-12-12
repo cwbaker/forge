@@ -530,8 +530,9 @@ struct Bind
                 }
                 else
                 {
-                    build_tool_->warning( "Ignoring cyclic dependency from '%s' to '%s' during binding", target->id().c_str(), dependency->id().c_str() );
+                    build_tool_->error( "Cyclic dependency from %s to %s in bind", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
                     dependency->set_successful( true );
+                    ++failures_;
                 }
                 ++i;
                 dependency = target->dependency( i );
@@ -828,18 +829,21 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             }
         }
         
-        void print( Target* target, const boost::filesystem::path& directory, int level )
+        void indent( int level )
         {
-            SWEET_ASSERT( target );
-            SWEET_ASSERT( level >= 0 );
-
-            ScopedVisit visit( target );
-
             printf( "\n" );
             for ( int i = 0; i < level; ++i )
             {
                 printf( "    " );
             }
+        }
+
+        void print( Target* target, const boost::filesystem::path& directory, int level )
+        {
+            SWEET_ASSERT( target );
+            SWEET_ASSERT( level >= 0 );
+
+            indent( level );
 
             if ( target->prototype() )
             {
@@ -880,27 +884,41 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                     time->tm_sec 
                 );
             }
+        }
 
+        void print_recursively( Target* target, const boost::filesystem::path& directory, int level )
+        {
+            ScopedVisit visit( target );
+            print( target, directory, level );
             if ( !target->visited() )
             {
                 target->set_visited( true );            
             
                 int i = 0;
-                Target* dependency = target->dependency( i );
+                Target* dependency = target->binding_dependency( i );
                 while ( dependency )
                 {
                     if ( !dependency->visiting() )
                     {
-                        print( dependency, directory, level + 1 );
+                        print_recursively( dependency, directory, level + 1 );
                     }
                     else
                     {
                         BuildTool* build_tool = target->graph()->build_tool();
                         SWEET_ASSERT( build_tool );
-                        build_tool->warning( "Ignoring cyclic dependency from '%s' to '%s' while printing dependencies", target->id().c_str(), dependency->id().c_str() );
+                        build_tool->output( "Ignoring cyclic dependency from '%s' to '%s' while printing dependencies", target->id().c_str(), dependency->id().c_str() );
                     }
                     ++i;
-                    dependency = target->dependency( i );
+                    dependency = target->binding_dependency( i );
+                }
+
+                i = 0;
+                dependency = target->ordering_dependency( i );
+                while ( dependency )
+                {
+                    print( dependency, directory, level + 1 );
+                    ++i;
+                    dependency = target->ordering_dependency( i );
                 }
             }
         }
@@ -908,7 +926,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
     bind( target );
     RecursivePrinter recursive_printer( this );
-    recursive_printer.print( target ? target : root_target_, boost::filesystem::path(directory), 0 );
+    recursive_printer.print_recursively( target ? target : root_target_, boost::filesystem::path(directory), 0 );
     printf( "\n\n" );
 }
 

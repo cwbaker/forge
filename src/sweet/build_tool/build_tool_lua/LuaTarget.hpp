@@ -48,6 +48,7 @@ private:
     Target* add_target( lua_State* lua_state );
     static int set_filename( lua_State* lua_state );
     static int filename( lua_State* lua_state );
+    static int directory( lua_State* lua_state );
     static int targets( lua_State* lua_state );
     static int dependency( lua_State* lua_state );
     static int dependencies_iterator( lua_State* lua_state );

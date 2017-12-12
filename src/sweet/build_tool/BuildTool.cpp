@@ -40,7 +40,6 @@ static const char* ROOT_FILENAME = "build.lua";
 BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& error_policy, BuildToolEventSink* event_sink )
 : error_policy_( error_policy ),
   event_sink_( event_sink ),
-  warning_level_( 0 ),
   lua_( NULL ),
   lua_build_tool_( NULL ),
   system_( NULL ),
@@ -260,31 +259,6 @@ boost::filesystem::path BuildTool::relative( const boost::filesystem::path& path
 }
 
 /**
-// Set the warning level that warnings are reported up to.
-//
-// Any warnings at a level equal to or less than \e warning_level will be
-// reported.  Other warnings will be silently swallowed.
-//
-// @param warning_level
-//  The value to set the warning level to.
-*/
-void BuildTool::set_warning_level( int warning_level )
-{
-    warning_level_ = warning_level;
-}
-
-/**
-// Get the warning level that warnings are reported at.
-//
-// @return
-//  The warning level.
-*/
-int BuildTool::warning_level() const
-{
-    return warning_level_;
-}
-
-/**
 // Set whether or not stack traces are reported when an error occurs.
 //
 // @param
@@ -501,30 +475,11 @@ void BuildTool::destroy_target_prototype_lua_binding( TargetPrototype* target_pr
 // @param text
 //  The text to output.
 */
-void BuildTool::output( const char* text )
-{
-    SWEET_ASSERT( text );
-
-    if ( event_sink_ )
-    {
-        event_sink_->build_tool_output( this, text );
-    }
-}
-
-/**
-// Handle a warning message.
-//
-// @param format
-//  A printf style format string that describes the text to output.
-//
-// @param ...
-//  Parameters as specified by \e format.
-*/
-void BuildTool::warning( const char* format, ... )
+void BuildTool::output( const char* format, ... )
 {
     SWEET_ASSERT( format );
 
-    if ( event_sink_ && warning_level_ > 0 )
+    if ( event_sink_ )
     {
         char message [1024];
         va_list args;
@@ -532,7 +487,7 @@ void BuildTool::warning( const char* format, ... )
         vsnprintf( message, sizeof(message), format, args );
         message[sizeof(message) - 1] = 0;
         va_end( args );
-        event_sink_->build_tool_warning( this, message );
+        event_sink_->build_tool_output( this, message );
     }
 }
 

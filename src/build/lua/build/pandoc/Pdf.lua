@@ -9,7 +9,7 @@ function Pdf.create( settings, filename )
     source:set_required_to_exist( true );
     pdf:add_dependency( source );
 
-    local directory = build.Directory( pdf:branch() );
+    local directory = build.Directory( pdf:directory() );
     pdf:add_ordering_dependency( directory );
 
     local working_directory = working_directory();

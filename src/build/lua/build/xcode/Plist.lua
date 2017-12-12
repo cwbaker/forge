@@ -5,7 +5,7 @@ function Plist.create( settings, filename, input )
     local plist = build.File( build.interpolate(filename, settings), Plist );
     plist.settings = settings;
     plist:add_dependency( build.SourceFile(input, settings) );
-    plist:add_ordering_dependency( build.Directory(plist:branch()) );
+    plist:add_ordering_dependency( build.Directory(plist:directory()) );
     return plist;
 end
 
