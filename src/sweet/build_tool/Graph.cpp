@@ -1,6 +1,6 @@
 //
 // Graph.cpp
-// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2015 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -14,45 +14,15 @@
 #include "OsInterface.hpp"
 #include "persist.hpp"
 #include <sweet/assert/assert.hpp>
+#include <memory>
 
 using std::list;
 using std::vector;
 using std::string;
+using std::unique_ptr;
 using namespace sweet;
 using namespace sweet::lua;
 using namespace sweet::build_tool;
-
-namespace sweet
-{
-
-namespace build_tool
-{
-
-struct Deleter
-{
-    ScriptInterface* script_interface_;
-    
-    public:
-        Deleter( ScriptInterface* script_interface )
-        : script_interface_( script_interface )
-        {
-            SWEET_ASSERT( script_interface_ );
-        }
-        
-        void operator()( Target* target ) const
-        {
-            SWEET_ASSERT( target );
-            if ( target->is_referenced_by_script() )
-            {
-                script_interface_->destroy_target( target );
-            }
-            delete target;
-        }
-};
-
-}
-
-}
 
 /**
 // Constructor.
@@ -86,7 +56,12 @@ Graph::Graph( BuildTool* build_tool )
   successful_revision_( 0 )
 {
     SWEET_ASSERT( build_tool_ );
-    root_target_.reset( new Target("", this) );
+    root_target_ = new Target( "", this );
+}
+
+Graph::~Graph()
+{
+    delete root_target_;
 }
 
 /**
@@ -97,7 +72,7 @@ Graph::Graph( BuildTool* build_tool )
 */
 Target* Graph::get_root_target() const
 {
-    return root_target_.get();
+    return root_target_;
 }
 
 /**
@@ -109,7 +84,7 @@ Target* Graph::get_root_target() const
 */
 Target* Graph::get_cache_target() const
 {
-    return cache_target_.get();
+    return cache_target_;
 }
         
 /**
@@ -236,10 +211,10 @@ int Graph::get_successful_revision() const
 // @return
 //  The Target.
 */
-ptr<Target> Graph::target( const std::string& id, ptr<TargetPrototype> target_prototype, ptr<Target> working_directory )
+Target* Graph::target( const std::string& id, TargetPrototype* target_prototype, Target* working_directory )
 {
     path::Path path( id );
-    ptr<Target> target( working_directory && path.is_relative() ? working_directory : root_target_ );
+    Target* target = working_directory && path.is_relative() ? working_directory : root_target_;
     SWEET_ASSERT( target );
 
     if ( !id.empty() )
@@ -263,26 +238,27 @@ ptr<Target> Graph::target( const std::string& id, ptr<TargetPrototype> target_pr
             }
             else
             {
-                ptr<Target> new_target = target->find_target_by_id( element );
-                if ( !new_target )
+                Target* next_target = target->find_target_by_id( element );
+                if ( !next_target )
                 {
-                    new_target.reset( new Target(element, this), Deleter(build_tool_->get_script_interface()) );
-                    target->add_target( new_target, target );
+                    unique_ptr<Target> new_target( new Target(element, this) );
+                    next_target = new_target.get();
+                    target->add_target( new_target.release(), target );
                     if ( i != path.end() )
                     {
-                        new_target->set_working_directory( target );
+                        next_target->set_working_directory( target );
                     }
                 }
-
-                target = new_target;
+                target = next_target;
             }
         }
     }
     else
     {
-        ptr<Target> new_target( new Target("", this), Deleter(build_tool_->get_script_interface()) );
-        target->add_target( new_target, target );
-        target = new_target;
+        unique_ptr<Target> new_target( new Target("", this) );
+        Target* next_target = new_target.get();
+        target->add_target( new_target.release(), target );
+        target = next_target;
     }
 
     if ( target_prototype && target->get_prototype() == NULL )
@@ -321,9 +297,9 @@ ptr<Target> Graph::target( const std::string& id, ptr<TargetPrototype> target_pr
 // @return
 //  The Target or null if no matching Target was found.
 */
-ptr<Target> Graph::find_target( const std::string& id, ptr<Target> working_directory )
+Target* Graph::find_target( const std::string& id, Target* working_directory )
 {
-    ptr<Target> target;
+    Target* target = NULL;
 
     if ( !id.empty() )
     {
@@ -355,6 +331,23 @@ ptr<Target> Graph::find_target( const std::string& id, ptr<Target> working_direc
 }
 
 /**
+// Destroy a target.
+//
+// @param target
+//  The Target to destroy (assumed not null).
+*/
+void Graph::destroy_target( Target* target )
+{
+    SWEET_ASSERT( target );
+    if ( target && target->is_referenced_by_script() )
+    {
+        ScriptInterface* script_interface = build_tool_->get_script_interface();
+        SWEET_ASSERT( script_interface );
+        script_interface->destroy_target( target );
+    }
+}
+
+/**
 // Load a buildfile into this Graph.
 //
 // @param filename
@@ -365,7 +358,7 @@ ptr<Target> Graph::find_target( const std::string& id, ptr<Target> working_direc
 //  of or null to make top level Targets dependencies of the target that 
 //  corresponds to the working directory.
 */
-void Graph::buildfile( const std::string& filename, ptr<Target> target )
+void Graph::buildfile( const std::string& filename, Target* target )
 {
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( root_target_ );
@@ -373,7 +366,7 @@ void Graph::buildfile( const std::string& filename, ptr<Target> target )
     path::Path path( build_tool_->get_script_interface()->absolute(filename) );
     SWEET_ASSERT( path.is_absolute() );
     
-    ptr<Target> buildfile_target = Graph::target( path.string(), ptr<TargetPrototype>(), ptr<Target>() );
+    Target* buildfile_target = Graph::target( path.string(), NULL, NULL );
     buildfile_target->set_filename( path.string() );
     if ( cache_target_ )
     {
@@ -469,12 +462,12 @@ struct Bind
 //  The number of Targets that failed to bind because they were files that
 //  were expected to exist (see Target::set_required_to_exist()).
 */
-int Graph::bind( ptr<Target> target )
+int Graph::bind( Target* target )
 {
     SWEET_ASSERT( !target || target->get_graph() == this );
 
     Bind bind( build_tool_ );
-    bind.visit( target ? target.get() : root_target_.get() );
+    bind.visit( target ? target : root_target_ );
     return bind.failures_;
 }
 
@@ -487,7 +480,7 @@ int Graph::bind( ptr<Target> target )
 void Graph::swap( Graph& graph )
 {
     std::swap( implicit_dependencies_, graph.implicit_dependencies_ );
-    root_target_.swap( graph.root_target_ );
+    std::swap( root_target_, graph.root_target_ );
 }
 
 /**
@@ -507,9 +500,9 @@ void Graph::swap( Graph& graph )
 void Graph::clear()
 {
     SWEET_ASSERT( build_tool_ );
-
-    root_target_.reset( new Target("", this) );
-    cache_target_.reset();
+    delete root_target_;
+    root_target_ = new Target( "", this );
+    cache_target_ = NULL;
     recover();
     implicit_dependencies_ = false;
 }
@@ -524,7 +517,7 @@ void Graph::recover()
     root_target_->recover( this );
     if ( !filename_.empty() )
     {
-        cache_target_ = target( filename_, ptr<TargetPrototype>(), ptr<Target>() );
+        cache_target_ = target( filename_, NULL, NULL );
         cache_target_->set_filename( filename_ );
         bind( cache_target_ );
     }
@@ -576,13 +569,13 @@ bool Graph::implicit_dependencies() const
 //  The target that corresponds to the file that this Graph was loaded from or
 //  null if there was no cache target.
 */
-ptr<Target> Graph::load_xml( const std::string& filename )
+Target* Graph::load_xml( const std::string& filename )
 {
     SWEET_ASSERT( !filename.empty() );
     SWEET_ASSERT( build_tool_ );
 
     filename_ = filename;
-    cache_target_.reset();
+    cache_target_ = NULL;
 
     if ( build_tool_->get_os_interface()->exists(filename) )
     {
@@ -633,13 +626,13 @@ void Graph::save_xml()
 //  The target that corresponds to the file that this Graph was loaded from or
 //  null if there was no cache target.
 */
-ptr<Target> Graph::load_binary( const std::string& filename )
+Target* Graph::load_binary( const std::string& filename )
 {
     SWEET_ASSERT( !filename.empty() );
     SWEET_ASSERT( build_tool_ );
     
     filename_ = filename;
-    cache_target_.reset();
+    cache_target_ = NULL;
 
     if ( build_tool_->get_os_interface()->exists(filename) )
     {
@@ -687,7 +680,7 @@ void Graph::save_binary()
 // @param path
 //  The path to display filenames relative to.
 */
-void Graph::print_dependencies( ptr<Target> target, const std::string& directory )
+void Graph::print_dependencies( Target* target, const std::string& directory )
 {
     struct ScopedVisit
     {
@@ -814,7 +807,7 @@ void Graph::print_dependencies( ptr<Target> target, const std::string& directory
     };
 
     RecursivePrinter recursive_printer( this );
-    recursive_printer.print( target ? target.get() : root_target_.get(), path::Path(directory), 0 );
+    recursive_printer.print( target ? target : root_target_, path::Path(directory), 0 );
     printf( "\n\n" );
 }
 
@@ -825,7 +818,7 @@ void Graph::print_dependencies( ptr<Target> target, const std::string& directory
 //  The Target to begin printing from or null to print from the root Target of
 //  this Graph.
 */
-void Graph::print_namespace( ptr<Target> target )
+void Graph::print_namespace( Target* target )
 {
     struct RecursivePrinter
     {
@@ -843,7 +836,7 @@ void Graph::print_namespace( ptr<Target> target )
             graph_->end_traversal();
         }
 
-        static void print( ptr<Target> target, int level )
+        static void print( Target* target, int level )
         {
             SWEET_ASSERT( target != 0 );
             SWEET_ASSERT( level >= 0 );
@@ -868,10 +861,10 @@ void Graph::print_namespace( ptr<Target> target )
             {
                 target->set_visited( true );            
             
-                const vector<ptr<Target> >& targets = target->get_targets();
-                for ( vector<ptr<Target> >::const_iterator i = targets.begin(); i != targets.end(); ++i )
+                const vector<Target*>& targets = target->get_targets();
+                for ( vector<Target*>::const_iterator i = targets.begin(); i != targets.end(); ++i )
                 {
-                    ptr<Target> target = *i;
+                    Target* target = *i;
                     SWEET_ASSERT( target );
                     print( target, level + 1 );
                 }

@@ -1,13 +1,16 @@
 
-Executable "error_test" {
-    libraries = {
-        "sweet/error/error",
-        "sweet/assert/assert",
-        "unit/libUnitTest"
+local settings = build.current_settings();
+for _, architecture in ipairs(settings.architectures) do
+    Executable ("error_test", architecture) {
+        libraries = {
+            "sweet/error/error",
+            "sweet/assert/assert",
+            "unit/libUnitTest"
+        };
+
+        Cxx (architecture) {
+            precompiled_header = "stdafx.hpp";
+            "main.cpp"
+        };
     };
-        
-    Cxx {
-        pch = "stdafx.hpp";
-        "main.cpp"
-    }
-}
+end

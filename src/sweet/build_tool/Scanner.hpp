@@ -1,8 +1,3 @@
-//
-// Scanner.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_BUILD_TOOL_SCANNER_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_SCANNER_HPP_INCLUDED
 
@@ -34,6 +29,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Scanner
 
     public:
         Scanner( unsigned int patterns_reserve, BuildTool* build_tool );
+        ~Scanner();
         void set_initial_lines( int initial_lines );
         int initial_lines() const;
         void set_later_lines( int later_lines );

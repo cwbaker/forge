@@ -1,8 +1,17 @@
 
-Library "boost_system" {
-    Cxx {
+local settings = build.push_settings {
+    defines = { 
         -- Disable automatic linking to Boost libraries.
-        defines = { "BOOST_ALL_NO_LIB" };
-        "error_code.cpp"
+        "BOOST_ALL_NO_LIB" 
     };
-}
+};
+
+for _, architecture in ipairs(settings.architectures) do 
+    Library ("boost_system", architecture) {
+        Cxx (architecture) {
+            "error_code.cpp"
+        };
+    };
+end
+
+build.pop_settings();

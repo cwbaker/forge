@@ -1,3 +1,5 @@
 
-Library "atomic" {
-}
+local settings = build.current_settings();
+for _, architecture in ipairs(settings.architectures) do
+    Library ("atomic", architecture);
+end

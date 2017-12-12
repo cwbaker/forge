@@ -1,23 +1,31 @@
 
-Library "boost_filesystem" {
-    Cxx {
+local settings = build.push_settings {
+    defines = { 
         -- Disable automatic linking to Boost libraries.
-        defines = { "BOOST_ALL_NO_LIB" };
-        "codecvt_error_category.cpp",
-        "operations.cpp",
-        "path.cpp",
-        "path_traits.cpp",
-        "portability.cpp",
-        "unique_path.cpp",
-        "utf8_codecvt_facet.cpp",
+        "BOOST_ALL_NO_LIB" 
+    };
+};
+
+for _, architecture in ipairs(settings.architectures) do 
+    local boost_filesystem = Library ("boost_filesystem", architecture) {
+        Cxx (architecture) {
+            "codecvt_error_category.cpp",
+            "operations.cpp",
+            "path.cpp",
+            "path_traits.cpp",
+            "portability.cpp",
+            "unique_path.cpp",
+            "utf8_codecvt_facet.cpp",
+        };
     };
 
-    Cxx {
-        -- Disable automatic linking to Boost libraries.
-        defines = { "BOOST_ALL_NO_LIB" };
-        settings = {
-            platforms = { "mingw", "msvc" };
+    if platform == "mingw" or platform == "msvc" then
+        boost_filesystem {
+            Cxx (architecture) {
+                "windows_file_codecvt.cpp"
+            };
         };
-        "windows_file_codecvt.cpp"
-    };
-}
+    end
+end
+
+build.pop_settings();

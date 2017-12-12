@@ -1,6 +1,6 @@
 //
 // Environment.cpp
-// Copyright (c) 2008 - 2013 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2015 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -31,7 +31,7 @@ Environment::Environment( int index, const path::Path& directory, BuildTool* bui
 : index_( index ),
   build_tool_( build_tool ),
   environment_thread_( build_tool->get_script_interface()->get_lua() ),
-  working_directory_(), 
+  working_directory_( NULL ), 
   directories_(), 
   job_( NULL ),
   exit_code_( 0 )
@@ -58,7 +58,7 @@ lua::LuaThread& Environment::get_environment_thread()
 //  The Target that represents the directory to set the working directory 
 //  stack to contain.
 */
-void Environment::reset_directory_to_target( const ptr<Target>& directory )
+void Environment::reset_directory_to_target( Target* directory )
 {
     SWEET_ASSERT( directory );
     directories_.clear();
@@ -172,7 +172,7 @@ const path::Path& Environment::directory() const
 // @return
 //  The Target that represents the current working directory.
 */
-ptr<Target> Environment::working_directory() const
+Target* Environment::working_directory() const
 {
     return working_directory_;
 }

@@ -1,6 +1,6 @@
 //
 // Arguments.cpp
-// Copyright (c) 2011 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) 2011 - 2015 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"

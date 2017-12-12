@@ -1,6 +1,6 @@
 //
 // BuildTool.cpp
-// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2015 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -36,19 +36,20 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
 : error_policy_( error_policy ),
   event_sink_( event_sink ),
   warning_level_( 0 ),
-  os_interface_(),
-  script_interface_(),
-  executor_(),
-  scheduler_(),
-  graph_()
+  os_interface_( NULL ),
+  script_interface_( NULL ),
+  executor_( NULL ),
+  scheduler_( NULL ),
+  graph_( NULL )
 {
     SWEET_ASSERT( path::Path(initial_directory).is_absolute() );
 
-    os_interface_.reset( new OsInterface() );
-    script_interface_.reset( new ScriptInterface(os_interface_.get(), this) );
-    executor_.reset( new Executor(this) );
-    scheduler_.reset( new Scheduler(this) );
-    graph_.reset( new Graph(this) );
+    os_interface_ = new OsInterface;
+    script_interface_ = new ScriptInterface( os_interface_, this );
+    executor_ = new Executor( this );
+    scheduler_ = new Scheduler( this );
+    graph_ = new Graph( this );
+
     script_interface_->set_root_directory( initial_directory );
     script_interface_->set_initial_directory( initial_directory );
 }
@@ -62,6 +63,11 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
 */
 BuildTool::~BuildTool()
 {
+    delete graph_;
+    delete scheduler_;
+    delete executor_;
+    delete script_interface_;
+    delete os_interface_;
 }
 
 /**
@@ -84,7 +90,7 @@ error::ErrorPolicy& BuildTool::error_policy() const
 OsInterface* BuildTool::get_os_interface() const
 {
     SWEET_ASSERT( os_interface_ );
-    return os_interface_.get();
+    return os_interface_;
 }
 
 /**
@@ -96,7 +102,7 @@ OsInterface* BuildTool::get_os_interface() const
 ScriptInterface* BuildTool::get_script_interface() const
 {
     SWEET_ASSERT( script_interface_ );
-    return script_interface_.get();
+    return script_interface_;
 }
 
 /**
@@ -108,7 +114,7 @@ ScriptInterface* BuildTool::get_script_interface() const
 Graph* BuildTool::get_graph() const
 {
     SWEET_ASSERT( graph_ );
-    return graph_.get();
+    return graph_;
 }
 
 /**
@@ -120,7 +126,7 @@ Graph* BuildTool::get_graph() const
 Executor* BuildTool::get_executor() const
 {
     SWEET_ASSERT( executor_ );
-    return executor_.get();
+    return executor_;
 }
 
 /**
@@ -132,7 +138,7 @@ Executor* BuildTool::get_executor() const
 Scheduler* BuildTool::get_scheduler() const
 {
     SWEET_ASSERT( scheduler_ );
-    return scheduler_.get();
+    return scheduler_;
 }
 
 /**

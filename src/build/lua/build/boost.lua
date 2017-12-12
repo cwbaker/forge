@@ -15,7 +15,7 @@ function boost.configure( settings )
             local_settings.boost.boost_directory = home( "boost" );
         end
     end
-end;
+end
 
 function boost.initialize( settings )
     boost.configure(settings);
@@ -25,9 +25,9 @@ function boost.initialize( settings )
         msvc = boost.msvc_boost_library;
         mingw = boost.mingw_boost_library;
     };
-    assert( boost_library_by_platform[platform], "No boost_library() implementation for the platform '%s'!" % platform );
+    assert( boost_library_by_platform[platform], ("No boost_library() implementation for the platform '%s'!"):format(platform) );
     boost_library = boost_library_by_platform[platform];
-end;
+end
 
 function boost.default_boost_library( name )
     return name;
@@ -48,8 +48,8 @@ function boost.msvc_boost_library( name )
         runtime = "mt-gd";
     end
 
-    return "lib%s-%s-%s-%s.lib" % { name, toolset, runtime, version };
-end;
+    return ("lib%s-%s-%s-%s.lib"):format( name, toolset, runtime, version );
+end
 
 function boost.mingw_boost_library( name )
     local toolset = "mgw46";
@@ -66,8 +66,8 @@ function boost.mingw_boost_library( name )
         runtime = "mt-d";
     end
 
-    return "%s-%s-%s-%s" % { name, toolset, runtime, version };
-end;
+    return ("%s-%s-%s-%s"):format( name, toolset, runtime, version );
+end
 
 function boost.llvmgcc_boost_library( name )
     local toolset = "xgcc42";
@@ -84,5 +84,5 @@ function boost.llvmgcc_boost_library( name )
         runtime = "mt-d";
     end
 
-    return "%s-%s-%s-%s" % { name, toolset, runtime, version };    
-end;
+    return ("%s-%s-%s-%s"):format( name, toolset, runtime, version );
+end

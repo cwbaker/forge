@@ -1,17 +1,19 @@
 
-Library "thread" {
-    libraries = {
-        "sweet/assert/assert",
-        "sweet/error/error"
+local settings = build.current_settings();
+for _, architecture in ipairs(settings.architectures) do
+    Library ("thread", architecture) {
+        libraries = {
+            "sweet/assert/assert",
+            "sweet/error/error"
+        };
+        Cxx (architecture) {
+            precompiled_header = "stdafx.hpp";
+            "Condition.cpp",
+            "JobQueue.cpp",
+            "Mutex.cpp",
+            "ScopedLock.cpp",
+            "Error.cpp",
+            "Thread.cpp"
+        };
     };
-
-    Cxx {
-        pch = "stdafx.hpp";
-        "Condition.cpp",
-        "JobQueue.cpp",
-        "Mutex.cpp",
-        "ScopedLock.cpp",
-        "Error.cpp",
-        "Thread.cpp"
-    };
-}
+end

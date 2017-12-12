@@ -9,7 +9,7 @@ local function uuid()
             table.insert( uuids, uuid );
         end;
     };
-    local uuidgen = "%s/bin/x64/uuidgen.exe" % settings.msvc.windows_sdk_directory;
+    local uuidgen = ("%s/bin/x64/uuidgen.exe"):format( settings.msvc.windows_sdk_directory );
     local arguments = "uuidgen";
     build.system( uuidgen, arguments, UuidScanner );
     assert( uuids[1], "UUID generation failed!" );
@@ -57,26 +57,27 @@ local function configurations( vcproj, target, include_directories )
             
             local output = "";
             if target:prototype() == ExecutablePrototype then
-                output = native( relative(root("../%s_%s/bin/%s_%s_%s.exe" % {platform, variant, module, platform, variant})) );
+                output = native( relative(root(("../%s_%s/bin/%s_%s_%s.exe"):format(platform, variant, module, platform, variant))) );
             end
             
-            local defines = "";
-            defines = defines.."BUILD_OS_"..upper(operating_system())..";";
-            defines = defines.."BUILD_PLATFORM_"..upper(platform)..";";
-            defines = defines.."BUILD_VARIANT_"..upper(variant)..";";
-            defines = defines.."BUILD_MODULE_"..upper(string.gsub(module, "-", "_"))..";"
-            defines = defines.."BUILD_LIBRARY_TYPE_"..upper(variant_settings.library_type)..";";
+            local defines = {
+                ("BUILD_OS_%s"):format( upper(operating_system()) ),
+                ("BUILD_PLATFORM_%s"):format( upper(platform) ),
+                ("BUILD_VARIANT_%s"):format( upper(variant) ),
+                ("BUILD_MODULE_%s"):format( upper(string.gsub(module, "-", "_")) ),
+                ("BUILD_LIBRARY_TYPE_%s"):format( upper(variant_settings.library_type) )
+            };
             if target.settings.defines then
                 for _, define in ipairs(target.settings.defines) do
-                    defines = defines..define..";";
+                    table.insert( defines, define );
                 end
             end    
             if target.defines then
                 for _, define in ipairs(target.defines) do
-                    defines = defines..define..";";
+                    table.insert( defines, define );
                 end
-            end
-            defines = string.gsub( defines, '"', '&quot;' );
+            end            
+            defines = string.gsub( table.concat(defines, ";"), '"', '&quot;' );
 
             local build_tool = native( relative(root("build/build.exe")) );
             vcproj:write( [[
@@ -133,15 +134,15 @@ end
 local function generate_files( vcproj, file, level )
     if file.children then
         vcproj:write( string.rep("    ", level) );
-        vcproj:write( [[<Filter Name="%s">]] % leaf(file.target:path()) );
+        vcproj:write( ('<Filter Name="%s">'):format(leaf(file.target:path())) );
         for _, child in ipairs(file.children) do 
             generate_files( vcproj, child, level + 1 );
         end
         vcproj:write( string.rep("    ", level) );
-        vcproj:write( [[</Filter>]] % leaf(file.target:path()) );
+        vcproj:write( '</Filter>' );
     else
         vcproj:write( string.rep("    ", level) );
-        vcproj:write( "<File RelativePath=\""..native(relative(file.target:get_filename())).."\" />\n" );
+        vcproj:write( ('<File RelativePath="%s" />\n'):format(native(relative(file.target:get_filename()))) );
     end
 end
 
@@ -249,7 +250,7 @@ Microsoft Visual Studio Solution File, Format Version 10.00
     local project_uuid = "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942";
     for path, module in pairs(modules) do
         local name = module.target.project_name or module.target:id();
-        local filename = "%s%s.vcproj" % { module.target:directory(), name };
+        local filename = ("%s%s.vcproj"):format( module.target:directory(), name );
         sln:write( string.format([[
 Project("{%s}") = "%s", "%s", "{%s}"
 EndProject
@@ -261,11 +262,10 @@ EndProject
     local function generate_directories( directories )
         for _, directory in ipairs(directories) do
             if directory.children then
-                sln:write([[
+                sln:write(([[
 Project("{%s}") = "%s", "%s", "{%s}"
 EndProject
-]] 
-                % {folder_uuid, directory.target:id(), directory.target:id(), directory.uuid}
+]]):format(folder_uuid, directory.target:id(), directory.target:id(), directory.uuid)
                 );
                 generate_directories( directory.children );
             end
@@ -276,7 +276,7 @@ EndProject
     local build_hpp = native( relative(root("sweet/build.hpp")) );
     local build_lua = native( relative(root("build.lua")) );
     local local_settings_lua = native( relative(root("local_settings.lua")) );
-    sln:write( [[
+    sln:write( ([[
 Project("{%s}") = "Solution Items", "Solution Items", "{%s}"
 	ProjectSection(SolutionItems) = preProject
 		%s = %s
@@ -284,7 +284,7 @@ Project("{%s}") = "Solution Items", "Solution Items", "{%s}"
 		%s = %s
 	EndProjectSection
 EndProject
-]] % {folder_uuid, uuid(), build_hpp, build_hpp, build_lua, build_lua, local_settings_lua, local_settings_lua }
+]]):format(folder_uuid, uuid(), build_hpp, build_hpp, build_lua, build_lua, local_settings_lua, local_settings_lua)
     );
     popd();
 
@@ -295,10 +295,9 @@ Global
     );
     for _, platform in ipairs(build.settings.platforms) do
         for _, variant in ipairs(build.settings.variants) do
-            sln:write([[
+            sln:write(([[
 		%s_%s|Win32 = %s_%s|Win32
-]]
-            % {platform, variant, platform, variant}
+]]):format(platform, variant, platform, variant)
             );
         end
     end
@@ -312,11 +311,10 @@ Global
     for _, module in pairs(modules) do
         for _, platform in ipairs(module.target.settings.platforms) do
             for _, variant in ipairs(module.target.settings.variants) do
-                sln:write([[
+                sln:write(([[
 		{%s}.%s_%s|Win32.ActiveCfg = %s_%s|Win32
 		{%s}.%s_%s|Win32.Build.0 = %s_%s|Win32
-]]
-                % {module.uuid, platform, variant, platform, variant, module.uuid, platform, variant, platform, variant}
+]]):format(module.uuid, platform, variant, platform, variant, module.uuid, platform, variant, platform, variant)
                 );
             end
         end
@@ -334,10 +332,9 @@ Global
     local function generate_nested_projects( directory )
         if directory and directory.children then
             for _, child in ipairs(directory.children) do
-                sln:write([[
+                sln:write(([[
 		{%s} = {%s}
-]] 
-                % {child.uuid, directory.uuid}
+]]):format(child.uuid, directory.uuid)
                 );
             end
             for _, directory in ipairs(directory.children) do
@@ -433,7 +430,7 @@ function visual_studio.generate_solution_and_projects( filename, root_target )
 
     for path, module in pairs(modules) do
         local name = module.target.project_name or module.target:id();
-        generate_project( "%s%s.vcproj" % {module.target:directory(), name}, module.target );
+        generate_project( ("%s%s.vcproj"):format(module.target:directory(), name), module.target );
     end
     generate_solution( filename, root_target, modules, directories[root_target:path()].children );
 end

@@ -1,6 +1,6 @@
 //
 // Scheduler.cpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2015 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -22,12 +22,14 @@
 #include <sweet/lua/ptr.hpp>
 #include <list>
 #include <string>
+#include <memory>
 #include <algorithm>
 
 using std::sort;
 using std::list;
 using std::vector;
 using std::string;
+using std::unique_ptr;
 using namespace sweet;
 using namespace sweet::atomic;
 using namespace sweet::lua;
@@ -35,7 +37,9 @@ using namespace sweet::build_tool;
 
 Scheduler::Scheduler( BuildTool* build_tool )
 : build_tool_( build_tool ),
+  environments_(),
   free_environments_(),
+  active_environments_(),
   results_mutex_(),
   results_condition_(),
   results_(),
@@ -48,6 +52,11 @@ Scheduler::Scheduler( BuildTool* build_tool )
 
 Scheduler::~Scheduler()
 {
+    while ( !environments_.empty() )
+    {
+        delete environments_.back();
+        environments_.pop_back();
+    }
 }
 
 void Scheduler::set_traversing( bool traversing )
@@ -84,8 +93,7 @@ void Scheduler::execute( const char* start, const char* finish )
 
     Graph* graph = build_tool_->get_graph();
     ScriptInterface* script_interface = build_tool_->get_script_interface();
-    ptr<Environment> environment = allocate_environment( graph->target(script_interface->get_initial_directory().string()) );
-
+    Environment* environment = allocate_environment( graph->target(script_interface->get_initial_directory().string()) );
     process_begin( environment );
     environment->get_environment_thread().resume( start, finish, "BuildTool" )
     .end();
@@ -100,7 +108,7 @@ void Scheduler::buildfile( const path::Path& path )
 {
     SWEET_ASSERT( path.is_absolute() );
 
-    ptr<Environment> environment = allocate_environment( build_tool_->get_graph()->target(path.branch().string()) );
+    Environment* environment = allocate_environment( build_tool_->get_graph()->target(path.branch().string()) );
     process_begin( environment );
     environment->get_environment_thread().resume( path.string().c_str(), path.leaf().c_str() )
     .end();
@@ -111,7 +119,7 @@ void Scheduler::call( const path::Path& path, const std::string& function )
 {
     if ( !function.empty() )
     {
-        ptr<Environment> environment = allocate_environment( build_tool_->get_graph()->target(path.branch().string()) );
+        Environment* environment = allocate_environment( build_tool_->get_graph()->target(path.branch().string()) );
         process_begin( environment );
         environment->get_environment_thread().resume( function.c_str() )
         .end();
@@ -119,12 +127,11 @@ void Scheduler::call( const path::Path& path, const std::string& function )
     }
 }
 
-void Scheduler::preorder_visit( const lua::LuaValue& function, ptr<Target> target )
+void Scheduler::preorder_visit( const lua::LuaValue& function, Target* target )
 {
     SWEET_ASSERT( target );
 
-    ptr<Environment> environment = allocate_environment( target->get_working_directory() );
-
+    Environment* environment = allocate_environment( target->get_working_directory() );
     process_begin( environment );
     environment->get_environment_thread().resume( function )
         ( target )
@@ -144,7 +151,7 @@ void Scheduler::postorder_visit( const lua::LuaValue& function, Job* job )
 
     if ( job->get_target()->is_buildable() )
     {
-        ptr<Environment> environment = allocate_environment( job->get_working_directory(), job );
+        Environment* environment = allocate_environment( job->get_working_directory(), job );
         process_begin( environment );
         environment->get_environment_thread().resume( function )
             ( job->get_target() )
@@ -167,7 +174,7 @@ void Scheduler::postorder_visit( const lua::LuaValue& function, Job* job )
     }    
 }
 
-void Scheduler::execute_finished( int exit_code, ptr<Environment> environment )
+void Scheduler::execute_finished( int exit_code, Environment* environment, Arguments* arguments )
 {
     SWEET_ASSERT( environment );
 
@@ -176,17 +183,22 @@ void Scheduler::execute_finished( int exit_code, ptr<Environment> environment )
         ( exit_code )
     .end();
     process_end( environment );
-}
 
-void Scheduler::scan_finished( ptr<Arguments> arguments )
-{
-    // Reset arguments here on the main thread to avoid accessing the Lua
+    // Delete arguments here on the main thread to avoid accessing the Lua
     // virtual machine from multiple threads as happens if the arguments are
-    // destroyed in the worker threads provided by the executor.
-    arguments.reset();
+    // deleted in the worker threads provided by the Executor.
+    delete arguments;
 }
 
-void Scheduler::output( const std::string& output, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory )
+void Scheduler::scan_finished( Arguments* arguments )
+{
+    // Delete arguments here on the main thread to avoid accessing the Lua
+    // virtual machine from multiple threads as happens if the arguments are
+    // deleted in the worker threads provided by the Executor.
+    delete arguments;
+}
+
+void Scheduler::output( const std::string& output, Scanner* scanner, Arguments* arguments, Target* working_directory )
 {
     SWEET_ASSERT( build_tool_ );
     if ( scanner )
@@ -200,7 +212,7 @@ void Scheduler::output( const std::string& output, ptr<Scanner> scanner, ptr<Arg
             {
                 ++matches;
                 
-                ptr<Environment> environment = allocate_environment( working_directory );
+                Environment* environment = allocate_environment( working_directory );
                 process_begin( environment );
                 lua::AddParameter add_parameter = environment->get_environment_thread().call( pattern->get_function() );
                 for ( size_t i = 1; i < match.size(); ++i )
@@ -227,14 +239,13 @@ void Scheduler::output( const std::string& output, ptr<Scanner> scanner, ptr<Arg
     }
 }
 
-void Scheduler::match( const Pattern* pattern, ptr<Target> target, const std::string& match, ptr<Arguments> arguments, ptr<Target> working_directory )
+void Scheduler::match( const Pattern* pattern, Target* target, const std::string& match, Arguments* arguments, Target* working_directory )
 {
     SWEET_ASSERT( pattern );
     SWEET_ASSERT( target );
     SWEET_ASSERT( working_directory );
     
-    ptr<Environment> environment = allocate_environment( working_directory );
-
+    Environment* environment = allocate_environment( working_directory );
     process_begin( environment );
     AddParameter add_parameter = environment->get_environment_thread().call( pattern->get_function() )
         ( target )
@@ -248,45 +259,48 @@ void Scheduler::match( const Pattern* pattern, ptr<Target> target, const std::st
     process_end( environment );
 }
 
-void Scheduler::error( const std::string& what, ptr<Environment> environment )
+void Scheduler::error( const std::string& what, Environment* environment )
 {
     SWEET_ASSERT( build_tool_ );
-    SWEET_ASSERT( environment );    
+    SWEET_ASSERT( environment );
+    SWEET_ASSERT( !active_environments_.empty() );    
+    SWEET_ASSERT( environment == active_environments_.back() );    
     build_tool_->error( what.c_str() );
-    build_tool_->get_script_interface()->pop_environment();
+    // build_tool_->get_script_interface()->pop_environment();
+    active_environments_.pop_back();
     destroy_environment( environment );
 }
 
-void Scheduler::push_output( const std::string& output, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory )
+void Scheduler::push_output( const std::string& output, Scanner* scanner, Arguments* arguments, Target* working_directory )
 {
     thread::ScopedLock lock( results_mutex_ );
     results_.push_back( std::bind(&Scheduler::output, this, output, scanner, arguments, working_directory) );
     results_condition_.notify_all();
 }
 
-void Scheduler::push_error( const std::exception& exception, ptr<Environment> environment )
+void Scheduler::push_error( const std::exception& exception, Environment* environment )
 {
     thread::ScopedLock lock( results_mutex_ );
     results_.push_back( std::bind(&Scheduler::error, this, string(exception.what()), environment) );
     results_condition_.notify_all();
 }
 
-void Scheduler::push_match( const Pattern* pattern, const std::string& match, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Target> target )
+void Scheduler::push_match( const Pattern* pattern, const std::string& match, Arguments* arguments, Target* working_directory, Target* target )
 {
     thread::ScopedLock lock( results_mutex_ );
     results_.push_back( std::bind(&Scheduler::match, this, pattern, target, match, arguments, working_directory) );
     results_condition_.notify_all();
 }
 
-void Scheduler::push_execute_finished( int exit_code, ptr<Environment> environment )
+void Scheduler::push_execute_finished( int exit_code, Environment* environment, Arguments* arguments )
 {
     thread::ScopedLock lock( results_mutex_ );
     --jobs_;
-    results_.push_back( std::bind(&Scheduler::execute_finished, this, exit_code, environment) );
+    results_.push_back( std::bind(&Scheduler::execute_finished, this, exit_code, environment, arguments) );
     results_condition_.notify_all();
 }
 
-void Scheduler::push_scan_finished( ptr<Arguments> arguments )
+void Scheduler::push_scan_finished( Arguments* arguments )
 {
     thread::ScopedLock lock( results_mutex_ );
     --jobs_;
@@ -294,14 +308,14 @@ void Scheduler::push_scan_finished( ptr<Arguments> arguments )
     results_condition_.notify_all();
 }
 
-void Scheduler::execute( const std::string& command, const std::string& command_line, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Environment> environment )
+void Scheduler::execute( const std::string& command, const std::string& command_line, Scanner* scanner, Arguments* arguments, Environment* environment )
 {
     thread::ScopedLock lock( results_mutex_ );
     build_tool_->get_executor()->execute( command, command_line, scanner, arguments, environment );
     ++jobs_;
 }
 
-void Scheduler::scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment )
+void Scheduler::scan( Target* target, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment )
 {
     thread::ScopedLock lock( results_mutex_ );
     build_tool_->get_executor()->scan( target, scanner, arguments, working_directory, environment );
@@ -315,7 +329,7 @@ void Scheduler::wait()
     }
 }
 
-int Scheduler::preorder( const lua::LuaValue& function, ptr<Target> target )
+int Scheduler::preorder( const lua::LuaValue& function, Target* target )
 {
     struct Preorder
     {
@@ -398,7 +412,7 @@ int Scheduler::preorder( const lua::LuaValue& function, ptr<Target> target )
 
     failures_ = 0;
     Preorder preorder( build_tool_ );
-    preorder.start( target ? target.get() : graph->get_root_target() );
+    preorder.start( target ? target : graph->get_root_target() );
 
     while ( !preorder.empty() )
     {
@@ -409,7 +423,7 @@ int Scheduler::preorder( const lua::LuaValue& function, ptr<Target> target )
             SWEET_ASSERT( target );
             if ( target->is_referenced_by_script() && target->get_working_directory() )
             {
-                preorder_visit( function, target->ptr_from_this() );
+                preorder_visit( function, target );
             }
             ++i;
         }
@@ -421,7 +435,7 @@ int Scheduler::preorder( const lua::LuaValue& function, ptr<Target> target )
     return failures_;
 }
 
-int Scheduler::postorder( const lua::LuaValue& function, ptr<Target> target )
+int Scheduler::postorder( const lua::LuaValue& function, Target* target )
 {
     struct ScopedVisit
     {
@@ -553,7 +567,7 @@ int Scheduler::postorder( const lua::LuaValue& function, ptr<Target> target )
     
     failures_ = 0;
     Postorder postorder( function, build_tool_ );
-    postorder.visit( target ? target.get() : graph->get_root_target() );
+    postorder.visit( target ? target : graph->get_root_target() );
 
     postorder.remove_complete_jobs();
     while ( !postorder.empty() )
@@ -573,7 +587,12 @@ int Scheduler::postorder( const lua::LuaValue& function, ptr<Target> target )
     return failures_;
 }
 
-ptr<Environment> Scheduler::allocate_environment( ptr<Target> working_directory, Job* job )
+Environment* Scheduler::environment() const
+{
+    return !active_environments_.empty() ? active_environments_.back() : NULL;
+}
+
+Environment* Scheduler::allocate_environment( Target* working_directory, Job* job )
 {
     SWEET_ASSERT( working_directory );
     SWEET_ASSERT( !job || job->get_working_directory() == working_directory );
@@ -581,22 +600,24 @@ ptr<Environment> Scheduler::allocate_environment( ptr<Target> working_directory,
     if ( free_environments_.empty() )
     {
         const int DEFAULT_ENVIRONMENTS_GROW_BY = 16;
+        environments_.reserve( environments_.size() + DEFAULT_ENVIRONMENTS_GROW_BY );
         free_environments_.reserve( free_environments_.size() + DEFAULT_ENVIRONMENTS_GROW_BY );
         for ( int i = 0; i < DEFAULT_ENVIRONMENTS_GROW_BY; ++i )
         {
-            ptr<Environment> environment( new Environment(i, path::Path(""), build_tool_) );
-            free_environments_.push_back( environment );
+            unique_ptr<Environment> environment( new Environment(i, path::Path(""), build_tool_) );
+            free_environments_.push_back( environment.get() );
+            environments_.push_back( environment.release() );
         }
     }
 
-    ptr<Environment> environment = free_environments_.back();
+    Environment* environment = free_environments_.back();
     free_environments_.pop_back();
     environment->reset_directory_to_target( working_directory );
     environment->set_job( job );
     return environment;
 }
 
-void Scheduler::free_environment( ptr<Environment> environment )
+void Scheduler::free_environment( Environment* environment )
 {
     SWEET_ASSERT( environment );
     SWEET_ASSERT( std::find(free_environments_.begin(), free_environments_.end(), environment) == free_environments_.end() );
@@ -611,7 +632,7 @@ void Scheduler::free_environment( ptr<Environment> environment )
     environment->set_job( NULL );
 }
 
-void Scheduler::destroy_environment( ptr<Environment> environment )
+void Scheduler::destroy_environment( Environment* environment )
 {
     SWEET_ASSERT( environment );
 
@@ -643,19 +664,22 @@ bool Scheduler::dispatch_results()
     return jobs_ > 0;                 
 }
 
-void Scheduler::process_begin( ptr<Environment> environment )
+void Scheduler::process_begin( Environment* environment )
 {
     SWEET_ASSERT( environment );
-    build_tool_->get_script_interface()->push_environment( environment );
+    active_environments_.push_back( environment );
+    build_tool_->error_policy().push_errors();
 }
 
-int Scheduler::process_end( ptr<Environment> environment )
+int Scheduler::process_end( Environment* environment )
 {
     SWEET_ASSERT( environment );
+    SWEET_ASSERT( !active_environments_.empty() );
+    SWEET_ASSERT( active_environments_.back() == environment );
 
-    int errors = build_tool_->get_script_interface()->pop_environment();
-    LuaThreadState state = environment->get_environment_thread().get_state();    
-
+    active_environments_.pop_back();
+    int errors = build_tool_->error_policy().pop_errors();
+    LuaThreadState state = environment->get_environment_thread().get_state();
     if ( errors == 0 && state != lua::LUA_THREAD_ERROR )
     {
         if ( state == lua::LUA_THREAD_READY )
@@ -667,6 +691,5 @@ int Scheduler::process_end( ptr<Environment> environment )
     {
         destroy_environment( environment );
     }
-    
     return errors;
 }

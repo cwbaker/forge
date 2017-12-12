@@ -1,13 +1,7 @@
-//
-// Job.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_BUILD_TOOL_JOB_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_JOB_HPP_INCLUDED
 
 #include "declspec.hpp"
-#include <sweet/pointer/ptr.hpp>
 #include <string>
 
 namespace sweet
@@ -42,17 +36,14 @@ class Job
     public:
         Job( Target* target, int height );
 
-        ptr<Target> get_target() const;
-        ptr<Target> get_working_directory() const;
+        Target* get_target() const;
+        Target* get_working_directory() const;
         int get_height() const;
 
         void set_state( JobState state );
         JobState get_state() const;
         
         bool operator<( const Job& job ) const;
-
-    private:
-        void print_failed_dependencies( ptr<Target> target ) const;
 };
 
 }

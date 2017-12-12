@@ -1,26 +1,29 @@
 
-Executable "unit_test" {
-    libraries = {
-        "unit/libUnitTest"
-    };
+local settings = build.current_settings();
+for _, architecture in ipairs(settings.architectures) do 
+    Executable ("unit_test", architecture) {
+        libraries = {
+            "unit/libUnitTest"
+        };
 
-    Cxx {
-        "Main.cpp",
-        "TestAssertHandler.cpp",
-        "TestCheckMacros.cpp",
-        "TestChecks.cpp",
-        "TestCurrentTest.cpp",
-        "TestDeferredTestReporter.cpp",
-        "TestMemoryOutStream.cpp",
-        "TestTest.cpp",
-        "TestTestList.cpp",
-        "TestTestMacros.cpp",
-        "TestTestResults.cpp",
-        "TestTestRunner.cpp",
-        "TestTestSuite.cpp",
-        "TestTimeConstraint.cpp",
-        "TestTimeConstraintMacro.cpp",
-        "TestUnitTest.cpp",
-        "TestXmlTestReporter.cpp"
-    }
-}
+        Cxx (architecture) {
+            "Main.cpp",
+            "TestAssertHandler.cpp",
+            "TestCheckMacros.cpp",
+            "TestChecks.cpp",
+            "TestCurrentTest.cpp",
+            "TestDeferredTestReporter.cpp",
+            "TestMemoryOutStream.cpp",
+            "TestTest.cpp",
+            "TestTestList.cpp",
+            "TestTestMacros.cpp",
+            "TestTestResults.cpp",
+            "TestTestRunner.cpp",
+            "TestTestSuite.cpp",
+            "TestTimeConstraint.cpp",
+            "TestTimeConstraintMacro.cpp",
+            "TestUnitTest.cpp",
+            "TestXmlTestReporter.cpp"
+        };
+    };
+end

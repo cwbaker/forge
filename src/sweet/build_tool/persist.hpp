@@ -1,8 +1,3 @@
-//
-// persist.hpp
-// Copyright 2012 (c) Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_BUILD_TOOL_PERSIST_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_PERSIST_HPP_INCLUDED
 
@@ -109,7 +104,7 @@ template <class Archive> void Target::persist( Archive& archive )
 // @param target_prototype
 //  The TargetPrototype to save.
 */
-template <class Archive> void save( Archive& archive, int mode, const char* name, ptr<TargetPrototype>& target_prototype )
+template <class Archive> void save( Archive& archive, int mode, const char* name, TargetPrototype*& target_prototype )
 {
     SWEET_ASSERT( mode == sweet::persist::MODE_VALUE );
 
@@ -140,7 +135,7 @@ template <class Archive> void save( Archive& archive, int mode, const char* name
 // @param target_prototype
 //  The TargetPrototype to load into (assumed to be null).
 */
-template <class Archive> void load( Archive& archive, int mode, const char* name, ptr<TargetPrototype>& target_prototype )
+template <class Archive> void load( Archive& archive, int mode, const char* name, TargetPrototype*& target_prototype )
 {
     SWEET_ASSERT( mode == sweet::persist::MODE_VALUE );
     SWEET_ASSERT( !target_prototype );
@@ -168,7 +163,7 @@ template <class Archive> void load( Archive& archive, int mode, const char* name
 // @param target_prototype
 //  The TargetPrototype to load into (ignored).
 */
-template <class Archive> void resolve( Archive& archive, int mode, ptr<TargetPrototype>& target_prototype )
+template <class Archive> void resolve( Archive& archive, int mode, TargetPrototype*& target_prototype )
 {
 }
 

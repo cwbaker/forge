@@ -1,6 +1,6 @@
 //
 // Job.cpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2015 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -21,13 +21,13 @@ Job::Job( Target* target, int height )
     SWEET_ASSERT( height_ >= 0 );
 }
 
-ptr<Target> Job::get_target() const
+Target* Job::get_target() const
 {
     SWEET_ASSERT( target_ );
-    return target_->ptr_from_this();
+    return target_;
 }
 
-ptr<Target> Job::get_working_directory() const
+Target* Job::get_working_directory() const
 {
     SWEET_ASSERT( target_ );
     return target_->get_working_directory();

@@ -1,36 +1,83 @@
 
--- Provide python like syntax for string interpolation.
-getmetatable("").__mod = function( format, args )
-    if args then
-        if type(args) == "table" then
-            return string.format( format, unpack(args) );
-        else
-            return string.format( format, args );
-        end
-    else
-        return format;
+-- Provide printf().
+function printf( format, ... ) 
+    print( string.format(format, ...) );
+end
+
+-- Provide formatted assert().
+function assertf( condition, format, ... )
+    if not condition then 
+        assert( condition, string.format(format, ...) );
     end
+end
+
+-- Provide formatted error().
+function errorf( format, ... )
+    error( string.format(format, ...) );
 end
 
 build = {};
 
-require "build/default_settings";
-require "build/Generate";
-require "build/PrecompiledHeader";
-require "build/Directory";
-require "build/Copy";
-require "build/Cc";
-require "build/StaticLibrary";
-require "build/DynamicLibrary";
-require "build/Executable";
-require "build/CcScanner";
-require "build/commands";
+function build.default_create_function( target_prototype, ... )
+    local create = target_prototype.create;
+    if create then 
+        return create( target_prototype, ... );
+    else
+        local id = select( 1, ... );
+        local definition = select( 2, ... );
+        return target( id, target_prototype, definition );
+    end
+end
+
+function build.default_call_function( target, ... )
+    local call = target.call;
+    if call then 
+        call( target, ... );
+    else
+        local definition = select( 1, ... );
+        for _, value in ipairs(definition) do 
+            if type(value) == "string" then
+                target:add_dependency( file(value) );
+            elseif type(value) == "table" then
+                target:add_dependency( value );
+            end
+        end
+    end
+    return target;
+end
+
+function build.TargetPrototype( id, create_function )
+    local target_prototype = TargetPrototype { id };
+    getmetatable( target_prototype ).__call = build.default_create_function;
+    return target_prototype;
+end
+
+function build.Target( id, target_prototype, definition )
+    local target_ = target( id, target_prototype, definition );
+    getmetatable( target_ ).__call = build.default_call_function;
+    return target_;
+end
+
+function build.File( filename, target_prototype, definition )
+    local target_ = file( filename, target_prototype, definition );
+    getmetatable( target_ ).__call = build.default_call_function;
+    return target_;
+end
+
+function build.SourceFile( value, settings )
+    local target = value;
+    if type(target) == "string" then 
+        target = file( build.interpolate(value, settings) );
+        target:set_required_to_exist( true );
+    end
+    return target;
+end
 
 -- Perform per run initialization of the build system.
 function build.initialize( project_settings )
-    platform = platform or build.switch { operating_system(); windows = "msvc"; macosx = "llvmgcc" };
+    platform = platform or build.switch { operating_system(); windows = "msvc"; macosx = "clang" };
     variant = variant or "debug";
-    version = version or "%s %s %s" % { os.date("%Y.%m.%d.%H%M"), platform, variant };
+    version = version or ("%s %s %s"):format( os.date("%Y.%m.%d.%H%M"), platform, variant );
     environment = environment or "dev";
     goal = goal or "";
     jobs = jobs or 4;
@@ -58,11 +105,11 @@ function build.initialize( project_settings )
     setmetatable( settings, {__index = local_settings} );
 
     local platform_settings = settings.settings_by_platform[platform];
-    assert( platform_settings, "The platform '%s' is not supported" % platform );
+    assertf( platform_settings, "The platform '%s' is not supported", platform );
     build.merge_settings( settings, platform_settings );
 
     local variant_settings = settings.settings_by_variant[variant];
-    assert( variant_settings, "The variant '%s' is not supported" % variant );
+    assertf( variant_settings, "The variant '%s' is not supported", variant );
     build.merge_settings( settings, variant_settings );
 
     if settings.library_type == "static" then
@@ -73,7 +120,7 @@ function build.initialize( project_settings )
         error( string.format("The library type '%s' is not 'static' or 'dynamic'", tostring(settings.library_type)) );
     end
 
-    build.default_settings.cache = root( "%s/%s_%s.cache" % {settings.obj, platform, variant} );
+    build.default_settings.cache = root( ("%s/%s_%s.cache"):format(settings.obj, platform, variant) );
     _G.settings = settings;
     build.default_settings = default_settings;
     build.local_settings = local_settings;
@@ -125,35 +172,18 @@ end
 
 -- Visit a target by calling a member function "depend" if it has one or,
 -- if there is no "depend" function and the id of the target matches that
--- of a C/C++ source or header file, then scan it with the CcScanner.
+-- of a C, C++, Objective C, or Objective C++ source or header file, then 
+-- scan it with the CcScanner.
 function build.depend_visit( target )
     local fn = target.depend;
     if fn then
         fn( target );
-    elseif target:prototype() == nil and string.find(target:id(), ".+%.[chi]p?p?") then
-        scan( target, CcScanner );
+    elseif target:prototype() == nil then
+        local id = target:id();
+        if id:find(".+%.[chi]p?p?") or id:find(".+%.mm?") then
+            scan( target, CcScanner );
+        end
     end
-end
-
--- Determine whether or not to load or build based on whether or not a 
--- settings table has platforms and variants fields that match the current
--- platform(s) and/or variant(s).
---
--- @return
---  True if \e target should be built otherwise false.
-function build.built_for_platform_and_variant( settings )
-    function contains( value, values )
-        for _, v in ipairs(values) do
-            if v == value then
-                return true;
-            end
-        end        
-        return false;
-    end
-    return 
-        (platform == "" or settings.platforms == nil or contains(platform, settings.platforms)) and 
-        (variant == "" or settings.variants == nil or contains(variant, settings.variants))
-    ;
 end
 
 -- Execute command with arguments and optional filter and raise an error if 
@@ -169,16 +199,12 @@ end
 function build.shell( arguments, filter )
     if operating_system() == "windows" then
         local cmd = "C:/windows/system32/cmd.exe";
-        local result = execute( cmd, [[cmd /c "%s"]] % arguments, filter );
-        if result ~= 0 then
-            error( "[[%s]] failed (result=%d)" % {arguments, result} );
-        end
+        local result = execute( cmd, ('cmd /c "%s"'):format(arguments), filter );
+        assertf( result == 0, "[[%s]] failed (result=%d)", arguments, result );
     else
         local sh = "/bin/sh";
-        local result = execute( sh, [[sh -c "%s"]] % arguments, filter );
-        if result ~= 0 then
-            error( "[[%s]] failed (result=%d)" % {arguments, tonumber(result)} );
-        end
+        local result = execute( sh, ('sh -c "%s"'):format(arguments), filter );
+        assertf( result == 0, "[[%s]] failed (result=%d)", arguments, tonumber(result) );
     end
 end
 
@@ -230,7 +256,7 @@ function build.serialize( file, value, level )
         for k, v in pairs(value) do
             if type(k) == "string" then
                 indent( level + 1 );
-                file:write( "%s = " % k );
+                file:write( ("%s = "):format(k) );
                 build.serialize( file, v, level + 1 );
                 file:write( ";\n" );
             end
@@ -243,7 +269,7 @@ end
 -- Save a settings table to a file.
 function build.save_settings( settings, filename )
     local file = io.open( filename, "wb" );
-    assert( file, "Opening %s to write settings failed" % filename );
+    assertf( file, "Opening %s to write settings failed", filename );
     file:write( "\nreturn " );
     build.serialize( file, settings, 0 );
     file:write( "\n" );
@@ -283,27 +309,35 @@ function build.inherit_settings( target, settings )
     return inherited;
 end
 
--- Load a target.
-function build.load_target( target )
-    local inherited = build.inherit_settings( target, build.settings );
-    for _, value in ipairs(target) do
-        if type(value) == "table" then
-            build.inherit_settings( value, target.settings );
+-- Merge fields from /source/ to /destination/.
+function build.merge( destination, source )
+    for k, v in pairs(source) do
+        if type(k) == "string" then
+            if type(v) == "table" then
+                destination[k] = build.append( destination[k], v );
+            else
+                destination[k] = v;
+            end
         end
     end
-    return inherited;
+    return destination;
 end
 
--- Load the dependency graph from the file specified by /settings.cache/.
-function build.load()
+-- Load the dependency graph from the file specified by /settings.cache/ and
+-- running depend and bind passes over the target specified by /goal/ and its
+-- dependencies.
+function build.load( goal )
     assert( initialize and type(initialize) == "function", "The 'initialize' function is not defined" );
     assert( buildfiles and type(buildfiles) == "function", "The 'buildfiles' function is not defined" );
 
+    local initialize_start = ticks();
     if not build.initialized then
         initialize();
         build.initialized = true;
     end
+    local initialize_finish = ticks();
 
+    local load_start = initialize_finish;
     local cache_target = load_binary( settings.cache, initial(goal) );
     if cache_target == nil or cache_target:is_outdated() or build.local_settings.updated then
         clear();
@@ -316,28 +350,36 @@ function build.load()
         preorder( build.visit("static_depend"), root_target );
 
         cache_target = find_target( settings.cache );
-        assert( cache_target, "No cache target found at '%s' after loading buildfiles" % settings.cache );
+        assertf( cache_target, "No cache target found at '%s' after loading buildfiles", settings.cache );
         local script = build.script;
         cache_target:add_dependency( file(root("build.lua")) );
         cache_target:add_dependency( file(root("local_settings.lua")) );
         cache_target:add_dependency( file(script("build/default_settings")) );
+        cache_target:add_dependency( file(script("build/commands")) );
         cache_target:add_dependency( file(script("build/Generate")) );
-        cache_target:add_dependency( file(script("build/PrecompiledHeader")) );
         cache_target:add_dependency( file(script("build/Directory")) );
         cache_target:add_dependency( file(script("build/Copy")) );
-        cache_target:add_dependency( file(script("build/StaticLibrary")) );
-        cache_target:add_dependency( file(script("build/DynamicLibrary")) );
-        cache_target:add_dependency( file(script("build/Executable")) );
-        cache_target:add_dependency( file(script("build/CcScanner")) );
-        cache_target:add_dependency( file(script("build/commands")) );
 
         mark_implicit_dependencies();
     end
+    local load_finish = ticks();
 
+    local depend_start = load_finish;
     local all = find_target( initial(goal) );
-    assert( all, "No target found at '"..tostring(initial(goal)).."'" );
+    assert( all, ("No target found at '%s'"):format(tostring(initial(goal))) );
     preorder( build.depend_visit, all );
+    local depend_finish = ticks();
+
+    local bind_start = depend_finish;
     bind( all );
+    local bind_finish = ticks();
+
+    return 
+        initialize_finish - initialize_start, 
+        load_finish - load_start, 
+        depend_finish - depend_start, 
+        bind_finish - bind_start
+    ;
 end
 
 -- Save the dependency graph to the file specified by /settings.cache/.
@@ -359,7 +401,7 @@ function build.script( name )
             return filename;
         end
     end
-    return nil;
+    errorf( "Script '%s' not found", filename );
 end
 
 -- Strip the extension from a path (e.g. "foo.txt" -> "foo" and "bar/foo.txt"
@@ -410,156 +452,27 @@ function build.current_settings( settings )
     return settings;
 end
 
-build.level = 0;
-
-function build.begin_target()
-    local level = build.level + 1;
-    build.level = level;
-    return level;
-end
-
-function build.end_target( create )
-    local level = build.level - 1;
-    build.level = level;    
-
-    if level == 0 then
-        return build.expand_target( create );
-    else
-        return create;
-    end
-end
-
-function build.expand_target( create, ... )
-    return create( ... );
-end
-
-function build.add_unit_dependencies( definition, prototype )
-    return function( architecture )
-        local unit;
-        local settings = build.push_settings( definition.settings );
-        if build.built_for_platform_and_variant(settings) then
-            unit = target( "", prototype, build.copy(definition) );
-            unit.settings = settings;
-            unit.architecture = architecture;
-
-            for _, value in ipairs(unit) do
-                local source_file = file( value );
-                source_file:set_required_to_exist( true );
-                source_file.unit = unit;
-                source_file.settings = settings;
-
-                local object = file( "%s/%s/%s" % {obj_directory(source_file), architecture, obj_name(value)} );
-                object.source = value;
-                object:add_dependency( source_file );
-                object:add_dependency( Directory("%s/%s" % {obj_directory(source_file), architecture}) );
-                unit:add_dependency( object );
-            end
-        end
-        build.pop_settings();        
-        return unit;
-    end
-end
-
-function build.add_library_dependencies( target )
-    local libraries = {};
-    if platform ~= "" and target.libraries then
-        for _, value in ipairs(target.libraries) do
-            local library = find_target( root(module_name(value, target.architecture)) );
-            assert( library, "Failed to find library '%s' for '%s'" % {value, relative(target:path(), root())} );
-            if build.built_for_platform_and_variant(library.settings) then
-                table.insert( libraries, library );
-                target:add_dependency( library );
-            end
-        end
-    end
-    target.libraries = libraries;
-end
-
-function build.add_jar_dependencies( target )
-    local jars = {};
-    if platform ~= "" and target.jars then
-        for _, value in ipairs(target.jars) do
-            local jar = find_target( root("%s.jar" % value) );
-            assert( jar, "Failed to find JAR '%s' for '%s'" % {value, relative(target:path(), root())} );
-            if build.built_for_platform_and_variant(jar.settings) then
-                table.insert( jars, jar );
-                target:add_dependency( jar );
-            end
-        end
-        target.jars = jars;
-    end
-end
-
-function build.add_module_dependencies( target, filename, architecture, settings )
-    if build.built_for_platform_and_variant(settings) then
-        local working_directory = working_directory();
-        working_directory:add_dependency( target );
-
-        local root_target = find_target( root() );
-        assert( root_target , "No root target found at '%s'" % tostring(root()) );
-        root_target:add_dependency( target );
-
-        target.settings = settings;
-        target.architecture = architecture;
-        target:set_filename( filename );
-        target:add_dependency( Directory(branch(filename)) );
-        if target:prototype() == DynamicLibraryPrototype and operating_system() == "windows" then 
-            target:add_dependency( Directory(target.settings.lib) );
-        end
-
-        for _, dependency in ipairs(target) do 
-            if type(dependency) == "function" then
-                dependency = build.expand_target( dependency, architecture );
-            end
-            if dependency then
-                target:add_dependency( dependency );
-                dependency.module = target;
-            end
+function build.add_library_dependencies( executable, libraries )
+    if libraries and platform ~= "" then
+        local architecture = executable.architecture;
+        for _, value in ipairs(libraries) do
+            local library = ("%s_%s"):format( value, architecture );
+            executable:add_dependency( target(root(library)) );
         end
     end
 end
 
-function build.add_package_dependencies( target, filename, dependencies )
-    if build.built_for_platform_and_variant(target) then
-        local working_directory = working_directory();
-        working_directory:add_dependency( target );
-
-        local root_target = find_target( root() );
-        assert( root_target , "No root target found at '%s'" % tostring(root()) );
-        root_target:add_dependency( target );
-
-        target.settings = build.current_settings();
-        target:set_filename( filename );
-        target:add_dependency( Directory(branch(filename)) );
-
-        for _, dependency in ipairs(dependencies) do 
-            if type(dependency) == "function" then
-                dependency = build.expand_target( dependency );
-            end
-            if dependency then
-                for _, dependency_target in ipairs(dependency) do 
-                    working_directory:remove_dependency( dependency_target );
-                    target:add_dependency( dependency_target );
-                    dependency_target.module = target;
-                end
-            end
+function build.add_jar_dependencies( jar, jars )
+    if jars and platform ~= "" then
+        for _, value in ipairs(jars) do
+            jar:add_dependency( target(root(value)) );
         end
     end
 end
 
-function build.expand( values )
-    if type(values) == "string" then
-        local result = {};
-        for value in string.gmatch(values, "[_/%.%w]+") do 
-            table.insert( result, value );
-        end
-        return result;
-    else
-        return values;
-    end
-end
-
+-- Append values from /value/ to /values/.
 function build.append( values, value )
+    values = values or {};
     if type(value) == "table" then 
         for _, other_value in ipairs(value) do 
             table.insert( values, other_value );
@@ -567,6 +480,7 @@ function build.append( values, value )
     else
         table.insert( values, value );
     end
+    return values;
 end
 
 function build.copy( value )
@@ -577,52 +491,44 @@ function build.copy( value )
     return copied_table;
 end
 
-function build.Pushd( directory )
-    pushd( directory );
-    return function()
-        pushd( directory );
-        return nil;
-    end
+function build.gen_directory( target )
+    return string.format( "%s/%s", target.settings.gen, relative(target:get_working_directory():path(), root()) );
 end
 
-function build.Popd()
-    popd();
-    return function()
-        popd();
-        return nil;
-    end
+function build.classes_directory( target )
+    return string.format( "%s/%s", target.settings.classes, relative(target:get_working_directory():path(), root()) );
 end
 
 function build.obj_directory( target )
-    return "%s/%s_%s/%s" % { target.settings.obj, platform, variant, relative(target:get_working_directory():path(), root()) };
+    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, relative(target:get_working_directory():path(), root()) );
 end;
 
 function build.cc_name( name )
-    return "%s.c" % basename( name );
+    return ("%s.c"):format( basename(name) );
 end;
 
 function build.cxx_name( name )
-    return "%s.cpp" % basename( name );
+    return ("%s.cpp"):format( basename(name) );
 end;
 
 function build.obj_name( name, architecture )
-    return "%s.o" % basename( name );
+    return ("%s.o"):format( basename(name) );
 end;
 
 function build.lib_name( name, architecture )
-    return "lib%s_%s_%s.a" % { name, architecture, variant };
+    return ("lib%s_%s.a"):format( name, architecture );
 end;
 
 function build.dll_name( name )
-    return "%s.dylib" % { name };
+    return ("%s.dylib"):format( name );
 end;
 
 function build.exe_name( name, architecture )
-    return "%s_%s" % { name, architecture };
+    return ("%s_%s"):format( name, architecture );
 end;
 
 function build.module_name( name, architecture )
-    return "%s_%s" % { name, architecture };
+    return ("%s_%s"):format( name, architecture );
 end
 
 obj_directory = build.obj_directory;
@@ -633,3 +539,9 @@ lib_name = build.lib_name;
 dll_name = build.dll_name;
 exe_name = build.exe_name;
 module_name = build.module_name;
+
+require "build.default_settings";
+require "build.commands";
+require "build.Generate";
+require "build.Directory";
+require "build.Copy";

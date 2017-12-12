@@ -1,13 +1,7 @@
-//
-// Executor.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_BUILD_TOOL_EXECUTOR_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_EXECUTOR_HPP_INCLUDED
 
 #include "declspec.hpp"
-#include <sweet/pointer/ptr.hpp>
 #include <sweet/thread/Condition.hpp>
 #include <sweet/thread/Mutex.hpp>
 #include <vector>
@@ -52,7 +46,7 @@ class Executor
     thread::Condition jobs_ready_condition_; ///< The condition attribute that is used to notify threads that there are jobs ready to be processed.
     std::deque<std::function<void ()> > jobs_; ///< The functions to be executed in the thread pool.
     int maximum_parallel_jobs_; ///< The maximum number of parallel jobs to allow.
-    std::vector<ptr<thread::Thread> > threads_; ///< The thread pool of Threads that process the Commands.
+    std::vector<thread::Thread*> threads_; ///< The thread pool of Threads that process the Commands.
     bool done_; ///< Whether or not this Executor has finished processing (indicates to the threads in the thread pool that they should return).
 
     public:
@@ -60,14 +54,14 @@ class Executor
         ~Executor();
         void set_maximum_parallel_jobs( int maximum_parallel_jobs );
         int get_maximum_parallel_jobs() const;
-        void execute( const std::string& command, const std::string& command_line, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Environment> environment );
-        void scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment );
+        void execute( const std::string& command, const std::string& command_line, Scanner* scanner, Arguments* arguments, Environment* environment );
+        void scan( Target* target, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment );
 
     private:
         static int thread_main( void* context );
         void thread_process();
-        void thread_execute( ptr<process::Process> process, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment );
-        void thread_scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment );
+        void thread_execute( process::Process* process, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment );
+        void thread_scan( Target* target, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment );
         void start();
         void stop();
 };

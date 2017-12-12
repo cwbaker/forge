@@ -1,8 +1,3 @@
-//
-// Error.hpp
-// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_BUILD_TOOL_ERROR_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_ERROR_HPP_INCLUDED
 

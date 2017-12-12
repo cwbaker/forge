@@ -1,6 +1,6 @@
 //
 // Error.cpp
-// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2015 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"

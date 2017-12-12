@@ -1,17 +1,20 @@
 
 buildfile "error_test/error_test.build";
 
-Library "error" {
-    libraries = {
-        "sweet/assert/assert"
-    };
+local settings = build.current_settings();
+for _, architecture in ipairs(settings.architectures) do 
+    Library ("error", architecture) {
+        libraries = {
+            "sweet/assert/assert"
+        };
 
-    Cxx {
-        pch = "stdafx.hpp";
-        "boost_integration.cpp",
-        "dinkumware_integration.cpp",
-        "Error.cpp",
-        "ErrorPolicy.cpp",
-        "functions.cpp"
-    }
-}
+        Cxx (architecture) {
+            precompiled_header = "stdafx.hpp";
+            "boost_integration.cpp",
+            "dinkumware_integration.cpp",
+            "Error.cpp",
+            "ErrorPolicy.cpp",
+            "functions.cpp"
+        };
+    };
+end

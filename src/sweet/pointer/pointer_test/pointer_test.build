@@ -1,15 +1,18 @@
 
-Executable "pointer_test" {
-    libraries = {
-        "sweet/pointer/pointer",
-        "sweet/error/error",
-        "sweet/assert/assert",
-        "unit/libUnitTest"
-    };
+local settings = build.current_settings();
+for _, architecture in ipairs(settings.architectures) do
+    Executable ("pointer_test", architecture) {
+        libraries = {
+            "sweet/pointer/pointer",
+            "sweet/error/error",
+            "sweet/assert/assert",
+            "unit/libUnitTest"
+        };
 
-    Cxx {
-        "main.cpp",
-        "TestPointer.cpp",
-        "TestPointerCast.cpp"
+        Cxx (architecture) {
+            "main.cpp",
+            "TestPointer.cpp",
+            "TestPointerCast.cpp"
+        };
     };
-}
+end

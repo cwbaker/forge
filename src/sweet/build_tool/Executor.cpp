@@ -1,6 +1,6 @@
 //
 // Executor.cpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) 2008 - 2015 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -20,6 +20,7 @@ using std::max;
 using std::find;
 using std::string;
 using std::vector;
+using std::unique_ptr;
 using namespace sweet;
 using namespace sweet::process;
 using namespace sweet::build_tool;
@@ -52,7 +53,7 @@ int Executor::get_maximum_parallel_jobs() const
     return maximum_parallel_jobs_;
 }
 
-void Executor::execute( const std::string& command, const std::string& command_line, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Environment> environment )
+void Executor::execute( const std::string& command, const std::string& command_line, Scanner* scanner, Arguments* arguments, Environment* environment )
 {
     SWEET_ASSERT( !command.empty() );
     SWEET_ASSERT( environment );
@@ -61,13 +62,13 @@ void Executor::execute( const std::string& command, const std::string& command_l
     {
         start();
         thread::ScopedLock lock( jobs_mutex_ );
-        ptr<process::Process> process( new Process(command.c_str(), command_line.c_str(), environment->directory().string().c_str(), PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR) );
+        Process* process = new Process( command.c_str(), command_line.c_str(), environment->directory().string().c_str(), PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR );
         jobs_.push_back( std::bind(&Executor::thread_execute, this, process, scanner, arguments, environment->working_directory(), environment) );
         jobs_ready_condition_.notify_all();
     }
 }
 
-void Executor::scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment )
+void Executor::scan( Target* target, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment )
 {
     SWEET_ASSERT( target );
     SWEET_ASSERT( working_directory );
@@ -112,7 +113,7 @@ void Executor::thread_process()
     }
 }
 
-void Executor::thread_execute( ptr<Process> process, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment )
+void Executor::thread_execute( Process* process, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment )
 {
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( process );
@@ -161,18 +162,20 @@ void Executor::thread_execute( ptr<Process> process, ptr<Scanner> scanner, ptr<A
         }
 
         process->wait();
-        build_tool_->get_scheduler()->push_execute_finished( process->exit_code(), environment );
+        build_tool_->get_scheduler()->push_execute_finished( process->exit_code(), environment, arguments );
+        delete process;
     }
 
     catch ( const std::exception& exception )
     {
         Scheduler* scheduler = build_tool_->get_scheduler();
         scheduler->push_error( exception, environment );
-        scheduler->push_execute_finished( EXIT_FAILURE, environment );
+        scheduler->push_execute_finished( EXIT_FAILURE, environment, arguments );
+        delete process;
     }
 }
 
-void Executor::thread_scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment )
+void Executor::thread_scan( Target* target, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment )
 {
     SWEET_ASSERT( target );
     SWEET_ASSERT( scanner );
@@ -257,8 +260,8 @@ void Executor::start()
         threads_.reserve( maximum_parallel_jobs_ );
         for ( size_t i = 0; i < maximum_parallel_jobs_; ++i )
         {
-            ptr<thread::Thread> thread( new thread::Thread(&Executor::thread_main, this) );
-            threads_.push_back( thread );
+            unique_ptr<thread::Thread> thread( new thread::Thread(&Executor::thread_main, this) );
+            threads_.push_back( thread.release() );
         }
     }
 }
@@ -277,11 +280,11 @@ void Executor::stop()
             jobs_ready_condition_.notify_all();
         }
 
-        for ( vector<ptr<thread::Thread> >::iterator i = threads_.begin(); i != threads_.end(); ++i )
+        for ( vector<thread::Thread*>::iterator i = threads_.begin(); i != threads_.end(); ++i )
         {
             try
             {
-                thread::Thread* thread = i->get();
+                thread::Thread* thread = *i;
                 SWEET_ASSERT( thread );
                 thread->join( 2000 );
             }
@@ -292,6 +295,10 @@ void Executor::stop()
             }
         }
         
-        threads_.clear();
+        while ( !threads_.empty() )
+        {
+            delete threads_.back();
+            threads_.pop_back();
+        }
     }
 }

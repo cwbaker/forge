@@ -34,7 +34,7 @@ end
 function QtMocPrototype.build( qtmoc )
     if not exists(qtmoc:get_filename()) or qtmoc:is_outdated() then
         local moc = build.settings.qt.moc;
-        build.system( moc, [[moc %s -o %s]] % {qtmoc[1], relative(qtmoc:get_filename())} );
+        build.system( moc, ('moc %s -o %s'):format(qtmoc[1], relative(qtmoc:get_filename())) );
     end
 end
 
@@ -47,7 +47,7 @@ function QtMoc( definition )
 
     local cxx_files = {};
     for _, value in ipairs(definition) do
-        local cxx_file = "moc_%s.cpp" % basename( value );
+        local cxx_file = ("moc_%s.cpp"):format( basename(value) );
         table.insert( cxx_files, cxx_file );
 
         local qtmoc = target( cxx_file, QtMocPrototype, {value} );

@@ -1,15 +1,18 @@
 
 buildfile "process_test/process_test.build";
 
-Library "process" {
-    libraries = {
-        "sweet/assert/assert",
-        "sweet/error/error"
-    };
+local settings = build.current_settings();
+for _, architecture in ipairs(settings.architectures) do
+    Library ("process", architecture) {
+        libraries = {
+            "sweet/assert/assert",
+            "sweet/error/error"
+        };
 
-    Cxx {
-        pch = "stdafx.hpp";
-        "Error.cpp",
-        "Process.cpp"
+        Cxx (architecture) {
+            precompiled_header = "stdafx.hpp";
+            "Error.cpp",
+            "Process.cpp"
+        };
     };
-}
+end

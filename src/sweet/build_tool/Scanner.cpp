@@ -1,11 +1,13 @@
 //
 // Scanner.cpp
-// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2015 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include "Scanner.hpp"
 #include "Pattern.hpp"
+#include "ScriptInterface.hpp"
+#include "BuildTool.hpp"
 #include <sweet/assert/assert.hpp>
 #include <algorithm>
 
@@ -13,6 +15,15 @@ using std::max;
 using namespace sweet;
 using namespace sweet::build_tool;
 
+/**
+// Constructor.
+//
+// @param patterns_reserve
+//  How many Patterns to reserve space for in this Scanner.
+//
+// @param build_tool
+//  The BuildTool that this Scanner is part of (assumed not null).
+*/
 Scanner::Scanner( unsigned int patterns_reserve, BuildTool* build_tool )
 : build_tool_( build_tool ),
   initial_lines_( 0 ),
@@ -22,6 +33,14 @@ Scanner::Scanner( unsigned int patterns_reserve, BuildTool* build_tool )
 {
     SWEET_ASSERT( build_tool_ );
     patterns_.reserve( patterns_reserve );
+}
+
+/**
+// Destructor.
+*/
+Scanner::~Scanner()
+{
+    build_tool_->get_script_interface()->destroy_scanner( this );    
 }
 
 /**

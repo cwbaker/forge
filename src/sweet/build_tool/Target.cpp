@@ -1,6 +1,6 @@
 //
 // Target.cpp
-// Copyright (c) 2007 - 2013 Charles Baker.  All rights reserved.
+// Copyright (c) 2007 - 2015 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -22,12 +22,11 @@ using namespace sweet::build_tool;
 // Constructor.
 */
 Target::Target()
-: pointer::enable_ptr_from_this<Target>(),
-  id_(),
+: id_(),
   path_(),
   branch_(),
   graph_( NULL ),
-  prototype_(),
+  prototype_( NULL ),
   timestamp_( 0 ),
   last_write_time_( 0 ),
   last_scan_time_( 0 ),
@@ -38,8 +37,8 @@ Target::Target()
   referenced_by_script_( false ),
   required_to_exist_( false ),
   filename_(),
-  working_directory_(),
-  parent_(),
+  working_directory_( NULL ),
+  parent_( NULL ),
   targets_(),
   dependencies_(),
   explicit_dependencies_( 0 ),
@@ -61,12 +60,11 @@ Target::Target()
 //  The Graph that this Target is part of.
 */
 Target::Target( const std::string& id, Graph* graph )
-: pointer::enable_ptr_from_this<Target>(),
-  id_( id ),
+: id_( id ),
   path_(),
   branch_(),
   graph_( graph ),
-  prototype_(),
+  prototype_( NULL ),
   timestamp_( 0 ),
   last_write_time_( 0 ),
   last_scan_time_( 0 ),
@@ -77,8 +75,8 @@ Target::Target( const std::string& id, Graph* graph )
   referenced_by_script_( false ),
   required_to_exist_( false ),
   filename_(),
-  working_directory_(),
-  parent_(),
+  working_directory_( NULL ),
+  parent_( NULL ),
   targets_(),
   dependencies_(),
   explicit_dependencies_( 0 ),
@@ -89,6 +87,20 @@ Target::Target( const std::string& id, Graph* graph )
   anonymous_( 0 )
 {
     SWEET_ASSERT( graph_ );
+}
+
+Target::~Target()
+{
+    while ( !targets_.empty() )
+    {
+        delete targets_.back();
+        targets_.pop_back();
+    }
+
+    if ( graph_ )
+    {
+        graph_->destroy_target( this );
+    }
 }
 
 /**
@@ -106,15 +118,15 @@ void Target::recover( Graph* graph )
 
     if ( referenced_by_script_ )
     {
-        graph->get_build_tool()->get_script_interface()->recover_target( ptr_from_this() );
-        graph->get_build_tool()->get_script_interface()->update_target( ptr_from_this(), get_prototype() );
+        graph->get_build_tool()->get_script_interface()->recover_target( this );
+        graph->get_build_tool()->get_script_interface()->update_target( this, get_prototype() );
     }
 
-    for ( vector<ptr<Target> >::const_iterator i = targets_.begin(); i != targets_.end(); ++i )
+    for ( vector<Target*>::const_iterator i = targets_.begin(); i != targets_.end(); ++i )
     {
-        Target* target = i->get();
+        Target* target = *i;
         SWEET_ASSERT( target );
-        target->parent_ = ptr_from_this();
+        target->parent_ = this;
         target->recover( graph );
     }
 }
@@ -157,9 +169,9 @@ const std::string& Target::get_branch() const
 {
     if ( branch_.empty() )
     {
-        vector<ptr<Target> > targets_to_root;
+        vector<Target*> targets_to_root;
 
-        ptr<Target> parent = get_parent();
+        Target* parent = get_parent();
         while ( parent )
         {
             targets_to_root.push_back( parent );
@@ -168,7 +180,7 @@ const std::string& Target::get_branch() const
 
         if ( !targets_to_root.empty() )
         {
-            vector<ptr<Target> >::const_reverse_iterator i = targets_to_root.rbegin();
+            vector<Target*>::const_reverse_iterator i = targets_to_root.rbegin();
             ++i;
 
             if ( i == targets_to_root.rend() || (*i)->get_id().find(path::BasicPathTraits<char>::DRIVE) == std::string::npos )
@@ -178,7 +190,7 @@ const std::string& Target::get_branch() const
 
             while ( i != targets_to_root.rend() )
             {
-                Target* target = i->get();
+                Target* target = *i;
                 SWEET_ASSERT( target != 0 );
                 branch_ += target->get_id() + "/";
                 ++i;
@@ -208,7 +220,7 @@ Graph* Target::get_graph() const
 //  The TargetPrototype to set this Target to have or null to set this Target to have
 //  no TargetPrototype.
 */
-void Target::set_prototype( ptr<TargetPrototype> target_prototype )
+void Target::set_prototype( TargetPrototype* target_prototype )
 {
     SWEET_ASSERT( !prototype_ || prototype_ == target_prototype );    
     if ( !prototype_ || prototype_ != target_prototype )
@@ -216,7 +228,7 @@ void Target::set_prototype( ptr<TargetPrototype> target_prototype )
         prototype_ = target_prototype;
         if ( is_referenced_by_script() )
         {
-            graph_->get_build_tool()->get_script_interface()->update_target( ptr_from_this(), target_prototype );
+            graph_->get_build_tool()->get_script_interface()->update_target( this, target_prototype );
         }
     }
 }
@@ -227,7 +239,7 @@ void Target::set_prototype( ptr<TargetPrototype> target_prototype )
 // @return
 //  The TargetPrototype or null if this Target has no TargetPrototype.
 */
-ptr<TargetPrototype> Target::get_prototype() const
+TargetPrototype* Target::get_prototype() const
 {
     return prototype_;
 }
@@ -548,7 +560,7 @@ const std::string& Target::get_filename() const
 //  The Target to set as this Target's working directory or null to set this
 //  Target to use the root Target as its working directory.
 */
-void Target::set_working_directory( ptr<Target> target )
+void Target::set_working_directory( Target* target )
 {
     working_directory_ = target;
 }
@@ -560,9 +572,9 @@ void Target::set_working_directory( ptr<Target> target )
 //  The relative parent of this Target or null if this Target doesn't have a
 //  relative parent.
 */
-ptr<Target> Target::get_working_directory() const
+Target* Target::get_working_directory() const
 {
-    return working_directory_.lock();
+    return working_directory_;
 }
 
 /**
@@ -571,7 +583,7 @@ ptr<Target> Target::get_working_directory() const
 // @param target
 //  The Target to make a parent of this Target.
 */
-void Target::set_parent( ptr<Target> target )
+void Target::set_parent( Target* target )
 {
     parent_ = target;
 }
@@ -582,9 +594,9 @@ void Target::set_parent( ptr<Target> target )
 // @return
 //  The Target that is a parent of this Target.
 */
-ptr<Target> Target::get_parent() const
+Target* Target::get_parent() const
 {
-    return parent_.lock();
+    return parent_;
 }
 
 /**
@@ -600,10 +612,10 @@ ptr<Target> Target::get_parent() const
 // @param this_target
 //  This Target.
 */
-void Target::add_target( ptr<Target> target, ptr<Target> this_target )
+void Target::add_target( Target* target, Target* this_target )
 {
     SWEET_ASSERT( target );
-    SWEET_ASSERT( this_target.get() == this );
+    SWEET_ASSERT( this_target == this );
     SWEET_ASSERT( std::find(targets_.begin(), targets_.end(), target) == targets_.end() );
     SWEET_ASSERT( target->get_id().empty() || !find_target_by_id(target->get_id()) );
     SWEET_ASSERT( !target->get_parent() );
@@ -621,14 +633,14 @@ void Target::add_target( ptr<Target> target, ptr<Target> this_target )
 // @return
 //  The Target or null if no matching Target could be found.
 */
-ptr<Target> Target::find_target_by_id( const std::string& id ) const
+Target* Target::find_target_by_id( const std::string& id ) const
 {
-    vector<ptr<Target> >::const_iterator i = targets_.begin();
+    vector<Target*>::const_iterator i = targets_.begin();
     while ( i != targets_.end() && (*i)->get_id() != id )
     {
         ++i;
     }
-    return i != targets_.end() ? *i : ptr<Target>();
+    return i != targets_.end() ? *i : NULL;
 }
 
 /**
@@ -637,7 +649,7 @@ ptr<Target> Target::find_target_by_id( const std::string& id ) const
 // @return
 //  The Targets.
 */
-const std::vector<ptr<Target> >& Target::get_targets() const
+const std::vector<Target*>& Target::get_targets() const
 {
     return targets_;
 }
@@ -667,14 +679,14 @@ const std::vector<ptr<Target> >& Target::get_targets() const
 // @param target
 //  The Target to add as a dependency.
 */
-void Target::add_dependency( ptr<Target> target )
+void Target::add_dependency( Target* target )
 {
-    if ( target && target.get() != this )
+    if ( target && target != this )
     {
         SWEET_ASSERT( target->get_graph() == get_graph() );
         if ( !is_dependency(target) )
         {
-            dependencies_.push_back( target.get() );
+            dependencies_.push_back( target );
             bound_to_dependencies_ = false;
             if ( !graph_->implicit_dependencies() )
             {
@@ -699,16 +711,15 @@ void Target::add_dependency( ptr<Target> target )
 // @param target
 //  The Target to remove as a dependency.
 */
-void Target::remove_dependency( ptr<Target> target )
+void Target::remove_dependency( Target* target )
 {
-    if ( target && target.get() != this )
+    if ( target && target != this )
     {
         SWEET_ASSERT( target->get_graph() == get_graph() );
-        vector<Target*>::iterator i = find( dependencies_.begin(), dependencies_.end(), target.get() );
+        vector<Target*>::iterator i = find( dependencies_.begin(), dependencies_.end(), target );
         if ( i != dependencies_.end() )
         {
-            swap( *i, dependencies_.back() );
-            dependencies_.pop_back();
+            dependencies_.erase( i );
         }
     }
 }
@@ -735,10 +746,10 @@ void Target::clear_implicit_dependencies()
 // @return
 //  True if this Target is a dependency otherwise false.
 */
-bool Target::is_dependency( ptr<Target> target ) const
+bool Target::is_dependency( Target* target ) const
 {
     SWEET_ASSERT( target && target->get_graph() == get_graph() );
-    return target && std::find( dependencies_.begin(), dependencies_.end(), target.get() ) != dependencies_.end();
+    return target && std::find( dependencies_.begin(), dependencies_.end(), target ) != dependencies_.end();
 }
 
 /**

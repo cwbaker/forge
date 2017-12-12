@@ -1,13 +1,7 @@
-//
-// Scheduler.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_BUILD_TOOL_SCHEDULER_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_SCHEDULER_HPP_INCLUDED
 
 #include "declspec.hpp"
-#include <sweet/pointer/ptr.hpp>
 #include <sweet/thread/Condition.hpp>
 #include <sweet/thread/Mutex.hpp>
 #include <sweet/path/Path.hpp>
@@ -44,7 +38,9 @@ class BuildTool;
 class Scheduler
 {
     BuildTool* build_tool_; ///< The BuildTool that this Scheduler is part of.
-    std::vector<ptr<Environment> > free_environments_; ///< The Environments that are free and waiting to be assigned a Job.
+    std::vector<Environment*> environments_; ///< The currently allocated Environments.
+    std::vector<Environment*> free_environments_; ///< The Environments that are free and waiting to be assigned a Job.
+    std::vector<Environment*> active_environments_; ///< The stack of Environments that are currently executing Lua scripts.
     thread::Mutex results_mutex_; ///< The mutex that ensures exclusive access to the results queue.
     thread::Condition results_condition_; ///< The Condition that is used to wait for results.
     std::deque<std::function<void()> > results_; ///< The functions to be executed as a result of jobs processing in the thread pool.
@@ -65,34 +61,38 @@ class Scheduler
         void execute( const char* start, const char* finish );        
         void buildfile( const path::Path& path );
         void call( const path::Path& path, const std::string& function );
-        void preorder_visit( const lua::LuaValue& function, ptr<Target> target );
+        void preorder_visit( const lua::LuaValue& function, Target* target );
         void postorder_visit( const lua::LuaValue& function, Job* job );
-        void execute_finished( int exit_code, ptr<Environment> environment );
-        void scan_finished( ptr<Arguments> arguments );
-        void output( const std::string& output, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory );
-        void match( const Pattern* pattern, ptr<Target> target, const std::string& match, ptr<Arguments> arguments, ptr<Target> working_directory );
-        void error( const std::string& what, ptr<Environment> environment );
+        void execute_finished( int exit_code, Environment* environment, Arguments* arguments );
+        void scan_finished( Arguments* arguments );
+        void output( const std::string& output, Scanner* scanner, Arguments* arguments, Target* working_directory );
+        void match( const Pattern* pattern, Target* target, const std::string& match, Arguments* arguments, Target* working_directory );
+        void error( const std::string& what, Environment* environment );
 
-        void push_output( const std::string& output, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory );
-        void push_error( const std::exception& exception, ptr<Environment> environment );
-        void push_match( const Pattern* pattern, const std::string& match, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Target> target );
-        void push_execute_finished( int exit_code, ptr<Environment> environment );
-        void push_scan_finished( ptr<Arguments> arguments );
+        void push_output( const std::string& output, Scanner* scanner, Arguments* arguments, Target* working_directory );
+        void push_error( const std::exception& exception, Environment* environment );
+        void push_match( const Pattern* pattern, const std::string& match, Arguments* arguments, Target* working_directory, Target* target );
+        void push_execute_finished( int exit_code, Environment* environment, Arguments* arguments );
+        void push_scan_finished( Arguments* arguments );
 
-        void execute( const std::string& command, const std::string& command_line, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Environment> environment );
-        void scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment );
+        void execute( const std::string& command, const std::string& command_line, Scanner* scanner, Arguments* arguments, Environment* environment );
+        void scan( Target* target, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment );
         void wait();
         
-        int preorder( const lua::LuaValue& function, ptr<Target> target );
-        int postorder( const lua::LuaValue& function, ptr<Target> target );        
+        int preorder( const lua::LuaValue& function, Target* target );
+        int postorder( const lua::LuaValue& function, Target* target );        
+
+        Environment* environment() const;
 
     private:
         bool dispatch_results();
-        void process_begin( ptr<Environment> environment );
-        int process_end( ptr<Environment> environment );
-        ptr<Environment> allocate_environment( ptr<Target> working_directory, Job* job = NULL );
-        void free_environment( ptr<Environment> environment );
-        void destroy_environment( ptr<Environment> environment );
+        void process_begin( Environment* environment );
+        int process_end( Environment* environment );
+        Environment* allocate_environment( Target* working_directory, Job* job = NULL );
+        void free_environment( Environment* environment );
+        void destroy_environment( Environment* environment );
+        void push_environment( Environment* environment );
+        int pop_environment( Environment* environment );
 };
 
 }

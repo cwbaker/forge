@@ -13,6 +13,8 @@ build.default_settings = {
     bin = root();
     lib = root();
     obj = root();
+    gen = root();
+    classes = root();
     data = root();
     root = root();
 
@@ -84,7 +86,7 @@ build.default_settings = {
             };
             framework_directories = {
             };
-            -- The "sdkroot" settings is replaced with "iphonesimulator" at 
+            -- The "sdkroot" setting is replaced with "iphonesimulator" at 
             -- build time when building for the simulator.
             sdkroot = "iphoneos"; 
             iphoneos_deployment_target = "7.0";

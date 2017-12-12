@@ -1,17 +1,20 @@
 
 buildfile "cmdline_test/cmdline_test.build";
 
-Library "cmdline" {
-    libraries = {
-        "sweet/assert/assert",
-        "sweet/error/error"
-    };
+local settings = build.current_settings();
+for _, architecture in ipairs(settings.architectures) do
+    Library ("cmdline", architecture) {
+        libraries = {
+            "sweet/assert/assert",
+            "sweet/error/error"
+        };
 
-    Cxx {
-        "AddOption.cpp",
-        "Error.cpp",
-        "Option.cpp",
-        "Parser.cpp",
-        "Splitter.cpp"
+        Cxx (architecture) {
+            "AddOption.cpp",
+            "Error.cpp",
+            "Option.cpp",
+            "Parser.cpp",
+            "Splitter.cpp"
+        };
     };
-}
+end

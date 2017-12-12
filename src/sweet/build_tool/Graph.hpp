@@ -1,13 +1,7 @@
-//
-// Graph.hpp
-// Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_BUILD_TOOL_GRAPH_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_GRAPH_HPP_INCLUDED
 
 #include "declspec.hpp"
-#include <sweet/pointer/ptr.hpp>
 #include <sweet/error/macros.hpp>
 #include <sweet/rtti/macros.hpp>
 
@@ -29,8 +23,8 @@ class SWEET_BUILD_TOOL_DECLSPEC Graph
 {
     BuildTool* build_tool_; ///< The BuildTool that this Graph is part of.
     std::string filename_; ///< The filename that this Graph was most recently loaded from.
-    ptr<Target> root_target_; ///< The root Target for this Graph.
-    ptr<Target> cache_target_; ///< The cache Target for this Graph.
+    Target* root_target_; ///< The root Target for this Graph.
+    Target* cache_target_; ///< The cache Target for this Graph.
     bool implicit_dependencies_; ///< True if dependencies added to Targets in this Graph are implicit.
     bool traversal_in_progress_; ///< True when a traversal is in progress otherwise false.
     int visited_revision_; ///< The current visit revision.
@@ -39,6 +33,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Graph
     public:
         Graph();
         Graph( BuildTool* build_tool );
+        ~Graph();
 
         Target* get_root_target() const;
         Target* get_cache_target() const;
@@ -50,22 +45,23 @@ class SWEET_BUILD_TOOL_DECLSPEC Graph
         int get_visited_revision() const;
         int get_successful_revision() const;             
 
-        ptr<Target> target( const std::string& id, ptr<TargetPrototype> target_prototype = ptr<TargetPrototype>(), ptr<Target> working_directory = ptr<Target>() );
-        ptr<Target> find_target( const std::string& path, ptr<Target> working_directory );
+        Target* target( const std::string& id, TargetPrototype* target_prototype = NULL, Target* working_directory = NULL );
+        Target* find_target( const std::string& path, Target* working_directory );
+        void destroy_target( Target* target );
                 
-        void buildfile( const std::string& filename, ptr<Target> target );
-        int bind( ptr<Target> target = ptr<Target>() );        
+        void buildfile( const std::string& filename, Target* target );
+        int bind( Target* target = NULL );        
         void swap( Graph& graph );
         void clear();
         void recover();
         void mark_implicit_dependencies();
         bool implicit_dependencies() const;
-        ptr<Target> load_xml( const std::string& filename );
+        Target* load_xml( const std::string& filename );
         void save_xml();
-        ptr<Target> load_binary( const std::string& filename );
+        Target* load_binary( const std::string& filename );
         void save_binary();
-        void print_dependencies( ptr<Target> target, const std::string& directory );
-        void print_namespace( ptr<Target> target );
+        void print_dependencies( Target* target, const std::string& directory );
+        void print_namespace( Target* target );
 
         template <class Archive> void enter( Archive& archive );
         template <class Archive> void exit( Archive& archive );

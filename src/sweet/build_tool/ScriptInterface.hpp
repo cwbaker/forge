@@ -1,15 +1,9 @@
-//
-// ScriptInterface.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_BUILD_TOOL_SCRIPTINTERFACE_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_SCRIPTINTERFACE_HPP_INCLUDED
 
 #include <sweet/lua/Lua.hpp>
 #include <sweet/lua/LuaObject.hpp>
 #include <sweet/path/Path.hpp>
-#include <sweet/pointer/ptr.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include <vector>
@@ -44,19 +38,18 @@ class ScriptInterface
     lua::LuaObject scanner_prototype_; ///< The LuaObject that acts as a prototype for Scanners.
     lua::LuaObject target_metatable_; ///< The LuaObject that acts as a metatable for Targets.
     lua::LuaObject target_prototype_; ///< The LuaObject that acts as a prototype for Targets.
-    std::vector<ptr<TargetPrototype> > target_prototypes_; ///< The TargetPrototypes that have been loaded in.
-    std::vector<ptr<Environment> > environments_; ///< The stack of Environments.
+    std::vector<TargetPrototype*> target_prototypes_; ///< The TargetPrototypes that have been loaded in.
+    std::vector<Scanner*> scanners_; ///< The Scanners that have been allocated.
     path::Path root_directory_; ///< The full path to the root directory.
     path::Path initial_directory_; ///< The full path to the initial directory.
 
     public:
         ScriptInterface( OsInterface* os_interface, BuildTool* build_tool );
+        ~ScriptInterface();
 
         lua::Lua& get_lua();
 
-        void push_environment( ptr<Environment> environment );
-        int pop_environment();
-        ptr<Environment> get_environment() const;
+        Environment* get_environment() const;
 
         void set_root_directory( const path::Path& root_directory );
         const path::Path& get_root_directory() const;
@@ -64,17 +57,17 @@ class ScriptInterface
         void set_initial_directory( const path::Path& initial_directory );
         const path::Path& get_initial_directory() const;
 
-        void create_prototype( ptr<TargetPrototype> target_prototype );
+        void create_prototype( TargetPrototype* target_prototype );
         void destroy_prototype( TargetPrototype* target_prototype );
-        void create_scanner( ptr<Scanner> scanner );
+        Scanner* create_scanner();
         void destroy_scanner( Scanner* scanner );
-        void create_target( ptr<Target> target );
-        void recover_target( ptr<Target> target );
-        void update_target( ptr<Target> target, ptr<TargetPrototype> target_prototype );
+        void create_target( Target* target );
+        void recover_target( Target* target );
+        void update_target( Target* target, TargetPrototype* target_prototype );
         void destroy_target( Target* target );
         
-        ptr<TargetPrototype> target_prototype( const std::string& id );
-        ptr<Target> find_target( const std::string& path );
+        TargetPrototype* target_prototype( const std::string& id );
+        Target* find_target( const std::string& path );
         std::string absolute( const std::string& path, const path::Path& working_directory = path::Path() );
         std::string relative( const std::string& path, const path::Path& working_directory = path::Path() );
         std::string root( const std::string& path ) const;
@@ -88,7 +81,7 @@ class ScriptInterface
         void pushd( const std::string& path );
         void popd();
         const std::string& pwd() const;
-        ptr<Target> working_directory();
+        Target* working_directory();
         std::string lower( const std::string& value );
         std::string upper( const std::string& value );
         std::string native( const std::string& path );
@@ -113,11 +106,11 @@ class ScriptInterface
         void sleep( float milliseconds );
         float ticks();
         
-        void buildfile( const std::string& filename, ptr<Target> target );
-        int bind( ptr<Target> target );
+        void buildfile( const std::string& filename, Target* target );
+        int bind( Target* target );
         void mark_implicit_dependencies();
-        void print_dependencies( ptr<Target> target );
-        void print_namespace( ptr<Target> target );
+        void print_dependencies( Target* target );
+        void print_namespace( Target* target );
         void wait();
         void clear();
         Target* load_xml( const std::string& filename );
@@ -126,9 +119,9 @@ class ScriptInterface
         void save_binary();
 
     private:
-        ptr<Target> get_parent( ptr<Target> target );
-        ptr<Target> get_working_directory( ptr<Target> target );
-        ptr<Target> add_target( lua_State* lua_state );
+        Target* get_parent( Target* target );
+        Target* get_working_directory( Target* target );
+        Target* add_target( lua_State* lua_state );
         static int target_prototype__( lua_State* lua_state );
         static int get_targets( lua_State* lua_state );
         static int dependency( lua_State* lua_state );

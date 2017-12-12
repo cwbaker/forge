@@ -1,79 +1,77 @@
 
-Library "liblua" {
-    libraries = {
-        "sweet/assert/assert";
-        "sweet/error/error";
-    };
-        
-    Cc {
-        defines = build.switch { 
-            operating_system();
-            windows = { "_CRT_SECURE_NO_DEPRECATE" };
-            macosx = { "LUA_USE_POSIX", "LUA_USE_DLOPEN" };
+local settings = build.current_settings();
+for _, architecture in ipairs(settings.architectures) do
+    Library ("liblua", architecture) {
+        libraries = {
+            "sweet/assert/assert";
+            "sweet/error/error";
         };
-        "lapi.c",
-        "lcode.c",
-        "ldebug.c",
-        "ldo.c",
-        "ldump.c",
-        "lfunc.c",
-        "lgc.c",
-        "llex.c",
-        "lmem.c",
-        "lobject.c",
-        "lopcodes.c",
-        "lparser.c",
-        "lstate.c",
-        "lstring.c",
-        "ltable.c",
-        "ltm.c",
-        "lundump.c",
-        "lvm.c",
-        "lzio.c",
-        "lauxlib.c",
-        "lbaselib.c",
-        "ldblib.c",
-        "liolib.c",
-        "lmathlib.c",
-        "loslib.c",
-        "ltablib.c",
-        "lstrlib.c",
-        "loadlib.c",
-        "linit.c", 
-    }
-}
 
-Executable "luac" {
-    settings = {
-        variants = { "debug", "release", "shipping" };
+        Cc (architecture) {
+            defines = build.switch { 
+                operating_system();
+                windows = { "_CRT_SECURE_NO_DEPRECATE" };
+                macosx = { "LUA_USE_POSIX", "LUA_USE_DLOPEN" };
+            };
+            "lapi.c",
+            "lcode.c",
+            "ldebug.c",
+            "ldo.c",
+            "ldump.c",
+            "lfunc.c",
+            "lgc.c",
+            "llex.c",
+            "lmem.c",
+            "lobject.c",
+            "lopcodes.c",
+            "lparser.c",
+            "lstate.c",
+            "lstring.c",
+            "ltable.c",
+            "ltm.c",
+            "lundump.c",
+            "lvm.c",
+            "lzio.c",
+            "lauxlib.c",
+            "lbaselib.c",
+            "ldblib.c",
+            "liolib.c",
+            "lmathlib.c",
+            "loslib.c",
+            "ltablib.c",
+            "lstrlib.c",
+            "loadlib.c",
+            "linit.c", 
+        };
     };
 
-    libraries = {
-        "sweet/assert/assert",
-        "lua/liblua"
-    };
+    if variant == "debug" or variant == "release" or variant == "shipping" then
+        Executable ("luac", architecture) {
+            libraries = {
+                "sweet/assert/assert",
+                "lua/liblua"
+            };
+            Cc (architecture) {
+                defines = { 
+                    "_CRT_SECURE_NO_DEPRECATE" 
+                };
+                "luac.c",
+                "print.c"
+            };
+        };
     
-    Cc {
-        defines = { "_CRT_SECURE_NO_DEPRECATE" };
-        "luac.c",
-        "print.c"
-    }
-}
-
-Executable "lua" {
-    settings = {
-        variants = { "debug", "release", "shipping" };
-    };
-
-    project_name = "lua_";        
-
-    libraries = {
-        "sweet/assert/assert",
-        "lua/liblua"
-    };
-    
-    Cc {
-        defines = { "_CRT_SECURE_NO_DEPRECATE" };
-        "lua.c",
-    }
-}
+        Executable ("lua", architecture) {
+            project_name = "lua_";
+            libraries = {
+                "sweet/assert/assert",
+                "lua/liblua"
+            };        
+            Cc (architecture) {
+                defines = { 
+                    "_CRT_SECURE_NO_DEPRECATE" 
+                };
+                "lua.c",
+            };
+        };
+    end
+end
