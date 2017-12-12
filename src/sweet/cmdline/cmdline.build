@@ -1,15 +1,13 @@
 
 buildfile "cmdline_test/cmdline_test.build";
 
-Library {
-    id = "cmdline";
-
+Library "cmdline" {
     libraries = {
         "sweet/assert/assert",
         "sweet/error/error"
     };
 
-    Source {
+    Cxx {
         "AddOption.cpp",
         "Error.cpp",
         "Option.cpp",

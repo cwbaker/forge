@@ -40,6 +40,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public pointer::enable_ptr_from_this<Ta
     std::time_t last_scan_time_; ///< The last write time of the file that this Target was bound to when it was scanned.
     bool outdated_; ///< Whether or not this Target is out of date.
     bool changed_; ///< Whether or not this Target's timestamp has changed since the last time it was bound to a file.
+    bool regular_file_; ///< Whether or not this Target is bound to a regular file.
     bool bound_to_file_; ///< Whether or not this Target is bound to a file.
     bool bound_to_dependencies_; ///< Whether or not this Target is bound to its dependencies.
     bool referenced_by_script_; ///< Whether or not this Target is referenced by a scripting object.  

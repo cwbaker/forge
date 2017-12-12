@@ -1,15 +1,13 @@
 
 buildfile "path_test/path_test.build";
 
-Library {
-    id = "path";
-    
+Library "path" {
     libraries = {
         "sweet/assert/assert",
         "sweet/error/error"
     };
 
-    Source {
+    Cxx {
         pch = "stdafx.hpp";
         "BasicPath.cpp",
         "BasicPathTraits.cpp"

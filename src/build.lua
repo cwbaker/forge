@@ -30,7 +30,7 @@ function initialize()
         lib = root( "../lib" );
         obj = root( "../obj" );
         include_directories = {
-            root( ".." ),
+            root(),
             boost_include_directory
         };
         library_directories = {
@@ -54,18 +54,18 @@ function initialize()
 end
 
 function buildfiles()
-    buildfile( "assert/assert.build" );
-    buildfile( "atomic/atomic.build" );
-    buildfile( "build_tool/build_tool.build" );
-    buildfile( "cmdline/cmdline.build" );
-    buildfile( "error/error.build" );
-    buildfile( "lua/lua.build" );
-    buildfile( "path/path.build" );
-    buildfile( "persist/persist.build" );
-    buildfile( "pointer/pointer.build" );
-    buildfile( "process/process.build" );
-    buildfile( "rtti/rtti.build" );
-    buildfile( "thread/thread.build" );
-    buildfile( "traits/traits.build" );
-    buildfile( "unit/unit.build" );
+    buildfile( "sweet/assert/assert.build" );
+    buildfile( "sweet/atomic/atomic.build" );
+    buildfile( "sweet/build_tool/build_tool.build" );
+    buildfile( "sweet/cmdline/cmdline.build" );
+    buildfile( "sweet/error/error.build" );
+    buildfile( "sweet/lua/lua.build" );
+    buildfile( "sweet/path/path.build" );
+    buildfile( "sweet/persist/persist.build" );
+    buildfile( "sweet/pointer/pointer.build" );
+    buildfile( "sweet/process/process.build" );
+    buildfile( "sweet/rtti/rtti.build" );
+    buildfile( "sweet/thread/thread.build" );
+    buildfile( "sweet/traits/traits.build" );
+    buildfile( "sweet/unit/unit.build" );
 end

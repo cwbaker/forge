@@ -1,6 +1,6 @@
 
 local platforms_by_operating_system = {
-    windows = { "msvc", "mingw" };
+    windows = { "android", "msvc", "mingw" };
     maxosx = { "llvmgcc" };
 };
 
@@ -8,6 +8,7 @@ build.default_settings = {
     bin = root();
     lib = root();
     obj = root();
+    data = root();
     root = root();
 
     user_settings_filename = home( "user_settings.lua" );
@@ -23,6 +24,15 @@ build.default_settings = {
     variants = {};
 
     settings_by_platform = {
+        ["android"] = {
+            architectures = { 
+                "armv5", "armv7" 
+            };
+            variants = {
+                "debug", "release", "shipping"
+            };
+        };
+
         ["llvmgcc"] = {
             architectures = {
                 "x86_64"

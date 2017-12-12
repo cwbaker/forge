@@ -128,23 +128,55 @@ local function end_files( vcproj, module )
 end
 
 -- Generate files in the project.
-local function generate_files( vcproj, directory, files, level )
-    pushd( directory );
-    for _, file in ipairs(files) do
+local function generate_files( vcproj, file, level )
+    if file.children then
         vcproj:write( string.rep("    ", level) );
-        vcproj:write( "<File RelativePath=\""..native(relative(file:get_filename())).."\" />\n" );
+        vcproj:write( [[<Filter Name="%s">]] % leaf(file.target:path()) );
+        for _, child in ipairs(file.children) do 
+            generate_files( vcproj, child, level + 1 );
+        end
+        vcproj:write( string.rep("    ", level) );
+        vcproj:write( [[</Filter>]] % leaf(file.target:path()) );
+    else
+        vcproj:write( string.rep("    ", level) );
+        vcproj:write( "<File RelativePath=\""..native(relative(file.target:get_filename())).."\" />\n" );
     end
-    popd();
 end
 
 -- Generate a Visual Studio project for /module/ to /filename/.
 local function generate_project( filename, module )
     print( filename );
 
-    local function populate_files( files, directory )
+    local function populate( basedir, files, directories )
+        local function add_directory( target )
+            local directory = directories[target:path()];
+            if directory == nil then
+                directory = { target = target; children = {} };
+                directories[target:path()] = directory;
+                if target:parent() then
+                    local parent = add_directory( target:parent() );
+                    table.insert( parent.children, directory );
+                end
+            end
+            return directory;
+        end
+
+        local function add_file( target )
+            local file = files[target:path()];
+            if not file then
+                file = { target = target };
+                files[target:path()] = file;
+                if target:parent() then
+                    local parent = add_directory( target:parent() );
+                    table.insert( parent.children, file );
+                end
+            end
+            return file;
+        end
+
         return function( target )
-            if target:directory() == directory and target:prototype() == nil then
-                table.insert( files, target );
+            if not string.find(relative(target:directory(), basedir), "..", 1, true) and target:prototype() == nil then
+                add_file( target );
             end
         end
     end
@@ -155,13 +187,30 @@ local function generate_project( filename, module )
     end
     
     local files = {};
-    preorder( populate_files(files, module:directory()), module );
+    local directories = {};
+    preorder( populate(module:directory(), files, directories), module );
 
     local vcproj = io.open( absolute(filename), "wb" );
     header( vcproj, module );
     configurations( vcproj, module, include_directories );
     begin_files( vcproj );
-    generate_files( vcproj, module:directory(), files, 2 );
+
+    local directory = directories[module:parent():path()];
+    if directory then
+        while directory.children and #directory.children == 1 do
+            directory = directory.children[1];
+        end
+        pushd( module:directory() );
+        if directory.children then
+            for _, directory in ipairs(directory.children) do
+                generate_files( vcproj, directory, 2 );
+            end
+        else
+            generate_files( vcproj, directory, 2 );
+        end
+        popd();
+    end
+
     end_files( vcproj, module );
     footer( vcproj );
     vcproj:close();    

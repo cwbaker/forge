@@ -17,8 +17,13 @@ end
 
 function Executable( id )
     return function( dependencies )
-        local executable = target( id, ExecutablePrototype, dependencies );
-        build.add_module_dependencies( executable, exe_name("%s/%s" % {settings.bin, id}), build.current_settings() );
-        return executable;
+        local executables = {};
+        local settings = build.current_settings();
+        for _, architecture in ipairs(settings.architectures) do 
+            local executable = target( "%s_%s" % {id, architecture}, ExecutablePrototype, build.copy(dependencies) );
+            build.add_module_dependencies( executable, "%s/%s" % {settings.bin, exe_name(id, architecture)}, build.current_settings(), architecture );
+            table.insert( executables, executable );
+        end
+        return executables;
     end
 end

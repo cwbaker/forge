@@ -1,7 +1,5 @@
 
-Executable {
-    id = "build";
-
+Executable "build" {
     settings = { 
         subsystem = "CONSOLE"; 
         stack_size = 32768; 
@@ -9,18 +7,18 @@ Executable {
     }; 
     
     libraries = {    
-        "build_tool/build_tool",
-        "cmdline/cmdline",
-        "lua/lua",
-        "lua/lua_/liblua",
-        "process/process",
-        "rtti/rtti",
-        "thread/thread",
-        "persist/persist",
-        "path/path",
-        "pointer/pointer",
-        "error/error",
-        "assert/assert"
+        "sweet/build_tool/build_tool",
+        "sweet/cmdline/cmdline",
+        "sweet/lua/lua",
+        "sweet/lua/lua_/liblua",
+        "sweet/process/process",
+        "sweet/rtti/rtti",
+        "sweet/thread/thread",
+        "sweet/persist/persist",
+        "sweet/path/path",
+        "sweet/pointer/pointer",
+        "sweet/error/error",
+        "sweet/assert/assert"
     };
     
     third_party_libraries = {
@@ -30,7 +28,7 @@ Executable {
         boost_library( "boost_thread" )
     };    
 
-    Source {
+    Cxx {
         pch = "stdafx.hpp";
         "Application.cpp", 
         "main.cpp"

@@ -1,7 +1,5 @@
 
-Executable {
-    id = "process_test";
-
+Executable "process_test" {
     libraries = {
         "sweet/process/process",
         "sweet/cmdline/cmdline",
@@ -9,7 +7,7 @@ Executable {
         "sweet/assert/assert"
     };
 
-    Source {
+    Cxx {
         pch = "stdafx.hpp";
         "Application.cpp",
         "main.cpp"

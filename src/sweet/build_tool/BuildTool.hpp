@@ -14,6 +14,13 @@
 namespace sweet
 {
 
+namespace error
+{
+
+class ErrorPolicy;
+
+}
+
 namespace build_tool
 {
 
@@ -31,6 +38,7 @@ class Graph;
 */
 class SWEET_BUILD_TOOL_DECLSPEC BuildTool
 {
+    error::ErrorPolicy& error_policy_;
     BuildToolEventSink* event_sink_; ///< The EventSink for this BuildTool or null if this BuildTool has no EventSink.
     int warning_level_; ///< The warning level to report warnings at.
     ptr<OsInterface> os_interface_; ///< The OsInterface that provides access to the operating system.
@@ -40,14 +48,15 @@ class SWEET_BUILD_TOOL_DECLSPEC BuildTool
     ptr<Graph> graph_; ///< The dependency graph of targets used to determine which targets are outdated.
 
     public:
-        BuildTool( const std::string& initial_directory, BuildToolEventSink* event_sink );
+        BuildTool( const std::string& initial_directory, error::ErrorPolicy& error_policy, BuildToolEventSink* event_sink );
         ~BuildTool();
 
+        error::ErrorPolicy& error_policy() const;
         OsInterface* get_os_interface() const;
         ScriptInterface* get_script_interface() const;
         Graph* get_graph() const;
         Executor* get_executor() const;
-        Scheduler* get_scheduler() const;       
+        Scheduler* get_scheduler() const;
 
         void set_warning_level( int warning_level );
         int get_warning_level() const;

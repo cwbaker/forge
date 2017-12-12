@@ -220,7 +220,7 @@ function msvc.cc( target )
 
     if ccsource ~= "" then
         cppdefines = cppdefines.." /DBUILD_VERSION=\"\\\""..version.."\\\"\"";
-        build.system( mscc, "cl"..cppdirs..cppdefines..ccflags.." /Fo"..obj_directory(target).." "..ccsource );
+        build.system( mscc, "cl"..cppdirs..cppdefines..ccflags.." /Fo"..obj_directory(target)..target.architecture.."/ "..ccsource );
     end
 end;
 
@@ -235,7 +235,7 @@ function msvc.build_library( target )
     
     local objects = "";
     for dependency in target:get_dependencies() do
-        if dependency:prototype() == SourcePrototype then
+        if dependency:prototype() == CxxPrototype then
             if dependency.precompiled_header ~= nil then
                 objects = objects.." "..obj_name( dependency.precompiled_header:id() );
             end
@@ -250,7 +250,7 @@ function msvc.build_library( target )
     
     if objects ~= "" then
         print( leaf(target:get_filename()) );
-        pushd( obj_directory(target) );
+        pushd( "%s/%s" % {obj_directory(target), target.architecture} );
         build.system( msar, "lib"..arflags.." /out:"..native(target:get_filename())..objects );
         popd();
     end
@@ -328,7 +328,7 @@ function msvc.build_executable( target )
 
     local objects = "";
     for dependency in target:get_dependencies() do
-        if dependency:prototype() == SourcePrototype then
+        if dependency:prototype() == CxxPrototype then
             if dependency.precompiled_header ~= nil then
                 objects = objects.." "..obj_name( dependency.precompiled_header:id() );
             end
@@ -344,7 +344,7 @@ function msvc.build_executable( target )
     if objects ~= "" then
         print( leaf(target:get_filename()) );
 
-        pushd( obj_directory(target) );
+        pushd( "%s/%s" % {obj_directory(target), target.architecture} );
         if target.settings.incremental_linking then
             local embedded_manifest = target:id().."_embedded.manifest";
             local embedded_manifest_rc = target:id().."_embedded_manifest.rc";

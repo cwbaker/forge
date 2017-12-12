@@ -66,7 +66,7 @@ struct Deleter
 ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_tool )
 : os_interface_( os_interface ),
   build_tool_( build_tool ),
-  lua_(),
+  lua_( build_tool->error_policy() ),
   target_prototype_metatable_( lua_ ),
   target_prototype_prototype_( lua_ ),
   scanner_metatable_( lua_ ),
@@ -208,15 +208,19 @@ void ScriptInterface::push_environment( ptr<Environment> environment )
 {
     SWEET_ASSERT( environment );
     environments_.push_back( environment );
+    build_tool_->error_policy().push_errors();
 }
 
-void ScriptInterface::pop_environment()
+int ScriptInterface::pop_environment()
 {
     SWEET_ASSERT( !environments_.empty() );
+    int errors = 0;
     if ( !environments_.empty() )
     {
         environments_.pop_back();
+        errors = build_tool_->error_policy().pop_errors();
     }
+    return errors;
 }
 
 ptr<Environment> ScriptInterface::get_environment() const
@@ -824,7 +828,7 @@ ptr<Target> ScriptInterface::add_target( lua_State* lua_state )
         {        
             if ( !lua_istable(lua_state, TABLE_PARAMETER) )
             {
-                SWEET_ERROR( lua::RuntimeError("Table or nothing expected as third parameter when creating a target") );
+                SWEET_ERROR( RuntimeError("Table or nothing expected as third parameter when creating a target") );
             }
             
             lua_pushvalue( lua_state, TABLE_PARAMETER );
@@ -860,7 +864,7 @@ int ScriptInterface::target_prototype__( lua_State* lua_state )
         const int TARGET_PROTOTYPE_PARAMETER = 1;
         if ( !lua_istable(lua_state, TARGET_PROTOTYPE_PARAMETER) )
         {
-            SWEET_ERROR( lua::RuntimeError("TargetPrototype call's first and only parameter is not a table") );
+            SWEET_ERROR( RuntimeError("TargetPrototype call's first and only parameter is not a table") );
         }
         
         ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
@@ -869,7 +873,7 @@ int ScriptInterface::target_prototype__( lua_State* lua_state )
         lua_rawgeti( lua_state, TARGET_PROTOTYPE_PARAMETER, 1 );
         if ( !lua_isstring(lua_state, -1) )
         {
-            SWEET_ERROR( lua::RuntimeError("TargetPrototype call's table expects a string to identify the prototype in the 1st field of the table") );
+            SWEET_ERROR( RuntimeError("TargetPrototype call's table expects a string to identify the prototype in the 1st field of the table") );
         }
         string id = lua_tostring( lua_state, -1 );
         lua_pop( lua_state, 1 );
@@ -901,7 +905,7 @@ struct GetTargetsTargetReferencedByScript
         SWEET_ASSERT( script_interface_ );
     }
     
-    bool operator()( ptr<Target> target ) const
+    bool operator()( lua_State* lua_state, ptr<Target> target ) const
     {
         SWEET_ASSERT( target );
         if ( !target->is_referenced_by_script() )
@@ -925,7 +929,7 @@ int ScriptInterface::get_targets( lua_State* lua_state )
         ptr<Target> target = LuaConverter<ptr<Target> >::to( lua_state, TARGET_PARAMETER );
         if ( !target )
         {
-            SWEET_ERROR( lua::RuntimeError("Target is null when iterating over children") );
+            SWEET_ERROR( RuntimeError("Target is null when iterating over children") );
         }
 
         const vector<ptr<Target> >& dependencies = target->get_targets();
@@ -950,7 +954,7 @@ struct GetDependenciesTargetReferencedByScript
         SWEET_ASSERT( script_interface_ );
     }
     
-    bool operator()( Target* target ) const
+    bool operator()( lua_State* lua_state, Target* target ) const
     {
         SWEET_ASSERT( target );
         if ( !target->is_referenced_by_script() )
@@ -974,7 +978,7 @@ int ScriptInterface::get_dependencies( lua_State* lua_state )
         ptr<Target> target = LuaConverter<ptr<Target> >::to( lua_state, TARGET_PARAMETER );
         if ( !target )
         {
-            SWEET_ERROR( lua::RuntimeError("Target is null when iterating over dependencies") );
+            SWEET_ERROR( RuntimeError("Target is null when iterating over dependencies") );
         }
 
         const vector<Target*>& dependencies = target->get_dependencies();
@@ -998,7 +1002,7 @@ int ScriptInterface::absolute_( lua_State* lua_state )
         const int PATH = 1;
         if ( lua_type(lua_state, PATH) != LUA_TSTRING )
         {
-            SWEET_ERROR( lua::RuntimeError("The first parameter of 'absolute()' is not a string as expected") );
+            SWEET_ERROR( RuntimeError("The first parameter of 'absolute()' is not a string as expected") );
         }
         std::string path = lua_tostring( lua_state, PATH );
         
@@ -1008,7 +1012,7 @@ int ScriptInterface::absolute_( lua_State* lua_state )
         {
             if ( lua_type(lua_state, WORKING_DIRECTORY) != LUA_TSTRING )
             {
-                SWEET_ERROR( lua::RuntimeError("The second parameter of 'absolute()' is not a string as expected") );
+                SWEET_ERROR( RuntimeError("The second parameter of 'absolute()' is not a string as expected") );
             }
             working_directory = path::Path( lua_tostring(lua_state, WORKING_DIRECTORY) );
         }
@@ -1038,7 +1042,7 @@ int ScriptInterface::relative_( lua_State* lua_state )
 
         if ( lua_type(lua_state, PATH) != LUA_TSTRING )
         {
-            SWEET_ERROR( lua::RuntimeError("The first parameter of 'relative()' is not a string as expected") );
+            SWEET_ERROR( RuntimeError("The first parameter of 'relative()' is not a string as expected") );
         }
         std::string path = lua_tostring( lua_state, PATH );
         
@@ -1047,7 +1051,7 @@ int ScriptInterface::relative_( lua_State* lua_state )
         {
             if ( lua_type(lua_state, WORKING_DIRECTORY) != LUA_TSTRING )
             {
-                SWEET_ERROR( lua::RuntimeError("The second parameter of 'relative()' is not a string as expected") );
+                SWEET_ERROR( RuntimeError("The second parameter of 'relative()' is not a string as expected") );
             }
             working_directory = path::Path( lua_tostring(lua_state, WORKING_DIRECTORY) );
         }
@@ -1227,7 +1231,7 @@ int ScriptInterface::scanner( lua_State* lua_state )
         const int SCANNER_PARAMETER = 1;
         if ( !lua_istable(lua_state, SCANNER_PARAMETER) )
         {
-            SWEET_ERROR( lua::RuntimeError("Table not passed when creating a Scanner") );
+            SWEET_ERROR( RuntimeError("Table not passed when creating a Scanner") );
         }
         
         ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );

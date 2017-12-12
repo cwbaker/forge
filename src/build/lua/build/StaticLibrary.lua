@@ -13,8 +13,13 @@ end
 
 function StaticLibrary( id )
     return function( dependencies )
-        local static_library = target( id, StaticLibraryPrototype, dependencies );
-        build.add_module_dependencies( static_library, lib_name("%s/%s" % {settings.lib, id}), build.current_settings() );
-        return static_library;                
+        local static_libraries = {};
+        local settings = build.current_settings();
+        for _, architecture in ipairs(settings.architectures) do 
+            local static_library = target( "%s_%s" % {id, architecture}, StaticLibraryPrototype, build.copy(dependencies) );
+            build.add_module_dependencies( static_library, "%s/%s" % {settings.lib, lib_name(id, architecture)}, build.current_settings(), architecture );
+            table.insert( static_libraries, static_library );
+        end
+        return static_libraries;
     end
 end

@@ -1,13 +1,11 @@
 
-Library {
-    id = "thread";
-    
+Library "thread" {
     libraries = {
         "sweet/assert/assert",
         "sweet/error/error"
     };
 
-    Source {
+    Cxx {
         pch = "stdafx.hpp";
         "Condition.cpp",
         "Mutex.cpp",

@@ -18,6 +18,7 @@
 #include "Error.hpp"
 #include <sweet/atomic/atomic.ipp>
 #include <sweet/thread/ScopedLock.hpp>
+#include <sweet/lua/LuaThread.hpp>
 #include <sweet/lua/ptr.hpp>
 #include <boost/bind.hpp>
 #include <list>
@@ -97,6 +98,7 @@ void Scheduler::execute( const char* start, const char* finish )
     catch ( const std::exception& exception )
     {
         build_tool_->error( "%s", exception.what() );
+        build_tool_->get_script_interface()->pop_environment();
         destroy_environment( environment );
     }    
 
@@ -122,6 +124,7 @@ void Scheduler::buildfile( const path::Path& path )
     catch ( const std::exception& exception )
     {
         build_tool_->error( "%s", exception.what() );
+        build_tool_->get_script_interface()->pop_environment();
         destroy_environment( environment );
     }    
 }
@@ -143,6 +146,7 @@ void Scheduler::call( const path::Path& path, const std::string& function )
         catch ( const std::exception& exception )
         {
             build_tool_->error( "%s", exception.what() );
+            build_tool_->get_script_interface()->pop_environment();
             destroy_environment( environment );
         }
     }
@@ -167,6 +171,7 @@ void Scheduler::preorder_visit( const lua::LuaValue& function, ptr<Target> targe
     {
         ++failures_;
         build_tool_->error( "%s (in preorder for '%s')", exception.what(), target->get_id().c_str() );
+        build_tool_->get_script_interface()->pop_environment();
         destroy_environment( environment );
     }
 }
@@ -199,6 +204,7 @@ void Scheduler::postorder_visit( const lua::LuaValue& function, Job* job )
     {
         ++failures_;
         build_tool_->error( "%s (in postorder for '%s')", exception.what(), job->get_target()->get_id().c_str() );
+        build_tool_->get_script_interface()->pop_environment();
         destroy_environment( environment );
     }
 }
@@ -219,6 +225,7 @@ void Scheduler::execute_finished( int exit_code, ptr<Environment> environment )
     catch ( const std::exception& exception )
     {
         build_tool_->error( "%s", exception.what() );
+        build_tool_->get_script_interface()->pop_environment();
         destroy_environment( environment );
     }
 }
@@ -261,6 +268,7 @@ void Scheduler::output( const std::string& output, ptr<Scanner> scanner, ptr<Arg
                 catch ( const std::exception& exception )
                 {
                     build_tool_->error( "%s", exception.what() );
+                    build_tool_->get_script_interface()->pop_environment();
                     destroy_environment( environment );
                 }
             }
@@ -303,6 +311,7 @@ void Scheduler::match( const Pattern* pattern, ptr<Target> target, const std::st
     catch ( const std::exception& exception )
     {
         build_tool_->error( "%s", exception.what() );
+        build_tool_->get_script_interface()->pop_environment();
         destroy_environment( environment );
     }
 }
@@ -312,6 +321,7 @@ void Scheduler::error( const std::string& what, ptr<Environment> environment )
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( environment );    
     build_tool_->error( what.c_str() );
+    build_tool_->get_script_interface()->pop_environment();
     destroy_environment( environment );
 }
 
@@ -628,8 +638,6 @@ void Scheduler::destroy_environment( ptr<Environment> environment )
 {
     SWEET_ASSERT( environment );
 
-    build_tool_->get_script_interface()->pop_environment();
-
     Job* job = environment->get_job();
     if ( job )
     {
@@ -668,20 +676,18 @@ void Scheduler::process_end( ptr<Environment> environment )
 {
     SWEET_ASSERT( environment );
 
-    build_tool_->get_script_interface()->pop_environment();
+    int errors = build_tool_->get_script_interface()->pop_environment();
+    LuaThreadState state = environment->get_environment_thread().get_state();    
 
-    switch ( environment->get_environment_thread().get_state() )
+    if ( errors == 0 && state != lua::LUA_THREAD_ERROR )
     {
-        case LUA_THREAD_READY:
+        if ( state == lua::LUA_THREAD_READY )
+        {
             free_environment( environment );
-            break;
-
-        case LUA_THREAD_SUSPENDED:
-            break;
-
-        case LUA_THREAD_ERROR:
-        default:
-            destroy_environment( environment );
-            break;
+        }
+    }
+    else
+    {
+        destroy_environment( environment );
     }
 }

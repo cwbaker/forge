@@ -6,7 +6,7 @@ Library "error" {
         "sweet/assert/assert"
     };
 
-    Source {
+    Cxx {
         pch = "stdafx.hpp";
         "boost_integration.cpp",
         "dinkumware_integration.cpp",

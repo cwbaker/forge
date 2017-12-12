@@ -1,7 +1,5 @@
 
-Executable {
-    id = "cmdline_test";
-
+Executable "cmdline_test" {
     libraries = {
         "sweet/cmdline/cmdline",
         "sweet/error/error",
@@ -9,7 +7,7 @@ Executable {
         "sweet/unit/libUnitTest"
     };
 
-    Source {
+    Cxx {
         "main.cpp",
         "TestParser.cpp",
         "TestSplitter.cpp"

@@ -7,6 +7,7 @@
 #include "Application.hpp"
 #include <sweet/build_tool/BuildTool.hpp>
 #include <sweet/cmdline/Parser.hpp>
+#include <sweet/error/ErrorPolicy.hpp>
 #include <sweet/assert/assert.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <string>
@@ -54,7 +55,7 @@ Application::Application( int argc, char** argv )
         if ( version )
         {
             std::cout << "Sweet Build " << BUILD_VERSION << " \n";
-            std::cout << "Copyright (c) 2007 - 2012 Charles Baker.  All rights reserved. \n";
+            std::cout << "Copyright (c) 2007 - 2013 Charles Baker.  All rights reserved. \n";
         }
 
         if ( help )
@@ -86,7 +87,8 @@ Application::Application( int argc, char** argv )
             commands.push_back( DEFAULT_COMMAND );
         }
     
-        BuildTool build_tool( directory, this );
+        error::ErrorPolicy error_policy;
+        BuildTool build_tool( directory, error_policy, this );
         build_tool.set_warning_level( warning_level );
         build_tool.set_stack_trace_enabled( stack_trace_enabled );
         build_tool.search_up_for_root_directory( directory );

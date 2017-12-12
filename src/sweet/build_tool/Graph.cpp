@@ -563,7 +563,7 @@ ptr<Target> Graph::load_xml( const std::string& filename )
     {
         path::Path path( filename );
         SWEET_ASSERT( path.is_absolute() );
-        sweet::persist::XmlReader reader;
+        sweet::persist::XmlReader reader( build_tool_->error_policy() );
         enter( reader );
         Graph graph;
         reader.read( path.string().c_str(), "graph", graph );
@@ -587,7 +587,7 @@ void Graph::save_xml()
     if ( !filename_.empty() )
     {
         path::Path path( filename_ );
-        sweet::persist::XmlWriter writer;
+        sweet::persist::XmlWriter writer( build_tool_->error_policy() );
         enter( writer );
         writer.write( path.string().c_str(), "graph", *this );
         exit( writer );
@@ -620,7 +620,7 @@ ptr<Target> Graph::load_binary( const std::string& filename )
     {
         path::Path path( filename );
         SWEET_ASSERT( path.is_absolute() );
-        sweet::persist::BinaryReader reader;
+        sweet::persist::BinaryReader reader( build_tool_->error_policy() );
         enter( reader );
         Graph graph;
         reader.read( path.string().c_str(), "graph", graph );
@@ -641,7 +641,7 @@ void Graph::save_binary()
     if ( !filename_.empty() )
     {
         path::Path path( filename_ );
-        sweet::persist::BinaryWriter writer;
+        sweet::persist::BinaryWriter writer( build_tool_->error_policy() );
         enter( writer );
         writer.write( path.string().c_str(), "graph", *this );
         exit( writer );

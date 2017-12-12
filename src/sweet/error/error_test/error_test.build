@@ -6,7 +6,7 @@ Executable "error_test" {
         "sweet/unit/libUnitTest"
     };
         
-    Source {
+    Cxx {
         pch = "stdafx.hpp";
         "main.cpp"
     }

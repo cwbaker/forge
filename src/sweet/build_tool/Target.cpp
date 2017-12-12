@@ -33,6 +33,7 @@ Target::Target()
   last_scan_time_( 0 ),
   outdated_( false ),
   changed_( false ),
+  regular_file_( false ),
   bound_to_file_( false ),
   bound_to_dependencies_( false ),
   referenced_by_script_( false ),
@@ -71,6 +72,7 @@ Target::Target( const std::string& id, Graph* graph )
   last_scan_time_( 0 ),
   outdated_( false ),
   changed_( false ),
+  regular_file_( false ),
   bound_to_file_( false ),
   bound_to_dependencies_( false ),
   referenced_by_script_( false ),
@@ -278,6 +280,7 @@ void Target::bind_to_file()
                     changed_ = last_write_time_ != last_write_time;
                     timestamp_ = 0;
                     last_write_time_ = last_write_time;
+                    regular_file_ = true;
                 }
                 outdated_ = false;
             }
@@ -316,7 +319,7 @@ void Target::bind_to_dependencies()
         time_t timestamp = get_last_write_time();
         bool outdated = outdated_;
 
-        if ( timestamp == 0 && !filename_.empty() && !dependencies_.empty() )
+        if ( timestamp == 0 && regular_file_ && !filename_.empty() && !dependencies_.empty() )
         {
             timestamp = time( NULL );
         }

@@ -17,11 +17,7 @@ build = {};
 require "build/default_settings";
 require "build/PrecompiledHeader";
 require "build/Directory";
-require "build/Compile";
-require "build/Archive";
-require "build/Link";
-require "build/Lipo";
-require "build/Source";
+require "build/Cxx";
 require "build/StaticLibrary";
 require "build/DynamicLibrary";
 require "build/Executable";
@@ -116,6 +112,24 @@ end
 function build.system( command, arguments, filter )
     if execute(command, arguments, filter) ~= 0 then       
         error( arguments.." failed", 0 );
+    end
+end
+
+-- Execute a command through the host system's native shell - either 
+-- "C:/windows/system32/cmd.exe" on Windows system or "/bin/sh" anywhere else.
+function build.shell( arguments, filter )
+    if operating_system() == "windows" then
+        local cmd = "C:/windows/system32/cmd.exe";
+        local result = execute( cmd, [[cmd /c "%s"]] % arguments, filter );
+        if result ~= 0 then
+            error( "[[%s]] failed (result=%d)" % {arguments, result} );
+        end
+    else
+        local sh = "/bin/sh";
+        local result = execute( sh, [[sh -c "%s"]] % arguments, filter );
+        if result ~= 0 then
+            error( "[[%s]] failed (result=%d)" % {arguments, tonumber(result)} );
+        end
     end
 end
 
@@ -328,7 +342,7 @@ function build.add_library_dependencies( target )
     if build.built_for_platform_and_variant(target) then
         if target.libraries then
             for _, value in ipairs(target.libraries) do
-                local library = find_target( root(value) );
+                local library = find_target( root("%s_%s" % {value, target.architecture}) );
                 assert( library, "Failed to find library '%s'" % value );
                 table.insert( libraries, library );
                 target:add_dependency( library );
@@ -338,20 +352,74 @@ function build.add_library_dependencies( target )
     target.libraries = libraries;
 end
 
-function build.add_module_dependencies( target, filename, settings )
+function build.add_module_dependencies( target, filename, settings, architecture )
+    if build.built_for_platform_and_variant(target) then
+        local working_directory = working_directory();
+        working_directory:add_dependency( target );
+
+        target.settings = settings;
+        target.architecture = architecture;
+        target:set_filename( filename );
+        target:add_dependency( Directory(branch(filename)) );        
+
+        for _, dependency in ipairs(target) do 
+            if type(dependency) == "function" then
+                dependency = dependency( architecture );
+            end
+            target:add_dependency( dependency );
+            dependency.module = target;
+        end
+    end
+end
+
+function build.add_package_dependencies( target, filename, settings, dependencies )
     if build.built_for_platform_and_variant(target) then
         local working_directory = working_directory();
         working_directory:add_dependency( target );
 
         target.settings = settings;
         target:set_filename( filename );
-        target:add_dependency( Directory(branch(filename)) );        
-        for _, dependency in ipairs(target) do 
+        target:add_dependency( Directory(branch(filename)) );
+
+        for _, dependency in ipairs(dependencies) do 
             if type(dependency) == "function" then
-                dependency = dependency();
+                dependency = dependency( abi );
             end
-            target:add_dependency( dependency );
-            dependency.module = target;
+            for _, dependency_target in ipairs(dependency) do 
+                working_directory:remove_dependency( dependency_target );
+                target:add_dependency( dependency_target );
+                dependency_target.module = target;
+            end
         end
     end
+end
+
+function build.expand( values )
+    if type(values) == "string" then
+        local result = {};
+        for value in string.gmatch(values, "%w+") do 
+            table.insert( result, value );
+        end
+        return result;
+    else
+        return values;
+    end
+end
+
+function build.append( values, value )
+    if type(value) == "table" then 
+        for _, other_value in ipairs(value) do 
+            table.insert( values, other_value );
+        end
+    else
+        table.insert( values, value );
+    end
+end
+
+function build.copy( value )
+    local copied_table = {};
+    for k, v in pairs(value) do 
+        copied_table[k] = v;
+    end
+    return copied_table;
 end

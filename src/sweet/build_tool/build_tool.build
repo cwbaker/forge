@@ -2,20 +2,18 @@
 buildfile "build/build.build";
 buildfile "build_tool_test/build_tool_test.build";
 
-Library {
-    id = "build_tool";
-    
+Library "build_tool" {
     libraries = {
-        "assert/assert",
-        "error/error",
-        "lua/lua",
-        "lua/lua_/liblua",
-        "path/path",
-        "persist/persist",
-        "pointer/pointer",
-        "process/process",
-        "rtti/rtti",
-        "thread/thread"
+        "sweet/assert/assert",
+        "sweet/error/error",
+        "sweet/lua/lua",
+        "sweet/lua/lua_/liblua",
+        "sweet/path/path",
+        "sweet/persist/persist",
+        "sweet/pointer/pointer",
+        "sweet/process/process",
+        "sweet/rtti/rtti",
+        "sweet/thread/thread"
     };    
 
     third_party_libraries = {
@@ -25,7 +23,7 @@ Library {
         boost_library( "boost_thread" )
     };    
 
-    Source {
+    Cxx {
         pch = "stdafx.hpp";
         "BuildTool.cpp",
         "BuildToolEventSink.cpp",

@@ -7,7 +7,7 @@ Executable "pointer_test" {
         "sweet/unit/libUnitTest"
     };
 
-    Source {
+    Cxx {
         "main.cpp",
         "TestPointer.cpp",
         "TestPointerCast.cpp"

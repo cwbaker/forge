@@ -7,7 +7,7 @@ Library "pointer" {
         "sweet/error/error"
     };
 
-    Source {
+    Cxx {
         pch = "stdafx.hpp";
         "ReferenceCount.cpp"
     };

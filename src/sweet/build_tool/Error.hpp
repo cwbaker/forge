@@ -33,7 +33,8 @@ enum ErrorCode
     BUILD_TOOL_ERROR_INITAL_TARGET_NOT_FOUND, ///< The initial target passed to construct a Graph was not found.
     BUILD_TOOL_ERROR_POSTORDER_CALLED_RECURSIVELY, ///< The postorder() function has been called recursively.
     BUILD_TOOL_ERROR_PREORDER_CALLED_RECURSIVELY, ///< The preorder() function has been called recursively.
-    BUILD_TOOL_ERROR_NULL_SCANNER ///< A scan() call was made without passing a valid Scanner.
+    BUILD_TOOL_ERROR_NULL_SCANNER, ///< A scan() call was made without passing a valid Scanner.
+    BUILD_TOOL_ERROR_RUNTIME_ERROR ///< An error occured while executing a Lua script.
 };
 
 /**
@@ -105,6 +106,11 @@ typedef error::ErrorTemplate<BUILD_TOOL_ERROR_PREORDER_CALLED_RECURSIVELY, Error
 // A scan() call was made without passing a valid Scanner.
 */
 typedef error::ErrorTemplate<BUILD_TOOL_ERROR_NULL_SCANNER, Error> NullScannerError;
+
+/**
+// An error occured while executing a Lua script.
+*/
+typedef error::ErrorTemplate<BUILD_TOOL_ERROR_RUNTIME_ERROR, Error> RuntimeError;
 
 }
 

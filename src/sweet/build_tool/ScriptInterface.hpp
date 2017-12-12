@@ -55,7 +55,7 @@ class ScriptInterface
         lua::Lua& get_lua();
 
         void push_environment( ptr<Environment> environment );
-        void pop_environment();        
+        int pop_environment();
         ptr<Environment> get_environment() const;
 
         void set_root_directory( const path::Path& root_directory );

@@ -66,8 +66,8 @@ function mingw.initialize( settings )
     end
 end
 
-function mingw.cc( target, definition )
-    local gcc = "%s/bin/gcc.exe" % definition.settings.mingw.mingw_directory;
+function mingw.cc( target )
+    local gcc = "%s/bin/gcc.exe" % target.settings.mingw.mingw_directory;
 
     local cppdefines = "";
     cppdefines = cppdefines.." -DBUILD_OS_"..upper(operating_system());
@@ -75,10 +75,10 @@ function mingw.cc( target, definition )
     cppdefines = cppdefines.." -DBUILD_VARIANT_"..upper(variant);
     cppdefines = cppdefines.." -DBUILD_LIBRARY_SUFFIX=\"\\\"_"..platform.."_"..variant..".lib\\\"\"";
     cppdefines = cppdefines.." -DBUILD_MODULE_"..upper(string.gsub(target.module:id(), "-", "_"))
-    cppdefines = cppdefines.." -DBUILD_LIBRARY_TYPE_"..upper(definition.settings.library_type);
+    cppdefines = cppdefines.." -DBUILD_LIBRARY_TYPE_"..upper(target.settings.library_type);
 
-    if definition.settings.defines then
-        for _, define in ipairs(definition.settings.defines) do
+    if target.settings.defines then
+        for _, define in ipairs(target.settings.defines) do
             cppdefines = cppdefines.." -D"..define;
         end
     end
@@ -96,48 +96,48 @@ function mingw.cc( target, definition )
         end
     end
 
-    if definition.settings.include_directories then
-        for _, directory in ipairs(definition.settings.include_directories) do
+    if target.settings.include_directories then
+        for _, directory in ipairs(target.settings.include_directories) do
             cppdirs = cppdirs.." -I\""..directory.."\"";
         end
     end
 
     local ccflags = " -c";
 
-    if definition.settings.compile_as_c then
+    if target.settings.compile_as_c then
         ccflags = ccflags.." -x c";
     else
         ccflags = ccflags.." -fpermissive -Wno-deprecated -x c++";
     end
     
-    if definition.settings.runtime_library == "static" or definition.settings.runtime_library == "static_debug" then
+    if target.settings.runtime_library == "static" or target.settings.runtime_library == "static_debug" then
         ccflags = ccflags.." -static-libstdc++";
     end
     
-    if definition.settings.debug then
+    if target.settings.debug then
         ccflags = ccflags.." -g";
     end
 
-    if definition.settings.optimization then
+    if target.settings.optimization then
         ccflags = ccflags.." -O2";
     end
     
-    if definition.settings.preprocess then
+    if target.settings.preprocess then
         ccflags = ccflags.." -E";
     end
 
-    if definition.settings.exceptions and not definition.settings.compile_as_c then
+    if target.settings.exceptions and not target.settings.compile_as_c then
         ccflags = ccflags.." -fexceptions";
     end
 
-    if definition.settings.run_time_type_info and not definition.settings.compile_as_c then
+    if target.settings.run_time_type_info and not target.settings.compile_as_c then
         ccflags = ccflags.." -frtti";
     end
 
     if target.precompiled_header ~= nil then            
         if target.precompiled_header:is_outdated() then
             print( leaf(target.precompiled_header.source) );
-            build.system( gcc, "gcc"..cppdirs..cppdefines..ccflags.." -o"..obj_directory(definition)..obj_name(target.precompiled_header.source).." "..target.precompiled_header.source, GccScanner );
+            build.system( gcc, "gcc"..cppdirs..cppdefines..ccflags.." -o"..obj_directory(target)..obj_name(target.precompiled_header.source).." "..target.precompiled_header.source, GccScanner );
         end        
     end
     
@@ -152,12 +152,12 @@ function mingw.cc( target, definition )
         if dependency:is_outdated() and dependency ~= target.precompiled_header then
             if dependency:prototype() == nil then
                 print( leaf(dependency.source) );
-                build.system( gcc, "gcc"..cppdirs..cppdefines..ccflags.." -o"..obj_directory(definition)..obj_name(dependency.source).." "..dependency.source, GccScanner );
+                build.system( gcc, "gcc"..cppdirs..cppdefines..ccflags.." -o"..dependency:get_filename().." "..dependency.source, GccScanner );
             elseif dependency.results then
                 for _, result in ipairs(dependency.results) do
                     if result:is_outdated() then
                         print( leaf(result.source) );
-                        build.system( gcc, "gcc"..cppdirs..cppdefines..ccflags.." -o"..obj_directory(definition)..obj_name(result.source).." "..result.source, GccScanner );
+                        build.system( gcc, "gcc"..cppdirs..cppdefines..ccflags.." -o"..dependency:get_filename().." "..result.source, GccScanner );
                     end
                 end
             end
@@ -165,14 +165,14 @@ function mingw.cc( target, definition )
     end
 end
 
-function mingw.build_library( target, definition )
-    local ar = "%s/bin/ar.exe" % definition.settings.mingw.mingw_directory;
+function mingw.build_library( target )
+    local ar = "%s/bin/ar.exe" % target.settings.mingw.mingw_directory;
 
     local arflags = " ";
     
     local objects = "";
     for dependency in target:get_dependencies() do
-        if dependency:prototype() == CompilePrototype then
+        if dependency:prototype() == CxxPrototype then
             if dependency.precompiled_header ~= nil then
                 objects = objects.." "..obj_name( dependency.precompiled_header:id() );
             end
@@ -187,26 +187,26 @@ function mingw.build_library( target, definition )
     
     if objects ~= "" then
         print( leaf(target:get_filename()) );
-        pushd( obj_directory(target.module) );
+        pushd( "%s/%s" % {obj_directory(target), target.architecture} );
         build.system( ar, "ar"..arflags.." -rcs "..native(target:get_filename())..objects );
         popd();
     end
 end
 
-function mingw.clean_library( target, definition )
+function mingw.clean_library( target )
     rm( target:get_filename() );
-    rmdir( obj_directory(target.module) );
+    rmdir( obj_directory(target) );
 end
 
-function mingw.build_executable( target, definition )
-    local gxx = "%s/bin/g++.exe" % definition.settings.mingw.mingw_directory;
+function mingw.build_executable( target )
+    local gxx = "%s/bin/g++.exe" % target.settings.mingw.mingw_directory;
 
     local ldlibs = " ";
     
-    local lddirs = " -L \""..definition.settings.lib.."\"";
+    local lddirs = " -L \""..target.settings.lib.."\"";
 
-    if definition.settings.library_directories then
-        for _, directory in ipairs(definition.settings.library_directories) do
+    if target.settings.library_directories then
+        for _, directory in ipairs(target.settings.library_directories) do
             lddirs = lddirs.." -L \""..directory.."\"";
         end
     end
@@ -214,49 +214,49 @@ function mingw.build_executable( target, definition )
     local ldflags = " ";
 
     ldflags = ldflags.." -o "..native( target:get_filename() );
-    if target.module:prototype() == DynamicLibraryPrototype then
-        ldflags = ldflags.." -shared -Wl,--out-implib,"..native( "%s/%s.lib" % {definition.settings.lib, basename(target:id())} );
+    if target:prototype() == DynamicLibraryPrototype then
+        ldflags = ldflags.." -shared -Wl,--out-implib,"..native( "%s/%s.lib" % {target.settings.lib, basename(target:id())} );
     end
     
-    if definition.settings.verbose_linking then
+    if target.settings.verbose_linking then
         ldflags = ldflags.." -Wl,--verbose=31";
     end
     
-    if definition.settings.runtime_library == "static" or definition.settings.runtime_library == "static_debug" then
+    if target.settings.runtime_library == "static" or target.settings.runtime_library == "static_debug" then
         ldflags = ldflags.." -static-libstdc++";
     end
     
-    if definition.settings.debug then
+    if target.settings.debug then
         ldflags = ldflags.." -debug";
     end
 
-    if definition.settings.generate_map_file then
-        ldflags = ldflags.." -Wl,-Map,"..native(obj_directory(target.module)..target:id()..".map");
+    if target.settings.generate_map_file then
+        ldflags = ldflags.." -Wl,-Map,"..native(obj_directory(target)..target:id()..".map");
     end
 
-    if definition.settings.stack_size then
-        ldflags = ldflags.." -Wl,--stack,"..tostring(definition.settings.stack_size);
+    if target.settings.stack_size then
+        ldflags = ldflags.." -Wl,--stack,"..tostring(target.settings.stack_size);
     end
     
-    if definition.settings.strip then
+    if target.settings.strip then
         ldflags = ldflags.." -Wl,--strip-all";
     end
 
     local libraries = "";
     if target.libraries then
         for _, library in ipairs(target.libraries) do
-            libraries = "%s -l%s" % { libraries, basename(library:id()) };
+            libraries = "%s -l%s" % { libraries, basename(library:get_filename()) };
         end
     end
-    if definition.third_party_libraries then
-        for _, library in ipairs(definition.third_party_libraries) do
+    if target.third_party_libraries then
+        for _, library in ipairs(target.third_party_libraries) do
             libraries = "%s -l%s" % { libraries, library };
         end
     end
 
     local objects = "";
     for dependency in target:get_dependencies() do
-        if dependency:prototype() == CompilePrototype then
+        if dependency:prototype() == CxxPrototype then
             if dependency.precompiled_header ~= nil then
                 objects = objects.." "..obj_name( dependency.precompiled_header:id() );
             end
@@ -271,19 +271,19 @@ function mingw.build_executable( target, definition )
 
     if objects ~= "" then
         print( leaf(target:get_filename()) );
-        pushd( obj_directory(target.module) );
+        pushd( "%s/%s" % {obj_directory(target), target.architecture} );
         build.system( gxx, "g++"..ldflags..lddirs..objects..libraries..ldlibs );
         popd();
     end
 end 
 
-function mingw.clean_executable( target, definition )
+function mingw.clean_executable( target )
     rm( target:get_filename() );
-    rmdir( obj_directory(target.module) );
+    rmdir( obj_directory(target) );
 end
 
 function mingw.obj_directory( target )
-    return "%s/%s_%s/%s/" % { target.settings.obj, platform, variant, relative(target:directory(), root()) };
+    return "%s/%s_%s/%s/" % { target.settings.obj, platform, variant, relative(target:get_working_directory():path(), root()) };
 end
 
 function mingw.cc_name( name )

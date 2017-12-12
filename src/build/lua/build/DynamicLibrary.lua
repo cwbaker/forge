@@ -17,8 +17,13 @@ end
 
 function DynamicLibrary( id )
     return function( dependencies )
-        local dynamic_library = target( id, DynamicLibraryPrototype, dependencies );
-        build.add_module_dependencies( dynamic_library, dll_name("%s/%s" % {settings.bin, id}), build.current_settings() );
-        return dynamic_library;        
+        local dynamic_libraries = {};
+        local settings = build.current_settings();
+        for _, architecture in ipairs(settings.architectures) do 
+            local dynamic_library = target( "%s_%s" % {id, architecture}, DynamicLibraryPrototype, build.copy(dependencies) );
+            build.add_module_dependencies( dynamic_library, "%s/%s" % {settings.bin, dll_name(id, architecture)}, build.current_settings(), architecture );
+            table.insert( dynamic_libraries, dynamic_library );
+        end
+        return dynamic_libraries;
     end
 end

@@ -32,8 +32,9 @@ static const char* ROOT_FILENAME = "build.lua";
 //  The EventSink to fire events from this BuildTool at or null if events 
 //  from this BuildTool are to be ignored.
 */
-BuildTool::BuildTool( const std::string& initial_directory, BuildToolEventSink* event_sink )
-: event_sink_( event_sink ),
+BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& error_policy, BuildToolEventSink* event_sink )
+: error_policy_( error_policy ),
+  event_sink_( event_sink ),
   warning_level_( 0 ),
   os_interface_(),
   script_interface_(),
@@ -61,6 +62,17 @@ BuildTool::BuildTool( const std::string& initial_directory, BuildToolEventSink* 
 */
 BuildTool::~BuildTool()
 {
+}
+
+/**
+// Get the ErrorPolicy for this BuildTool.
+//
+// @return
+//  The ErrorPolicy;
+*/
+error::ErrorPolicy& BuildTool::error_policy() const
+{
+    return error_policy_;
 }
 
 /**

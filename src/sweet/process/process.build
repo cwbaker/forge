@@ -1,15 +1,13 @@
 
 buildfile "process_test/process_test.build";
 
-Library {
-    id = "process";
-
+Library "process" {
     libraries = {
         "sweet/assert/assert",
         "sweet/error/error"
     };
 
-    Source {
+    Cxx {
         pch = "stdafx.hpp";
         "Error.cpp",
         "Process.cpp"
