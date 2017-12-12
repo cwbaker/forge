@@ -1,8 +1,3 @@
-//
-// assert.hpp
-// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_ASSERT_ASSERT_HPP_INCLUDED
 #define SWEET_ASSERT_ASSERT_HPP_INCLUDED
 

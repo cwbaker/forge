@@ -365,6 +365,13 @@ int Parser::parse_option( const Option* option, const char* argument, const char
             break;
         }
 
+        case OPTION_STRING_VECTOR:
+        {
+            vector<string>* address = static_cast<vector<string>*>( option->get_address() );
+            address->push_back( string(argument) );
+            break;
+        }
+
         default:
             SWEET_ASSERT( false );
             break;

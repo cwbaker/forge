@@ -211,6 +211,8 @@ function clang.append_link_libraries( target, libraries )
 end
 
 function clang.parse_dependencies_file( filename, object )
+    object:clear_implicit_dependencies();
+
     local file = io.open( filename, "r" );
     assertf( file, "Opening '%s' to parse dependencies failed", filename );
     local dependencies = file:read( "a" );
@@ -224,7 +226,7 @@ function clang.parse_dependencies_file( filename, object )
         local start, finish, path = dependencies:find( DEPENDENCY_PATTERN, finish + 1 );
         while start and finish do 
             local dependency = build.SourceFile( path );
-            object:add_dependency( dependency );
+            object:add_implicit_dependency( dependency );
             start, finish, path = dependencies:find( DEPENDENCY_PATTERN, finish + 1 );
         end
     end
