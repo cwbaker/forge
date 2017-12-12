@@ -77,7 +77,7 @@ return {
             framework_directories = {
             };
             sdkroot = "iphoneos";
-            iphoneos_deployment_target = "7.0";
+            iphoneos_deployment_target = "8.0";
             targeted_device_family = "1,2";
             provisioning_profile = build.home( "sweet/sweet_software/dev.mobileprovision" );
         };
@@ -137,6 +137,7 @@ return {
             link_time_code_generation = false;
             minimal_rebuild = true;
             objc_arc = true;
+            objc_modules = true;
             optimization = false;
             pre_compiled_headers = true;
             preprocess = false;
@@ -167,6 +168,7 @@ return {
             link_time_code_generation = false;
             minimal_rebuild = true;
             objc_arc = true;
+            objc_modules = true;
             optimization = false;
             pre_compiled_headers = true;
             preprocess = false;
@@ -197,6 +199,7 @@ return {
             link_time_code_generation = true;
             minimal_rebuild = false;
             objc_arc = true;
+            objc_modules = true;
             optimization = true;
             pre_compiled_headers = true;
             preprocess = false;
@@ -227,6 +230,7 @@ return {
             link_time_code_generation = true;
             minimal_rebuild = false;
             objc_arc = true;
+            objc_modules = true;
             optimization = true;
             pre_compiled_headers = true;
             preprocess = false;
@@ -257,6 +261,7 @@ return {
             link_time_code_generation = true;
             minimal_rebuild = false;
             objc_arc = true;
+            objc_modules = true;
             optimization = true;
             pre_compiled_headers = true;
             preprocess = false;
@@ -287,6 +292,7 @@ return {
             link_time_code_generation = true;
             minimal_rebuild = false;
             objc_arc = true;
+            objc_modules = true;
             optimization = true;
             pre_compiled_headers = true;
             preprocess = false;

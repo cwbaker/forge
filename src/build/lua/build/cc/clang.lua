@@ -84,6 +84,11 @@ function clang.append_compile_flags( target, flags )
             if target.settings.objc_arc then
                 table.insert( flags, "-fobjc-arc" );
             end
+            if target.settings.objc_modules then
+                if language == "objective-c" then
+                    table.insert( flags, "-fmodules" );
+                end
+            end
         end
     end
         
@@ -220,12 +225,12 @@ function clang.parse_dependencies_file( filename, object )
     file = nil;
 
     local TARGET_PATTERN = "([^:]+):[ \t\n\r\\]+";
-    local DEPENDENCY_PATTERN = "([^ \t\n\r]+)[ \t\n\r%\\]+";
+    local DEPENDENCY_PATTERN = "([^\n\r]+) \\[ \t\n\r]+";
     local start, finish, path = dependencies:find( TARGET_PATTERN );
     if start and finish then 
         local start, finish, path = dependencies:find( DEPENDENCY_PATTERN, finish + 1 );
         while start and finish do 
-            local dependency = build.ImplicitSourceFile( path );
+            local dependency = build.ImplicitSourceFile( path:gsub("\\ ", " ") );
             object:add_implicit_dependency( dependency );
             start, finish, path = dependencies:find( DEPENDENCY_PATTERN, finish + 1 );
         end

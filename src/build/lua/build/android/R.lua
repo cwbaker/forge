@@ -17,9 +17,10 @@ function R.call( resource, definition, settings )
     local working_directory = build.working_directory();
     local gen_directory = ("%s/%s"):format( settings.gen, build.relative(working_directory:path(), build.root()) );
     for _, package in ipairs(definition.packages) do
-        r_java = build.File( ("%s/%s/R.java"):format(gen_directory, string.gsub(package, "%.", "/")) );
+        local r_java = build.File( ("%s/%s/R.java"):format(gen_directory, string.gsub(package, "%.", "/")) );
         r_java.settings = settings;
-        r_java:add_dependency( Directory(r_java:branch()) );
+        r_java:add_ordering_dependency( Directory(r_java:branch()) );
+        r_java:set_built( true );
         resource:add_dependency( r_java );
     end
     local android_manifest = definition.android_manifest;

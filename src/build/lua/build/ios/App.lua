@@ -20,13 +20,6 @@ function App.call( app, definition )
         table.insert( definition, build.Generate(app.entitlements, entitlements) );
     end
 
-    local resource_rules = definition.resource_rules;
-    if resource_rules then 
-        assertf( build.is_file(resource_rules), "The resource rules file '%s' does not exist", tostring(resource_rules) );
-        app.resource_rules = ("%s/ResourceRules.plist"):format( app:filename() );
-        table.insert( definition, build.Copy(app.resource_rules, resource_rules) );
-    end
-
     local working_directory = build.working_directory();
     for _, dependency in ipairs(definition) do 
         working_directory:remove_dependency( dependency );
@@ -73,11 +66,6 @@ function App.build( app )
             local entitlements = app.entitlements;
             if entitlements then 
                 table.insert( command_line, ('--entitlements "%s"'):format(entitlements) );
-            end
-
-            local resource_rules = app.resource_rules;
-            if resource_rules then 
-                table.insert( command_line, ('--resource-rules "%s"'):format(resource_rules) );
             end
 
             local codesign = app.settings.ios.codesign;
