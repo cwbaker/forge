@@ -15,6 +15,7 @@ goal = goal or "";
 jobs = jobs or 4;
 
 local settings = build.initialize {
+    variants = { "debug", "release", "shipping" };
     bin = root( ("../%s_%s/bin"):format(platform, variant) );
     lib = root( ("../%s_%s/lib"):format(platform, variant) );
     obj = root( ("../%s_%s/obj"):format(platform, variant) );
@@ -25,7 +26,6 @@ local settings = build.initialize {
     library_directories = {
         root( ("../%s_%s/lib"):format(platform, variant) ),
     };
-    buildfile = root( "build.build" );
     sln = root( "../sweet_build_tool.sln" );
     xcodeproj = {
         filename = root( "../sweet_build_tool.xcodeproj" );
@@ -65,5 +65,5 @@ build.default_buildfiles {
 -- generating XCode projects and Visual Studio solutions.
 build.default_targets {
     "sweet/build_tool/build",
-    "sweet/build_tool/build/build_hooks"
+    "sweet/build_tool/build_hooks"
 };
