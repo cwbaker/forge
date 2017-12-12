@@ -103,7 +103,7 @@ end;
 function ios.initialize( settings )
     for _, architecture in ipairs(settings.ios.architectures) do 
         build:default_build( ("cc_ios_%s"):format(architecture), build:configure {
-            obj = build:root( ("../%s/obj/cc_ios_%s"):format(variant, architecture) );
+            obj = ("%s/obj/cc_ios_%s"):format( settings.obj, architecture );
             platform = "ios";
             architecture = architecture;
             default_architecture = architecture;

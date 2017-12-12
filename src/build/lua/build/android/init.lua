@@ -147,7 +147,7 @@ function android.initialize( settings )
     
     for _, architecture in ipairs(settings.android.architectures) do 
         build:default_build( ("cc_android_%s"):format(architecture), build:configure {
-            obj = build:root( ("../%s/obj/cc_android_%s"):format(variant, architecture) );
+            obj = ("%s/obj/cc_android_%s"):format( settings.obj, architecture );
             platform = "android";
             architecture = architecture;
             default_architecture = architecture;

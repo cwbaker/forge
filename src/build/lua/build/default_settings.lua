@@ -29,7 +29,6 @@ return {
     };
     
     library_directories = {
-        build:root( ("../%s/lib"):format(variant) );
     };
 
     platforms = platforms_by_operating_system [build:operating_system()];
