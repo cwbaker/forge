@@ -782,7 +782,12 @@ const std::vector<Target*>& Target::targets() const
 */
 void Target::add_explicit_dependency( Target* target )
 {
-    if ( target && target != this && !is_explicit_dependency(target) )
+    bool able_to_add_explicit_dependency = 
+        target && 
+        target != this && 
+        !is_explicit_dependency( target )
+    ;
+    if ( able_to_add_explicit_dependency )
     {
         SWEET_ASSERT( target->graph() == graph() );
         remove_dependency( target );
@@ -816,7 +821,14 @@ void Target::clear_explicit_dependencies()
 */
 void Target::add_implicit_dependency( Target* target )
 {
-    if ( target && target != this && !target->anonymous() && !is_implicit_dependency(target) )
+    bool able_to_add_implicit_dependency =
+        target &&
+        target != this &&
+        !target->anonymous() &&
+        !is_explicit_dependency( target ) &&
+        !is_implicit_dependency( target )
+    ;
+    if ( able_to_add_implicit_dependency )
     {
         remove_dependency( target );
         implicit_dependencies_.push_back( target );
@@ -868,7 +880,12 @@ void Target::clear_implicit_dependencies()
 */
 void Target::add_ordering_dependency( Target* target )
 {
-    if ( target && target != this && !is_ordering_dependency(target) )
+    bool able_to_add_ordering_dependency = 
+        target &&
+        target != this &&
+        !is_dependency( target )
+    ;
+    if ( able_to_add_ordering_dependency )
     {
         remove_dependency( target );
         ordering_dependencies_.push_back( target );
