@@ -10,3 +10,4 @@ shipping/
 /src/local_settings.lua
 *.sdf
 *.suo
+bootstrap
