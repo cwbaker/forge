@@ -7,9 +7,9 @@ gcc.arch_by_architecture = {
 };
 
 function gcc.append_defines( target, flags )
-    table.insert( flags, ('-DBUILD_PLATFORM_%s'):format(upper(platform)) );
-    table.insert( flags, ('-DBUILD_VARIANT_%s'):format(upper(variant)) );
-    table.insert( flags, ('-DBUILD_LIBRARY_TYPE_%s'):format(upper(target.settings.library_type)) );
+    table.insert( flags, ('-DBUILD_PLATFORM_%s'):format(build.upper(platform)) );
+    table.insert( flags, ('-DBUILD_VARIANT_%s'):format(build.upper(variant)) );
+    table.insert( flags, ('-DBUILD_LIBRARY_TYPE_%s'):format(build.upper(target.settings.library_type)) );
     table.insert( flags, ('-DBUILD_BIN_DIRECTORY="\\"%s\\""'):format(target.settings.bin) );
     table.insert( flags, ('-DBUILD_MODULE_DIRECTORY="\\"%s\\""'):format(target:working_directory():path()) );
 

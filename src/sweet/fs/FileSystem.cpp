@@ -5,6 +5,8 @@
 
 #include "FileSystem.hpp"
 #include "BasicPath.hpp"
+#include "DirectoryStack.hpp"
+#include "BasicPath.ipp"
 #if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
 #elif defined(BUILD_OS_MACOSX)
@@ -17,14 +19,27 @@ using namespace sweet;
 using namespace sweet::fs;
 
 FileSystem::FileSystem()
-: root_(),
+: empty_(),
+  root_(),
   initial_(),
   executable_(),
   home_(),
   directory_stack_( NULL )
 {
-    refresh_executable();
-    refresh_home();
+    reset_executable();
+    reset_home();
+}
+
+FileSystem::FileSystem( DirectoryStack* directory_stack )
+: empty_(),
+  root_(),
+  initial_(),
+  executable_(),
+  home_(),
+  directory_stack_( directory_stack )
+{
+    reset_executable();
+    reset_home();
 }
 
 const fs::Path& FileSystem::root() const
@@ -99,17 +114,17 @@ fs::Path FileSystem::home( const fs::Path& path ) const
     return absolute_path;
 }
 
-void FileSystem::set_root( const fs::Path& root )
+void FileSystem::reset_root( const fs::Path& root )
 {
     root_ = root;
 }
 
-void FileSystem::set_initial( const fs::Path& initial )
+void FileSystem::reset_initial( const fs::Path& initial )
 {
     initial_ = initial;
 }
 
-void FileSystem::refresh_executable()
+void FileSystem::reset_executable()
 {
 #if defined(BUILD_OS_WINDOWS)
     char path [MAX_PATH + 1];
@@ -125,7 +140,7 @@ void FileSystem::refresh_executable()
 #endif
 }
 
-void FileSystem::refresh_home()
+void FileSystem::reset_home()
 {
 #if defined(BUILD_OS_WINDOWS)
     char path [MAX_PATH + 1];
@@ -139,6 +154,16 @@ void FileSystem::refresh_home()
     _NSGetExecutablePath( path, &size );
     home_ = fs::Path( path );
 #endif
+}
+
+DirectoryStack* FileSystem::directory_stack() const
+{
+    return directory_stack_;
+}
+
+const fs::Path& FileSystem::directory() const
+{
+    return directory_stack_ ? directory_stack_->directory() : empty_;
 }
 
 void FileSystem::set_directory_stack( DirectoryStack* directory_stack )
@@ -146,7 +171,34 @@ void FileSystem::set_directory_stack( DirectoryStack* directory_stack )
     directory_stack_ = directory_stack;
 }
 
-DirectoryStack* FileSystem::directory_stack() const
+void FileSystem::reset_directory( const fs::Path& directory )
 {
-    return directory_stack_;
+    if ( directory_stack_ ) 
+    {
+        directory_stack_->reset_directory( directory );
+    }
+}
+
+void FileSystem::change_directory( const fs::Path& directory )
+{
+    if ( directory_stack_ ) 
+    {
+        directory_stack_->change_directory( directory );
+    }
+}
+
+void FileSystem::push_directory( const fs::Path& directory )
+{
+    if ( directory_stack_ ) 
+    {
+        directory_stack_->push_directory( directory );
+    }
+}
+
+void FileSystem::pop_directory()
+{
+    if ( directory_stack_ ) 
+    {
+        directory_stack_->pop_directory();
+    }
 }

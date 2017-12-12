@@ -12,7 +12,7 @@ for _, architecture in ipairs(settings.architectures) do
 
         build.Cc (architecture) {
             defines = build.switch { 
-                operating_system();
+                build.operating_system();
                 windows = { "_CRT_SECURE_NO_DEPRECATE" };
                 macosx = { "LUA_USE_POSIX", "LUA_USE_DLOPEN" };
             };

@@ -3,17 +3,16 @@
 // Copyright (c) Charles Baker.  All rights reserved.
 //
 
-#include "stdafx.hpp"
 #include "Scheduler.hpp"
 #include "Target.hpp"
 #include "Graph.hpp"
 #include "BuildTool.hpp"
 #include "Job.hpp"
 #include "Context.hpp"
-#include "ScriptInterface.hpp"
 #include "Executor.hpp"
 #include "Arguments.hpp"
 #include "Error.hpp"
+#include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
 #include <sweet/process/Environment.hpp>
 #include <sweet/lua/LuaThread.hpp>
 #include <list>
@@ -76,8 +75,7 @@ void Scheduler::execute( const char* start, const char* finish )
     SWEET_ASSERT( start <= finish );
 
     Graph* graph = build_tool_->graph();
-    ScriptInterface* script_interface = build_tool_->script_interface();
-    Context* context = allocate_context( graph->target(script_interface->initial_directory().string()) );
+    Context* context = allocate_context( graph->target(build_tool_->initial().string()) );
     process_begin( context );
     context->context_thread().resume( start, finish, "BuildTool" )
     .end();
@@ -151,7 +149,7 @@ void Scheduler::execute_finished( int exit_code, Context* context, process::Envi
     process_end( context );
 
     // The environment is deleted here for symmetry with its construction in 
-    // the main thread in ScriptInterface along with filters and arguments.
+    // the main thread in the Lua bindings along with filters and arguments.
     delete environment;
 }
 
@@ -417,7 +415,7 @@ Context* Scheduler::allocate_context( Target* working_directory, Job* job )
         free_contexts_.reserve( free_contexts_.size() + DEFAULT_ENVIRONMENTS_GROW_BY );
         for ( int i = 0; i < DEFAULT_ENVIRONMENTS_GROW_BY; ++i )
         {
-            unique_ptr<Context> context( new Context(i, fs::Path(""), build_tool_) );
+            unique_ptr<Context> context( new Context(fs::Path(""), build_tool_) );
             free_contexts_.push_back( context.get() );
             contexts_.push_back( context.release() );
         }

@@ -3,7 +3,7 @@
 -- the environment variable 'SDKROOT' contains 'iPhoneSimulator'.  This is to
 -- accomodate builds triggered from Xcode that always specify 'ios' as the 
 -- platform but might be building for the iOS simulator.
-local sdkroot = getenv( "SDKROOT" );
+local sdkroot = os.getenv( "SDKROOT" );
 if platform and platform == "ios" and sdkroot and sdkroot:find("iPhoneSimulator") then 
     platform = "ios_simulator";
 end
@@ -25,7 +25,7 @@ function ios.configure( settings )
 
         local xcodebuild = "/usr/bin/xcodebuild";
         local arguments = "xcodebuild -sdk iphoneos -version";
-        local result = execute( xcodebuild, arguments, nil, nil, function(line)
+        local result = build.execute( xcodebuild, arguments, nil, nil, function(line)
             local key, value = line:match( "(%w+): ([^\n]+)" );
             if key and value then 
                 if key == "ProductBuildVersion" then 
@@ -46,7 +46,7 @@ function ios.configure( settings )
 
         local xcodebuild = "/usr/bin/xcodebuild";
         local arguments = "xcodebuild -version";
-        local result = execute( xcodebuild, arguments, nil, nil, function(line)
+        local result = build.execute( xcodebuild, arguments, nil, nil, function(line)
             local major, minor = line:match( "Xcode (%d+)%.(%d+)" );
             if major and minor then 
                 xcode_version = ("%02d%02d"):format( tonumber(major), tonumber(minor) );
@@ -67,7 +67,7 @@ function ios.configure( settings )
 
         local sw_vers = "/usr/bin/sw_vers";
         local arguments = "sw_vers -buildVersion";
-        local result = execute( sw_vers, arguments, nil, nil, function(line)
+        local result = build.execute( sw_vers, arguments, nil, nil, function(line)
             local version = line:match( "%w+" );
             if version then 
                 os_version = version;
@@ -78,7 +78,7 @@ function ios.configure( settings )
         return os_version;
     end
 
-    if operating_system() == "macosx" then
+    if build.operating_system() == "macosx" then
         local local_settings = build.local_settings;
         if not local_settings.ios then
             local sdk_version, sdk_build_version = autodetect_iphoneos_sdk_version();
@@ -205,7 +205,7 @@ function ios.build_executable( target )
     local objects = {};
     local libraries = {};
 
-    pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
+    build.pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
@@ -229,7 +229,7 @@ function ios.build_executable( target )
         print( leaf(target:filename()) );
         build.system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
     end
-    popd();
+    build.popd();
 end
 
 function ios.clean_executable( target )
@@ -271,19 +271,19 @@ function ios.deploy( directory )
 end
 
 function ios.obj_directory( target )
-    return ("%s/%s"):format( target.settings.obj, relative(target:working_directory():path(), root()) );
+    return ("%s/%s"):format( target.settings.obj, build.relative(target:working_directory():path(), build.root()) );
 end
 
 function ios.cc_name( name )
-    return ("%s.c"):format( basename(name) );
+    return ("%s.c"):format( build.basename(name) );
 end
 
 function ios.cxx_name( name )
-    return ("%s.cpp"):format( basename(name) );
+    return ("%s.cpp"):format( build.basename(name) );
 end
 
 function ios.obj_name( name, architecture )
-    return ("%s.o"):format( basename(name) );
+    return ("%s.o"):format( build.basename(name) );
 end
 
 function ios.lib_name( name, architecture )

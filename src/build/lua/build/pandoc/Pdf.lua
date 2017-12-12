@@ -29,7 +29,7 @@ function Pdf.build( pdf )
             ('"%s"'):format( pdf:dependency():filename() )
         };
         local environment = {
-            PATH = getenv( "PATH" );
+            PATH = os.getenv( "PATH" );
         };
         build.system( pandoc, arguments, environment, build.dependencies_filter(html) );
     end

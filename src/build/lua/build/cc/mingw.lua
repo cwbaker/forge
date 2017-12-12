@@ -31,19 +31,19 @@ function mingw.initialize( settings )
         
         local path = {
             ("%s/bin"):format( mingw_directory ),
-            getenv("PATH")
+            os.getenv("PATH")
         };
         putenv( "PATH", table.concat(path, ";") );
         
         local include = {
             ("%s/include"):format( mingw_directory ),
-            getenv("INCLUDE")
+            os.getenv("INCLUDE")
         };
         putenv( "INCLUDE", table.concat(include, ";") );
         
         local lib = {
             ("%s/lib"):format( mingw_directory ),
-            getenv("LIB")
+            os.getenv("LIB")
         };
         putenv( "LIB", table.concat(lib, ";") );
 

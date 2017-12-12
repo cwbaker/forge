@@ -42,7 +42,7 @@ function Css.build( css )
             ('"%s"'):format( css:filename() ),
         };
         local environment = {
-            PATH = getenv( "PATH" );
+            PATH = os.getenv( "PATH" );
         };
         build.system( ruby, arguments, environment, build.dependencies_filter(css) );
     end

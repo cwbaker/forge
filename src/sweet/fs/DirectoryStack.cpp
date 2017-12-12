@@ -1,14 +1,23 @@
 //
 // DirectoryStack.cpp
-// Copyright (c) Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include "DirectoryStack.hpp"
+#include "BasicPath.ipp"
 #include <sweet/assert/assert.hpp>
 
 using namespace sweet;
 using namespace sweet::fs;
+
+/**
+// Construct an empty DirectoryStack.
+*/
+DirectoryStack::DirectoryStack()
+: directories_()
+{
+}
 
 /**
 // Reset the working directory stack to contain only \e directory.

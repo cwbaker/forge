@@ -1,7 +1,6 @@
 #ifndef SWEET_BUILD_TOOL_TARGET_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_TARGET_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include <ctime>
 #include <string>
 #include <vector>
@@ -21,7 +20,7 @@ class BuildTool;
 /**
 // A Target.
 */
-class SWEET_BUILD_TOOL_DECLSPEC Target
+class Target
 {
     std::string id_; ///< The identifier of this Target.
     mutable std::string path_; ///< The full path to this Target in the Target namespace.
@@ -138,14 +137,6 @@ class SWEET_BUILD_TOOL_DECLSPEC Target
 
         template <class Archive> void persist( Archive& archive );
 };
-
-}
-
-namespace lua
-{
-
-void lua_push( lua_State* lua, std::time_t timestamp );
-std::time_t lua_to( lua_State* lua, int position, const std::time_t* null_pointer_for_overloading );
 
 }
 

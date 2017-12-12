@@ -1,7 +1,6 @@
 #ifndef SWEET_BUILD_TOOL_ARGUMENTS_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_ARGUMENTS_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include <sweet/lua/LuaValue.hpp>
 #include <vector>
 

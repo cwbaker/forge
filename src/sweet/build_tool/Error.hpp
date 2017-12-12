@@ -1,7 +1,6 @@
 #ifndef SWEET_BUILD_TOOL_ERROR_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_ERROR_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include <sweet/error/Error.hpp>
 #include <sweet/error/ErrorTemplate.hpp>
 
@@ -35,7 +34,7 @@ enum ErrorCode
 /**
 // The base class for exceptions thrown from the Build Tool library.
 */
-class SWEET_BUILD_TOOL_DECLSPEC Error : public error::Error
+class Error : public error::Error
 {
     public:
         Error( int error );

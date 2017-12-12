@@ -3,7 +3,6 @@
 // Copyright (c) 2007 - 2015 Charles Baker.  All rights reserved.
 //
 
-#include "stdafx.hpp"
 #include "Error.hpp"
 
 using namespace sweet::build_tool;

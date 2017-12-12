@@ -10,6 +10,7 @@ for _, architecture in ipairs(settings.architectures) do
         libraries = {    
             "boost/libs/filesystem/src/boost_filesystem",
             "boost/libs/system/src/boost_system",
+            "sweet/build_tool/build_tool_lua/build_tool_lua",
             "sweet/build_tool/build_tool",
             "sweet/cmdline/cmdline",
             "sweet/fs/fs",

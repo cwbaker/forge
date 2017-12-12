@@ -52,7 +52,7 @@ function Html.build( html )
         table.insert( arguments, ('-o "%s"'):format(html:filename()) );
         table.insert( arguments, ('"%s"'):format(html:dependency():filename()) );
         local environment = {
-            PATH = getenv( "PATH" );
+            PATH = os.getenv( "PATH" );
         };
         build.system( pandoc, arguments, environment, build.dependencies_filter(html) );
     end

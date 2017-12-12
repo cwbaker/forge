@@ -3,12 +3,10 @@
 // Copyright (c) Charles Baker.  All rights reserved.
 //
 
-#include "stdafx.hpp"
 #include "Context.hpp"
 #include "Target.hpp"
 #include "BuildTool.hpp"
 #include "Graph.hpp"
-#include "ScriptInterface.hpp"
 
 using namespace sweet;
 using namespace sweet::lua;
@@ -17,9 +15,6 @@ using namespace sweet::build_tool;
 /**
 // Constructor.
 //
-// @param index
-//  The index of this Context.
-//
 // @param directory
 //  The inital working directory to set for this Context (assumed to be
 //  an absolute path).
@@ -27,10 +22,9 @@ using namespace sweet::build_tool;
 // @param build_tool
 //  The BuildTool that this Context is part of.
 */
-Context::Context( int index, const fs::Path& directory, BuildTool* build_tool )
-: index_( index ),
-  build_tool_( build_tool ),
-  context_thread_( build_tool->script_interface()->lua() ),
+Context::Context( const fs::Path& directory, BuildTool* build_tool )
+: build_tool_( build_tool ),
+  context_thread_( *build_tool->lua() ),
   working_directory_( NULL ), 
   directories_(), 
   job_( NULL ),

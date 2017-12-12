@@ -3,16 +3,19 @@
 // Copyright (c) Charles Baker.  All rights reserved.
 //
 
-#include "stdafx.hpp"
 #include "BuildTool.hpp"
 #include "Error.hpp"
 #include "BuildToolEventSink.hpp"
-#include "OsInterface.hpp"
+#include "System.hpp"
 #include "Scheduler.hpp"
 #include "Executor.hpp"
 #include "Reader.hpp"
-#include "ScriptInterface.hpp"
 #include "Graph.hpp"
+#include "Target.hpp"
+#include "Context.hpp"
+#include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
+#include <sweet/build_tool/build_tool_lua/LuaTarget.hpp>
+#include <sweet/build_tool/build_tool_lua/LuaTargetPrototype.hpp>
 #include <sweet/fs/fs.hpp>
 
 using std::string;
@@ -38,25 +41,32 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
 : error_policy_( error_policy ),
   event_sink_( event_sink ),
   warning_level_( 0 ),
-  os_interface_( NULL ),
-  script_interface_( NULL ),
+  lua_( NULL ),
+  lua_build_tool_( NULL ),
+  system_( NULL ),
   reader_( NULL ),
   executor_( NULL ),
   scheduler_( NULL ),
-  graph_( NULL )
+  graph_( NULL ),
+  root_directory_(),
+  initial_directory_(),
+  home_directory_(),
+  executable_directory_()
 {
     SWEET_ASSERT( fs::Path(initial_directory).is_absolute() );
 
-    os_interface_ = new OsInterface;
-    script_interface_ = new ScriptInterface( os_interface_, this );
+    lua_ = new lua::Lua( error_policy_ );
+    lua_build_tool_ = new LuaBuildTool( this, lua_ );
+    system_ = new System;
     reader_ = new Reader( this );
     executor_ = new Executor( this );
     scheduler_ = new Scheduler( this );
     graph_ = new Graph( this );
 
-    script_interface_->set_root_directory( initial_directory );
-    script_interface_->set_initial_directory( initial_directory );
-    script_interface_->set_executable_directory( fs::Path(os_interface_->executable()).branch().string() );
+    root_directory_ = initial_directory;
+    initial_directory_ = initial_directory;
+    home_directory_ = fs::Path( system_->home() );
+    executable_directory_ = fs::Path( system_->executable() ).branch();
 }
 
 /**
@@ -72,8 +82,9 @@ BuildTool::~BuildTool()
     delete scheduler_;
     delete executor_;
     delete reader_;
-    delete script_interface_;
-    delete os_interface_;
+    delete system_;
+    delete lua_build_tool_;
+    delete lua_;
 }
 
 /**
@@ -88,27 +99,15 @@ error::ErrorPolicy& BuildTool::error_policy() const
 }
 
 /**
-// Get the OsInterface for this BuildTool.
+// Get the System for this BuildTool.
 //
 // @return
-//  The OsInterface.
+//  The System.
 */
-OsInterface* BuildTool::os_interface() const
+System* BuildTool::system() const
 {
-    SWEET_ASSERT( os_interface_ );
-    return os_interface_;
-}
-
-/**
-// Get the ScriptInterface for this BuildTool.
-//
-// @return
-//  The ScriptInterface.
-*/
-ScriptInterface* BuildTool::script_interface() const
-{
-    SWEET_ASSERT( script_interface_ );
-    return script_interface_;
+    SWEET_ASSERT( system_ );
+    return system_;
 }
 
 /**
@@ -160,6 +159,103 @@ Scheduler* BuildTool::scheduler() const
 }
 
 /**
+// Get the currently active Context for this BuildTool.
+//
+// @return
+//  The currently active Context.
+*/
+Context* BuildTool::context() const
+{
+    SWEET_ASSERT( scheduler_ );
+    SWEET_ASSERT( scheduler_->context() );
+    return scheduler_->context();
+}
+
+lua::Lua* BuildTool::lua() const
+{
+    SWEET_ASSERT( lua_ );
+    return lua_;
+}
+
+const fs::Path& BuildTool::root() const
+{
+    return root_directory_;
+}
+
+fs::Path BuildTool::root( const fs::Path& path ) const
+{
+    if ( fs::Path(path).is_absolute() )
+    {
+        return path;
+    }
+
+    fs::Path absolute_path( root_directory_ );
+    absolute_path /= path;
+    absolute_path.normalize();
+    return absolute_path.string();
+}
+
+const fs::Path& BuildTool::initial() const
+{
+    return initial_directory_;
+}
+
+fs::Path BuildTool::initial( const fs::Path& path ) const
+{
+    if ( fs::Path(path).is_absolute() )
+    {
+        return path;
+    }
+
+    fs::Path absolute_path( initial_directory_ );
+    absolute_path /= path;
+    absolute_path.normalize();
+    return absolute_path.string();
+}
+
+const fs::Path& BuildTool::home() const
+{
+    return home_directory_;
+}
+
+fs::Path BuildTool::home( const fs::Path& path ) const
+{
+    if ( fs::Path(path).is_absolute() )
+    {
+        return path;
+    }
+
+    fs::Path absolute_path( home_directory_ );
+    absolute_path /= path;
+    absolute_path.normalize();
+    return absolute_path.string();
+}
+
+const fs::Path& BuildTool::executable() const
+{
+    return executable_directory_;
+}
+
+fs::Path BuildTool::executable( const fs::Path& path ) const
+{
+    if ( fs::Path(path).is_absolute() )
+    {
+        return path;
+    }
+    
+    fs::Path absolute_path( executable_directory_ );
+    absolute_path /= path;
+    absolute_path.normalize();
+    return absolute_path.string();
+}
+
+fs::Path BuildTool::absolute( const fs::Path& path ) const
+{
+    const fs::Path& base_path = context()->directory();
+    return fs::absolute( path, base_path );
+}
+
+/**
 // Set the warning level that warnings are reported up to.
 //
 // Any warnings at a level equal to or less than \e warning_level will be
@@ -192,8 +288,8 @@ int BuildTool::warning_level() const
 */
 void BuildTool::set_stack_trace_enabled( bool stack_trace_enabled )
 {
-    SWEET_ASSERT( script_interface_ );
-    script_interface_->lua().set_stack_trace_enabled( stack_trace_enabled );
+    SWEET_ASSERT( lua_ );
+    lua_->set_stack_trace_enabled( stack_trace_enabled );
 }
 
 /**
@@ -204,8 +300,8 @@ void BuildTool::set_stack_trace_enabled( bool stack_trace_enabled )
 */
 bool BuildTool::stack_trace_enabled() const
 {
-    SWEET_ASSERT( script_interface_ );
-    return script_interface_->lua().is_stack_trace_enabled();
+    SWEET_ASSERT( lua_ );
+    return lua_->is_stack_trace_enabled();
 }
 
 /**
@@ -268,15 +364,15 @@ const std::string& BuildTool::build_hooks_library() const
 void BuildTool::search_up_for_root_directory( const std::string& directory )
 {
     boost::filesystem::path root_directory( directory );
-    while ( !root_directory.empty() && !os_interface_->exists((root_directory / ROOT_FILENAME).string()) )
+    while ( !root_directory.empty() && !system_->exists((root_directory / ROOT_FILENAME).string()) )
     {
         root_directory = root_directory.branch_path();
     }
-    if ( !os_interface_->exists((root_directory / ROOT_FILENAME).string()) )
+    if ( !system_->exists((root_directory / ROOT_FILENAME).string()) )
     {
         SWEET_ERROR( RootFileNotFoundError("The file '%s' could not be found to identify the root directory", ROOT_FILENAME) );
     }
-    script_interface_->set_root_directory( root_directory.string() );
+    root_directory_ = fs::Path( root_directory.string() );
 }
 
 /**
@@ -300,7 +396,7 @@ void BuildTool::assign( const std::vector<std::string>& assignments )
         {
             std::string attribute = i->substr( 0, position );
             std::string value = i->substr( position + 1, std::string::npos );
-            script_interface_->lua().globals()
+            lua_->globals()
                 ( attribute.c_str(), value )
             ;
         }
@@ -322,18 +418,23 @@ void BuildTool::execute( const std::string& filename, const std::vector<std::str
     fs::Path path( filename );
     if ( path.empty() )
     {
-        path = script_interface_->root_directory() / string( ROOT_FILENAME );
+        path = root_directory_ / string( ROOT_FILENAME );
     }
     else if ( path.is_relative() )
     {
-        path = script_interface_->initial_directory() / filename;
+        path = initial_directory_ / filename;
         path.normalize();
     }
     
+    error_policy_.push_errors();
     scheduler_->load( path );
-    for ( vector<string>::const_iterator command = commands.begin(); command != commands.end(); ++command )
+    int errors = error_policy_.pop_errors();
+    if ( errors == 0 )
     {
-        scheduler_->command( path, *command );
+        for ( vector<string>::const_iterator command = commands.begin(); command != commands.end(); ++command )
+        {
+            scheduler_->command( path, *command );
+        }
     }
 }
 
@@ -349,6 +450,45 @@ void BuildTool::execute( const std::string& filename, const std::vector<std::str
 void BuildTool::execute( const char* start, const char* finish )
 {
     scheduler_->execute( start, finish );
+}
+
+void BuildTool::create_target_lua_binding( Target* target )
+{
+    SWEET_ASSERT( lua_build_tool_ );
+    lua_build_tool_->lua_target()->create_target( target );
+}
+
+void BuildTool::recover_target_lua_binding( Target* target )
+{
+    SWEET_ASSERT( lua_build_tool_ );
+    lua_build_tool_->lua_target()->recover_target( target );
+}
+
+void BuildTool::update_target_lua_binding( Target* target, TargetPrototype* target_prototype )
+{
+    SWEET_ASSERT( lua_build_tool_ );
+    lua_build_tool_->lua_target()->update_target( target, target_prototype );
+}
+
+void BuildTool::destroy_target_lua_binding( Target* target )
+{
+    SWEET_ASSERT( target );
+    if ( target && target->referenced_by_script() )
+    {
+        lua_build_tool_->lua_target()->destroy_target( target );
+    }
+}
+
+void BuildTool::create_target_prototype_lua_binding( TargetPrototype* target_prototype )
+{
+    SWEET_ASSERT( lua_build_tool_ );
+    lua_build_tool_->lua_target_prototype()->create_target_prototype( target_prototype );
+}
+
+void BuildTool::destroy_target_prototype_lua_binding( TargetPrototype* target_prototype )
+{
+    SWEET_ASSERT( lua_build_tool_ );
+    lua_build_tool_->lua_target_prototype()->destroy_target_prototype( target_prototype );
 }
 
 /**

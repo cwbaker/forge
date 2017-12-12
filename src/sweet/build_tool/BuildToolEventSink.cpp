@@ -3,7 +3,6 @@
 // Copyright (c) 2010 - 2015 Charles Baker.  All rights reserved.
 //
 
-#include "stdafx.hpp"
 #include "BuildToolEventSink.hpp"
 
 using namespace sweet::build_tool;

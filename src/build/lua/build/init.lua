@@ -34,14 +34,14 @@ function split_modules( module, qualified_id )
 end
 
 -- Provide buildfile() that restores the settings stack position.
-local original_buildfile = buildfile;
+local original_buildfile = build.buildfile;
 function buildfile( ... )
     local position = build.store_settings();
     pcall( original_buildfile, ... );
     build.restore_settings( position );
 end
 
-build = {};
+build = _G.build or {};
 
 function build.matches( value, ... )
     for i = 1, select("#", ...) do 
@@ -90,7 +90,7 @@ function build.default_call_function( target, ... )
 end
 
 function build.TargetPrototype( id, create_function )
-    local target_prototype = TargetPrototype { id };
+    local target_prototype = build.target_prototype( id );
     getmetatable( target_prototype ).__call = create_function or build.default_create_function;
     local module, id = split_modules( build, id );
     module[id] = target_prototype;
@@ -98,13 +98,13 @@ function build.TargetPrototype( id, create_function )
 end
 
 function build.Target( id, target_prototype, definition )
-    local target_ = target( id, target_prototype, definition );
+    local target_ = build.target( id, target_prototype, definition );
     getmetatable( target_ ).__call = build.default_call_function;
     return target_;
 end
 
 function build.File( filename, target_prototype, definition )
-    local target_ = file( filename, target_prototype, definition );
+    local target_ = build.file( filename, target_prototype, definition );
     target_:set_cleanable( true );
     getmetatable( target_ ).__call = build.default_call_function;
     return target_;
@@ -114,7 +114,7 @@ function build.SourceFile( value, settings )
     local target = value;
     if type(target) == "string" then 
         settings = settings or build.current_settings();
-        target = file( build.interpolate(value, settings) );
+        target = build.file( build.interpolate(value, settings) );
         target:set_required_to_exist( true );
         target:set_cleanable( false );
     end
@@ -125,7 +125,7 @@ function build.ImplicitSourceFile( value, settings )
     local target = value;
     if type(target) == "string" then 
         settings = settings or build.current_settings();
-        target = file( build.interpolate(value, settings) );
+        target = build.file( build.interpolate(value, settings) );
         target:set_cleanable( false );
     end
     return target;
@@ -140,7 +140,7 @@ end
 -- Perform per run initialization of the build system.
 function build.initialize( project_settings )
     -- Set default values for variables that can be passed on the command line.
-    platform = platform or operating_system();
+    platform = platform or build.operating_system();
     variant = variant or "debug";
     version = version or ("%s %s %s"):format( os.date("%Y.%m.%d.%H%M"), platform, variant );
     goal = goal or "";
@@ -153,11 +153,11 @@ function build.initialize( project_settings )
         windows = "msvc"; 
     };
 
-    set_maximum_parallel_jobs( jobs );
-    if operating_system() == "windows" then 
-        set_build_hooks_library( executable("build_hooks.dll") );
-    elseif operating_system() == "macosx" then
-        set_build_hooks_library( executable("build_hooks.dylib") );
+    build.set_maximum_parallel_jobs( jobs );
+    if build.operating_system() == "windows" then 
+        build.set_build_hooks_library( build.executable("build_hooks.dll") );
+    elseif build.operating_system() == "macosx" then
+        build.set_build_hooks_library( build.executable("build_hooks.dylib") );
     end    
 
     -- Set default settings (all other settings inherit from this table).
@@ -167,12 +167,12 @@ function build.initialize( project_settings )
     setmetatable( local_settings, {__index = default_settings}  );
 
     local user_settings_filename = default_settings.user_settings_filename;
-    if exists(user_settings_filename) then
+    if build.exists(user_settings_filename) then
         build.merge_settings( local_settings, dofile(user_settings_filename) );
     end
 
     local local_settings_filename = default_settings.local_settings_filename;
-    if exists(local_settings_filename) then
+    if build.exists(local_settings_filename) then
         build.merge_settings( local_settings, dofile(local_settings_filename) );
     end
 
@@ -196,7 +196,7 @@ function build.initialize( project_settings )
         error( string.format("The library type '%s' is not 'static' or 'dynamic'", tostring(settings.library_type)) );
     end
 
-    default_settings.cache = root( ("%s/%s_%s.cache"):format(settings.obj, platform, variant) );
+    default_settings.cache = build.root( ("%s/%s_%s.cache"):format(settings.obj, platform, variant) );
     _G.settings = settings;
     build.default_buildfiles_ = {};
     build.default_targets_ = {};
@@ -272,7 +272,7 @@ end
 -- Add a target to the current directory's target so that it will be built 
 -- when a build is invoked from that directory.
 function build.default_target( target )
-    local directory = working_directory();
+    local directory = build.working_directory();
     directory:add_dependency( target );
 end
 
@@ -280,8 +280,8 @@ end
 -- when a build is invoked from that directory.
 function build.default_targets( targets )
     for _, target in ipairs(targets) do 
-        local directory = working_directory();
-        table.insert( build.default_targets_, {directory:path(), absolute(target)} );
+        local directory = build.working_directory();
+        table.insert( build.default_targets_, {directory:path(), build.absolute(target)} );
     end
 end
 
@@ -309,7 +309,7 @@ function build.clean_visit( target )
     if fn then 
         fn( target );
     elseif target:cleanable() and target:filename() ~= "" then 
-        rm( target:filename() );
+        build.rm( target:filename() );
     end
 end
 
@@ -319,7 +319,7 @@ function build.system( command, arguments, environment, dependencies_filter, std
     if type(arguments) == "table" then
         arguments = table.concat( arguments, " " );
     end
-    if execute(command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ...) ~= 0 then       
+    if build.execute(command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ...) ~= 0 then       
         error( ("%s failed"):format(arguments), 0 );
     end
 end
@@ -457,25 +457,24 @@ end
 -- running depend and bind passes over the target specified by /goal/ and its
 -- dependencies.
 function build.load( force )
-    local load_start = ticks();
-    local cache_target = load_binary( settings.cache );
+    local load_start = build.ticks();
+    local cache_target = build.load_binary( settings.cache );
     if cache_target == nil or cache_target:outdated() or build.local_settings.updated or force then
-        clear();
+        build.clear();
         build.push_settings( build.settings );
         for _, filename in ipairs(build.default_buildfiles_) do
             buildfile( filename );
         end
         build.pop_settings();
 
-        cache_target = find_target( settings.cache );
+        cache_target = build.find_target( settings.cache );
         assertf( cache_target, "No cache target found at '%s' after loading buildfiles", settings.cache );
-        local script = build.script;
-        cache_target:add_dependency( file(root("build.lua")) );
-        cache_target:add_dependency( file(script("build/default_settings")) );
-        cache_target:add_dependency( file(script("build/commands")) );
-        cache_target:add_dependency( file(script("build/Generate")) );
-        cache_target:add_dependency( file(script("build/Directory")) );
-        cache_target:add_dependency( file(script("build/Copy")) );
+        cache_target:add_dependency( build.file(build.root("build.lua")) );
+        cache_target:add_dependency( build.file(build.script("build/default_settings")) );
+        cache_target:add_dependency( build.file(build.script("build/commands")) );
+        cache_target:add_dependency( build.file(build.script("build/Generate")) );
+        cache_target:add_dependency( build.file(build.script("build/Directory")) );
+        cache_target:add_dependency( build.file(build.script("build/Copy")) );
 
         -- Add default targets as dependencies of the working directory that
         -- was in effect when `build.default_target(s)` was called.
@@ -485,7 +484,7 @@ function build.load( force )
             directory:add_dependency( target );
         end
     end
-    local load_finish = ticks();
+    local load_finish = build.ticks();
     return load_finish - load_start;
 end
 
@@ -495,8 +494,8 @@ function build.save()
         build.local_settings.updated = nil;
         build.save_settings( build.local_settings, build.settings.local_settings_filename );
     end
-    mkdir( branch(settings.cache) );
-    save_binary( settings.cache );
+    build.mkdir( build.branch(settings.cache) );
+    build.save_binary( settings.cache );
 end
 
 -- Convert /name/ into a path relative to the first pattern in package.paths
@@ -504,7 +503,7 @@ end
 function build.script( name )
     for path in string.gmatch(package.path, "([^;]*);?") do
         local filename = string.gsub( path, "?", name );
-        if exists(filename) then
+        if build.exists(filename) then
             return filename;
         end
     end
@@ -514,7 +513,7 @@ end
 -- Strip the extension from a path (e.g. "foo.txt" -> "foo" and "bar/foo.txt"
 -- -> "bar/foo".
 function build.strip( path )
-    local branch = branch( path );
+    local branch = build.branch( path );
     if branch ~= "" then 
         return ("%s/%s"):format( branch, basename(path) );
     else
@@ -578,7 +577,7 @@ function build.add_library_dependencies( executable, libraries )
         local architecture = executable.architecture;
         for _, value in ipairs(libraries) do
             local library = ("%s_%s"):format( value, architecture );
-            executable:add_dependency( target(root(library)) );
+            executable:add_dependency( build.target(build.root(library)) );
         end
     end
 end
@@ -586,7 +585,7 @@ end
 function build.add_jar_dependencies( jar, jars )
     if jars and platform ~= "" then
         for _, value in ipairs(jars) do
-            jar:add_dependency( target(root(value)) );
+            jar:add_dependency( build.target(build.root(value)) );
         end
     end
 end
@@ -600,7 +599,7 @@ function build.dependencies_filter( target )
             local READ_PATTERN = "^== read '([^']*)'";
             local filename = line:match( READ_PATTERN );
             if filename then
-                local within_source_tree = relative( absolute(filename), root() ):find( "..", 1, true ) == nil;
+                local within_source_tree = build.relative( build.absolute(filename), build.root() ):find( "..", 1, true ) == nil;
                 if within_source_tree then 
                     local header = build.ImplicitSourceFile( filename );
                     target:add_implicit_dependency( header );

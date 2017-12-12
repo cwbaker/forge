@@ -10,7 +10,7 @@ function Lipo.create( settings, id )
 end
 
 function Lipo.call( lipo, definition )
-    local working_directory = working_directory();
+    local working_directory = build.working_directory();
     for _, dependency in ipairs(definition) do 
         working_directory:remove_dependency( dependency );
         lipo:add_dependency( dependency );

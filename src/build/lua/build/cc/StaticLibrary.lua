@@ -7,7 +7,7 @@ function StaticLibrary.create( settings, id, architecture )
     static_library.settings = settings;
     static_library.architecture = architecture;
     static_library:set_filename( ("%s/%s"):format(settings.lib, lib_name(id, architecture)) );
-    static_library:add_dependency( Directory(branch(static_library:filename())) );
+    static_library:add_dependency( Directory(build.branch(static_library:filename())) );
     build.default_target( static_library );
     return static_library;
 end

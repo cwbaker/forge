@@ -3,7 +3,6 @@
 // Copyright (c) 2011 - 2015 Charles Baker.  All rights reserved.
 //
 
-#include "stdafx.hpp"
 #include "Arguments.hpp"
 #include <sweet/lua/AddParameter.hpp>
 #include <sweet/lua/LuaValue.hpp>

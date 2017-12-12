@@ -1,15 +1,13 @@
 //
 // Job.cpp
-// Copyright (c) Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
-#include "stdafx.hpp"
 #include "Job.hpp"
 #include "Target.hpp"
 #include <sweet/assert/assert.hpp>
 
 using namespace sweet;
-using namespace sweet::lua;
 using namespace sweet::build_tool;
 
 Job::Job( Target* target, int height )

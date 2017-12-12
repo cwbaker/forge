@@ -1,17 +1,15 @@
 //
 // Graph.cpp
-// Copyright (c) 2007 - 2015 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
-#include "stdafx.hpp"
 #include "Graph.hpp"
 #include "Error.hpp"
 #include "TargetPrototype.hpp"
 #include "Target.hpp"
 #include "BuildTool.hpp"
-#include "ScriptInterface.hpp"
 #include "Scheduler.hpp"
-#include "OsInterface.hpp"
+#include "System.hpp"
 #include "persist.hpp"
 #include <sweet/assert/assert.hpp>
 #include <memory>
@@ -29,6 +27,7 @@ using namespace sweet::build_tool;
 */
 Graph::Graph()
 : build_tool_( NULL ),
+  target_prototypes_(),
   filename_(),
   root_target_(),
   cache_target_(),
@@ -46,6 +45,7 @@ Graph::Graph()
 */
 Graph::Graph( BuildTool* build_tool )
 : build_tool_( build_tool ),
+  target_prototypes_(),
   filename_(),
   root_target_(),
   cache_target_(),
@@ -60,6 +60,12 @@ Graph::Graph( BuildTool* build_tool )
 Graph::~Graph()
 {
     delete root_target_;
+
+    while ( !target_prototypes_.empty() )
+    {
+        delete target_prototypes_.back();
+        target_prototypes_.pop_back();
+    }
 }
 
 /**
@@ -168,6 +174,40 @@ int Graph::visited_revision() const
 int Graph::successful_revision() const
 {
     return successful_revision_;
+}
+
+/**
+// Find or create a TargetPrototype.
+//
+// @param id
+//  The identifier of the TargetPrototype to find or create (assumed not 
+//  empty).
+//
+// @return
+//  The TargetPrototype.
+*/
+TargetPrototype* Graph::target_prototype( const std::string& id )
+{   
+    SWEET_ASSERT( !id.empty() );
+
+    vector<TargetPrototype* >::const_iterator i = target_prototypes_.begin(); 
+    while ( i != target_prototypes_.end() && (*i)->id() != id )
+    {
+        ++i;
+    }
+
+    TargetPrototype* target_prototype = NULL;
+    if ( i == target_prototypes_.end() )
+    {
+        unique_ptr<TargetPrototype> new_target_prototype( new TargetPrototype(id, build_tool_) );
+        target_prototype = new_target_prototype.get();
+        target_prototypes_.push_back( new_target_prototype.release() );
+    }
+    else
+    {
+        target_prototype = *i;
+    }    
+    return target_prototype;
 }
 
 /**
@@ -331,23 +371,6 @@ Target* Graph::find_target( const std::string& id, Target* working_directory )
 }
 
 /**
-// Destroy a target.
-//
-// @param target
-//  The Target to destroy (assumed not null).
-*/
-void Graph::destroy_target_lua_binding( Target* target )
-{
-    SWEET_ASSERT( target );
-    if ( target && target->referenced_by_script() )
-    {
-        ScriptInterface* script_interface = build_tool_->script_interface();
-        SWEET_ASSERT( script_interface );
-        script_interface->destroy_target( target );
-    }
-}
-
-/**
 // Load a buildfile into this Graph.
 //
 // @param filename
@@ -358,7 +381,7 @@ void Graph::buildfile( const std::string& filename )
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( root_target_ );
      
-    fs::Path path( build_tool_->script_interface()->absolute(filename) );
+    fs::Path path( build_tool_->absolute(filename) );
     SWEET_ASSERT( path.is_absolute() );
     
     Target* buildfile_target = Graph::target( path.string(), NULL, NULL );
@@ -510,7 +533,7 @@ void Graph::clear()
             SWEET_ASSERT( target );
             target->clear_explicit_dependencies();
             target->destroy_anonymous_targets();
-            target->graph()->destroy_target_lua_binding( target );
+            target->graph()->build_tool()->destroy_target_lua_binding( target );
 
             const vector<Target*>& targets = target->targets();
             for ( vector<Target*>::const_iterator i = targets.begin(); i != targets.end(); ++i )
@@ -559,7 +582,7 @@ Target* Graph::load_xml( const std::string& filename )
     filename_ = filename;
     cache_target_ = NULL;
 
-    if ( build_tool_->os_interface()->exists(filename) )
+    if ( build_tool_->system()->exists(filename) )
     {
         fs::Path path( filename );
         SWEET_ASSERT( path.is_absolute() );
@@ -616,7 +639,7 @@ Target* Graph::load_binary( const std::string& filename )
     filename_ = filename;
     cache_target_ = NULL;
 
-    if ( build_tool_->os_interface()->exists(filename) )
+    if ( build_tool_->system()->exists(filename) )
     {
         fs::Path path( filename );
         SWEET_ASSERT( path.is_absolute() );

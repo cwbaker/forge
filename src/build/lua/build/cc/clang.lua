@@ -2,9 +2,9 @@
 clang = {};
 
 function clang.append_defines( target, defines )
-    table.insert( defines, ('-DBUILD_PLATFORM_%s'):format(upper(platform)) );
-    table.insert( defines, ('-DBUILD_VARIANT_%s'):format(upper(variant)) );
-    table.insert( defines, ('-DBUILD_LIBRARY_TYPE_%s'):format(upper(target.settings.library_type)) );
+    table.insert( defines, ('-DBUILD_PLATFORM_%s'):format(build.upper(platform)) );
+    table.insert( defines, ('-DBUILD_VARIANT_%s'):format(build.upper(variant)) );
+    table.insert( defines, ('-DBUILD_LIBRARY_TYPE_%s'):format(build.upper(target.settings.library_type)) );
     table.insert( defines, ('-DBUILD_BIN_DIRECTORY="\\"%s\\""'):format(target.settings.bin) );
     table.insert( defines, ('-DBUILD_MODULE_DIRECTORY="\\"%s\\""'):format(target:working_directory():path()) );
     table.insert( defines, ('-DBUILD_VERSION="\\"%s\\""'):format(version) );
@@ -164,7 +164,7 @@ function clang.append_link_flags( target, flags )
     end
     
     if target.settings.generate_map_file then
-        table.insert( flags, ('-Wl,-map,"%s"'):format(native(("%s/%s.map"):format(obj_directory(target), target:id()))) );
+        table.insert( flags, ('-Wl,-map,"%s"'):format(build.native(("%s/%s.map"):format(obj_directory(target), target:id()))) );
     end
 
     if target.settings.strip and not target.settings.generate_dsym_bundle then
@@ -175,7 +175,7 @@ function clang.append_link_flags( target, flags )
         table.insert( flags, ('-exported_symbols_list "%s"'):format(absolute(target.settings.exported_symbols_list)) );
     end
 
-    table.insert( flags, ('-o "%s"'):format(native(target:filename())) );
+    table.insert( flags, ('-o "%s"'):format(build.native(target:filename())) );
 end
 
 function clang.append_link_libraries( target, libraries )

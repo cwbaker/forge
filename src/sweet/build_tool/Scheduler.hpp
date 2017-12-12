@@ -1,7 +1,6 @@
 #ifndef SWEET_BUILD_TOOL_SCHEDULER_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_SCHEDULER_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include <sweet/fs/fs.hpp>
 #include <deque>
 #include <vector>

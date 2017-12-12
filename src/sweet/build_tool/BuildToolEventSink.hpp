@@ -1,8 +1,6 @@
 #ifndef SWEET_BUILD_TOOL_BUILDTOOLEVENTSINK_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_BUILDTOOLEVENTSINK_HPP_INCLUDED
 
-#include "declspec.hpp"
-
 namespace sweet
 {
 
@@ -15,7 +13,7 @@ class BuildTool;
 // An interface for classes that wish to receive events from a 
 // BuildTool.
 */
-class SWEET_BUILD_TOOL_DECLSPEC BuildToolEventSink
+class BuildToolEventSink
 {
     public:
         virtual ~BuildToolEventSink();

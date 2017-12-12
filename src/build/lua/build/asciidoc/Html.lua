@@ -30,7 +30,7 @@ function Html.build( html )
             ('"%s"'):format( html:dependency():filename() )
         };
         local environment = {
-            PATH = getenv( "PATH" );
+            PATH = os.getenv( "PATH" );
         };
         build.system( python, arguments, environment, build.dependencies_filter(html) );
     end

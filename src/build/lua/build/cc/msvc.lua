@@ -31,7 +31,7 @@ function msvc.configure( settings )
         end
     end
 
-    if operating_system() == "windows" then
+    if build.operating_system() == "windows" then
         local local_settings = build.local_settings;
         if not local_settings.msvc then
             local_settings.updated = true;
@@ -101,16 +101,16 @@ function msvc.initialize( settings )
                 LIB = table.concat( lib_i386, ";" );
                 LIBPATH = table.concat( lib_i386, ";" );
                 INCLUDE = table.concat( include, ";" );
-                SYSTEMROOT = getenv( "SYSTEMROOT" );
-                TMP = getenv( "TMP" );
+                SYSTEMROOT = os.getenv( "SYSTEMROOT" );
+                TMP = os.getenv( "TMP" );
             };
             ["x86_64"] = {
                 PATH = table.concat( path_x86_64, ";" );
                 LIB = table.concat( lib_x86_64, ";" );
                 LIBPATH = table.concat( lib_x86_64, ";" );
                 INCLUDE = table.concat( include, ";" );
-                SYSTEMROOT = getenv( "SYSTEMROOT" );
-                TMP = getenv( "TMP" );
+                SYSTEMROOT = os.getenv( "SYSTEMROOT" );
+                TMP = os.getenv( "TMP" );
             };
         };
     end
@@ -133,11 +133,11 @@ function msvc.windows_sdk_tool( target, tool )
 end
 
 function msvc.append_defines( target, flags )
-    table.insert( flags, ('/DBUILD_PLATFORM_%s'):format(upper(platform)) );
-    table.insert( flags, ('/DBUILD_VARIANT_%s'):format(upper(variant)) );
+    table.insert( flags, ('/DBUILD_PLATFORM_%s'):format(build.upper(platform)) );
+    table.insert( flags, ('/DBUILD_VARIANT_%s'):format(build.upper(variant)) );
     table.insert( flags, ('/DBUILD_LIBRARY_SUFFIX="\\"_%s.lib\\""'):format(target.architecture) );
-    table.insert( flags, ('/DBUILD_MODULE_%s'):format(upper(string.gsub(target.module:id(), "-", "_"))) );
-    table.insert( flags, ('/DBUILD_LIBRARY_TYPE_%s'):format(upper(target.settings.library_type)) );
+    table.insert( flags, ('/DBUILD_MODULE_%s'):format(build.upper(string.gsub(target.module:id(), "-", "_"))) );
+    table.insert( flags, ('/DBUILD_LIBRARY_TYPE_%s'):format(build.upper(target.settings.library_type)) );
     table.insert( flags, '/D_CRT_SECURE_NO_WARNINGS' );
 
     if string.find(target.settings.runtime_library, "debug", 1, true) then
@@ -167,7 +167,7 @@ end
 function msvc.append_include_directories( target, flags )
     if target.include_directories then
         for _, directory in ipairs(target.include_directories) do
-            table.insert( flags, ('/I "%s"'):format(relative(directory)) );
+            table.insert( flags, ('/I "%s"'):format(build.relative(directory)) );
         end
     end
 
@@ -212,7 +212,7 @@ function msvc.append_compile_flags( target, flags )
     
     if target.settings.debug then
         local pdb = ("%s%s"):format(obj_directory(target), pdb_name(target.module:id()) );
-        table.insert( flags, ("/Zi /Fd%s"):format(native(pdb)) );
+        table.insert( flags, ("/Zi /Fd%s"):format(build.native(pdb)) );
     end
 
     if target.settings.link_time_code_generation then
@@ -278,10 +278,10 @@ function msvc.append_link_flags( target, flags )
         table.insert( flags, ("/subsystem:%s"):format(target.settings.subsystem) );
     end
 
-    table.insert( flags, ("/out:%s"):format(native(target:filename())) );
+    table.insert( flags, ("/out:%s"):format(build.native(target:filename())) );
     if target:prototype() == build.DynamicLibrary then
         table.insert( flags, "/dll" );
-        table.insert( flags, ("/implib:%s"):format(native(("%s/%s.lib"):format(target.settings.lib, target:id()))) );
+        table.insert( flags, ("/implib:%s"):format(build.native(("%s/%s.lib"):format(target.settings.lib, target:id()))) );
     end
     
     if target.settings.verbose_linking then
@@ -290,7 +290,7 @@ function msvc.append_link_flags( target, flags )
     
     if target.settings.debug then
         table.insert( flags, "/debug" );
-        table.insert( flags, ("/pdb:%s"):format(native(obj_directory(target), pdb_name(target:id()))) );
+        table.insert( flags, ("/pdb:%s"):format(build.native(obj_directory(target), pdb_name(target:id()))) );
     end
 
     if target.settings.link_time_code_generation then
@@ -298,7 +298,7 @@ function msvc.append_link_flags( target, flags )
     end
 
     if target.settings.generate_map_file then
-        table.insert( flags, ("/map:%s.map"):format(native(("%s%s"):format(obj_directory(target), target:id()))) );
+        table.insert( flags, ("/map:%s.map"):format(build.native(("%s%s"):format(obj_directory(target), target:id()))) );
     end
 
     if target.settings.optimization then
@@ -335,7 +335,7 @@ function msvc.dependencies_filter( output_directory, source_directory )
     local directories = { source_directory };
 
     -- Strip the backslash delimited prefix from _include_path_ and return the
-    -- remaining portion.  This remaining portion is the correct relative path to
+    -- remaining portion.  This remaining portion is the correct build.relative path to
     -- a header.
     local function relative_include_path( include_path )
         local position = 1;
@@ -370,7 +370,7 @@ function msvc.dependencies_filter( output_directory, source_directory )
                 path = ("%s/%s"):format( directory, relative_include_path(path) );
             end
 
-            local within_source_tree = relative( path, root() ):find( "..", 1, true ) == nil;
+            local within_source_tree = build.relative( path, root() ):find( "..", 1, true ) == nil;
             if within_source_tree then 
                 local header = build.SourceFile( path );
                 object:add_dependency( header );

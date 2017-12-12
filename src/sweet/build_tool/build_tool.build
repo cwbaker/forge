@@ -1,15 +1,25 @@
 
 buildfile "build/build.build";
 buildfile "build_hooks/build_hooks.build";
+buildfile "build_tool_lua/build_tool_lua.build";
 buildfile "build_tool_test/build_tool_test.build";
 
-local settings = build.current_settings();
+local settings = build.push_settings {
+    defines = {
+        "_CRT_SECURE_NO_DEPRECATE",
+        "_SCL_SECURE_NO_DEPRECATE",
+        "_WIN32_WINNT=0x0500",
+        "WIN32_LEAN_AND_MEAN"
+    }
+};
+
 for _, architecture in ipairs(settings.architectures) do
     build.Library ("build_tool", architecture) {
         libraries = {
             "boost/libs/filesystem/src/boost_filesystem",
             "boost/libs/system/src/boost_system",
             "sweet/assert/assert",
+            "sweet/build_tool/build_tool_lua/build_tool_lua",
             "sweet/error/error",
             "sweet/lua/lua",
             "lua/liblua",
@@ -30,12 +40,13 @@ for _, architecture in ipairs(settings.architectures) do
             "Executor.cpp",
             "Graph.cpp",
             "Job.cpp",
-            "OsInterface.cpp",
             "Reader.cpp", 
             "Scheduler.cpp", 
-            "ScriptInterface.cpp",
+            "System.cpp",
             "Target.cpp",
             "TargetPrototype.cpp"
         };
     }
 end
+
+build.pop_settings();

@@ -1,16 +1,15 @@
 //
 // Target.cpp
-// Copyright (c) 2007 - 2015 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
-#include "stdafx.hpp"
 #include "Target.hpp"
 #include "Error.hpp"
 #include "TargetPrototype.hpp"
 #include "Graph.hpp"
 #include "BuildTool.hpp"
-#include "ScriptInterface.hpp"
-#include "OsInterface.hpp"
+#include "System.hpp"
+#include <sweet/assert/assert.hpp>
 #include <algorithm>
 
 using std::min;
@@ -106,7 +105,7 @@ Target::~Target()
 
     if ( graph_ )
     {
-        graph_->destroy_target_lua_binding( this );
+        graph_->build_tool()->destroy_target_lua_binding( this );
     }
 }
 
@@ -125,8 +124,8 @@ void Target::recover( Graph* graph )
 
     if ( referenced_by_script_ )
     {
-        graph->build_tool()->script_interface()->recover_target( this );
-        graph->build_tool()->script_interface()->update_target( this, prototype() );
+        graph->build_tool()->recover_target_lua_binding( this );
+        graph->build_tool()->update_target_lua_binding( this, prototype() );
     }
 
     for ( vector<Target*>::const_iterator i = targets_.begin(); i != targets_.end(); ++i )
@@ -249,7 +248,7 @@ void Target::set_prototype( TargetPrototype* target_prototype )
         prototype_ = target_prototype;
         if ( referenced_by_script() )
         {
-            graph_->build_tool()->script_interface()->update_target( this, target_prototype );
+            graph_->build_tool()->update_target_lua_binding( this, target_prototype );
         }
     }
 }
@@ -310,12 +309,12 @@ void Target::bind_to_file()
 
             for ( vector<string>::const_iterator filename = filenames_.begin(); filename != filenames_.end(); ++filename )
             {
-                OsInterface* os_interface = graph_->build_tool()->os_interface();
-                if ( os_interface->exists(*filename) )
+                System* system = graph_->build_tool()->system();
+                if ( system->exists(*filename) )
                 {
-                    if ( always_bind_ || !dependencies_.empty() || os_interface->is_regular(*filename) )
+                    if ( always_bind_ || !dependencies_.empty() || system->is_regular(*filename) )
                     {
-                        time_t last_write_time = os_interface->last_write_time( *filename );
+                        time_t last_write_time = system->last_write_time( *filename );
                         latest_last_write_time = max( last_write_time, latest_last_write_time );
                         earliest_last_write_time = min( last_write_time, earliest_last_write_time );
                         bound = true;
@@ -365,29 +364,19 @@ void Target::bind_to_dependencies()
         time_t timestamp = timestamp_;
         bool outdated = outdated_;
 
+        int i = 0;
+        Target* target = dependency( i );
+        while ( target )
+        {
+            outdated = outdated || target->outdated();
+            timestamp = std::max( timestamp, target->timestamp() );
+            ++i;
+            target = dependency( i );
+        }
+
         if ( !filenames_.empty() )
         {
-            int i = 0;
-            Target* target = dependency( i );
-            while ( target )
-            {
-                outdated = outdated || target->timestamp() > last_write_time();
-                timestamp = std::max( timestamp, target->timestamp() );
-                ++i;
-                target = dependency( i );
-            }
-        }
-        else
-        {
-            int i = 0;
-            Target* target = dependency( i );
-            while ( target )
-            {
-                outdated = outdated || target->outdated();
-                timestamp = std::max( timestamp, target->timestamp() );
-                ++i;
-                target = dependency( i );
-            }
+            outdated = outdated || timestamp > last_write_time();
         }
 
         set_timestamp( timestamp );
@@ -1220,45 +1209,4 @@ int Target::postorder_height() const
 int Target::next_anonymous_index()
 {
     return anonymous_++;
-}
-
-/**
-// Push a std::time_t onto the Lua stack.
-//
-// @param lua_state
-//  The lua_State to push the std::time_t onto the stack of.
-//
-// @param timestamp
-//  The std::time_t to push.
-//
-// @relates Target
-*/
-void sweet::lua::lua_push( lua_State* lua_state, std::time_t timestamp )
-{
-    SWEET_ASSERT( lua_state );
-    lua_pushnumber( lua_state, static_cast<lua_Number>(timestamp) );
-}
-
-/**
-// Convert a number on the Lua stack into a std::time_t.
-//
-// @param lua_state
-//  The lua_State to get the std::time_t from.
-//
-// @param position
-//  The position of the std::time_t on the stack.
-//
-// @param null_pointer_for_overloading
-//  Ignored.
-//
-// @return
-//  The std::time_t.
-//
-// @relates Target
-*/
-std::time_t sweet::lua::lua_to( lua_State* lua_state, int position, const std::time_t* /*null_pointer_for_overloading*/ )
-{
-    SWEET_ASSERT( lua_state );
-    SWEET_ASSERT( lua_isnumber(lua_state, position) );
-    return static_cast<std::time_t>( lua_tonumber(lua_state, position) );
 }

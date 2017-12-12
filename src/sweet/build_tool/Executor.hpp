@@ -1,13 +1,13 @@
 #ifndef SWEET_BUILD_TOOL_EXECUTOR_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_EXECUTOR_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include <vector>
 #include <deque>
 #include <functional>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#include <string>
 
 namespace sweet
 {

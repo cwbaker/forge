@@ -496,8 +496,8 @@ function xcodeproj()
     build.load( true );
     local all = all or find_target( root() );
     assertf( all, "Missing target at '%s' to generate Xcode project from", root() );
-    assertf( build.settings.visual_studio, "Missing Xcode settings in 'settings.xcode'" );
-    assertf( build.settings.visual_studio.sln, "Missing Xcode project filename in 'settings.xcode.xcodeproj'" );
+    assertf( build.settings.xcode, "Missing Xcode settings in 'settings.xcode'" );
+    assertf( build.settings.xcode.xcodeproj, "Missing Xcode project filename in 'settings.xcode.xcodeproj'" );
     xcode.generate_project( settings.xcode.xcodeproj, all );
 end
 

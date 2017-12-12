@@ -9,7 +9,7 @@ local function call( cc, definition )
         source.unit = cc;
         source.settings = settings;
 
-        local object = build.File( ("%s/%s/%s/%s"):format(obj_directory(cc), architecture, relative(source:branch()), obj_name(value)) );
+        local object = build.File( ("%s/%s/%s/%s"):format(obj_directory(cc), architecture, build.relative(source:branch()), obj_name(value)) );
         object.source = value;
         object:add_dependency( source );
         object:add_dependency( Directory(object:branch()) );
@@ -26,7 +26,7 @@ end
 local function create_target_prototype( id, language )
     local target_prototype = build.TargetPrototype( id );
     local function create( settings, architecture )
-        local cc = build.Target( anonymous(), target_prototype );
+        local cc = build.Target( build.anonymous(), target_prototype );
         cc.settings = settings;
         cc.architecture = architecture or settings.default_architecture;
         cc.language = language;

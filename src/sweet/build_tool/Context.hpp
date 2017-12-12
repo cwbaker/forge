@@ -1,7 +1,6 @@
 #ifndef SWEET_BUILD_TOOL_CONTEXT_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_CONTEXT_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include <sweet/lua/LuaThread.hpp>
 #include <sweet/fs/fs.hpp>
 #include <vector>
@@ -21,7 +20,6 @@ class BuildTool;
 */
 class Context 
 {
-    int index_; ///< The index of this context.
     BuildTool* build_tool_; ///< The BuildTool that this context is part of.
     lua::LuaThread context_thread_; ///< The LuaThread that this context uses to execute scripts in.
     Target* working_directory_; ///< The current working directory for this context.
@@ -30,7 +28,7 @@ class Context
     int exit_code_; ///< The exit code from the Command that was most recently executed by this context.
 
     public:
-        Context( int index, const fs::Path& directory, BuildTool* build_tool );
+        Context( const fs::Path& directory, BuildTool* build_tool );
 
         lua::LuaThread& context_thread();
 
@@ -44,9 +42,6 @@ class Context
 
         void set_job( Job* job );
         Job* job() const;
-
-        void set_echo( bool echo );
-        bool echo() const;
 
         void set_exit_code( int exit_code );
         int exit_code() const;

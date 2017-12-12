@@ -5,29 +5,29 @@ function Copy.create( settings, destination, source )
     destination = build.interpolate( destination, settings );
     source = build.interpolate( source, settings );
     local copy = build.File( destination, Copy );
-    copy:add_dependency( file(source) );
-    copy:add_dependency( Directory(branch(destination)) );
+    copy:add_dependency( build.file(source) );
+    copy:add_dependency( Directory(build.branch(destination)) );
     copy.source = source;
     return copy;
 end
 
 function Copy.build( copy )
     if copy:outdated() then
-        print( leaf(copy:filename()) );
-        if is_file(copy.source) then 
-            rm( copy:filename() );
-            cp( copy.source, copy:filename() );
+        print( build.leaf(copy:filename()) );
+        if build.is_file(copy.source) then 
+            build.rm( copy:filename() );
+            build.cp( copy.source, copy:filename() );
         else
-            rmdir( copy:filename() );
-            cpdir( copy.source, copy:filename() );
+            build.rmdir( copy:filename() );
+            build.cpdir( copy.source, copy:filename() );
         end
     end
 end
 
 function Copy.clean( copy )
-    if is_file(copy.source) then 
-        rm( copy:filename() );
+    if build.is_file(copy.source) then 
+        build.rm( copy:filename() );
     else
-        rmdir( copy:filename() );
+        build.rmdir( copy:filename() );
     end
 end

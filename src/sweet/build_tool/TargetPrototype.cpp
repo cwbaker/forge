@@ -1,12 +1,11 @@
 //
 // TargetPrototype.cpp
-// Copyright (c) 2007 - 2015 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
-#include "stdafx.hpp"
 #include "TargetPrototype.hpp"
 #include "BuildTool.hpp"
-#include "ScriptInterface.hpp"
+#include <sweet/assert/assert.hpp>
 
 using namespace sweet::build_tool;
 
@@ -31,7 +30,7 @@ TargetPrototype::TargetPrototype( const std::string& id, BuildTool* build_tool )
 */
 TargetPrototype::~TargetPrototype()
 {
-    build_tool_->script_interface()->destroy_prototype( this );
+    build_tool_->destroy_target_prototype_lua_binding( this );
 }
 
 /**

@@ -7,7 +7,7 @@ end
 
 function Directory.build( directory )
     if directory:outdated() then
-        mkdir( directory:filename() );
+        build.mkdir( directory:filename() );
     end
 end
 
