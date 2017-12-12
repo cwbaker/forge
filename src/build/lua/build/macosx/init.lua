@@ -78,21 +78,48 @@ function macosx.configure( settings )
 end
 
 function macosx.initialize( settings )
-    if build:platform_matches("macosx") then
-        cc = macosx.cc;
-        objc = macosx.objc;
-        build_library = macosx.build_library;
-        clean_library = macosx.clean_library;
-        build_executable = macosx.build_executable;
-        clean_executable = macosx.clean_executable;
-        lipo_executable = macosx.lipo_executable;
-        obj_directory = macosx.obj_directory;
-        cc_name = macosx.cc_name;
-        cxx_name = macosx.cxx_name;
-        obj_name = macosx.obj_name;
-        lib_name = macosx.lib_name;
-        dll_name = macosx.dll_name;
-        exe_name = macosx.exe_name;
+    if build:operating_system() == "macosx" then
+        for _, architecture in ipairs(settings.architectures) do 
+            build:default_build( ("macosx-%s"):format(architecture), build:configure {
+                platform = "macosx";
+                architecture = architecture;
+                default_architecture = architecture;
+                cc = macosx.cc;
+                objc = macosx.objc;
+                build_library = macosx.build_library;
+                clean_library = macosx.clean_library;
+                build_executable = macosx.build_executable;
+                clean_executable = macosx.clean_executable;
+                lipo_executable = macosx.lipo_executable;
+                obj_directory = macosx.obj_directory;
+                cc_name = macosx.cc_name;
+                cxx_name = macosx.cxx_name;
+                obj_name = macosx.obj_name;
+                lib_name = macosx.lib_name;
+                dll_name = macosx.dll_name;
+                exe_name = macosx.exe_name;
+            } );
+        end
+
+        local settings = build.settings;
+        local architecture = settings.default_architecture;
+        settings.platform = "macosx";
+        settings.architecture = architecture;
+        settings.default_architecture = architecture;
+        settings.cc = macosx.cc;
+        settings.objc = macosx.objc;
+        settings.build_library = macosx.build_library;
+        settings.clean_library = macosx.clean_library;
+        settings.build_executable = macosx.build_executable;
+        settings.clean_executable = macosx.clean_executable;
+        settings.lipo_executable = macosx.lipo_executable;
+        settings.obj_directory = macosx.obj_directory;
+        settings.cc_name = macosx.cc_name;
+        settings.cxx_name = macosx.cxx_name;
+        settings.obj_name = macosx.obj_name;
+        settings.lib_name = macosx.lib_name;
+        settings.dll_name = macosx.dll_name;
+        settings.exe_name = macosx.exe_name;
     end
 end
 
@@ -135,7 +162,8 @@ function macosx.build_library( target )
         "-static"
     };
 
-    build:pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
+    local settings = target.settings;
+    build:pushd( ("%s/%s_%s"):format(settings.obj_directory(target), settings.platform, settings.architecture) );
     local objects =  {};
     for _, compile in target:dependencies() do
         local prototype = compile:prototype();
@@ -163,7 +191,8 @@ function macosx.build_executable( target )
     local flags = {};
     clang.append_link_flags( target, flags );
 
-    local macosx_deployment_target = target.settings.macosx_deployment_target;
+    local settings = target.settings;
+    local macosx_deployment_target = settings.macosx_deployment_target;
     if macosx_deployment_target then 
         table.insert( flags, ("-mmacosx-version-min=%s"):format(macosx_deployment_target) );
     end
@@ -180,7 +209,8 @@ function macosx.build_executable( target )
     local objects = {};
     local libraries = {};
 
-    build:pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
+    local settings = target.settings;
+    build:pushd( ("%s/%s_%s"):format(settings.obj_directory(target), settings.platform, settings.architecture) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
@@ -201,7 +231,7 @@ function macosx.build_executable( target )
         local ldflags = table.concat( flags, " " );
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, " " );
-        local xcrun = target.settings.macosx.xcrun;
+        local xcrun = settings.macosx.xcrun;
         build:system( xcrun, ('xcrun --sdk macosx clang++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
     end
     build:popd();

@@ -71,8 +71,9 @@ function android.platform_directory( settings, architecture )
     return ("%s/platforms/%s/arch-%s"):format( android.ndk_directory, android.ndk_platform, arch_by_architecture[architecture] );
 end
 
-function android.include_directories( settings, architecture )
+function android.include_directories( settings )
     local android = settings.android;
+    local architecture = settings.architecture;
     local runtime_library = settings.runtime_library;
     if runtime_library:match("gnustl.*") then
         return {
@@ -124,43 +125,51 @@ function android.library_directories( settings, architecture )
 end
 
 function android.initialize( settings )
-    if build:platform_matches("android") then
-        if build:operating_system() == "windows" then
-            local path = {
-                ("%s/bin"):format( android.toolchain_directory(settings, "armv5") )
-            };
-            android.environment = {
-                PATH = table.concat( path, ";" );
-            };
-        else
-            local path = {
-                "/usr/bin",
-                "/bin",
-                ("%s/bin"):format( android.toolchain_directory(settings, "armv5") )
-            };
-            android.environment = {
-                PATH = table.concat( path, ":" );
-            };
-        end
+    if build:operating_system() == "windows" then
+        local path = {
+            ("%s/bin"):format( android.toolchain_directory(settings, "armv5") )
+        };
+        android.environment = {
+            PATH = table.concat( path, ";" );
+        };
+    else
+        local path = {
+            "/usr/bin",
+            "/bin",
+            ("%s/bin"):format( android.toolchain_directory(settings, "armv5") )
+        };
+        android.environment = {
+            PATH = table.concat( path, ":" );
+        };
+    end
 
-        settings.android.proguard_enabled = settings.android.proguard_enabled or variant == "shipping";
-        
-        cc = android.cc;
-        build_library = android.build_library;
-        clean_library = android.clean_library;
-        build_executable = android.build_executable;
-        clean_executable = android.clean_executable;
-        obj_directory = android.obj_directory;
-        cc_name = android.cc_name;
-        cxx_name = android.cxx_name;
-        pch_name = android.pch_name;
-        pdb_name = android.pdb_name;
-        obj_name = android.obj_name;
-        lib_name = android.lib_name;
-        exp_name = android.exp_name;
-        dll_name = android.dll_name;
-        exe_name = android.exe_name;        
-        ilk_name = android.ilk_name;
+    settings.android.proguard_enabled = settings.android.proguard_enabled or variant == "shipping";
+    
+    for _, architecture in ipairs(settings.android.architectures) do 
+        build:default_build( ("android-%s"):format(architecture), build:configure {
+            platform = "android";
+            architecture = architecture;
+            default_architecture = architecture;
+            runtime_library = "gnustl_shared";
+            cc = android.cc;
+            build_library = android.build_library;
+            clean_library = android.clean_library;
+            build_executable = android.build_executable;
+            clean_executable = android.clean_executable;
+            gen_directory = android.gen_directory;
+            classes_directory = android.classes_directory;
+            obj_directory = android.obj_directory;
+            cc_name = android.cc_name;
+            cxx_name = android.cxx_name;
+            pch_name = android.pch_name;
+            pdb_name = android.pdb_name;
+            obj_name = android.obj_name;
+            lib_name = android.lib_name;
+            exp_name = android.exp_name;
+            dll_name = android.dll_name;
+            exe_name = android.exe_name;        
+            ilk_name = android.ilk_name;
+        } );
     end
 end
 
@@ -211,7 +220,8 @@ function android.build_library( target )
         "-rcs"
     };
     
-    build:pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
+    local settings = target.settings;
+    build:pushd( ("%s/%s_%s"):format(settings.obj_directory(target), settings.platform, settings.architecture) );
     local objects = {};
     for _, compile in target:dependencies() do
         local prototype = compile:prototype();
@@ -223,7 +233,6 @@ function android.build_library( target )
     end
     
     if #objects > 0 then
-        print( build:leaf(target:filename()) );
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
         local ar = ("%s/bin/arm-linux-androideabi-ar"):format( android.toolchain_directory(target.settings, target.architecture) );
@@ -233,8 +242,9 @@ function android.build_library( target )
 end
 
 function android.clean_library( target )
-    build:rm( target:filename() );
-    build:rmdir( obj_directory(target) );
+    build:rm( target );
+    local settings = target.settings;
+    build:rmdir( settings.obj_directory(target) );
 end
 
 function android.build_executable( target )
@@ -259,7 +269,8 @@ function android.build_executable( target )
     local objects = {};
     local libraries = {};
 
-    build:pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
+    local settings = target.settings;
+    build:pushd( ("%s/%s_%s"):format(settings.obj_directory(target), settings.platform, settings.architecture) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx then
@@ -290,16 +301,15 @@ function android.build_executable( target )
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, " " );
         local gxx = ("%s/bin/arm-linux-androideabi-g++"):format( android.toolchain_directory(target.settings, target.architecture) );
-
-        print( build:leaf(target:filename()) );
         build:system( gxx, ('arm-linux-androideabi-g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), android.environment );
     end
     build:popd();
 end 
 
 function android.clean_executable( target )
-    build:rm( target:filename() );
-    build:rmdir( obj_directory(target) );
+    build:rm( target );
+    local settings = target.settings;
+    build:rmdir( settings.obj_directory(target) );
 end
 
 -- Deploy the fist Android .apk package found in the dependencies of the 
@@ -364,10 +374,10 @@ function android.android_jar( settings )
     return ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
 end
 
-function android.DynamicLibrary( build, name, architecture )
-    local filename = ("${apk}/%s"):format( android.dll_name(name, architecture) );
-    local dynamic_library = build:DynamicLibrary( filename );
-    dynamic_library.architecture = architecture or settings.default_architecture;
+function android.DynamicLibrary( build, name )
+    local architecture = build.settings.architecture;
+    local dynamic_library = build:DynamicLibrary( ("${apk}/%s"):format(name), architecture );
+    dynamic_library.architecture = architecture;
 
     local group = build:Target( build:anonymous() );
     group:add_dependency( dynamic_library );

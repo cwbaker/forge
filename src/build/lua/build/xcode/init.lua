@@ -53,12 +53,12 @@ local function add_file( filename )
     return file;
 end
 
-local function add_configurations( architecture, variants )
+local function add_configurations( architectures, variants )
     local configurations = {};
     for _, variant in pairs(variants) do
         local configuration = {
             uuid = uuid();
-            architecture = architecture;
+            architectures = architectures;
             variant = variant;
         };
         table.insert( configurations, configuration );
@@ -66,7 +66,7 @@ local function add_configurations( architecture, variants )
     return configurations;
 end
 
-local function add_legacy_target( target, platform )
+local function add_legacy_target( target, platform, architectures )
     assert( target );
     local filename = target:filename();
     local working_directory = target:working_directory():path();
@@ -82,7 +82,7 @@ local function add_legacy_target( target, platform )
             build = build:executable( "build" );
             path = filename;
             settings = settings;
-            configurations = add_configurations( target.architecture, settings.variants );
+            configurations = add_configurations( architectures, settings.variants );
         };
         legacy_targets[filename] = legacy_target;
     end
@@ -239,12 +239,7 @@ local function generate_project( xcodeproj, groups )
 end
 
 local function generate_configuration( xcodeproj, configuration, id, settings )
-    local archs;
-    if configuration.architecture then 
-        archs = configuration.architecture;
-    else
-        archs = table.concat( settings.architectures or {}, " " );
-    end
+    local archs = table.concat( configuration.architectures or {settings.architecture} or {}, " " );
     xcodeproj:write(([[
     %s /* %s */ = {
         isa = XCBuildConfiguration;
@@ -382,6 +377,19 @@ local function find_targets_by_prototype( target, prototype )
     return targets;
 end
 
+local function find_architectures_by_prototype( target, prototype, architectures )
+    local architectures = architectures or {};
+    if target:prototype() == prototype then 
+        local architecture = target.settings.architecture;
+        table.insert( architectures, architecture );
+    else
+        for _, dependency in target:dependencies() do 
+            find_architectures_by_prototype( dependency, prototype, architectures );
+        end
+    end
+    return architectures;
+end
+
 local function included( filename, includes, excludes )
     if build:is_directory(filename) then 
         return false;
@@ -432,38 +440,37 @@ function xcode.generate_project( name, project )
 
     populate_source( build:root(), {"^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java"}, {"^.*%.framework"} );
 
-    for _, platform in ipairs(build.settings.platforms) do 
-        for _, target in project:dependencies() do 
-            if target then 
-                if platform:match("ios.*") and _G.ios then
-                    local ios_apps = find_targets_by_prototype( target, build.ios.App );
-                    for _, ios_app in ipairs(ios_apps) do 
-                        add_legacy_target( ios_app, platform );
-                    end
+    for _, target in project:dependencies() do 
+        if target then 
+            if _G.ios then
+                local ios_apps = find_targets_by_prototype( target, build.ios.App );
+                for _, ios_app in ipairs(ios_apps) do 
+                    local architectures = find_architectures_by_prototype( target, build.Executable );
+                    add_legacy_target( ios_app, platform, architectures );
+                end
+            end
+
+            if _G.android then
+                local android_apks = find_targets_by_prototype( target, build.android.Apk );
+                for _, android_apk in ipairs(android_apks) do 
+                    add_legacy_target( android_apk, platform );
+                end
+            end
+
+            if _G.macosx or _G.windows then
+                local executables = find_targets_by_prototype( target, build.Executable );
+                for _, executable in ipairs(executables) do 
+                    add_legacy_target( executable, platform );
                 end
 
-                if platform == "android" and _G.android then
-                    local android_apks = find_targets_by_prototype( target, build.android.Apk );
-                    for _, android_apk in ipairs(android_apks) do 
-                        add_legacy_target( android_apk, platform );
-                    end
+                local dynamic_libraries = find_targets_by_prototype( target, build.DynamicLibrary );
+                for _, dynamic_library in ipairs(dynamic_libraries) do 
+                    add_legacy_target( dynamic_library, platform );
                 end
 
-                if platform == "macosx" then
-                    local executables = find_targets_by_prototype( target, build.Executable );
-                    for _, executable in ipairs(executables) do 
-                        add_legacy_target( executable, platform );
-                    end
-
-                    local dynamic_libraries = find_targets_by_prototype( target, build.DynamicLibrary );
-                    for _, dynamic_library in ipairs(dynamic_libraries) do 
-                        add_legacy_target( dynamic_library, platform );
-                    end
-
-                    local binaries = find_targets_by_prototype( target, build.xcode.Lipo );
-                    for _, binary in ipairs(binaries) do 
-                        add_legacy_target( binary, platform );
-                    end
+                local binaries = find_targets_by_prototype( target, build.xcode.Lipo );
+                for _, binary in ipairs(binaries) do 
+                    add_legacy_target( binary, platform );
                 end
             end
         end
@@ -491,8 +498,6 @@ end
 
 -- The "xcodeproj" command entry point (global).
 function xcodeproj()
-    platform = "";
-    variant = "";
     local all = all or build:find_target( build:root("all") );
     assertf( all, "Missing target at '%s' to generate Xcode project from", build:root() );
     assertf( build.settings.xcode, "Missing Xcode settings in 'settings.xcode'" );

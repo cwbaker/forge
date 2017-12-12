@@ -13,17 +13,18 @@ end
 function Dex:build()
     local jars = {};
 
+    local settings = self.settings;
     local proguard = self:dependency( 1 );
     if proguard and self.settings.android.proguard_enabled then 
         local proguard_sh = ("%s/tools/proguard/bin/proguard.sh"):format( self.settings.android.sdk_directory );
         build:system( proguard_sh, {
             'proguard.sh',
-            ('-printmapping \"%s/%s.map\"'):format( build:classes_directory(self), build:leaf(self) ),
+            ('-printmapping \"%s/%s.map\"'):format( settings.classes_directory(self), build:leaf(self) ),
             ('"@%s"'):format( proguard ) 
         } );
-        table.insert( jars, ('\"%s/classes.jar\"'):format(build:classes_directory(self)) );
+        table.insert( jars, ('\"%s/classes.jar\"'):format(settings.classes_directory(self)) );
     else
-        table.insert( jars, build:classes_directory(self) );
+        table.insert( jars, settings.classes_directory(self) );
     end
 
     local third_party_jars = self.third_party_jars;

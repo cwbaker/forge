@@ -10,13 +10,13 @@ local path_separator_by_operating_system = {
 };
 
 return {
-    bin = build:root( ("../%s_%s/bin"):format(platform, variant) );
-    lib = build:root( ("../%s_%s/lib"):format(platform, variant) );
-    obj = build:root( ("../%s_%s/obj"):format(platform, variant) );
-    gen = build:root( ("../%s_%s/gen"):format(platform, variant) );
-    classes = build:root( ("../%s_%s/classes"):format(platform, variant) );
-    data = build:root( ("../%s_%s/data"):format(platform, variant) );
-    root = build:root();
+    bin = build:root( ("../%s/bin"):format(variant) );
+    lib = build:root( ("../%s/lib"):format(variant) );
+    obj = build:root( ("../%s/obj"):format(variant) );
+    gen = build:root( ("../%s/gen"):format(variant) );
+    classes = build:root( ("../%s/classes"):format(variant) );
+
+    platform = platform;
 
     path_separator = path_separator_by_operating_system [build:operating_system()];
 
@@ -24,9 +24,13 @@ return {
 
     local_settings_filename = build:root( "local_settings.lua" );
 
-    include_directories = {};
+    include_directories = {
+        build:root();
+    };
     
-    library_directories = {};
+    library_directories = {
+        build:root( ("../%s/lib"):format(variant) );
+    };
 
     platforms = platforms_by_operating_system [build:operating_system()];
 

@@ -52,8 +52,9 @@ local function included( jar, filename )
 end
 
 function Jar.build( jar )
+    local settings = jar.settings;
     local jar_ = build:native( ("%s/bin/jar"):format(jar.settings.java.jdk_directory) );
-    local directory = build:classes_directory( jar );
+    local directory = settings.classes_directory( jar );
     build:pushd( directory );
 
     local classes = {};

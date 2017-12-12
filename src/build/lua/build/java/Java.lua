@@ -4,8 +4,8 @@ local Java = build:TargetPrototype( "Java" );
 function Java.create( settings )
     local java_ = build:Target( build:anonymous(), Java );
     java_.settings = settings;
-    java_:set_filename( ("%s/Java.%s.timestamp"):format(build:classes_directory(java_), java_:id()) );
-    java_:add_ordering_dependency( build:Directory(build:classes_directory(java_)) );
+    java_:set_filename( ("%s/Java.%s.timestamp"):format(settings.classes_directory(java_), java_:id()) );
+    java_:add_ordering_dependency( build:Directory(settings.classes_directory(java_)) );
     java.add_jar_dependencies( java_, settings.jars );
     return java_;
 end
@@ -56,7 +56,7 @@ function Java.build( java )
     if #source_files > 0 then
         local settings = java.settings;
         local javac = ("%s/bin/javac"):format( settings.java.jdk_directory );
-        local output = build:classes_directory( java );
+        local output = settings.classes_directory( java );
         local classpath = output;
 
         local sourcepaths = {};
@@ -71,7 +71,7 @@ function Java.build( java )
             end
         end
         table.insert( sourcepaths, java.sourcepath or "." );
-        table.insert( sourcepaths, build:gen_directory(java) );
+        table.insert( sourcepaths, settings.gen_directory(java) );
         
         local command_line = {
             'javac',
@@ -98,7 +98,7 @@ end
 
 function Java.clean( java )
     build:rm( java:filename() );
-    build:rmdir( build:classes_directory(java) )
+    build:rmdir( settings.classes_directory(java) )
 end
 
 java.Java = Java;

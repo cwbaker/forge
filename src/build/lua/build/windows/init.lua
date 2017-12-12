@@ -2,24 +2,47 @@
 windows = {};
 
 function windows.initialize( settings )
-    if build:platform_matches("windows") then
-        cc = windows.cc;
-        build_library = windows.build_library;
-        clean_library = windows.clean_library;
-        build_executable = windows.build_executable;
-        clean_executable = windows.clean_executable;
-        lipo_executable = windows.lipo_executable;
-        obj_directory = windows.obj_directory;
-        cc_name = windows.cc_name;
-        cxx_name = windows.cxx_name;
-        pch_name = windows.pch_name;
-        pdb_name = windows.pdb_name;
-        obj_name = windows.obj_name;
-        lib_name = windows.lib_name;
-        exp_name = windows.exp_name;
-        dll_name = windows.dll_name;
-        exe_name = windows.exe_name;
-        ilk_name = windows.ilk_name;
+    if build:operating_system() == "windows" then
+        for _, architecture in ipairs(settings.architectures) do 
+            build:default_build( ("windows-%s"):format(architecture), build:configure {
+                architecture = architecture;
+                default_architecture = architecture;
+                cc = windows.cc;
+                build_library = windows.build_library;
+                clean_library = windows.clean_library;
+                build_executable = windows.build_executable;
+                clean_executable = windows.clean_executable;
+                obj_directory = windows.obj_directory;
+                cc_name = windows.cc_name;
+                cxx_name = windows.cxx_name;
+                pch_name = windows.pch_name;
+                pdb_name = windows.pdb_name;
+                obj_name = windows.obj_name;
+                lib_name = windows.lib_name;
+                exp_name = windows.exp_name;
+                dll_name = windows.dll_name;
+                exe_name = windows.exe_name;
+                ilk_name = windows.ilk_name;
+            } );
+        end
+
+        local settings = build.settings;
+        settings.cc = windows.cc;
+        settings.build_library = windows.build_library;
+        settings.clean_library = windows.clean_library;
+        settings.build_executable = windows.build_executable;
+        settings.clean_executable = windows.clean_executable;
+        settings.obj_directory = windows.obj_directory;
+        settings.cc_name = windows.cc_name;
+        settings.cxx_name = windows.cxx_name;
+        settings.pch_name = windows.pch_name;
+        settings.pdb_name = windows.pdb_name;
+        settings.obj_name = windows.obj_name;
+        settings.lib_name = windows.lib_name;
+        settings.exp_name = windows.exp_name;
+        settings.dll_name = windows.dll_name;
+        settings.exe_name = windows.exe_name;
+        settings.ilk_name = windows.ilk_name;
     end
 end
 

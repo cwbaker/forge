@@ -19,43 +19,55 @@ end
 -- Provide buildfile() that restores the settings stack position.
 local original_buildfile = build.buildfile;
 function buildfile( ... )
-    local position = build:store_settings();
-    local buildfiles_stack = build.buildfiles_stack;
+    local buildfiles_stack = build.buildfiles_stack_;
     table.insert( buildfiles_stack, build:file(select(1, ...)) );
     local success, errors_or_error_message = pcall( original_buildfile, build, ... );
     table.remove( buildfiles_stack );
-    build:restore_settings( position );
     assertf( success and errors_or_error_message == 0, "Loading buildfile '%s' failed", tostring(select(1, ...)) );
 end
 
 build = _G.build or {};
-build.buildfiles_stack = {};
-build.settings_stack = {};
-build.modules = {};
+build.settings = {};
+build.buildfiles_stack_ = {};
+build.modules_ = {};
+build.default_builds_ = {};
+
+function build:default_build( identifier, build )
+    table.insert( self.default_builds_, {identifier, build} );
+end
+
+function build:default_builds( pattern )
+    return coroutine.wrap( function() 
+        local index = 1;
+        for _, default_build in ipairs(self.default_builds_) do 
+            local identifier = default_build[1];
+            if pattern == nil or pattern == "" or identifier:find(pattern) then 
+                coroutine.yield( index, default_build[2] );
+                index = index + 1;
+            end
+        end        
+    end );
+end
 
 function build:current_buildfile()
-    local buildfiles_stack = self.buildfiles_stack;
+    local buildfiles_stack = self.buildfiles_stack_;
     local back = #buildfiles_stack;
     if back > 0 then 
         return buildfiles_stack[back];
     end
 end
 
-function build:matches( value, ... )
-    for i = 1, select("#", ...) do 
-        if string.match(value, select(i, ...)) then
+function build:platform_matches( ... )
+    local platform = self.settings.platform;
+    if platform == "" then 
+        return true;
+    end
+    for i = 1, select("#", ...) do
+        if platform:match(select(i, ...)) then
             return true;
         end
     end
     return false;
-end
-
-function build:platform_matches( ... )
-    return platform == "" or self:matches( platform, ... );
-end
-
-function build:variant_matches( ... )
-    return variant == "" or self:matches( variant, ... );
 end
 
 function build:File( filename, target_prototype )
@@ -196,7 +208,7 @@ function build:initialize( project_settings )
         error( string.format("The library type '%s' is not 'static' or 'dynamic'", tostring(settings.library_type)) );
     end
 
-    default_settings.cache = self:root( ("%s/%s_%s.cache"):format(settings.obj, platform, variant) );
+    default_settings.cache = self:root( ("%s/%s.cache"):format(settings.obj, variant) );
     _G.settings = settings;
     self.default_settings = default_settings;
     self.local_settings = local_settings;
@@ -205,19 +217,18 @@ function build:initialize( project_settings )
     self:initialize_modules( settings );
     self:load_binary( settings.cache );
     self:clear();
-    self:push_settings( settings );
     return settings;
 end
 
 -- Register *module* to be configured and initialized when the build sysetm 
 -- is initialized.
 function build:register_module( module )
-    table.insert( self.modules, module ); 
+    table.insert( self.modules_, module ); 
 end
 
 -- Call `configure` for each registered module that provides it.
 function build:configure_modules( settings )
-    local modules = self.modules;
+    local modules = self.modules_;
     for _, module in ipairs(modules) do 
         local configure = module.configure;
         if configure and type(configure) == "function" then 
@@ -228,7 +239,7 @@ end
 
 -- Call `initialize` for each registered module that provides it.
 function build:initialize_modules( settings )
-    local modules = self.modules;
+    local modules = self.modules_;
     for _, module in ipairs(modules) do 
         local initialize = module.initialize;
         if initialize and type(initialize) == "function" then 
@@ -319,7 +330,7 @@ function build:interpolate( template, variables )
 end
 
 -- Dump the keys, values, and prototype of a table for debugging.
-function build.dump( t )
+function build:dump( t )
     print( tostring(t) );
     if t ~= nil then
         if getmetatable(t) ~= nil then
@@ -436,9 +447,10 @@ end
 
 -- Save the dependency graph to the file specified by /settings.cache/.
 function build:save()
+    local settings = self:current_settings();
     if self.local_settings.updated then
         self.local_settings.updated = nil;
-        self:save_settings( self.local_settings, self.settings.local_settings_filename );
+        self:save_settings( self.local_settings, settings.local_settings_filename );
     end
     self:mkdir( self:branch(settings.cache) );
     self:save_binary( settings.cache );
@@ -481,58 +493,21 @@ function build:generated( filename, architecture, settings )
 end
 
 function build:configure( settings )
-    local build_ = { 
+    local build = { 
+        __this = self.__this;
         settings = settings;
-        settings_stack = {
-            settings
-        };
     };
-    setmetatable( build_, {__index = self} );
-    return build_;
-end
-
-function build:push_settings( settings )
-    local settings_stack = self.settings_stack;
-    local back = #settings_stack;
-    if settings then
-        if back > 0 then
-            setmetatable( settings, {__index = settings_stack[back]} );
-        end
-    else
-        assert( back > 0 );
-        settings = settings_stack[back];
-    end
-    table.insert( settings_stack, settings );
-    return settings;
-end
-
-function build:pop_settings()
-    local settings_stack = self.settings_stack;
-    assert( #settings_stack > 0 );
-    table.remove( settings_stack );
+    setmetatable( settings, {
+        __index = self.settings;
+    } );
+    setmetatable( build, {
+        __index = self;
+    } );
+    return build, settings;
 end
 
 function build:current_settings()
-    local settings_stack = self.settings_stack;
-    local back = #settings_stack;
-    if back > 0 then
-        return settings_stack[back];
-    else 
-        return self.settings;
-    end
-end
-
-function build:store_settings()
-    return #self.settings_stack;
-end
-
-function build:restore_settings( position )
-    local settings_stack = self.settings_stack;
-    local top_position = #settings_stack;
-    while top_position > position do
-        table.remove( settings_stack, top_position );
-        top_position = top_position - 1;
-    end 
+    return self.settings;
 end
 
 -- Add dependencies detected by the injected build hooks library to the 
@@ -595,52 +570,6 @@ function build:walk_dependencies( target, start, finish, maximum_level )
         end
     end );
 end
-
-function build:gen_directory( target )
-    return string.format( "%s/%s", target.settings.gen, self:relative(target:working_directory():path(), self:root()) );
-end
-
-function build:classes_directory( target )
-    return string.format( "%s/%s", target.settings.classes, self:relative(target:working_directory():path(), self:root()) );
-end
-
-function build:obj_directory( target )
-    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, self:relative(target:working_directory():path(), self:root()) );
-end;
-
-function build.cc_name( name )
-    return ("%s.c"):format( build.basename(name) );
-end;
-
-function build.cxx_name( name )
-    return ("%s.cpp"):format( build.basename(name) );
-end;
-
-function build.obj_name( name, architecture )
-    return ("%s.o"):format( build.basename(name) );
-end;
-
-function build.lib_name( name )
-    return ("lib%s.a"):format( name );
-end;
-
-function build.dll_name( name )
-    return ("%s.dylib"):format( name );
-end;
-
-function build.exe_name( name, architecture )
-    if architecture then 
-        return ("%s_%s"):format( name, architecture );
-    end
-    return ("%s"):format( name );
-end;
-
-cc_name = build.cc_name;
-cxx_name = build.cxx_name;
-obj_name = build.obj_name;
-lib_name = build.lib_name;
-dll_name = build.dll_name;
-exe_name = build.exe_name;
 
 require "build.commands";
 require "build.TargetPrototype";

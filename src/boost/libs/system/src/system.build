@@ -1,18 +1,16 @@
 
-local settings = build:push_settings {
-    warning_level = 0;
-    defines = { 
-        -- Disable automatic linking to Boost libraries.
-        "BOOST_ALL_NO_LIB" 
+for _, build in build:default_builds() do 
+    local build = build:configure {
+        warning_level = 0;
+        defines = { 
+            -- Disable automatic linking to Boost libraries.
+            "BOOST_ALL_NO_LIB" 
+        };
     };
-};
 
-for _, architecture in ipairs(settings.architectures) do 
-    build:Library ("boost_system", architecture) {
-        build:Cxx (architecture) {
+    build:Library "boost_system" {
+        build:Cxx () {
             "error_code.cpp"
         };
     };
 end
-
-build:pop_settings();

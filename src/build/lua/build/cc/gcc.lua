@@ -7,27 +7,30 @@ gcc.arch_by_architecture = {
 };
 
 function gcc.append_defines( target, flags )
-    table.insert( flags, ('-DBUILD_PLATFORM_%s'):format(build:upper(platform)) );
+    local settings = target.settings;
+    table.insert( flags, ('-DBUILD_PLATFORM_%s'):format(build:upper(settings.platform)) );
     table.insert( flags, ('-DBUILD_VARIANT_%s'):format(build:upper(variant)) );
-    table.insert( flags, ('-DBUILD_LIBRARY_TYPE_%s'):format(build:upper(target.settings.library_type)) );
-    table.insert( flags, ('-DBUILD_BIN_DIRECTORY="\\"%s\\""'):format(target.settings.bin) );
+    table.insert( flags, ('-DBUILD_LIBRARY_TYPE_%s'):format(build:upper(settings.library_type)) );
+    table.insert( flags, ('-DBUILD_BIN_DIRECTORY="\\"%s\\""'):format(settings.bin) );
     table.insert( flags, ('-DBUILD_MODULE_DIRECTORY="\\"%s\\""'):format(target:working_directory():path()) );
 
-    if string.find(target.settings.runtime_library, "debug", 1, true) then
+    if string.find(settings.runtime_library, "debug", 1, true) then
         table.insert( flags, "-D_DEBUG" );
         table.insert( flags, "-DDEBUG" );
     else 
         table.insert( flags, "-DNDEBUG" );
     end
 
-    if target.settings.defines then
-        for _, define in ipairs(target.settings.defines) do
+    local defines = settings.defines;
+    if defines then
+        for _, define in ipairs(defines) do
             table.insert( flags, ("-D%s"):format(define) );
         end
     end
     
-    if target.defines then
-        for _, define in ipairs(target.defines) do
+    local defines = target.defines;
+    if defines then
+        for _, define in ipairs(defines) do
             table.insert( flags, ("-D%s"):format(define) );
         end
     end
@@ -37,16 +40,16 @@ function gcc.append_version_defines( target, flags )
     table.insert( flags, ('-DBUILD_VERSION="\\"%s\\""'):format(version) );
 end
 
-function gcc.append_include_directories( target, include_directories )
+function gcc.append_include_directories( target, flags )
     if target.include_directories then
         for _, directory in ipairs(target.include_directories) do
-            table.insert( include_directories, ('-I "%s"'):format(build:relative(directory)) );
+            table.insert( flags, ('-I "%s"'):format(build:relative(directory)) );
         end
     end
 
     if target.settings.include_directories then
         for _, directory in ipairs(target.settings.include_directories) do
-            table.insert( include_directories, ('-I "%s"'):format(directory) );
+            table.insert( flags, ('-I "%s"'):format(directory) );
         end
     end
 end

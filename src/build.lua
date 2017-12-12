@@ -16,15 +16,15 @@ jobs = jobs or 4;
 
 local settings = build:initialize {
     variants = { "debug", "release", "shipping" };
-    bin = build:root( ("../%s_%s/bin"):format(platform, variant) );
-    lib = build:root( ("../%s_%s/lib"):format(platform, variant) );
-    obj = build:root( ("../%s_%s/obj"):format(platform, variant) );
+    bin = build:root( ("../%s/bin"):format(variant) );
+    lib = build:root( ("../%s/lib"):format(variant) );
+    obj = build:root( ("../%s/obj"):format(variant) );
     include_directories = {
         build:root(),
         build:root( "boost" )
     };
     library_directories = {
-        build:root( ("../%s_%s/lib"):format(platform, variant) ),
+        build:root( ("../%s/lib"):format(variant) ),
     };
     visual_studio = {
         sln = build:root( "../sweet_build_tool.sln" );

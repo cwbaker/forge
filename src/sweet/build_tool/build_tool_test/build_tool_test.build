@@ -1,39 +1,34 @@
 
-local settings = build:push_settings {
-    architectures = { "x86_64" };
+local build = build:configure {
     -- Disable automatic linking to Boost libraries.
     defines = { "BOOST_ALL_NO_LIB" };
 };
 
-for _, architecture in ipairs(settings.architectures) do
-    build:all {
-        build:Executable ("build_tool_test", architecture) {
-            libraries = {    
-                "boost/libs/filesystem/src/boost_filesystem",
-                "boost/libs/system/src/boost_system",
-                "sweet/build_tool/build_tool_lua/build_tool_lua",
-                "sweet/build_tool/build_tool",
-                "sweet/cmdline/cmdline",
-                "sweet/lua/lua",
-                "sweet/persist/persist",
-                "sweet/process/process",
-                "sweet/rtti/rtti",
-                "lua/liblua",
-                "sweet/error/error",
-                "sweet/assert/assert",
-                "unit/libUnitTest"
-            };
+build:all {
+    build:Executable "build_tool_test" {
+        libraries = {    
+            "boost/libs/filesystem/src/boost_filesystem",
+            "boost/libs/system/src/boost_system",
+            "sweet/build_tool/build_tool_lua/build_tool_lua",
+            "sweet/build_tool/build_tool",
+            "sweet/cmdline/cmdline",
+            "sweet/lua/lua",
+            "sweet/persist/persist",
+            "sweet/process/process",
+            "sweet/rtti/rtti",
+            "lua/liblua",
+            "sweet/error/error",
+            "sweet/assert/assert",
+            "unit/libUnitTest"
+        };
 
-            build:Cxx (architecture) {
-                "main.cpp",
-                "ErrorChecker.cpp",
-                "FileChecker.cpp",
-                "TestDirectoryApi.cpp",
-                "TestGraph.cpp",
-                "TestPostorder.cpp"
-            };
+        build:Cxx () {
+            "main.cpp",
+            "ErrorChecker.cpp",
+            "FileChecker.cpp",
+            "TestDirectoryApi.cpp",
+            "TestGraph.cpp",
+            "TestPostorder.cpp"
         };
     };
-end
-
-build:pop_settings();
+};

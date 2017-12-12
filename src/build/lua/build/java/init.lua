@@ -19,12 +19,26 @@ function java.configure( settings )
     end
 end
 
+function java.initialize( settings )
+    local settings = build.settings;
+    settings.gen_directory = java.gen_directory;
+    settings.classes_directory = java.classes_directory;
+end
+
 function java.add_jar_dependencies( jar, jars )
     if jars and platform ~= "" then
         for _, value in ipairs(jars) do
             jar:add_dependency( build:target(build:root(value)) );
         end
     end
+end
+
+function java.gen_directory( target )
+    return string.format( "%s/%s", target.settings.gen, build:relative(target:working_directory():path(), build:root()) );
+end
+
+function java.classes_directory( target )
+    return string.format( "%s/%s", target.settings.classes, build:relative(target:working_directory():path(), build:root()) );
 end
 
 require "build.java.Jar";

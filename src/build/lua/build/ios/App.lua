@@ -26,9 +26,10 @@ function App.create( settings, identifier )
 end
 
 function App:depend( dependencies )
+    local settings = self.settings;
     local entitlements = dependencies.entitlements;
     if entitlements then 
-        self.entitlements = ("%s/%s"):format( build:obj_directory(self), "Entitlements.plist" );
+        self.entitlements = ("%s/%s"):format( settings.obj_directory(self), "Entitlements.plist" );
         table.insert( dependencies, build:Generate (self.entitlements) (entitlements) );
         dependencies.entitlements = nil;
     end

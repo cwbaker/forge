@@ -1,5 +1,5 @@
 
-local settings = build:push_settings {
+local build = build:configure {
     subsystem = "CONSOLE"; 
     stack_size = 32768; 
     architectures = { "x86_64" };
@@ -7,30 +7,26 @@ local settings = build:push_settings {
     defines = { "BOOST_ALL_NO_LIB" };
 };
 
-for _, architecture in ipairs(settings.architectures) do
-    build:all {
-        build:Executable ("build", architecture) {
-            libraries = {    
-                "boost/libs/filesystem/src/boost_filesystem",
-                "boost/libs/system/src/boost_system",
-                "sweet/build_tool/build_tool",
-                "sweet/build_tool/build_tool_lua/build_tool_lua",
-                "sweet/cmdline/cmdline",
-                "sweet/lua/lua",
-                "lua/liblua",
-                "sweet/process/process",
-                "sweet/rtti/rtti",
-                "sweet/persist/persist",
-                "sweet/error/error",
-                "sweet/assert/assert"
-            };
-            
-            build:Cxx (architecture) {
-                "Application.cpp", 
-                "main.cpp"
-            };    
+build:all {
+    build:Executable "build" {
+        libraries = {    
+            "boost/libs/filesystem/src/boost_filesystem",
+            "boost/libs/system/src/boost_system",
+            "sweet/build_tool/build_tool",
+            "sweet/build_tool/build_tool_lua/build_tool_lua",
+            "sweet/cmdline/cmdline",
+            "sweet/lua/lua",
+            "lua/liblua",
+            "sweet/process/process",
+            "sweet/rtti/rtti",
+            "sweet/persist/persist",
+            "sweet/error/error",
+            "sweet/assert/assert"
         };
+        
+        build:Cxx () {
+            "Application.cpp", 
+            "main.cpp"
+        };    
     };
-end
-
-build:pop_settings();
+};

@@ -4,17 +4,17 @@ buildfile "build_hooks/build_hooks.build";
 buildfile "build_tool_lua/build_tool_lua.build";
 buildfile "build_tool_test/build_tool_test.build";
 
-local settings = build:push_settings {
-    defines = {
-        "_CRT_SECURE_NO_DEPRECATE",
-        "_SCL_SECURE_NO_DEPRECATE",
-        "_WIN32_WINNT=0x0500",
-        "WIN32_LEAN_AND_MEAN"
-    }
-};
+for _, build in build:default_builds() do
+    local build = build:configure {
+        defines = {
+            "_CRT_SECURE_NO_DEPRECATE",
+            "_SCL_SECURE_NO_DEPRECATE",
+            "_WIN32_WINNT=0x0500",
+            "WIN32_LEAN_AND_MEAN"
+        }
+    };
 
-for _, architecture in ipairs(settings.architectures) do
-    build:Library ("build_tool", architecture) {
+    build:Library "build_tool" {
         libraries = {
             "boost/libs/filesystem/src/boost_filesystem",
             "boost/libs/system/src/boost_system",
@@ -29,7 +29,7 @@ for _, architecture in ipairs(settings.architectures) do
             "sweet/rtti/rtti"
         };    
 
-        build:Cxx (architecture) {
+        build:Cxx () {
             -- Disable automatic linking to Boost libraries.
             defines = { "BOOST_ALL_NO_LIB" };
             "Arguments.cpp",
@@ -49,5 +49,3 @@ for _, architecture in ipairs(settings.architectures) do
         };
     }
 end
-
-build:pop_settings();

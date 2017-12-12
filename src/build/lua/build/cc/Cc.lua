@@ -2,13 +2,14 @@
 local function depend( cc, dependencies )
     build:merge( cc, dependencies );
     local settings = cc.settings;
-    local architecture = cc.architecture;
+    local platform = settings.platform;
+    local architecture = settings.architecture;
     for _, value in ipairs(dependencies) do
         local source = build:SourceFile( value );
         source.unit = cc;
         source.settings = settings;
 
-        local object = build:File( ("%s/%s/%s/%s"):format(obj_directory(cc), architecture, build:relative(source:branch()), obj_name(source:filename())) );
+        local object = build:File( ("%s/%s_%s/%s/%s"):format(settings.obj_directory(cc), platform, architecture, build:relative(source:branch()), settings.obj_name(source:filename())) );
         object:add_dependency( source );
         object:add_ordering_dependency( build:Directory(object:directory()) );
         cc:add_dependency( object );
@@ -16,9 +17,8 @@ local function depend( cc, dependencies )
 end
 
 local function build_( cc_ )
-    if cc_:outdated() then
-        cc( cc_ );
-    end
+    local settings = cc_.settings;
+    settings.cc( cc_ );
 end
 
 local function create_target_prototype( id, language )

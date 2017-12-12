@@ -1,31 +1,26 @@
 
-if build:platform_matches("macosx") then
-    local settings = build:push_settings {
-        stack_size = 32768;
-    };
-    local build_hooks = build:Lipo ("build_hooks.dylib");
-    for _, architecture in ipairs(settings.architectures) do
-        build_hooks { 
-            build:DynamicLibrary (("build_hooks_%s"):format(architecture), architecture) {
-                build:Cxx (architecture) {
-                    "build_hooks_macosx.cpp"
+if build:operating_system() == "macosx" then
+    for _, build in build:default_builds() do
+        local architecture = build.settings.architecture;
+        build:all {
+            build:Lipo "${bin}/build_hooks.dylib" { 
+                build:DynamicLibrary (("build_hooks_%s"):format(architecture)) {
+                    build:Cxx () {
+                        "build_hooks_macosx.cpp"
+                    };
                 };
             };
         };
     end
-    build:pop_settings();    
-elseif build:platform_matches("windows") then
-    local settings = build:push_settings {
-        stack_size = 32768;
-        architectures = { "x86_64" };
-    };
-    for _, architecture in ipairs(settings.architectures) do
-        build:DynamicLibrary ("build_hooks", architecture) {
-            build:Cxx (architecture) {
+end
+
+if build:operating_system() == "windows" then
+    build:all {
+        build:DynamicLibrary "build_hooks" {
+            build:Cxx () {
                 "build_hooks_windows.cpp",
                 "ImportDescriptor.cpp"
             };
         };
-    end
-    build:pop_settings();
+    };
 end

@@ -37,12 +37,19 @@ setmetatable( TargetPrototype, {
 
         local target_prototype = build:target_prototype( identifier );
         getmetatable( target_prototype ).__call = function( target_prototype, build, ... )
+            local target;
             local create_function = target_prototype.create;
             if create_function then 
                 local settings = build:current_settings();
-                return create_function( settings, ... );
+                target = create_function( settings, ... );
+            else
+                target = create( target_prototype, build, ... );
             end
-            return create( target_prototype, build, ... );
+            local annotate_function = target.annotate;
+            if annotate_function then 
+                annotate_function( target, build, ... );
+            end
+            return target;
         end;
 
         local module, identifier = split_modules( build, identifier );
