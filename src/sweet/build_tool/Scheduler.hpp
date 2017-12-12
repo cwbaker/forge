@@ -64,16 +64,18 @@ class Scheduler
         void buildfile( const path::Path& path );
         void call( const path::Path& path, const std::string& function );
         void postorder_visit( const lua::LuaValue& function, Job* job );
-        void execute_finished( int exit_code, Context* context, process::Environment* environment, lua::LuaValue* filter, Arguments* arguments );
+        void execute_finished( int exit_code, Context* context, process::Environment* environment );
+        void filter_finished( lua::LuaValue* filter, Arguments* arguments );
         void output( const std::string& output, lua::LuaValue* filter, Arguments* arguments, Target* working_directory );
         void error( const std::string& what, Context* context );
 
         void push_output( const std::string& output, lua::LuaValue* filter, Arguments* arguments, Target* working_directory );
         void push_error( const std::exception& exception, Context* context );
-        void push_execute_finished( int exit_code, Context* context, process::Environment* environment, lua::LuaValue* filter, Arguments* arguments );
+        void push_execute_finished( int exit_code, Context* context, process::Environment* environment );
+        void push_filter_finished( lua::LuaValue* filter, Arguments* arguments );
         void push_scan_finished( Arguments* arguments );
 
-        void execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* filter, Arguments* arguments, Context* context );
+        void execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* dependencies_filter, lua::LuaValue* stdout_filter, lua::LuaValue* stderr_filter, Arguments* arguments, Context* context );
         void wait();
         
         int postorder( const lua::LuaValue& function, Target* target );        

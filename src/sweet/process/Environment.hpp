@@ -23,7 +23,7 @@ public:
     char* const* values() const;
     const char* buffer() const;
     void append( const char* key, const char* value );
-    void finish();
+    void prepare();
 };
     
 }

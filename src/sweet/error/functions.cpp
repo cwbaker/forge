@@ -1,6 +1,6 @@
 //
 // functions.cpp
-// Copyright (c) 2001 - 2013 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -128,6 +128,10 @@ const char* format( int error, char* buffer, unsigned int length )
     }
 #elif defined(BUILD_OS_MACOSX)
     strerror_r( error, buffer, length );
+#else
+    (void) error;
+    (void) buffer;
+    (void) length;
 #endif
     return buffer;
 }

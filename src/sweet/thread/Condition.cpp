@@ -1,6 +1,6 @@
 //
 // Condition.cpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -23,16 +23,17 @@ Condition::Condition()
 : m_mutex(),
   m_queue( ::CreateSemaphore(0, 0, INT_MAX, 0) ),
   m_waiting( 0 )
-#elif defined(BUILD_OS_MACOSX)
+#else
   //condition_()
 #endif  
 {
 #if defined(BUILD_OS_WINDOWS)
     SWEET_ASSERT( m_queue );
 
-#elif defined(BUILD_OS_MACOSX)
+#else
     int result = pthread_cond_init( &condition_, NULL );
     SWEET_ASSERT( result == 0 );
+    (void) result;
 #endif
 }
 
@@ -48,7 +49,7 @@ Condition::~Condition()
         m_queue = INVALID_HANDLE_VALUE;
     }
 
-#elif defined(BUILD_OS_MACOSX)
+#else
     pthread_cond_destroy( &condition_ );
 #endif
 }
@@ -78,7 +79,7 @@ void Condition::wait( ScopedLock& lock )
 
     lock.lock();
 
-#elif defined(BUILD_OS_MACOSX)
+#else
     pthread_cond_wait( &condition_, lock.pthread_mutex() );
 #endif
 }
@@ -101,9 +102,10 @@ void Condition::notify_one()
         SWEET_ASSERT( result != 0 );
     }
 
-#elif defined(BUILD_OS_MACOSX)
+#else
     int result = pthread_cond_signal( &condition_ );
     SWEET_ASSERT( result == 0 );
+    (void) result;
 #endif
 }
 
@@ -123,8 +125,9 @@ void Condition::notify_all()
         SWEET_ASSERT( result != 0 );
     }
 
-#elif defined(BUILD_OS_MACOSX)
+#else
     int result = pthread_cond_broadcast( &condition_ );
     SWEET_ASSERT( result == 0 );
+    (void) result;
 #endif
 }

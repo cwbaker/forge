@@ -25,7 +25,7 @@ BuildToolEventSink::~BuildToolEventSink()
 // @param message
 //  The null terminated message to be output.
 */
-void BuildToolEventSink::build_tool_output( BuildTool* build_tool, const char* message )
+void BuildToolEventSink::build_tool_output( BuildTool* /*build_tool*/, const char* /*message*/ )
 {    
 }
 
@@ -38,7 +38,7 @@ void BuildToolEventSink::build_tool_output( BuildTool* build_tool, const char* m
 // @param message
 //  The null terminated warning message.
 */
-void BuildToolEventSink::build_tool_warning( BuildTool* build_tool, const char* message )
+void BuildToolEventSink::build_tool_warning( BuildTool* /*build_tool*/, const char* /*message*/ )
 {
 }
 
@@ -51,6 +51,6 @@ void BuildToolEventSink::build_tool_warning( BuildTool* build_tool, const char* 
 // @param message
 //  The null terminated error message.
 */
-void BuildToolEventSink::build_tool_error( BuildTool* build_tool, const char* message )
+void BuildToolEventSink::build_tool_error( BuildTool* /*build_tool*/, const char* /*message*/ )
 {
 }

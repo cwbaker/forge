@@ -136,6 +136,11 @@ function build.initialize( project_settings )
     };
 
     set_maximum_parallel_jobs( jobs );
+    if operating_system() == "windows" then 
+        set_build_hooks_library( executable("build_hooks.dll") );
+    elseif operating_system() == "macosx" then
+        set_build_hooks_library( executable("build_hooks.dylib") );
+    end    
 
     -- Set default settings (all other settings inherit from this table).
     local default_settings = dofile( build.script("build/default_settings") );
@@ -292,8 +297,8 @@ end
 
 -- Execute command with arguments and optional filter and raise an error if 
 -- it doesn't return 0.
-function build.system( command, arguments, environment, filter, ... )
-    if execute(command, arguments, environment, filter, ...) ~= 0 then       
+function build.system( command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... )
+    if execute(command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ...) ~= 0 then       
         error( ("%s failed"):format(arguments), 0 );
     end
 end
@@ -566,6 +571,27 @@ function build.add_jar_dependencies( jar, jars )
             jar:add_dependency( target(root(value)) );
         end
     end
+end
+
+-- Add dependencies detected by the injected build hooks library to the 
+-- target /object/.
+function build.dependencies_filter( object )
+    local function filter( line )
+        if line:match("^==") then 
+            local READ_PATTERN = "^== read '([^']*)'";
+            local filename = line:match( READ_PATTERN );
+            if filename then
+                local within_source_tree = relative( absolute(filename), root() ):find( "..", 1, true ) == nil;
+                if within_source_tree then 
+                    local header = build.SourceFile( filename );
+                    object:add_dependency( header );
+                end
+            end
+        else
+            print( line );
+        end
+    end
+    return filter;
 end
 
 -- Append values from /value/ to /values/.

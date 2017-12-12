@@ -584,7 +584,7 @@ bool Target::bound_to_file() const
 void Target::set_filename( const std::string& filename, int index )
 {
     SWEET_ASSERT( index >= 0 );
-    if ( index >= filenames_.size() )
+    if ( index >= int(filenames_.size()) )
     {
         filenames_.insert( filenames_.end(), index - filenames_.size() + 1, string() );
     }
@@ -603,7 +603,7 @@ void Target::set_filename( const std::string& filename, int index )
 */
 const std::string& Target::filename( int n ) const
 {
-    SWEET_ASSERT( n >= 0 && n < filenames_.size() );
+    SWEET_ASSERT( n >= 0 && n < int(filenames_.size()) );
     return filenames_[n];
 }
 
@@ -1118,7 +1118,7 @@ void sweet::lua::lua_push( lua_State* lua_state, std::time_t timestamp )
 //
 // @relates Target
 */
-std::time_t sweet::lua::lua_to( lua_State* lua_state, int position, const std::time_t* null_pointer_for_overloading )
+std::time_t sweet::lua::lua_to( lua_State* lua_state, int position, const std::time_t* /*null_pointer_for_overloading*/ )
 {
     SWEET_ASSERT( lua_state );
     SWEET_ASSERT( lua_isnumber(lua_state, position) );

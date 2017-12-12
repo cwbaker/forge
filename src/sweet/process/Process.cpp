@@ -19,220 +19,33 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/syscall.h>
 #endif
 
+using std::vector;
 using namespace sweet::process;
 
 /**
 // Constructor.
 */
 Process::Process()
-: flags_( PROCESS_FLAG_NONE ),
+: executable_( NULL ),
+  directory_( NULL ),
+  environment_( NULL ),
+  start_suspended_( false ),
 #if defined(BUILD_OS_WINDOWS)
   process_( INVALID_HANDLE_VALUE ),
-  stdout_( INVALID_HANDLE_VALUE )
+  stdout_( INVALID_HANDLE_VALUE ),
+  suspended_thread_( INVALID_HANDLE_VALUE )
 #elif defined(BUILD_OS_MACOSX)
   process_( 0 ),
-  stdout_( 0 )
+  exit_code_( 0 ),
+  suspended_( false )
 #endif
 {
-}
-
-/**
-// Constructor.
-//
-// @param command
-//  The command to execute for this Process (assumed not null).
-//
-// @param arguments
-//  The arguments to pass to execute this Process (assumed not null).
-//
-// @param directory
-//  The directory to execute this Process in (assumed not null).
-//
-// @param environment
-//  The environment to execute the process with or null to execute with an 
-//  empty environment.
-//
-// @param flags
-//  A bitwise or of flags that indicates the features that this Process 
-//  needs to provide.
-*/
-Process::Process( const char* command, const char* arguments, const char* directory, const Environment* environment, int flags )
-: flags_( flags ),
-#if defined(BUILD_OS_WINDOWS)
-  process_( INVALID_HANDLE_VALUE ),
-  stdout_( INVALID_HANDLE_VALUE )
-#elif defined(BUILD_OS_MACOSX)
-  process_( 0 ),
-  stdout_( 0 )
-#endif
-{
-    SWEET_ASSERT( command );
-    SWEET_ASSERT( arguments );
-    SWEET_ASSERT( directory );
-
-#if defined(BUILD_OS_WINDOWS)
-    STARTUPINFO startup_info;
-    memset( &startup_info, 0, sizeof(startup_info) );
-    startup_info.cb = sizeof(startup_info);
-
-    PROCESS_INFORMATION process_information;
-    memset( &process_information, 0, sizeof(process_information) );
-
-//
-// If the process flags specified that stdout and stderr should be provided
-// to the child process so that the parent process can call Process::read()
-// then create pipes that are inherited as stdout and stderr for the child
-// process.
-//
-// A single pipe is created and its read end is marked as not inheritable 
-// because the read end is only used by the parent process.  The write end
-// is inherited as the pipe that is written to by the child process when it
-// writes to stdout.
-//
-// This pipe is duplicated to provide the handle to the pipe that is written
-// to by the child process when it writes to stderr.
-//
-// The handle to stdin from this process is inherited as the handle to stdin
-// for the child process.
-//
-    HANDLE stdout_read = INVALID_HANDLE_VALUE;
-    HANDLE stdout_write = INVALID_HANDLE_VALUE;
-    HANDLE stderr_write = INVALID_HANDLE_VALUE;
-
-    if ( flags & PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR )
-    {
-        SECURITY_ATTRIBUTES security_attributes;
-        memset( &security_attributes, 0, sizeof(security_attributes) );
-        security_attributes.nLength = sizeof(security_attributes);
-        security_attributes.lpSecurityDescriptor = 0;
-        security_attributes.bInheritHandle = TRUE;
-
-        BOOL result = ::CreatePipe( &stdout_read, &stdout_write, &security_attributes, 0 );
-        if ( !result )
-        {
-            char error [1024];
-            error::Error::format( ::GetLastError(), error, sizeof(error) );
-            SWEET_ERROR( CreatingPipeFailedError("Creating stdout for '%s' failed - %s", command, error) );
-        }
-
-        ::SetHandleInformation( stdout_read, HANDLE_FLAG_INHERIT, 0 );
-
-        result = ::DuplicateHandle( ::GetCurrentProcess(), stdout_write, ::GetCurrentProcess(), &stderr_write, 0, TRUE, DUPLICATE_SAME_ACCESS );
-        if ( !result )
-        {
-            ::CloseHandle( stdout_read );
-            ::CloseHandle( stdout_write );
-
-            char error [1024];
-            error::Error::format( ::GetLastError(), error, sizeof(error) );
-            SWEET_ERROR( DuplicatingHandleFailedError("Duplicating stdout into stderr for '%s' failed - %s", command, error) );
-        }
-
-        startup_info.hStdError = stderr_write;
-        startup_info.hStdOutput = stdout_write;
-        startup_info.hStdInput = ::GetStdHandle( STD_INPUT_HANDLE );
-        startup_info.dwFlags = STARTF_USESTDHANDLES;
-    }
-
-//
-// Create the process.
-//
-    void* eenvironment = (void*) ( environment ? environment->buffer() : NULL );
-    BOOL created = ::CreateProcessA( command, const_cast<char*>(arguments), NULL, NULL, TRUE, 0, eenvironment, directory, &startup_info, &process_information );
-    if ( !created )
-    {
-        ::CloseHandle( stdout_read );
-        ::CloseHandle( stdout_write );
-        ::CloseHandle( stderr_write );
-
-        char error [1024];
-        error::Error::format( ::GetLastError(), error, sizeof(error) );
-        SWEET_ERROR( ExecutingProcessFailedError("Executing '%s' failed - %s", command, error) );
-    }
-
-//
-// Close the thread handle returned in the process information because it
-// isn't used anywhere.
-//
-    ::CloseHandle( process_information.hThread );
-
-//
-// Close the the write ends of the pipes used for stdout and stderr because 
-// they only need to be used by the child process and also because calls to 
-// ::ReadFile() on the read end only return 0 when all of the write ends have
-// been closed.
-//
-    if ( stdout_write != INVALID_HANDLE_VALUE )
-    {
-        ::CloseHandle( stdout_write );
-        stdout_write = INVALID_HANDLE_VALUE;
-    }
-
-    if ( stderr_write != INVALID_HANDLE_VALUE )
-    {
-        ::CloseHandle( stderr_write );
-        stderr_write = INVALID_HANDLE_VALUE;
-    }
-
-    process_ = process_information.hProcess;
-    stdout_ = stdout_read;
-
-#elif defined(BUILD_OS_MACOSX)
-    cmdline::Splitter splitter( arguments );
-
-    // Use the undocumented `pthread_fchdir()` system call to change the 
-    // working directory for the thread that is spawning a process rather than
-    // the global per-process working directory changed by `fchdir()`.  See 
-    // `syscall()` and `<sys/syscall.h>`.
-    int result = syscall( SYS___pthread_chdir, directory );
-    if ( result != 0 )
-    {
-        char message [256];
-        SWEET_ERROR( ExecutingProcessFailedError("Executing '%s' failed - unable to change directory to '%s' - %s", command, directory, Error::format(errno, message, sizeof(message))) );
-    }
-
-    int files [2] = { 0, 0 };
-    posix_spawn_file_actions_t file_actions;
-    posix_spawn_file_actions_init( &file_actions );
-    if ( flags & PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR )
-    {
-        result = pipe( files );
-        if ( result != 0 )
-        {
-            char message [256];
-            SWEET_ERROR( CreatingPipeFailedError("Creating stdout for '%s' failed - %s", command, Error::format(errno, message, sizeof(message))) );
-        }
-
-        posix_spawn_file_actions_addclose( &file_actions, files[0] );
-        posix_spawn_file_actions_addclose( &file_actions, STDOUT_FILENO );
-        posix_spawn_file_actions_addclose( &file_actions, STDERR_FILENO );
-        posix_spawn_file_actions_adddup2( &file_actions, files[1], STDOUT_FILENO );
-        posix_spawn_file_actions_adddup2( &file_actions, files[1], STDERR_FILENO );
-        posix_spawn_file_actions_addclose( &file_actions, files[1] );
-    }
-
-    pid_t pid = 0;
-    char* const* envp = environment ? environment->values() : NULL;
-    result = posix_spawn( &pid, command, &file_actions, NULL, &splitter.arguments()[0], envp );
-    posix_spawn_file_actions_destroy( &file_actions );
-
-    if ( result != 0 )
-    {
-        close( files[0] );
-        close( files[1] );
-        char message [256];
-        SWEET_ERROR( ExecutingProcessFailedError("Executing '%s' failed - %s", command, Error::format(result, message, sizeof(message))) );
-    }
-
-    process_ = pid;
-    stdout_ = files[0];
-    close( files[1] );
-#endif    
 }
 
 /**
@@ -240,17 +53,22 @@ Process::Process( const char* command, const char* arguments, const char* direct
 */
 Process::~Process()
 {
-#if defined(BUILD_OS_WINDOWS)
+    resume();
+
+#if defined(BUILD_OS_WINDOWS)   
     if ( process_ != INVALID_HANDLE_VALUE )
     {
         ::CloseHandle( process_ );
         process_ = INVALID_HANDLE_VALUE;
     }
 
-    if ( stdout_ != INVALID_HANDLE_VALUE )
+    for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
     {
-        ::CloseHandle( stdout_ );
-        stdout_ = INVALID_HANDLE_VALUE;
+        if ( pipe->write_fd != (intptr_t) INVALID_HANDLE_VALUE )
+        {
+            ::CloseHandle( (HANDLE) pipe->write_fd );
+            pipe->write_fd = (intptr_t) INVALID_HANDLE_VALUE;
+        }
     }
 
 #elif defined(BUILD_OS_MACOSX)
@@ -261,10 +79,295 @@ Process::~Process()
         process_ = 0;
     }
 
-    if ( stdout_ != 0 )
+    for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
     {
-        close( stdout_ );
-        stdout_ = 0;
+        if ( pipe->write_fd != -1 )
+        {
+            close( pipe->write_fd );
+            pipe->write_fd = -1;
+        }
+    }
+#endif
+}
+
+void Process::executable( const char* executable )
+{
+    SWEET_ASSERT( executable );
+    executable_ = executable;
+}
+
+void Process::directory( const char* directory )
+{
+    directory_ = directory;
+}
+
+void Process::environment( const Environment* environment )
+{
+    environment_ = environment;
+}
+
+void Process::start_suspended( bool start_suspended )
+{
+    start_suspended_ = start_suspended;
+}
+
+/**
+// Create a pipe to communicate with the spawned process.
+//
+// 
+//
+// @param child_fd
+//  The child file descriptor to dup2() the write end of the pipe into in the
+//  child process.
+//
+// @return
+//  The file descriptor for read end of the pipe in the parent process.
+*/
+intptr_t Process::pipe( int child_fd )
+{
+    SWEET_ASSERT( child_fd != PIPE_STDIN );
+
+#if defined(BUILD_OS_WINDOWS)
+    pipes_.push_back( Pipe() );
+    Pipe& pipe = pipes_.back();
+    pipe.child_fd = child_fd;
+    pipe.read_fd = (intptr_t) INVALID_HANDLE_VALUE;
+    pipe.write_fd = (intptr_t) INVALID_HANDLE_VALUE;
+
+    SECURITY_ATTRIBUTES security_attributes;
+    memset( &security_attributes, 0, sizeof(security_attributes) );
+    security_attributes.nLength = sizeof(security_attributes);
+    security_attributes.lpSecurityDescriptor = 0;
+    security_attributes.bInheritHandle = TRUE;
+
+    HANDLE read_fd = INVALID_HANDLE_VALUE;
+    HANDLE write_fd = INVALID_HANDLE_VALUE;
+    BOOL result = ::CreatePipe( &read_fd, &write_fd, &security_attributes, 0 );
+    if ( !result )
+    {
+        char error [1024];
+        error::Error::format( ::GetLastError(), error, sizeof(error) );
+        SWEET_ERROR( CreatingPipeFailedError("Creating stdout for '%s' failed - %s", executable_, error) );
+    }
+    ::SetHandleInformation( read_fd, HANDLE_FLAG_INHERIT, 0 );
+
+    pipe.read_fd = (intptr_t) read_fd;
+    pipe.write_fd = (intptr_t) write_fd;
+    return pipe.read_fd;
+
+#elif defined(BUILD_OS_MACOSX)
+    int fds [2] = { -1, -1 };
+    int result = ::pipe( fds );
+    SWEET_ASSERT( result == 0 );
+    if ( result != 0 )
+    {
+        char error [1024];
+        error::Error::format( errno, error, sizeof(error) );
+        SWEET_ERROR( CreatingPipeFailedError("Creating stdout for '%s' failed - %s", executable_, error) );
+    }
+    pipes_.push_back( Pipe() );
+    Pipe& pipe = pipes_.back();
+    pipe.child_fd = child_fd;
+    pipe.read_fd = fds[0];
+    pipe.write_fd = fds[1];
+    return pipe.read_fd;
+#endif
+}
+
+void Process::run( const char* arguments )
+{
+    SWEET_ASSERT( executable_ );
+    SWEET_ASSERT( arguments );
+
+#if defined(BUILD_OS_WINDOWS)
+    STARTUPINFO startup_info;
+    memset( &startup_info, 0, sizeof(startup_info) );
+    startup_info.cb = sizeof(startup_info);
+    startup_info.hStdInput = ::GetStdHandle( STD_INPUT_HANDLE );
+    startup_info.hStdOutput = ::GetStdHandle( STD_OUTPUT_HANDLE );
+    startup_info.hStdError = ::GetStdHandle( STD_ERROR_HANDLE );
+    startup_info.dwFlags = STARTF_USESTDHANDLES;
+
+    PROCESS_INFORMATION process_information;
+    memset( &process_information, 0, sizeof(process_information) );
+
+    for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
+    {
+        switch ( pipe->child_fd )
+        {
+            case PIPE_STDOUT:
+                startup_info.hStdOutput = (HANDLE) pipe->write_fd;
+                break;
+
+            case PIPE_STDERR:
+                startup_info.hStdError = (HANDLE) pipe->write_fd;
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    DWORD creation_flags = 0;
+    if ( start_suspended_ )
+    {
+        creation_flags |= CREATE_SUSPENDED;
+    }
+
+    // Create the process.
+    void* envp = (void*) ( environment_ ? environment_->buffer() : NULL );
+    BOOL created = ::CreateProcessA( executable_, const_cast<char*>(arguments), NULL, NULL, TRUE, creation_flags, envp, directory_, &startup_info, &process_information );
+    if ( !created )
+    {
+        char error [1024];
+        error::Error::format( ::GetLastError(), error, sizeof(error) );
+        SWEET_ERROR( ExecutingProcessFailedError("Executing '%s' failed - %s", executable_, error) );
+    }
+
+    // If the process was started suspended then keep its main thread handle
+    // open so that it can be resumed later.  Otherwise close the main thread
+    // handle as it is not used again.
+    if ( start_suspended_ )
+    {
+        suspended_thread_ = process_information.hThread;
+    }
+    else
+    {
+        ::CloseHandle( process_information.hThread );
+    }
+
+    // Close the the write ends of any the pipes used because they only need 
+    // to be used by the child process and also because calls to ::ReadFile()
+    // on the read end only return 0 when all of the write ends have been 
+    // closed.
+    for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
+    {
+        if ( pipe->write_fd != (intptr_t) INVALID_HANDLE_VALUE )
+        {
+            ::CloseHandle( (HANDLE) pipe->write_fd );
+            pipe->write_fd = (intptr_t) INVALID_HANDLE_VALUE;
+        }
+    }
+
+    process_ = process_information.hProcess;
+
+#elif defined(BUILD_OS_MACOSX)
+    cmdline::Splitter splitter( arguments );
+
+    if ( directory_ )
+    {
+        // Use the undocumented `pthread_fchdir()` system call to change the 
+        // working directory for the thread that is spawning a process rather than
+        // the global per-process working directory changed by `fchdir()`.  See 
+        // `syscall()` and `<sys/syscall.h>`.
+        int result = syscall( SYS___pthread_chdir, directory_ );
+        if ( result != 0 )
+        {
+            char message [256];
+            SWEET_ERROR( ExecutingProcessFailedError("Executing '%s' failed - unable to change directory to '%s' - %s", executable_, directory_, Error::format(errno, message, sizeof(message))) );
+        }
+    }
+
+    posix_spawn_file_actions_t file_actions;
+    posix_spawn_file_actions_init( &file_actions );
+    for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
+    {
+        if ( pipe->read_fd < 0 || pipe->write_fd < 0 || pipe->child_fd < 0 )
+        {
+            char message [256];
+            SWEET_ERROR( CreatingPipeFailedError("Creating pipe for '%s' failed - %s", executable_, Error::format(errno, message, sizeof(message))) );
+        }
+        posix_spawn_file_actions_addclose( &file_actions, pipe->read_fd );
+        posix_spawn_file_actions_adddup2( &file_actions, pipe->write_fd, pipe->child_fd );
+        posix_spawn_file_actions_addclose( &file_actions, pipe->write_fd );
+    }
+
+    posix_spawnattr_t attributes;
+    posix_spawnattr_init( &attributes );
+    if ( start_suspended_ )
+    {
+        posix_spawnattr_setflags( &attributes, POSIX_SPAWN_START_SUSPENDED );
+        suspended_ = true;
+    }
+
+    pid_t pid = 0;
+    char* const* envp = environment_ ? environment_->values() : NULL;
+    int result = posix_spawn( &pid, executable_, &file_actions, &attributes, &splitter.arguments()[0], envp );
+    posix_spawnattr_destroy( &attributes );
+    posix_spawn_file_actions_destroy( &file_actions );
+
+    for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
+    {
+        close( pipe->write_fd );
+        pipe->write_fd = -1;
+    }
+
+    if ( result != 0 )
+    {
+        char message [256];
+        SWEET_ERROR( ExecutingProcessFailedError("Executing '%s' failed - %s", executable_, Error::format(result, message, sizeof(message))) );
+    }
+
+    process_ = pid;
+#endif    
+}
+
+/**
+// Get the handle or identifier of this Process.
+//
+// @return 
+//  The handle or identifier of this Process cast to a void pointer.
+*/
+void* Process::process() const
+{
+    return (void*) (intptr_t) process_;
+}
+
+/**
+// Get the handle of the suspended main thread of this Process.
+//
+// @return
+//  The handle to the suspended main thread or null if this Process is not
+//  suspended or this code is running on a platform other than Windows.
+*/
+void* Process::thread() const
+{
+#if defined(BUILD_OS_WINDOWS)
+    return suspended_thread_;
+#else
+    return NULL;
+#endif
+}
+
+void* Process::write_pipe( int index ) const
+{
+#if defined(BUILD_OS_WINDOWS)
+    return index >= 0 && index < int(pipes_.size()) ? (void*) pipes_[index].write_fd : INVALID_HANDLE_VALUE;
+#else
+    (void) index;
+    return (void*) -1;
+#endif
+}
+
+/**
+// Resume this Process after it has been started suspended.
+//
+// It is only valid to call this function once to resume an initially 
+// suspended process.  Additional calls will silently do nothing.
+*/
+void Process::resume()
+{
+#if defined(BUILD_OS_WINDOWS)
+    if ( suspended_thread_ != INVALID_HANDLE_VALUE )
+    {
+        ::ResumeThread( suspended_thread_ );
+        suspended_thread_ = INVALID_HANDLE_VALUE;
+    }
+#elif defined(BUILD_OS_MACOSX)
+    if ( suspended_ )
+    {
+        suspended_ = false;
+        kill( process_, SIGCONT );
     }
 #endif
 }
@@ -299,12 +402,6 @@ void Process::wait()
         SWEET_ERROR( WaitForProcessFailedError("Waiting for a process failed - %s", Error::format(errno, buffer, sizeof(buffer))) );
     }
     process_ = 0;
-
-    if ( stdout_ != 0 )
-    {
-        close( stdout_ );
-        stdout_ = 0;
-    }    
 #endif
 }
 
@@ -330,58 +427,7 @@ int Process::exit_code()
 
     return exit_code;
 #elif defined(BUILD_OS_MACOSX)
-    SWEET_ASSERT( process_ == 0 && stdout_ == 0 );
+    SWEET_ASSERT( process_ == 0 );
     return exit_code_;
-#endif
-}
-
-/**
-// Read from the stdout and stderr of this Process.
-//
-// If the read on the pipe fails because the write end of the pipe has been
-// closed by the child process then this function will return 0.
-//
-// @param buffer
-//  A buffer to receive the read data.
-//
-// @param length
-//  The maximum number of bytes that can be read into \e buffer.
-//
-// @return
-//  The number of bytes read (or 0 if this Process has closed the write
-//  end of the pipe or exited).
-*/
-unsigned int Process::read( void* buffer, unsigned int length )
-{
-#if defined(BUILD_OS_WINDOWS)
-    SWEET_ASSERT( process_ != INVALID_HANDLE_VALUE );
-    SWEET_ASSERT( stdout_ != INVALID_HANDLE_VALUE );
-    SWEET_ASSERT( flags_ & PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR );
-
-    DWORD read = 0;
-    BOOL result = ::ReadFile( stdout_, buffer, length, &read, NULL );
-    if ( !result && ::GetLastError() != ERROR_BROKEN_PIPE )
-    {
-        char error [1024];
-        error::Error::format( ::GetLastError(), error, sizeof(error) );
-        SWEET_ERROR( ReadingPipeFailedError("Reading from a child process failed - %s", error) );
-    }
-    return read;
-
-#elif defined(BUILD_OS_MACOSX)
-    SWEET_ASSERT( process_ != 0 );
-    SWEET_ASSERT( stdout_ != 0 );
-
-    int bytes = ::read( stdout_, buffer, length );
-    while ( bytes < 0 && errno == EINTR )
-    {
-        bytes = ::read( stdout_, buffer, length );
-    }
-    if ( bytes == -1 )
-    {
-        char buffer [1024];
-        SWEET_ERROR( ReadingPipeFailedError("Reading from a child process failed - %s", Error::format(errno, buffer, sizeof(buffer))) );        
-    }
-    return bytes;
 #endif
 }

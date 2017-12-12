@@ -57,7 +57,6 @@ function gcc.append_compile_flags( target, flags )
     table.insert( flags, "-fpic" );
     table.insert( flags, "-ffunction-sections" );
     table.insert( flags, "-funwind-tables" );
-    -- table.insert( flags, "-fasm-blocks" );
     table.insert( flags, "-no-canonical-prefixes" );
     table.insert( flags, "-fomit-frame-pointer" );
     table.insert( flags, "-fno-strict-aliasing" );
@@ -103,6 +102,19 @@ function gcc.append_compile_flags( target, flags )
         table.insert( flags, "-fstack-protector" );
     else
         table.insert( flags, "-fno-stack-protector" );
+    end
+
+    if target.settings.warnings_as_errors then 
+        table.insert( flags, "-Werror" );
+    end
+
+    local warning_level = target.settings.warning_level
+    if warning_level == 0 then 
+        table.insert( flags, "-w" );
+    elseif warning_level == 1 then
+        table.insert( flags, "-Wall" );
+    elseif warning_level >= 2 then
+        table.insert( flags, "-Wall -Wextra" );
     end
 end
 
@@ -169,59 +181,6 @@ function gcc.append_link_libraries( target, libraries )
             table.insert( libraries, ("-l%s"):format(library) );
         end
     end
-end
-
-function gcc.process_dependencies( target )
-    local BACKSLASH = ("\\"):byte();
-    local SPACE = (" "):byte();
-    local START = "[^:%s\n\r\\]";
-    local FINISH = "[:%s\n\r\\]";
-
-    function extract( line, start )
-        if start then
-            local finish = line:find( FINISH, start + 1 );
-            while finish and line:byte(finish) == BACKSLASH and line:byte(finish + 1) == SPACE do 
-                finish = line:find( FINISH, finish + 2 );
-            end
-            if finish then 
-                finish = finish - 1;
-            end
-            return start, finish;
-        end
-    end
-
-    local filename = ("%s.d"):format( build.strip(target:filename()) );
-    local file = io.open( filename );
-    assertf( file, "Dependency file '%s' not found for '%s'", filename, target:path() );
-
-    local line = file:read();
-    if line then 
-        local start, finish = extract( line, line:find(START) or 1 );
-        if start then 
-            local filename = line:sub( start, finish ):gsub( "\\ ", " " );
-            assertf( filename == target:filename(), "Dependency file '%s' does not match '%s'", filename, target:filename() );
-            target:clear_implicit_dependencies();
-            start, finish = extract( line, line:find(START, (finish or #line) + 1) );
-        end
-        while line do 
-            while start do 
-                local filename = line:sub( start, finish ):gsub( "\\ ", " " );
-                local within_source_tree = relative( filename, root() ):find( "..", 1, true ) == nil;
-                if within_source_tree then
-                    local header = build.SourceFile( filename );
-                    target:add_dependency( header );
-                end
-                start, finish = extract( line, line:find(START, (finish or #line) + 1) );
-            end
-            line = file:read();
-            if line then
-                start, finish = extract( line, line:find(START) or 1 );
-            end
-        end
-    end
-
-    file:close();
-    file = nil;
 end
 
 build.register_module( gcc );

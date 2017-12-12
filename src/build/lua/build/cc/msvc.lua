@@ -57,48 +57,80 @@ function msvc.initialize( settings )
 
         local visual_studio_directory = settings.msvc.visual_studio_directory;
         
-        local path = {
+        local path_i386 = {
+            ('%s\\VC\\bin\\amd64_x86'):format( visual_studio_directory ),
             ('%s\\Common7\\IDE'):format( visual_studio_directory ),
-            ('%s\\VC\\BIN'):format( visual_studio_directory ),
             ('%s\\Common7\\Tools'):format( visual_studio_directory ),
-            ('%s\\VC\\VCPackages'):format( visual_studio_directory ),
+            ('%s\\VC\\vcpackages'):format( visual_studio_directory ),
+        };
+
+        local path_x86_64 = {
+            ('%s\\VC\\bin\\amd64'):format( visual_studio_directory ),
+            ('%s\\Common7\\IDE'):format( visual_studio_directory ),
+            ('%s\\Common7\\Tools'):format( visual_studio_directory ),
+            ('%s\\VC\\vcpackages'):format( visual_studio_directory ),
         };
         
+        local lib_i386 = {
+            ('%s\\VC\\atlmfc\\lib'):format( visual_studio_directory ),
+            ('%s\\VC\\lib'):format( visual_studio_directory )
+        };
+
+        local lib_x86_64 = {
+            ('%s\\VC\\atlmfc\\lib\\amd64'):format( visual_studio_directory ),
+            ('%s\\VC\\lib\\amd64'):format( visual_studio_directory )
+        };
+
         local include = {
-            ('%s\\VC\\ATLMFC\\INCLUDE'):format( visual_studio_directory ),
-            ('%s\\VC\\INCLUDE'):format( visual_studio_directory ),
+            ('%s\\VC\\atlmfc\\include'):format( visual_studio_directory ),
+            ('%s\\VC\\include'):format( visual_studio_directory ),
         };
         
-        local lib = {
-            ('%s\\VC\\ATLMFC\\LIB'):format( visual_studio_directory ),
-            ('%s\\VC\\LIB'):format( visual_studio_directory )
-        };
-
-        local libpath = {
-            ('%s\\VC\\ATLMFC\\LIB'):format( visual_studio_directory ),
-            ('%s\\VC\\LIB'):format( visual_studio_directory )
-        };
-
         local windows_sdk_directory = settings.msvc.windows_sdk_directory;
         if windows_sdk_directory then 
-            table.insert( path, ('%s\\bin'):format(windows_sdk_directory) );
             table.insert( include, ('%s\\Include\\um'):format(windows_sdk_directory) );
             table.insert( include, ('%s\\Include\\shared'):format(windows_sdk_directory) );
             table.insert( include, ('%s\\Include\\winrt'):format(windows_sdk_directory) );
-            table.insert( lib, ('%s\\Lib\\winv6.3\\um\\x86'):format(windows_sdk_directory) );
+            table.insert( lib_i386, ('%s\\Lib\\winv6.3\\um\\x86'):format(windows_sdk_directory) );
+            table.insert( lib_x86_64, ('%s\\Lib\\winv6.3\\um\\x64'):format(windows_sdk_directory) );
         end
 
-        local environment = {
-            PATH = table.concat( path, ";" );
-            INCLUDE = table.concat( include, ";" );
-            LIB = table.concat( lib, ";" );
-            LIBPATH = table.concat( libpath, ";" );
-            SYSTEMROOT = getenv( "SYSTEMROOT" );
-            TMP = getenv( "TMP" );
+        msvc.environments_by_architecture = {
+            ["i386"] = {
+                PATH = table.concat( path_i386, ";" );
+                LIB = table.concat( lib_i386, ";" );
+                LIBPATH = table.concat( lib_i386, ";" );
+                INCLUDE = table.concat( include, ";" );
+                SYSTEMROOT = getenv( "SYSTEMROOT" );
+                TMP = getenv( "TMP" );
+            };
+            ["x86_64"] = {
+                PATH = table.concat( path_x86_64, ";" );
+                LIB = table.concat( lib_x86_64, ";" );
+                LIBPATH = table.concat( lib_x86_64, ";" );
+                INCLUDE = table.concat( include, ";" );
+                SYSTEMROOT = getenv( "SYSTEMROOT" );
+                TMP = getenv( "TMP" );
+            };
         };
-        msvc.environment = environment;
     end
 end;
+
+function msvc.visual_studio_tool( target, tool )
+    if target.architecture == "x86_64" then
+        return ("%s/VC/bin/amd64/%s"):format( target.settings.msvc.visual_studio_directory, tool );
+    else
+        return ("%s/VC/bin/%s"):format( target.settings.msvc.visual_studio_directory, tool );
+    end
+end
+
+function msvc.windows_sdk_tool( target, tool )
+    if target.architecture == "x86_64" then
+        return ("%s/bin/x64/%s"):format( target.settings.msvc.windows_sdk_directory, tool );
+    else
+        return ("%s/bin/x86/%s"):format( target.settings.msvc.windows_sdk_directory, tool );
+    end
+end
 
 function msvc.append_defines( target, flags )
     table.insert( flags, ('/DBUILD_PLATFORM_%s'):format(upper(platform)) );
@@ -106,6 +138,7 @@ function msvc.append_defines( target, flags )
     table.insert( flags, ('/DBUILD_LIBRARY_SUFFIX="\\"_%s.lib\\""'):format(target.architecture) );
     table.insert( flags, ('/DBUILD_MODULE_%s'):format(upper(string.gsub(target.module:id(), "-", "_"))) );
     table.insert( flags, ('/DBUILD_LIBRARY_TYPE_%s'):format(upper(target.settings.library_type)) );
+    table.insert( flags, '/D_CRT_SECURE_NO_WARNINGS' );
 
     if string.find(target.settings.runtime_library, "debug", 1, true) then
         table.insert( flags, "/D_DEBUG" );
@@ -201,6 +234,23 @@ function msvc.append_compile_flags( target, flags )
     if target.settings.run_time_checks then
         table.insert( flags, "/RTC1" );
     end
+
+    if target.settings.warnings_as_errors then 
+        table.insert( flags, "/WX" );
+    end
+
+    local warning_level = target.settings.warning_level
+    if warning_level == 0 then 
+        table.insert( flags, "/w" );
+    elseif warning_level == 1 then
+        table.insert( flags, "/W1" );
+    elseif warning_level == 2 then
+        table.insert( flags, "/W2" );
+    elseif warning_level == 3 then
+        table.insert( flags, "/W3" );
+    elseif warning_level >= 4 then
+        table.insert( flags, "/W4" );
+    end
 end
 
 function msvc.append_library_directories( target, flags )
@@ -229,9 +279,9 @@ function msvc.append_link_flags( target, flags )
     end
 
     table.insert( flags, ("/out:%s"):format(native(target:filename())) );
-    if target:prototype() == DynamicLibrary then
+    if target:prototype() == build.DynamicLibrary then
         table.insert( flags, "/dll" );
-        table.insert( flags, ("/implib:%s"):format(native(lib_name(("%s/%s"):format(target.settings.lib, target:id())))) );
+        table.insert( flags, ("/implib:%s"):format(native(("%s/%s.lib"):format(target.settings.lib, target:id()))) );
     end
     
     if target.settings.verbose_linking then
@@ -279,11 +329,10 @@ function msvc.append_link_libraries( target, flags )
     end
 end
 
-function msvc.process_dependencies_filter( output_directory, source_directory )
-    local context = {
-        current_directory = source_directory;
-        directories = { source_directory };
-    };
+function msvc.dependencies_filter( output_directory, source_directory )
+    local object;
+    local current_directory = source_directory;
+    local directories = { source_directory };
 
     -- Strip the backslash delimited prefix from _include_path_ and return the
     -- remaining portion.  This remaining portion is the correct relative path to
@@ -298,21 +347,20 @@ function msvc.process_dependencies_filter( output_directory, source_directory )
         return include_path:sub( position );
     end
 
-    -- Match lines that indicatesource files and header files in Microsoft
+    -- Match lines that indicate source files and header files in Microsoft
     -- Visual C++ output to gather dependencies for source file compilation.
-    local function process_dependencies_filter( line, context )
+    local function dependencies_filter( line )
         local SHOW_INCLUDES_PATTERN = "^Note: including file:(%s*)([^\n\r]*)[\n\r]*$";
         local indent, path = line:match( SHOW_INCLUDES_PATTERN );
         if indent and path then
             local indent = #indent;
-            local directories = context.directories;
             if indent < #directories then
                 while indent < #directories do 
                     table.remove( directories );
                 end
             end
             if indent > #directories then 
-                table.insert( directories, context.current_directory );
+                table.insert( directories, current_directory );
             end
 
             local LOWER_CASE_DRIVE_PATTERN = "^%l:";
@@ -324,23 +372,20 @@ function msvc.process_dependencies_filter( output_directory, source_directory )
 
             local within_source_tree = relative( path, root() ):find( "..", 1, true ) == nil;
             if within_source_tree then 
-                local object = context.object;
                 local header = build.SourceFile( path );
                 object:add_dependency( header );
             end
-            context.current_directory = branch( path );
+            current_directory = branch( path );
         else
             local SOURCE_FILE_PATTERN = "^[%w_]+%.[%w_]+[\n\r]*$";
             local start, finish = line:find( SOURCE_FILE_PATTERN );
             if start and finish then 
-                local object = build.File( ("%s/%s"):format(output_directory, obj_name(line)) );
-                context.object = object;
+                object = build.File( ("%s/%s"):format(output_directory, obj_name(line)) );
             end
             printf( line );
         end
     end
-
-    return process_dependencies_filter, context;
+    return dependencies_filter;
 end
 
 build.register_module( msvc );

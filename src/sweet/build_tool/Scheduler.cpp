@@ -144,7 +144,7 @@ void Scheduler::postorder_visit( const lua::LuaValue& function, Job* job )
     }    
 }
 
-void Scheduler::execute_finished( int exit_code, Context* context, process::Environment* environment, lua::LuaValue* filter, Arguments* arguments )
+void Scheduler::execute_finished( int exit_code, Context* context, process::Environment* environment )
 {
     SWEET_ASSERT( context );
 
@@ -154,12 +154,16 @@ void Scheduler::execute_finished( int exit_code, Context* context, process::Envi
     .end();
     process_end( context );
 
-    // Delete environment, filter, and arguments on the main thread to avoid 
-    // accessing the Lua virtual machine from multiple threads as happens if
-    // the filter or arguments are deleted in the worker threads provided by
-    // the Executor.  The environment is deleted here just for symmetry with
-    // its construction in the main thread in ScriptInterface..
+    // The environment is deleted here for symmetry with its construction in 
+    // the main thread in ScriptInterface along with filters and arguments.
     delete environment;
+}
+
+void Scheduler::filter_finished( lua::LuaValue* filter, Arguments* arguments )
+{
+    // Delete filters and arguments on the main thread to avoid accessing the
+    // Lua virtual machine from multiple threads as happens if the filter or 
+    // arguments are deleted in the worker threads provided by the Executor.  
     delete filter;
     delete arguments;
 }
@@ -189,12 +193,18 @@ void Scheduler::output( const std::string& output, lua::LuaValue* filter, Argume
 void Scheduler::error( const std::string& what, Context* context )
 {
     SWEET_ASSERT( build_tool_ );
-    SWEET_ASSERT( context );
-    SWEET_ASSERT( !active_contexts_.empty() );    
-    SWEET_ASSERT( context == active_contexts_.back() );
     build_tool_->error( what.c_str() );
-    active_contexts_.pop_back();
-    destroy_context( context );
+    if ( context )
+    {
+        SWEET_ASSERT( !active_contexts_.empty() );    
+        SWEET_ASSERT( find(free_contexts_.begin(), free_contexts_.end(), context) == free_contexts_.end() );
+        SWEET_ASSERT( context == active_contexts_.back() || find(active_contexts_.begin(), active_contexts_.end(), context) == active_contexts_.end() );
+        if ( context == active_contexts_.back() )
+        {
+            active_contexts_.pop_back();
+        }
+        destroy_context( context );
+    }
 }
 
 void Scheduler::push_output( const std::string& output, lua::LuaValue* filter, Arguments* arguments, Target* working_directory )
@@ -211,18 +221,25 @@ void Scheduler::push_error( const std::exception& exception, Context* context )
     results_condition_.notify_all();
 }
 
-void Scheduler::push_execute_finished( int exit_code, Context* context, process::Environment* environment, lua::LuaValue* filter, Arguments* arguments )
+void Scheduler::push_execute_finished( int exit_code, Context* context, process::Environment* environment )
 {
     thread::ScopedLock lock( results_mutex_ );
     --jobs_;
-    results_.push_back( std::bind(&Scheduler::execute_finished, this, exit_code, context, environment, filter, arguments) );
+    results_.push_back( std::bind(&Scheduler::execute_finished, this, exit_code, context, environment) );
     results_condition_.notify_all();
 }
 
-void Scheduler::execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* filter, Arguments* arguments, Context* context )
+void Scheduler::push_filter_finished( lua::LuaValue* filter, Arguments* arguments )
 {
     thread::ScopedLock lock( results_mutex_ );
-    build_tool_->executor()->execute( command, command_line, environment, filter, arguments, context );
+    results_.push_back( std::bind(&Scheduler::filter_finished, this, filter, arguments) );
+    results_condition_.notify_all();
+}
+
+void Scheduler::execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* dependencies_filter, lua::LuaValue* stdout_filter, lua::LuaValue* stderr_filter, Arguments* arguments, Context* context )
+{
+    thread::ScopedLock lock( results_mutex_ );
+    build_tool_->executor()->execute( command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context );
     ++jobs_;
 }
 

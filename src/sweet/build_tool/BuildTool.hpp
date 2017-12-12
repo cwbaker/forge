@@ -20,6 +20,7 @@ namespace build_tool
 
 class BuildToolEventSink;
 class ScriptInterface;
+class Reader;
 class Executor;
 class Scheduler;
 class OsInterface;
@@ -36,6 +37,7 @@ class SWEET_BUILD_TOOL_DECLSPEC BuildTool
     int warning_level_; ///< The warning level to report warnings at.
     OsInterface* os_interface_; ///< The OsInterface that provides access to the operating system.
     ScriptInterface* script_interface_; ///< The ScriptInterface that provides the API used by Lua scripts.
+    Reader* reader_; ///< The reader that filters executable output and dependencies.
     Executor* executor_; ///< The executor that schedules threads to process commands.
     Scheduler* scheduler_; ///< The scheduler that schedules environments to process jobs in the dependency graph.
     Graph* graph_; ///< The dependency graph of targets used to determine which targets are outdated.
@@ -48,6 +50,7 @@ class SWEET_BUILD_TOOL_DECLSPEC BuildTool
         OsInterface* os_interface() const;
         ScriptInterface* script_interface() const;
         Graph* graph() const;
+        Reader* reader() const;
         Executor* executor() const;
         Scheduler* scheduler() const;
 
@@ -59,6 +62,9 @@ class SWEET_BUILD_TOOL_DECLSPEC BuildTool
 
         void set_maximum_parallel_jobs( int maximum_parallel_jobs );
         int maximum_parallel_jobs() const;
+
+        void set_build_hooks_library( const std::string& build_hooks_library );
+        const std::string& build_hooks_library() const;
 
         void search_up_for_root_directory( const std::string& directory );
         void assign( const std::vector<std::string>& assignments_and_commands );

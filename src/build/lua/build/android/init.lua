@@ -164,8 +164,12 @@ function android.cc( target )
     for dependency in target:dependencies() do
         if dependency:outdated() then
             print( leaf(dependency.source) );
-            build.system( gcc_, ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, dependency:filename(), dependency.source), android.environment );
-            gcc.process_dependencies( dependency );
+            build.system( 
+                gcc_, 
+                ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, dependency:filename(), dependency.source), 
+                android.environment,
+                build.dependencies_filter(dependency)
+            );
         end
     end
 end

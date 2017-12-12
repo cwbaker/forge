@@ -1,6 +1,6 @@
 //
 // Error.cpp
-// Copyright (c) 2001 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -152,6 +152,10 @@ const char* Error::format( int oserror, char* buffer, unsigned int length )
     }
 #elif defined(BUILD_OS_MACOSX)
     strerror_r( oserror, buffer, length );
+#else
+    (void) oserror;
+    (void) buffer;
+    (void) length;
 #endif
     return buffer;
 }

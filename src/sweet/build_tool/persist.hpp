@@ -109,6 +109,7 @@ template <class Archive> void Target::persist( Archive& archive )
 template <class Archive> void save( Archive& archive, int mode, const char* name, TargetPrototype*& target_prototype )
 {
     SWEET_ASSERT( mode == sweet::persist::MODE_VALUE );
+    (void) mode;
 
     if ( target_prototype )
     {
@@ -141,6 +142,7 @@ template <class Archive> void load( Archive& archive, int mode, const char* name
 {
     SWEET_ASSERT( mode == sweet::persist::MODE_VALUE );
     SWEET_ASSERT( !target_prototype );
+    (void) mode;
 
     std::string id;
     archive.value( name, id );
@@ -165,7 +167,7 @@ template <class Archive> void load( Archive& archive, int mode, const char* name
 // @param target_prototype
 //  The TargetPrototype to load into (ignored).
 */
-template <class Archive> void resolve( Archive& archive, int mode, TargetPrototype*& target_prototype )
+template <class Archive> void resolve( Archive& /*archive*/, int /*mode*/, TargetPrototype*& /*target_prototype*/ )
 {
 }
 

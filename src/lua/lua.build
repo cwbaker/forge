@@ -1,5 +1,8 @@
 
-local settings = build.current_settings();
+local settings = build.push_settings {
+    warning_level = 0;
+};
+
 for _, architecture in ipairs(settings.architectures) do
     build.Library ("liblua", architecture) {
         libraries = {
@@ -79,3 +82,5 @@ if build.platform_matches("macosx") or build.platform_matches("windows") then
         end
     end
 end
+
+build.pop_settings();

@@ -1,6 +1,6 @@
 //
 // ScopedLock.cpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -51,7 +51,7 @@ void ScopedLock::unlock()
     m_mutex.unlock();
 }
 
-#if defined(BUILD_OS_MACOSX)
+#if !defined(BUILD_OS_WINDOWS)
 pthread_mutex_t* ScopedLock::pthread_mutex() const
 {
     return m_mutex.pthread_mutex();

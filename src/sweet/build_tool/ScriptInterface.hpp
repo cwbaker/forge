@@ -38,6 +38,7 @@ class ScriptInterface
     std::vector<TargetPrototype*> target_prototypes_; ///< The TargetPrototypes that have been loaded in.
     path::Path root_directory_; ///< The full path to the root directory.
     path::Path initial_directory_; ///< The full path to the initial directory.
+    path::Path executable_directory_; ///< The full path to the build executable directory.
 
     public:
         ScriptInterface( OsInterface* os_interface, BuildTool* build_tool );
@@ -51,6 +52,9 @@ class ScriptInterface
 
         void set_initial_directory( const path::Path& initial_directory );
         const path::Path& initial_directory() const;
+
+        void set_executable_directory( const path::Path& executable_directory );
+        const path::Path& executable_directory() const;
 
         void create_prototype( TargetPrototype* target_prototype );
         void destroy_prototype( TargetPrototype* target_prototype );
@@ -66,6 +70,7 @@ class ScriptInterface
         std::string root( const std::string& path ) const;
         std::string initial( const std::string& path ) const;
         std::string home( const std::string& path ) const;
+        std::string executable( const std::string& path ) const;
         std::string anonymous() const;
 
         bool is_absolute( const std::string & path );
@@ -98,7 +103,7 @@ class ScriptInterface
         void sleep( float milliseconds );
         float ticks();
         
-        void buildfile( const std::string& filename, Target* target );
+        void buildfile( const std::string& filename );
         void mark_implicit_dependencies();
         void print_dependencies( Target* target );
         void print_namespace( Target* target );
@@ -124,6 +129,7 @@ class ScriptInterface
         static int root_( lua_State* lua_state );
         static int initial_( lua_State* lua_state );
         static int home_( lua_State* lua_state );
+        static int executable_( lua_State* lua_state );
         static int getenv_( lua_State* lua_state );
         static int file( lua_State* lua_state );
         static int target( lua_State* lua_state );

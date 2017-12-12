@@ -1,5 +1,6 @@
 
 local settings = build.push_settings {
+    warning_level = 0;
     defines = { 
         -- Disable automatic linking to Boost libraries.
         "BOOST_ALL_NO_LIB" 

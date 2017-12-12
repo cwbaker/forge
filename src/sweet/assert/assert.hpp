@@ -16,7 +16,7 @@
 
 #include <sweet/build.hpp>
 
-#ifndef BUILD_MODULE_ASSERT
+#if !defined BUILD_MODULE_ASSERT && defined _MSC_VER
 #pragma comment( lib, "assert" BUILD_LIBRARY_SUFFIX )
 #endif
 
@@ -38,7 +38,7 @@ extern "C"
 {
 #endif
 
-SWEET_ASSERT_DECLSPEC void sweet_break();
+SWEET_ASSERT_DECLSPEC void sweet_break( void );
 SWEET_ASSERT_DECLSPEC void sweet_assert( int expression, const char* description, const char* file, int line );
 SWEET_ASSERT_DECLSPEC void sweet_assert_with_break( int expression, const char* description, const char* file, int line );
    
@@ -67,7 +67,10 @@ do { \
 
 #else
 
+#ifdef _MSC_VER
 #pragma warning( disable: 4127 )
+#endif
+
 #define SWEET_ASSERT( x )
 
 #endif

@@ -76,7 +76,8 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
   target_prototype_( lua_ ),
   target_prototypes_(),
   root_directory_(),
-  initial_directory_()
+  initial_directory_(),
+  executable_directory_()
 {
     SWEET_ASSERT( os_interface_ );
     SWEET_ASSERT( build_tool_ );
@@ -127,6 +128,8 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "maximum_parallel_jobs", &BuildTool::maximum_parallel_jobs, build_tool_ )
         ( "set_stack_trace_enabled", &BuildTool::set_stack_trace_enabled, build_tool_ )
         ( "stack_trace_enabled", &BuildTool::stack_trace_enabled, build_tool_ )
+        ( "set_build_hooks_library", &BuildTool::set_build_hooks_library, build_tool_ )
+        ( "build_hooks_library", &BuildTool::build_hooks_library, build_tool_ )
     ;
 
     lua_.globals()
@@ -139,6 +142,7 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "root", raw(&ScriptInterface::root_), this )
         ( "initial", raw(&ScriptInterface::initial_), this )
         ( "home", raw(&ScriptInterface::home_), this )
+        ( "executable", raw(&ScriptInterface::executable_), this )
         ( "anonymous", &ScriptInterface::anonymous, this )
         ( "is_absolute", &ScriptInterface::is_absolute, this )
         ( "is_relative", &ScriptInterface::is_relative, this )
@@ -224,6 +228,16 @@ void ScriptInterface::set_initial_directory( const path::Path& initial_directory
 const path::Path& ScriptInterface::initial_directory() const
 {
     return initial_directory_;
+}
+
+void ScriptInterface::set_executable_directory( const path::Path& executable_directory )
+{
+    executable_directory_ = executable_directory;
+}
+
+const path::Path& ScriptInterface::executable_directory() const
+{
+    return executable_directory_;
 }
 
 void ScriptInterface::create_prototype( TargetPrototype* target_prototype )
@@ -446,6 +460,19 @@ std::string ScriptInterface::home( const std::string& path ) const
     return absolute_path.string();
 }
 
+std::string ScriptInterface::executable( const std::string& path ) const
+{
+    if ( path::Path(path).is_absolute() )
+    {
+        return path;
+    }
+    
+    path::Path absolute_path( executable_directory_ );
+    absolute_path /= path;
+    absolute_path.normalize();
+    return absolute_path.string();
+}
+
 std::string ScriptInterface::anonymous() const
 {
     Context* context = ScriptInterface::context();
@@ -595,9 +622,7 @@ void ScriptInterface::mkdir( const std::string& path )
 
 void ScriptInterface::cpdir( const std::string& from, const std::string& to )
 {
-    Context* context = ScriptInterface::context();
-    SWEET_ASSERT( context );
-    return os_interface_->cpdir( absolute(from), absolute(to), context->directory().branch() );
+    return os_interface_->cpdir( absolute(from), absolute(to) );
 }
 
 void ScriptInterface::rmdir( const std::string& path )
@@ -635,10 +660,10 @@ float ScriptInterface::ticks()
     return os_interface_->ticks();
 }
 
-void ScriptInterface::buildfile( const std::string& filename, Target* target )
+void ScriptInterface::buildfile( const std::string& filename )
 {
     SWEET_ASSERT( build_tool_ );
-    return build_tool_->graph()->buildfile( filename, target );
+    return build_tool_->graph()->buildfile( filename );
 }
 
 void ScriptInterface::mark_implicit_dependencies()
@@ -722,7 +747,7 @@ Target* ScriptInterface::parent( Target* target )
 {
     SWEET_ASSERT( target );
     
-    Target* parent;
+    Target* parent = NULL;
     if ( target )
     {
         parent = target->parent();
@@ -738,7 +763,7 @@ Target* ScriptInterface::target_working_directory( Target* target )
 {
     SWEET_ASSERT( target );
     
-    Target* working_directory;
+    Target* working_directory = NULL;
     if ( target )
     {
         working_directory = target->working_directory();
@@ -856,7 +881,7 @@ int ScriptInterface::set_filename( lua_State* lua_state )
 
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
     const char* filename = lua_tostring( lua_state, FILENAME );
-    int index = lua_isnumber( lua_state, INDEX ) ? lua_tointeger( lua_state, INDEX ) : 0;
+    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 0;
     target->set_filename( string(filename), index );
 
     return 0;
@@ -874,7 +899,7 @@ int ScriptInterface::filename( lua_State* lua_state )
         return lua_error( lua_state );
     }
 
-    int index = lua_isnumber( lua_state, INDEX ) ? lua_tointeger( lua_state, INDEX ) : 1;
+    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
     if ( index < 1 )
     {
         SWEET_ERROR( RuntimeError("Index of less than 1 passed to 'Target.filename()'; index=%d", index) );
@@ -905,7 +930,7 @@ struct GetTargetsTargetReferencedByScript
         SWEET_ASSERT( script_interface_ );
     }
     
-    bool operator()( lua_State* lua_state, Target* target ) const
+    bool operator()( lua_State* /*lua_state*/, Target* target ) const
     {
         SWEET_ASSERT( target );
         if ( !target->referenced_by_script() )
@@ -957,7 +982,7 @@ int ScriptInterface::dependency( lua_State* lua_state )
         return lua_error( lua_state );
     }
 
-    int index = lua_isnumber( lua_state, INDEX ) ? lua_tointeger( lua_state, INDEX ) : 1;
+    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
     if ( index < 1 )
     {
         SWEET_ERROR( RuntimeError("Index of less than 1 passed to 'Target.dependency()'; index=%d", index) );
@@ -965,7 +990,7 @@ int ScriptInterface::dependency( lua_State* lua_state )
     }
     --index;
 
-    if ( index < target->dependencies().size() )
+    if ( index < int(target->dependencies().size()) )
     {
         Target* dependency = target->dependency( index );
         if ( !dependency->referenced_by_script() )
@@ -993,7 +1018,7 @@ struct GetDependenciesTargetReferencedByScript
         SWEET_ASSERT( script_interface_ );
     }
     
-    bool operator()( lua_State* lua_state, Target* target ) const
+    bool operator()( lua_State* /*lua_state*/, Target* target ) const
     {
         SWEET_ASSERT( target );
         if ( !target->referenced_by_script() )
@@ -1190,15 +1215,40 @@ int ScriptInterface::home_( lua_State* lua_state )
     }
 }
 
+int ScriptInterface::executable_( lua_State* lua_state )
+{
+    SWEET_ASSERT( lua_state );
+
+    try
+    {
+        std::string path;
+        if ( lua_gettop(lua_state) > 0 && !lua_isnoneornil(lua_state, -1) )
+        {
+            path = LuaConverter<std::string>::to( lua_state, -1 );        
+            lua_pop( lua_state, 1 );
+        }
+        
+        ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+        SWEET_ASSERT( script_interface );
+        std::string absolute_path = script_interface->executable( path );
+        lua_pushlstring( lua_state, absolute_path.c_str(), absolute_path.length() );
+        return 1;
+    }
+
+    catch ( const std::exception& exception )
+    {
+        lua_pushstring( lua_state, exception.what() );
+        return lua_error( lua_state );        
+    }
+}
+
 int ScriptInterface::getenv_( lua_State* lua_state )
 {
     SWEET_ASSERT( lua_state );
 
-    const char* name = NULL;
     if ( lua_gettop(lua_state) > 0 && lua_isstring(lua_state, -1) )
     {
         const char* name = lua_tostring( lua_state, -1 );
-
         ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
         SWEET_ASSERT( script_interface );
         const char* value = script_interface->getenv( name );        
@@ -1274,7 +1324,7 @@ int ScriptInterface::postorder( lua_State* lua_state )
         LuaValue function( script_interface->lua_, lua_state, FUNCTION_PARAMETER );
 
         const int TARGET_PARAMETER = 2;
-        Target* target;
+        Target* target = NULL;
         if ( !lua_isnoneornil(lua_state, TARGET_PARAMETER) )
         {
             target = LuaConverter<Target* >::to( lua_state, TARGET_PARAMETER );
@@ -1308,17 +1358,17 @@ int ScriptInterface::execute( lua_State* lua_state )
         ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
         SWEET_ASSERT( script_interface );
 
-        const int COMMAND_PARAMETER = 1;
-        string command = LuaConverter<string>::to( lua_state, COMMAND_PARAMETER );
+        const int COMMAND = 1;
+        string command = LuaConverter<string>::to( lua_state, COMMAND );
         
-        const int COMMAND_LINE_PARAMETER = 2;
-        string command_line = LuaConverter<string>::to( lua_state, COMMAND_LINE_PARAMETER );
+        const int COMMAND_LINE = 2;
+        string command_line = LuaConverter<string>::to( lua_state, COMMAND_LINE );
         
-        const int ENVIRONMENT_PARAMETER = 3;
+        const int ENVIRONMENT = 3;
         unique_ptr<process::Environment> environment;
-        if ( !lua_isnoneornil(lua_state, ENVIRONMENT_PARAMETER) )
+        if ( !lua_isnoneornil(lua_state, ENVIRONMENT) )
         {
-            if ( !lua_istable(lua_state, ENVIRONMENT_PARAMETER) )
+            if ( !lua_istable(lua_state, ENVIRONMENT) )
             {
                 lua_pushstring( lua_state, "Expected an environment table or nil as 3rd parameter" );
                 return lua_error( lua_state );
@@ -1326,7 +1376,7 @@ int ScriptInterface::execute( lua_State* lua_state )
             
             environment.reset( new process::Environment );
             lua_pushnil( lua_state );
-            while ( lua_next(lua_state, ENVIRONMENT_PARAMETER) )
+            while ( lua_next(lua_state, ENVIRONMENT) )
             {
                 if ( lua_isstring(lua_state, -2) )
                 {
@@ -1336,24 +1386,62 @@ int ScriptInterface::execute( lua_State* lua_state )
                 }
                 lua_pop( lua_state, 1 );
             }
-            environment->finish();
         }
 
-        const int FILTER_PARAMETER = 4;
-        unique_ptr<lua::LuaValue> filter;
-        if ( !lua_isnoneornil(lua_state, FILTER_PARAMETER) )
+        const int DEPENDENCIES_FILTER = 4;
+        unique_ptr<lua::LuaValue> dependencies_filter;
+        if ( !lua_isnoneornil(lua_state, DEPENDENCIES_FILTER) )
         {
-            filter.reset( new lua::LuaValue(script_interface->lua_, lua_state, FILTER_PARAMETER) );
+            if ( !lua_isfunction(lua_state, DEPENDENCIES_FILTER) && !lua_istable(lua_state, DEPENDENCIES_FILTER) )
+            {
+                lua_pushstring( lua_state, "Expected a function or callable table as 4th parameter (dependencies filter)" );
+                return lua_error( lua_state );
+            }
+            dependencies_filter.reset( new lua::LuaValue(script_interface->lua_, lua_state, DEPENDENCIES_FILTER) );
         }
 
-        const int ARGUMENTS_PARAMETER = 5;
+        const int STDOUT_FILTER = 5;
+        unique_ptr<lua::LuaValue> stdout_filter;
+        if ( !lua_isnoneornil(lua_state, STDOUT_FILTER) )
+        {
+            if ( !lua_isfunction(lua_state, STDOUT_FILTER) && !lua_istable(lua_state, STDOUT_FILTER) )
+            {
+                lua_pushstring( lua_state, "Expected a function or callable table as 4th parameter (dependencies filter)" );
+                return lua_error( lua_state );
+            }
+            stdout_filter.reset( new lua::LuaValue(script_interface->lua_, lua_state, STDOUT_FILTER) );
+        }
+
+        const int STDERR_FILTER = 6;
+        unique_ptr<lua::LuaValue> stderr_filter;
+        if ( !lua_isnoneornil(lua_state, STDERR_FILTER) )
+        {
+            if ( !lua_isfunction(lua_state, STDERR_FILTER) && !lua_istable(lua_state, STDERR_FILTER) )
+            {
+                lua_pushstring( lua_state, "Expected a function or callable table as 4th parameter (dependencies filter)" );
+                return lua_error( lua_state );
+            }
+            stderr_filter.reset( new lua::LuaValue(script_interface->lua_, lua_state, STDERR_FILTER) );
+        }
+
+        const int ARGUMENTS = 7;
         unique_ptr<Arguments> arguments;
-        if ( lua_gettop(lua_state) >= ARGUMENTS_PARAMETER )
+        if ( lua_gettop(lua_state) >= ARGUMENTS )
         {
-            arguments.reset( new Arguments(script_interface->lua_, lua_state, ARGUMENTS_PARAMETER, lua_gettop(lua_state) + 1) );
+            arguments.reset( new Arguments(script_interface->lua_, lua_state, ARGUMENTS, lua_gettop(lua_state) + 1) );
         }
 
-        script_interface->build_tool_->scheduler()->execute( command, command_line, environment.release(), filter.release(), arguments.release(), script_interface->context() );
+        script_interface->build_tool_->scheduler()->execute( 
+            command, 
+            command_line, 
+            environment.release(), 
+            dependencies_filter.release(), 
+            stdout_filter.release(), 
+            stderr_filter.release(), 
+            arguments.release(), 
+            script_interface->context() 
+        );
+
         return lua_yield( lua_state, 0 );
     }
 

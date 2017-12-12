@@ -1,5 +1,6 @@
 
 buildfile "build/build.build";
+buildfile "build_hooks/build_hooks.build";
 buildfile "build_tool_test/build_tool_test.build";
 
 local settings = build.current_settings();
@@ -32,6 +33,7 @@ for _, architecture in ipairs(settings.architectures) do
             "Graph.cpp",
             "Job.cpp",
             "OsInterface.cpp",
+            "Reader.cpp", 
             "Scheduler.cpp", 
             "ScriptInterface.cpp",
             "Target.cpp",

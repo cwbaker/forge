@@ -36,7 +36,6 @@ Application::Application( int argc, char** argv )
     bool version = false;
     std::string filename = "";
     std::string directory = boost::filesystem::initial_path<boost::filesystem::path>().string();
-    int jobs = 0;
     int warning_level = 0;
     bool stack_trace_enabled = false;
     std::vector<std::string> assignments_and_commands;
@@ -104,7 +103,7 @@ int Application::get_result() const
     return result_;
 }
 
-void Application::build_tool_output( BuildTool* build_tool, const char* message )
+void Application::build_tool_output( BuildTool* /*build_tool*/, const char* message )
 {
     SWEET_ASSERT( message );
 
@@ -113,7 +112,7 @@ void Application::build_tool_output( BuildTool* build_tool, const char* message 
     fflush( stdout );
 }
 
-void Application::build_tool_warning( BuildTool* build_tool, const char* message )
+void Application::build_tool_warning( BuildTool* /*build_tool*/, const char* message )
 {
     SWEET_ASSERT( message );
     
@@ -123,7 +122,7 @@ void Application::build_tool_warning( BuildTool* build_tool, const char* message
     fflush( stderr );
 }
 
-void Application::build_tool_error( BuildTool* build_tool, const char* message )
+void Application::build_tool_error( BuildTool* /*build_tool*/, const char* message )
 {
     SWEET_ASSERT( message );
     

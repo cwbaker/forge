@@ -631,7 +631,7 @@ typename BasicPath<String, Traits>::const_reverse_iterator BasicPath<String, Tra
 //  True if \e character is contained in \e separators otherwise false.
 */
 template <class String, class Traits>
-bool BasicPath<String, Traits>::in( int character, const typename Traits::char_type* separators )
+bool BasicPath<String, Traits>::in( typename Traits::char_type character, const typename Traits::char_type* separators )
 {
     SWEET_ASSERT( separators );    
     const typename Traits::char_type* i = separators;

@@ -49,7 +49,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Graph
         Target* find_target( const std::string& path, Target* working_directory );
         void destroy_target( Target* target );
                 
-        void buildfile( const std::string& filename, Target* target );
+        void buildfile( const std::string& filename );
         int bind( Target* target = NULL );        
         void swap( Graph& graph );
         void clear();

@@ -229,7 +229,7 @@ Target* Graph::target( const std::string& id, TargetPrototype* target_prototype,
                    
             if ( element == "." )
             {
-                target = target;
+                // Target is unchanged for a single "." element.
             }
             else if ( element == ".." )
             {
@@ -314,7 +314,7 @@ Target* Graph::find_target( const std::string& id, Target* working_directory )
         {       
             if ( *i == "." )
             {
-                target = target;
+                // Target is unchanged for a single "." element.
             }
             else if ( *i == ".." )
             {
@@ -354,13 +354,8 @@ void Graph::destroy_target( Target* target )
 //
 // @param filename
 //  The name of the buildfile to load.
-//
-// @param target
-//  The Target that top level Targets in the buildfile are made dependencies 
-//  of or null to make top level Targets dependencies of the target that 
-//  corresponds to the working directory.
 */
-void Graph::buildfile( const std::string& filename, Target* target )
+void Graph::buildfile( const std::string& filename )
 {
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( root_target_ );

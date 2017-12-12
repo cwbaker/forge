@@ -6,6 +6,7 @@
 #include "Environment.hpp"
 #include <sweet/assert/assert.hpp>
 
+using std::vector;
 using namespace sweet::process;
 
 Environment::Environment( unsigned int values_reserve, unsigned int buffer_reserve )
@@ -34,19 +35,23 @@ void Environment::append( const char* key, const char* value )
     size_t key_length = strlen( key );
     size_t value_length = strlen( value );
 
-    int key_start = buffer_.size();
+    uintptr_t key_start = buffer_.size();
     buffer_.resize( buffer_.size() + key_length + value_length + 2 );
     strcpy( &buffer_[key_start], key );
     buffer_[key_start + key_length] = '=';
-    int value_start = key_start + key_length + 1;
+    size_t value_start = key_start + key_length + 1;
     strcpy( &buffer_[value_start], value );
     buffer_[value_start + value_length + 0] = 0;
 
-    values_.push_back( &buffer_[key_start] );
+    values_.push_back( (char*) key_start );
 }
 
-void Environment::finish()
+void Environment::prepare()
 {
+    for ( vector<char*>::iterator value = values_.begin(); value != values_.end(); ++value )
+    {
+        *value = buffer_.data() + (uintptr_t) *value;
+    }
     values_.push_back( NULL );
     buffer_.push_back( 0 );
 }

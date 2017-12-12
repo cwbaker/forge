@@ -64,5 +64,6 @@ build.default_buildfiles {
 -- Targets built when building from the root directory and as targets when
 -- generating XCode projects and Visual Studio solutions.
 build.default_targets {
-    "sweet/build_tool/build"    
+    "sweet/build_tool/build",
+    "sweet/build_tool/build/build_hooks"
 };

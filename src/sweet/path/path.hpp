@@ -1,6 +1,6 @@
 //
 // path.hpp
-// Copyright (c) 2006 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker.  All rights reserved.
 //
 
 #ifndef SWEET_PATH_PATH_HPP_INCLUDED
@@ -17,7 +17,7 @@
 #include "BasicPath.hpp"
 #include "BasicPath.ipp"
 
-#ifndef BUILD_MODULE_PATH
+#if !defined BUILD_MODULE_PATH && defined _MSC_VER
 #pragma comment( lib, "path" BUILD_LIBRARY_SUFFIX )
 #endif
 

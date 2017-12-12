@@ -1,14 +1,9 @@
-//
-// ScopedLock.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_THREAD_SCOPEDLOCK_HPP_INCLUDED
 #define SWEET_THREAD_SCOPEDLOCK_HPP_INCLUDED
 
 #include "declspec.hpp"
 
-#if defined(BUILD_OS_MACOSX)
+#if !defined(BUILD_OS_WINDOWS)
 #include <pthread.h>
 #endif
 
@@ -34,7 +29,7 @@ class SWEET_THREAD_DECLSPEC ScopedLock
         void lock();
         void unlock();
 
-#if defined(BUILD_OS_MACOSX)
+#if !defined(BUILD_OS_WINDOWS)
         pthread_mutex_t* pthread_mutex() const;
 #endif
 

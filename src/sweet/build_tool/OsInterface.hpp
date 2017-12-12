@@ -31,8 +31,9 @@ class OsInterface
         std::time_t last_write_time( const std::string& path );
         boost::filesystem::directory_iterator ls( const std::string& path );
         boost::filesystem::recursive_directory_iterator find( const std::string& path );
+        std::string executable();
         void mkdir( const std::string& path );
-        void cpdir( const std::string& from, const std::string& to, const path::Path& base_path );
+        void cpdir( const std::string& from, const std::string& to );
         void rmdir( const std::string& path );
         void cp( const std::string& from, const std::string& to );
         void rm( const std::string& path );

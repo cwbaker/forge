@@ -59,7 +59,6 @@ function clang.append_compile_flags( target, flags )
     table.insert( flags, "-c" );
     table.insert( flags, ("-arch %s"):format(target.architecture) );
     table.insert( flags, "-fasm-blocks" );
-    table.insert( flags, "-MMD" );
     
     local language = target.language or "c++";
     if language then
@@ -103,6 +102,23 @@ function clang.append_compile_flags( target, flags )
     else
         table.insert( flags, "-fno-stack-protector" );
     end
+
+    if target.settings.warnings_as_errors then 
+        table.insert( flags, "-Werror" );
+    end
+
+    local warning_level = target.settings.warning_level
+    if warning_level == 0 then 
+        table.insert( flags, "-w" );
+    elseif warning_level == 1 then
+        table.insert( flags, "-Wall" );
+    elseif warning_level == 2 then
+        table.insert( flags, "-Wall -Wextra" );
+    elseif warning_level == 3 then
+        table.insert( flags, "-Wall -Wextra" );
+    else
+        table.insert( flags, "-Wall -Wextra -Weverything" );
+    end
 end
 
 function clang.append_library_directories( target, library_directories )
@@ -136,9 +152,8 @@ function clang.append_link_flags( target, flags )
     table.insert( flags, "-std=c++11" );
     table.insert( flags, "-stdlib=libc++" );
 
-    if target:prototype() == DynamicLibrary then
-        table.insert( flags, "-shared" );
-        table.insert( flags, ("-Wl,--out-implib,%s"):format(native(("%s/%s"):format(target.settings.lib, lib_name(target:id())))) );
+    if target:prototype() == build.DynamicLibrary then
+        table.insert( flags, "-Xlinker -dylib" );
     end
     
     if target.settings.verbose_linking then
@@ -190,10 +205,6 @@ function clang.append_link_libraries( target, libraries )
             table.insert( libraries, ('-framework "%s"'):format(framework) );
         end
     end
-end
-
-function clang.process_dependencies( target )
-    gcc.process_dependencies( target );
 end
 
 build.register_module( clang );

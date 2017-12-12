@@ -133,8 +133,12 @@ function ios.cc( target )
     for dependency in target:dependencies() do
         if dependency:outdated() then
             print( leaf(dependency.source) );
-            build.system( xcrun, ('xcrun --sdk %s clang %s -o "%s" "%s"'):format(sdkroot, ccflags, dependency:filename(), absolute(dependency.source)) );
-            clang.process_dependencies( dependency );
+            build.system( 
+                xcrun, 
+                ('xcrun --sdk %s clang %s -o "%s" "%s"'):format(sdkroot, ccflags, dependency:filename(), absolute(dependency.source)),
+                nil, 
+                build.dependencies_filter(dependency) 
+            );
         end
     end
 end;

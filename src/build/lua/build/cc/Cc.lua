@@ -39,7 +39,7 @@ local function create_target_prototype( id, language )
     return target_prototype;
 end
 
-local Cc = create_target_prototype( "Cc", "c" );
-local Cxx = create_target_prototype( "Cxx", "c++" );
-local ObjC = create_target_prototype( "ObjC", "objective-c" );
-local ObjCxx = create_target_prototype( "ObjCxx", "objective-c++" );
+create_target_prototype( "Cc", "c" );
+create_target_prototype( "Cxx", "c++" );
+create_target_prototype( "ObjC", "objective-c" );
+create_target_prototype( "ObjCxx", "objective-c++" );

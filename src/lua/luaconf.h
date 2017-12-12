@@ -21,7 +21,7 @@
 #include <sweet/build.hpp>
 
 // Add automatic linking pragma.
-#ifndef BUILD_MODULE_LIBLUA
+#if !defined BUILD_MODULE_LIBLUA && defined _MSC_VER
 #pragma comment( lib, "liblua" BUILD_LIBRARY_SUFFIX )
 #endif
 
@@ -522,7 +522,7 @@
 */
 
 #define LUA_NUMBER_DOUBLE
-#define LUA_NUMBER	double
+#define LUA_NUMBER float
 
 /*
 @@ LUAI_UACNUMBER is the result of an 'usual argument conversion'

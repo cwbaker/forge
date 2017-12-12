@@ -1,6 +1,6 @@
 //
 // Thread.cpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -23,7 +23,7 @@ using namespace sweet::thread;
 Thread::Thread( int (*function)(void*), void* context )
 #if defined(BUILD_OS_WINDOWS)
 : m_thread( NULL ),
-#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_ANDROID) || defined(BUILD_OS_IOS)
+#else
 : //thread_(),
   exit_code_( 0 ),
 #endif
@@ -43,7 +43,7 @@ Thread::Thread( int (*function)(void*), void* context )
 
     m_thread_id = static_cast<int>( thread_id );
 
-#elif defined(BUILD_OS_MACOSX)
+#else
     int result = pthread_create( &thread_, NULL, &Thread::thread_entry_point, this );
     if ( result != 0 )
     {
@@ -65,7 +65,7 @@ Thread::~Thread()
         m_thread_id = 0;
     }
 
-#elif defined(BUILD_OS_MACOSX)
+#else
     pthread_detach( thread_ );
 #endif
 }
@@ -105,10 +105,8 @@ int Thread::exit_code() const
     }
     return static_cast<int>( exit_code );
 
-#elif defined(BUILD_OS_MACOSX)
-    return exit_code_;
 #else
-    return 0;
+    return exit_code_;
 #endif
 }
 
@@ -136,15 +134,14 @@ bool Thread::join( int timeout )
     }
     return result == WAIT_OBJECT_0;
 
-#elif defined(BUILD_OS_MACOSX)
+#else
+    (void) timeout;    
     void* value = NULL;
     int result = pthread_join( thread_, &value );
     if ( result != 0 )
     {
         SWEET_ERROR( JoiningThreadFailedError("Joining thread %d failed - result=%d", result) );
     }
-    return true;
-#else 
     return true;
 #endif
 }
@@ -166,9 +163,8 @@ DWORD WINAPI Thread::thread_entry_point( LPVOID context )
     SWEET_ASSERT( thread );
     return static_cast<DWORD>( (*thread->m_function)(thread->m_context) );
 }
-#endif
 
-#if defined(BUILD_OS_MACOSX)
+#else
 void* Thread::thread_entry_point( void* context )
 {
     Thread* thread = reinterpret_cast<Thread*>( context );

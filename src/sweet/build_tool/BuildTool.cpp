@@ -1,6 +1,6 @@
 //
 // BuildTool.cpp
-// Copyright (c) 2007 - 2015 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -10,6 +10,7 @@
 #include "OsInterface.hpp"
 #include "Scheduler.hpp"
 #include "Executor.hpp"
+#include "Reader.hpp"
 #include "ScriptInterface.hpp"
 #include "Graph.hpp"
 
@@ -38,6 +39,7 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
   warning_level_( 0 ),
   os_interface_( NULL ),
   script_interface_( NULL ),
+  reader_( NULL ),
   executor_( NULL ),
   scheduler_( NULL ),
   graph_( NULL )
@@ -46,12 +48,14 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
 
     os_interface_ = new OsInterface;
     script_interface_ = new ScriptInterface( os_interface_, this );
+    reader_ = new Reader( this );
     executor_ = new Executor( this );
     scheduler_ = new Scheduler( this );
     graph_ = new Graph( this );
 
     script_interface_->set_root_directory( initial_directory );
     script_interface_->set_initial_directory( initial_directory );
+    script_interface_->set_executable_directory( path::Path(os_interface_->executable()).branch().string() );
 }
 
 /**
@@ -66,6 +70,7 @@ BuildTool::~BuildTool()
     delete graph_;
     delete scheduler_;
     delete executor_;
+    delete reader_;
     delete script_interface_;
     delete os_interface_;
 }
@@ -115,6 +120,18 @@ Graph* BuildTool::graph() const
 {
     SWEET_ASSERT( graph_ );
     return graph_;
+}
+
+/**
+// Get the Reader for this BuildTool.
+//
+// @return
+//  The Reader.
+*/
+Reader* BuildTool::reader() const
+{
+    SWEET_ASSERT( reader_ );
+    return reader_;
 }
 
 /**
@@ -212,6 +229,31 @@ int BuildTool::maximum_parallel_jobs() const
 {
     SWEET_ASSERT( executor_ );
     return executor_->maximum_parallel_jobs();
+}
+
+/**
+// Set the path to the build hooks library.
+//
+// @param build_hooks_library
+//  The path to the build hooks library or an empty string to disable tracking
+//  dependencies via build hooks.
+*/
+void BuildTool::set_build_hooks_library( const std::string& build_hooks_library )
+{
+    SWEET_ASSERT( executor_ );
+    executor_->set_build_hooks_library( build_hooks_library );
+}
+
+/**
+// Get the path to the build hooks library.
+//
+// @return 
+//  The path to the build hooks library.
+*/
+const std::string& BuildTool::build_hooks_library() const
+{
+    SWEET_ASSERT( executor_ );
+    return executor_->build_hooks_library();
 }
 
 /**

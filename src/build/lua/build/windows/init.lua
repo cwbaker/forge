@@ -33,6 +33,7 @@ function windows.cc( target )
     msvc.append_include_directories( target, flags );
     msvc.append_compile_flags( target, flags );
     
+    local objects_by_source = {};
     local sources_by_directory = {};
     for dependency in target:dependencies() do
         if dependency:outdated() then
@@ -43,6 +44,7 @@ function windows.cc( target )
                 sources_by_directory[directory] = sources;
             end
             table.insert( sources, dependency.source );
+            objects_by_source[leaf(dependency.source)] = dependency;
             dependency:clear_implicit_dependencies();
         end    
     end
@@ -52,9 +54,15 @@ function windows.cc( target )
             local output_directory = native( ("%s%s/%s/"):format(obj_directory(target), target.architecture, directory) );
             local ccflags = table.concat( flags, " " );
             local source = table.concat( sources, '" "' );
-            local cl = ("%s/VC/bin/cl.exe"):format( target.settings.msvc.visual_studio_directory );
-            local environment = msvc.environment;
-            build.system( cl, ('cl %s /Fo%s "%s"'):format(ccflags, output_directory, source), environment, msvc.process_dependencies_filter(output_directory, absolute(directory)) );
+            local cl = msvc.visual_studio_tool( target, "cl.exe" );
+            local environment = msvc.environments_by_architecture[target.architecture];
+            build.system( 
+                cl, 
+                ('cl %s /Fo%s "%s"'):format(ccflags, output_directory, source), 
+                environment, 
+                nil,
+                msvc.dependencies_filter(output_directory, absolute(directory))
+            );
         end
     end
 end;
@@ -82,8 +90,8 @@ function windows.build_library( target )
     if #objects > 0 then
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
-        local msar = ("%s/VC/bin/lib.exe"):format( target.settings.msvc.visual_studio_directory );
-        local environment = msvc.environment;
+        local msar = msvc.visual_studio_tool( target, "lib.exe" );
+        local environment = msvc.environments_by_architecture[target.architecture];
         print( leaf(target:filename()) );
         build.system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:filename()), arobjects), environment );
     end
@@ -117,9 +125,9 @@ function windows.build_executable( target )
     msvc.append_link_libraries( target, libraries );
 
     if #objects > 0 then
-        local msld = ("%s/VC/bin/link.exe"):format( target.settings.msvc.visual_studio_directory );
-        local msmt = ("%s/bin/x86/mt.exe"):format( target.settings.msvc.windows_sdk_directory );
-        local msrc = ("%s/bin/x86/rc.exe"):format( target.settings.msvc.windows_sdk_directory );
+        local msld = msvc.visual_studio_tool( target, "link.exe" );
+        local msmt = msvc.windows_sdk_tool( target, "mt.exe" );
+        local msrc = msvc.windows_sdk_tool( target, "rc.exe" );
         local intermediate_manifest = ('%s%s_intermediate.manifest'):format( obj_directory(target), target:id() );
 
         print( leaf(target:filename()) );
@@ -144,12 +152,12 @@ function windows.build_executable( target )
             local ldflags = table.concat( flags, ' ' );
             local ldlibs = table.concat( libraries, ' ' );
             local ldobjects = table.concat( objects, '" "' );
-            local environment = msvc.environment;
+            local environment = msvc.environments_by_architecture[target.architecture];
 
             if exists(embedded_manifest) ~= true then
                 build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
                 build.system( msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest), environment );
-                build.system( msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, ignore_filter );
+                build.system( msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
             end
 
             table.insert( objects, embedded_manifest_res );
@@ -159,7 +167,7 @@ function windows.build_executable( target )
 
             build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
             build.system( msmt, ('mt /nologo /out:"%s" /manifest %s'):format(embedded_manifest, intermediate_manifest), environment );
-            build.system( msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), environment, ignore_filter );
+            build.system( msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
             build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
         else
             table.insert( flags, "/incremental:no" );
@@ -167,7 +175,7 @@ function windows.build_executable( target )
             local ldflags = table.concat( flags, ' ' );
             local ldlibs = table.concat( libraries, ' ' );
             local ldobjects = table.concat( objects, '" "' );
-            local environment = msvc.environment;
+            local environment = msvc.environments_by_architecture[target.architecture];
 
             build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
             sleep( 100 );
@@ -215,20 +223,20 @@ function windows.lib_name( name, architecture )
     return ("%s_%s.lib"):format( name, architecture );
 end
 
-function windows.exp_name( name, architecture )
-    return ("%s_%s.exp"):format( name, architecture );
+function windows.exp_name( name )
+    return ("%s.exp"):format( name );
 end
 
-function windows.dll_name( name, architecture )
-    return ("%s_%s.dll"):format( name, architecture );
+function windows.dll_name( name )
+    return ("%s.dll"):format( name );
 end
 
-function windows.exe_name( name, architecture )
-    return ("%s_%s.exe"):format( name, architecture );
+function windows.exe_name( name )
+    return ("%s.exe"):format( name );
 end
 
-function windows.ilk_name( name, architecture )
-    return ("%s_%s.ilk"):format( name, architecture );
+function windows.ilk_name( name )
+    return ("%s.ilk"):format( name );
 end
 
 function windows.module_name( name, architecture )

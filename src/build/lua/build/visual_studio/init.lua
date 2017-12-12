@@ -10,7 +10,7 @@ local function uuid()
     local uuids = {};
     local uuidgen = ("%s/bin/x64/uuidgen.exe"):format( settings.msvc.windows_sdk_directory );
     local arguments = "uuidgen";
-    build.system( uuidgen, arguments, nil, function(line)
+    build.system( uuidgen, arguments, nil, nil, function(line)
         local uuid = line:match( "[%w-_]+" );
         if uuid then 
             table.insert( uuids, uuid );

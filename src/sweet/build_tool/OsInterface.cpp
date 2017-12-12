@@ -12,8 +12,10 @@
 #elif defined(BUILD_OS_MACOSX)
 #include <unistd.h>
 #include <time.h>
+#include <mach-o/dyld.h>
 #endif
 
+using std::string;
 using namespace sweet;
 using namespace sweet::build_tool;
 
@@ -127,6 +129,28 @@ boost::filesystem::recursive_directory_iterator OsInterface::find( const std::st
 }
 
 /**
+// Get the full path to the build executable.
+//
+// @return
+//  Returns the full path to the build executable.
+*/
+std::string OsInterface::executable()
+{
+#if defined(BUILD_OS_WINDOWS)
+    char path [MAX_PATH + 1];
+    int size = ::GetModuleFileNameA( NULL, path, sizeof(path) );
+    path [sizeof(path) - 1] = 0;
+    return string( path );
+#elif defined(BUILD_OS_MACOSX)
+    uint32_t size = 0;
+    _NSGetExecutablePath( NULL, &size );
+    char path [size];
+    _NSGetExecutablePath( path, &size );
+    return string( path );
+#endif
+}
+
+/**
 // Make a directory and any intermediate directories that don't already exist.
 //
 // @param path
@@ -150,7 +174,7 @@ void OsInterface::mkdir( const std::string& path )
 // @param to
 //  The directory to copy to.
 */
-void OsInterface::cpdir( const std::string& from, const std::string& to, const path::Path& base_path )
+void OsInterface::cpdir( const std::string& from, const std::string& to )
 {
     using namespace boost::filesystem;
 

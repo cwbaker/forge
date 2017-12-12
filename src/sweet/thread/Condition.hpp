@@ -1,8 +1,3 @@
-//
-// Condition.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_THREAD_CONDITION_HPP_INCLUDED
 #define SWEET_THREAD_CONDITION_HPP_INCLUDED
 
@@ -10,7 +5,7 @@
 
 #if defined(BUILD_OS_WINDOWS)
 #include "Mutex.hpp"
-#elif defined(BUILD_OS_MACOSX)
+#else
 #include <pthread.h>
 #endif
 
@@ -31,8 +26,7 @@ class SWEET_THREAD_DECLSPEC Condition
     Mutex m_mutex; ///< Ensures exclusive access to this Condition.
     void* m_queue; ///< The queue semaphore.
     unsigned int m_waiting; ///< The number of threads waiting on this Condition.
-
-#elif defined(BUILD_OS_MACOSX)
+#else
     pthread_cond_t condition_;
 #endif
 

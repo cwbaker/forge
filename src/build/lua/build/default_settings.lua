@@ -142,6 +142,8 @@ return {
             strip = false;
             subsystem = "CONSOLE";
             verbose_linking = false;
+            warning_level = 3;
+            warnings_as_errors = true;
         };
 
         ["debug_dll"] = {
@@ -169,6 +171,8 @@ return {
             strip = false;
             subsystem = "CONSOLE";
             verbose_linking = false;
+            warning_level = 3;
+            warnings_as_errors = true;
         };
 
         ["release"] = {
@@ -196,6 +200,8 @@ return {
             strip = false;
             subsystem = "CONSOLE";
             verbose_linking = false;
+            warning_level = 3;
+            warnings_as_errors = true;
         };
 
         ["release_dll"] = {
@@ -223,6 +229,8 @@ return {
             strip = false;
             subsystem = "CONSOLE";
             verbose_linking = false;
+            warning_level = 3;
+            warnings_as_errors = true;
         };
         
         ["shipping"] = {
@@ -250,6 +258,8 @@ return {
             strip = true;
             subsystem = "CONSOLE";
             verbose_linking = false;
+            warning_level = 3;
+            warnings_as_errors = true;
         };
         
         ["shipping_dll"] = {
@@ -277,6 +287,8 @@ return {
             strip = true;
             subsystem = "CONSOLE";
             verbose_linking = false;
-        };    
+            warning_level = 3;
+            warnings_as_errors = true;
+        };
     };    
 }

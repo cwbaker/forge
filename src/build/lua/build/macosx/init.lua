@@ -49,8 +49,12 @@ function macosx.cc( target )
     for dependency in target:dependencies() do
         if dependency:outdated() then
             print( leaf(dependency.source) );
-            build.system( xcrun, ('xcrun --sdk macosx clang %s -o "%s" "%s"'):format(ccflags, dependency:filename(), absolute(dependency.source)) );
-            clang.process_dependencies( dependency );
+            build.system( 
+                xcrun, 
+                ('xcrun --sdk macosx clang %s -o "%s" "%s"'):format(ccflags, dependency:filename(), absolute(dependency.source)), 
+                nil, 
+                build.dependencies_filter(dependency) 
+            );
         end
     end
 end
@@ -130,19 +134,16 @@ end
 function macosx.lipo_executable( target )
     local executables = {};
     for executable in target:dependencies() do 
-        local prototype = executable:prototype();
-        if prototype == Executable or prototype == DynamicLibrary then
-            table.insert( executable, executable:filename() );
-        end
+        table.insert( executables, executable:filename() );
     end
-    executables = table.concat( executables, '" "' );
     print( leaf(target:filename()) );
+    executables = table.concat( executables, [[" "]] );
     local xcrun = target.settings.macosx.xcrun;
-    build.system( xcrun, ('xcrun lipo -create "%s" -output "%s"'):format(executables, target:filename()) );
+    build.system( xcrun, ('xcrun --sdk macosx lipo -create -output "%s" "%s"'):format(target:filename(), executables) );
 end
 
 function macosx.obj_directory( target )
-    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, relative(target:working_directory():path(), root()) );
+    return ("%s/%s"):format( target.settings.obj, relative(target:working_directory():path(), root()) );
 end
 
 function macosx.cc_name( name )
@@ -165,8 +166,8 @@ function macosx.dll_name( name )
     return ("%s.dylib"):format( name );
 end
 
-function macosx.exe_name( name, architecture )
-    return ("%s_%s"):format( name, architecture );
+function macosx.exe_name( name )
+    return ("%s"):format( name );
 end
 
 function macosx.module_name( name, architecture )

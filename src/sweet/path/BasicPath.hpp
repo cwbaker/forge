@@ -68,7 +68,7 @@ class BasicPath
         const_reverse_iterator rend() const;
         
     private:
-        static bool in( int character, const typename Traits::char_type* separators );
+        static bool in( typename Traits::char_type character, const typename Traits::char_type* separators );
         static bool compare( typename String::const_iterator begin, typename String::const_iterator end, const typename Traits::char_type* value );
 };
 
