@@ -749,11 +749,16 @@ void Target::add_target( Target* target, Target* this_target )
 */
 void Target::destroy_anonymous_targets()
 {
-    int i = 0; 
-    while ( i < int(targets_.size()) )
+    for ( vector<Target*>::iterator i = targets_.begin(); i != targets_.end(); ++i )
     {
-        ++i;
+        Target* target = *i;
+        if ( target->anonymous() )
+        {
+            delete target;
+            *i = NULL;
+        }
     }
+    targets_.erase( remove(targets_.begin(), targets_.end(), (Target*) NULL), targets_.end() );
 }
 
 /**
