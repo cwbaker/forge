@@ -166,7 +166,6 @@ intptr_t Process::pipe( int child_fd )
 #elif defined(BUILD_OS_MACOSX)
     int fds [2] = { -1, -1 };
     int result = ::pipe( fds );
-    SWEET_ASSERT( result == 0 );
     if ( result != 0 )
     {
         char error [1024];

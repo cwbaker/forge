@@ -33,7 +33,6 @@ Target::Target()
   prototype_( NULL ),
   timestamp_( 0 ),
   last_write_time_( 0 ),
-  last_scan_time_( 0 ),
   outdated_( false ),
   changed_( false ),
   bound_to_file_( false ),
@@ -41,6 +40,7 @@ Target::Target()
   referenced_by_script_( false ),
   required_to_exist_( false ),
   cleanable_( false ),
+  built_( false ),
   working_directory_( NULL ),
   parent_( NULL ),
   targets_(),
@@ -73,7 +73,6 @@ Target::Target( const std::string& id, Graph* graph )
   prototype_( NULL ),
   timestamp_( 0 ),
   last_write_time_( 0 ),
-  last_scan_time_( 0 ),
   outdated_( false ),
   changed_( false ),
   bound_to_file_( false ),
@@ -81,6 +80,7 @@ Target::Target( const std::string& id, Graph* graph )
   referenced_by_script_( false ),
   required_to_exist_( false ),
   cleanable_( false ),
+  built_( false ),
   working_directory_( NULL ),
   parent_( NULL ),
   targets_(),
@@ -384,7 +384,11 @@ void Target::bind_to_dependencies()
 
         if ( !filenames_.empty() )
         {
-            outdated = outdated || timestamp > last_write_time();
+            outdated = 
+                outdated || 
+                timestamp > last_write_time() ||
+                (cleanable_ && !built_)
+            ;
         }
 
         set_timestamp( timestamp );
@@ -469,6 +473,30 @@ bool Target::cleanable() const
 }
 
 /**
+// Set whether or not this Target is considered to have been built at least 
+// once.
+//
+// @param built
+//  True to mark this Target has having been built otherwise false to indicate
+//  that this Target should be considered outdated if it is also cleanable.
+*/
+void Target::set_built( bool built )
+{
+    built_ = built;
+}
+
+/**
+// Has this Target been built at least once?
+//
+// @return
+//  True if this Target has been built at least once otherwise false.
+*/
+bool Target::built() const
+{
+    return built_;
+}
+
+/**
 // Set the timestamp for this Target.
 //
 // The timestamp is the time that is used to determine whether generated
@@ -514,28 +542,6 @@ std::time_t Target::timestamp() const
 std::time_t Target::last_write_time() const
 {
     return last_write_time_;
-}
-
-/**
-// Set the last scan time of the file that this Target is bound to.
-//
-// @param last_scan_time
-//  The value to set the last scan time of this Target to.
-*/
-void Target::set_last_scan_time( std::time_t last_scan_time )
-{
-    last_scan_time_ = last_scan_time;
-}
-
-/**
-// Get the last scan time of this Target.
-//
-// @return
-//  The last scan time of this Target.
-*/
-std::time_t Target::last_scan_time() const
-{
-    return last_scan_time_;
 }
 
 /**

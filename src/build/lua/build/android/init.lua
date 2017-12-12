@@ -200,6 +200,7 @@ function android.cc( target )
     local gcc_ = ("%s/bin/arm-linux-androideabi-gcc"):format( android.toolchain_directory(target.settings, target.architecture) );
     for _, object in target:dependencies() do
         if object:outdated() then
+            object:set_built( false );
             local source = object:dependency();
             print( build.leaf(source:id()) );
             local output = object:filename();
@@ -210,6 +211,7 @@ function android.cc( target )
                 android.environment,
                 build.dependencies_filter(object)
             );
+            object:set_built( true );
         end
     end
 end

@@ -66,6 +66,10 @@ function windows.cc( target )
             );
         end
     end
+
+    for _, object in pairs(objects_by_source) do
+        object:set_built( true );
+    end
 end;
 
 function windows.build_library( target )

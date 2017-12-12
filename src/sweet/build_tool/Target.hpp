@@ -29,7 +29,6 @@ class Target
     TargetPrototype* prototype_; ///< The TargetPrototype for this Target or null if this Target has no TargetPrototype.
     std::time_t timestamp_; ///< The timestamp for this Target.
     std::time_t last_write_time_; ///< The last write time of the file that this Target is bound to.
-    std::time_t last_scan_time_; ///< The last write time of the file that this Target was bound to when it was scanned.
     bool outdated_; ///< Whether or not this Target is out of date.
     bool changed_; ///< Whether or not this Target's timestamp has changed since the last time it was bound to a file.
     bool bound_to_file_; ///< Whether or not this Target is bound to a file.
@@ -37,6 +36,7 @@ class Target
     bool referenced_by_script_; ///< Whether or not this Target is referenced by a scripting object.  
     bool required_to_exist_; ///< Whether or not this Target is required to be bound to an existing file.
     bool cleanable_; ///< Whether or not this Target is able to be cleaned.
+    bool built_; ///< Whether or not this Target has had `Target::clear_implicit_dependencies()` called on it.
     Target* working_directory_; ///< The Target that relative paths expressed when this Target is visited are relative to.
     Target* parent_; ///< The parent of this Target in the Target namespace or null if this Target has no parent.
     std::vector<Target*> targets_; ///< The children of this Target in the Target namespace.
@@ -78,12 +78,12 @@ class Target
         void set_cleanable( bool cleanable );
         bool cleanable() const;
 
+        void set_built( bool built );
+        bool built() const;
+
         void set_timestamp( std::time_t timestamp );
         std::time_t timestamp() const;
         std::time_t last_write_time() const;
-
-        void set_last_scan_time( std::time_t last_scan_time );
-        std::time_t last_scan_time() const;
 
         void set_outdated( bool outdated );
         bool outdated() const;

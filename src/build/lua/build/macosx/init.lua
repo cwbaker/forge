@@ -115,6 +115,7 @@ function macosx.cc( target )
 
     for _, object in target:dependencies() do
         if object:outdated() then
+            object:set_built( false );
             local source = object:dependency();
             print( build.leaf(source:id()) );
             local dependencies = ("%s.d"):format( object:filename() );
@@ -125,6 +126,7 @@ function macosx.cc( target )
                 ('xcrun --sdk macosx clang %s -MMD -MF "%s" -o "%s" "%s"'):format(ccflags, dependencies, output, input)
             );
             clang.parse_dependencies_file( dependencies, object );
+            object:set_built( true );
         end
     end
 end

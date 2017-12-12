@@ -28,11 +28,11 @@ using namespace sweet::build_tool;
 // Constructor.
 */
 Graph::Graph()
-: build_tool_( NULL ),
+: build_tool_( nullptr ),
   target_prototypes_(),
   filename_(),
-  root_target_(),
-  cache_target_(),
+  root_target_( nullptr ),
+  cache_target_( nullptr ),
   traversal_in_progress_( false ),
   visited_revision_( 0 ),
   successful_revision_( 0 )
@@ -662,7 +662,7 @@ Target* Graph::load_xml( const std::string& filename )
     SWEET_ASSERT( build_tool_ );
 
     filename_ = filename;
-    cache_target_ = NULL;
+    cache_target_ = nullptr;
 
     if ( build_tool_->system()->exists(filename) )
     {
@@ -671,10 +671,16 @@ Target* Graph::load_xml( const std::string& filename )
         Graph graph;
         reader.read( filename.c_str(), "graph", graph );
         exit( reader );
-        swap( graph );
+        if ( graph.root_target() )
+        {
+            swap( graph );
+            recover();
+            return cache_target_;
+        }
     }
+
     recover();
-    return cache_target_;
+    return nullptr;
 }
 
 /**
@@ -726,11 +732,16 @@ Target* Graph::load_binary( const std::string& filename )
         Graph graph;
         reader.read( filename.c_str(), "graph", graph );
         exit( reader );
-        swap( graph );
+        if ( graph.root_target() )
+        {
+            swap( graph );
+            recover();
+            return cache_target_;
+        }
     }
-
+    
     recover();
-    return cache_target_;
+    return nullptr;
 }
 
 /**
@@ -837,9 +848,15 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
             std::time_t timestamp = target->timestamp();
             struct tm* time = ::localtime( &timestamp );
-            printf( "'%s' %s %04d-%02d-%02d %02d:%02d:%02d", 
+            printf( "'%s' %c%c%c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d", 
                 id(target),
-                target->outdated() ? "true" : "false", 
+                target->outdated() ? 'O' : 'o',
+                target->changed() ? 'T' : 't',
+                target->bound_to_file() ? 'F' : 'f',
+                target->referenced_by_script() ? 'S' : 's',
+                target->required_to_exist() ? 'E' : 'e',
+                target->cleanable() ? 'C' : 'c',
+                target->built() ? 'B' : 'b',
                 time ? time->tm_year + 1900 : 9999, 
                 time ? time->tm_mon + 1 : 99, 
                 time ? time->tm_mday : 99, 
@@ -847,7 +864,6 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                 time ? time->tm_min : 99, 
                 time ? time->tm_sec : 99
             );
-
 
             if ( !target->filenames().empty() )
             {

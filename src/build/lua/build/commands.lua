@@ -1,6 +1,6 @@
 
 function default()
-    local failures = build.postorder( build.visit("build"), build.load() );
+    local failures = build.postorder( build.build_visit, build.load() );
     build.save();
     printf( "build: default (build)=%dms", math.ceil(build.ticks()) );
     return failures;

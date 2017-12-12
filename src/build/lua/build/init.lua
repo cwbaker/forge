@@ -111,6 +111,13 @@ function build.File( filename, target_prototype, definition )
     return target_;
 end
 
+function build.GeneratedFile( filename, target_prototype, definition )
+    local target_ = build.file( filename, target_prototype, definition );
+    target_:set_cleanable( false );
+    getmetatable( target_ ).__call = build.default_call_function;
+    return target_;
+end
+
 function build.SourceFile( value, settings )
     local target = value;
     if type(target) == "string" then 
@@ -300,6 +307,18 @@ function build.visit( pass, ... )
     end
 end
 
+-- Visit a target by calling a member function "build" if it exists and 
+-- setting that Target's built flag to true if the function returns with
+-- no errors.
+function build.build_visit( target )
+    local fn = target.build;
+    if fn then 
+        local success, error_message = pcall( fn, target );
+        target:set_built( success );
+        assert( success, error_message );
+    end
+end
+
 -- Visit a target by calling a member function "clean" if it exists or if
 -- there is no "clean" function and the target is not marked as a source file
 -- that must exist then its associated file is deleted.
@@ -452,7 +471,7 @@ function build.merge( destination, source )
     return destination;
 end
 
--- Find and return the initial target but searching up from the path specified
+-- Find and return the initial target by searching up from the path specified
 -- by *goal* until a target is found.
 function build.find_initial_target( goal )
     local all = build.find_target( goal );

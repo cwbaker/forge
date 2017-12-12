@@ -23,6 +23,7 @@ boost::filesystem::path absolute( const boost::filesystem::path& path, const boo
 
     boost::filesystem::path absolute_path( base_path );
     absolute_path /= path;
+    absolute_path.normalize();
     return absolute_path;
 }
 

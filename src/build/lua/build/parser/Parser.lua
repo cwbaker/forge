@@ -3,7 +3,7 @@ local Parser = build.TargetPrototype( "Parser" );
 
 function Parser.create( settings, value )
     local grammar = build.SourceFile( value );    
-    local parser = build.File( ("%s.hpp"):format(build.basename(value)), Parser );
+    local parser = build.GeneratedFile( ("%s.hpp"):format(build.basename(value)), Parser );
     parser.grammar = value;
     parser.settings = settings;
     parser:add_dependency( grammar );
