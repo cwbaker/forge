@@ -219,7 +219,7 @@ int LuaTarget::filename( lua_State* lua_state )
     }
     else
     {
-        lua_pushlstring( lua_state, "", 1 );
+        lua_pushlstring( lua_state, "", 0 );
     }
     return 1;
 }
@@ -243,7 +243,7 @@ int LuaTarget::directory( lua_State* lua_state )
     }
     else
     {
-        lua_pushlstring( lua_state, "", 1 );
+        lua_pushlstring( lua_state, "", 0 );
     }
     return 1;
 }
