@@ -39,6 +39,7 @@ Executor::Executor( BuildTool* build_tool )
   done_( false )
 {
     SWEET_ASSERT( build_tool_ );
+    initialize_build_hooks_windows();
 }
 
 Executor::~Executor()
@@ -242,7 +243,13 @@ process::Environment* Executor::inject_build_hooks_macosx( process::Environment*
 void Executor::inject_build_hooks_windows( process::Process* pprocess, intptr_t write_dependencies_pipe ) const
 {
 #if defined(BUILD_OS_WINDOWS)
-    if ( !build_hooks_library_.empty() && write_dependencies_pipe != (intptr_t) INVALID_HANDLE_VALUE )
+    bool inject_build_hooks =
+        !build_hooks_library_.empty() &&
+        write_dependencies_pipe != (intptr_t) INVALID_HANDLE_VALUE &&
+        is_64_bit_process_windows( pprocess )
+    ;
+
+    if ( inject_build_hooks )
     {
         unsigned char inject_build_hooks[] = {
 			0x48, 0x83, 0xEC, 0x08, // sub rsp,8
@@ -349,5 +356,31 @@ void Executor::inject_build_hooks_windows( process::Process* pprocess, intptr_t 
 #else
     (void) pprocess;
     (void) write_dependencies_pipe;    
+#endif
+}
+
+#if defined BUILD_OS_WINDOWS 
+typedef BOOL (WINAPI *IsWow64ProcessFunction)( HANDLE, PBOOL );
+IsWow64ProcessFunction IsWow64Process = NULL;
+#endif
+
+void Executor::initialize_build_hooks_windows() const
+{
+#if defined BUILD_OS_WINDOWS 
+    IsWow64Process = (IsWow64ProcessFunction) GetProcAddress( GetModuleHandleA("kernel32"), "IsWow64Process" );
+#endif
+}
+
+bool Executor::is_64_bit_process_windows( process::Process* process ) const
+{
+#if defined BUILD_OS_WINDOWS
+    BOOL is_32_bit_process = TRUE;
+    return 
+        IsWow64Process &&
+        IsWow64Process( (HANDLE) process->process(), &is_32_bit_process ) &&
+        !is_32_bit_process
+    ;
+#else
+    return true;
 #endif
 }

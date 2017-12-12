@@ -68,6 +68,8 @@ class Executor
         void stop();
         process::Environment* inject_build_hooks_macosx( process::Environment* environment, bool dependencies_filter_exists ) const;
         void inject_build_hooks_windows( process::Process* process, intptr_t write_dependencies_pipe ) const;
+        void initialize_build_hooks_windows() const;
+        bool is_64_bit_process_windows( process::Process* process ) const;
 };
 
 }
