@@ -41,6 +41,7 @@ class SWEET_PROCESS_DECLSPEC Process
     const char* directory_;
     const Environment* environment_;
     bool start_suspended_;
+    bool inherit_environment_;
     std::vector<Pipe> pipes_;
 
 #if defined(BUILD_OS_WINDOWS)
@@ -67,6 +68,7 @@ class SWEET_PROCESS_DECLSPEC Process
         void directory( const char* directory );
         void environment( const Environment* environment );
         void start_suspended( bool start_suspended );
+        void inherit_environment( bool inherit_environment );
         intptr_t pipe( int child_fd );
         void run( const char* arguments );
 

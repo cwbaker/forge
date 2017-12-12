@@ -298,6 +298,9 @@ end
 -- Execute command with arguments and optional filter and raise an error if 
 -- it doesn't return 0.
 function build.system( command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... )
+    if type(arguments) == "table" then
+        arguments = table.concat( arguments, " " );
+    end
     if execute(command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ...) ~= 0 then       
         error( ("%s failed"):format(arguments), 0 );
     end
@@ -333,7 +336,7 @@ function build.dump( t )
     print( tostring(t) );
     if t ~= nil then
         if getmetatable(t) ~= nil then
-            printf( "  prototype=", tostring(getmetatable(t).__index) );
+            printf( "  prototype=%s", tostring(getmetatable(t).__index) );
         end
         for k, v in pairs(t) do
             printf( "  %s -> %s", tostring(k), tostring(v) );
@@ -450,7 +453,6 @@ function build.load( force )
         assertf( cache_target, "No cache target found at '%s' after loading buildfiles", settings.cache );
         local script = build.script;
         cache_target:add_dependency( file(root("build.lua")) );
-        cache_target:add_dependency( file(root("local_settings.lua")) );
         cache_target:add_dependency( file(script("build/default_settings")) );
         cache_target:add_dependency( file(script("build/commands")) );
         cache_target:add_dependency( file(script("build/Generate")) );

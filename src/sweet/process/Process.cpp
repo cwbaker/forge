@@ -28,6 +28,10 @@
 using std::vector;
 using namespace sweet::process;
 
+#if defined(BUILD_OS_MACOSX)
+extern char* const* environ;
+#endif
+
 /**
 // Constructor.
 */
@@ -36,6 +40,7 @@ Process::Process()
   directory_( NULL ),
   environment_( NULL ),
   start_suspended_( false ),
+  inherit_environment_( false ),
 #if defined(BUILD_OS_WINDOWS)
   process_( INVALID_HANDLE_VALUE ),
   stdout_( INVALID_HANDLE_VALUE ),
@@ -111,10 +116,13 @@ void Process::start_suspended( bool start_suspended )
     start_suspended_ = start_suspended;
 }
 
+void Process::inherit_environment( bool inherit_environment )
+{
+    inherit_environment_ = inherit_environment;
+}
+
 /**
 // Create a pipe to communicate with the spawned process.
-//
-// 
 //
 // @param child_fd
 //  The child file descriptor to dup2() the write end of the pipe into in the
@@ -215,7 +223,16 @@ void Process::run( const char* arguments )
     }
 
     // Create the process.
-    void* envp = (void*) ( environment_ ? environment_->buffer() : NULL );
+    void* envp = NULL;
+    if ( environment_ )
+    {
+        envp = (void*) environment_->buffer();
+    }
+    else if ( !inherit_environment_ )
+    {
+        const char* empty_environment = "\0\0";
+        envp = (void*) empty_environment;
+    }
     BOOL created = ::CreateProcessA( executable_, const_cast<char*>(arguments), NULL, NULL, TRUE, creation_flags, envp, directory_, &startup_info, &process_information );
     if ( !created )
     {
@@ -291,7 +308,15 @@ void Process::run( const char* arguments )
     }
 
     pid_t pid = 0;
-    char* const* envp = environment_ ? environment_->values() : NULL;
+    char* const* envp = NULL;
+    if ( inherit_environment_ )
+    {
+        envp = environ;
+    }
+    else if ( environment_ )
+    {
+        envp = environment_->values();
+    }
     int result = posix_spawn( &pid, executable_, &file_actions, &attributes, &splitter.arguments()[0], envp );
     posix_spawnattr_destroy( &attributes );
     posix_spawn_file_actions_destroy( &file_actions );

@@ -16,7 +16,7 @@ function ios.configure( settings )
 
         local xcodebuild = "/usr/bin/xcodebuild";
         local arguments = "xcodebuild -sdk iphoneos -version";
-        local result = execute( xcodebuild, arguments, nil, function(line)
+        local result = execute( xcodebuild, arguments, nil, nil, function(line)
             local key, value = line:match( "(%w+): ([^\n]+)" );
             if key and value then 
                 if key == "ProductBuildVersion" then 
@@ -37,7 +37,7 @@ function ios.configure( settings )
 
         local xcodebuild = "/usr/bin/xcodebuild";
         local arguments = "xcodebuild -version";
-        local result = execute( xcodebuild, arguments, nil, function(line)
+        local result = execute( xcodebuild, arguments, nil, nil, function(line)
             local major, minor = line:match( "Xcode (%d+)%.(%d+)" );
             if major and minor then 
                 xcode_version = ("%02d%02d"):format( tonumber(major), tonumber(minor) );
@@ -58,7 +58,7 @@ function ios.configure( settings )
 
         local sw_vers = "/usr/bin/sw_vers";
         local arguments = "sw_vers -buildVersion";
-        local result = execute( sw_vers, arguments, nil, function(line)
+        local result = execute( sw_vers, arguments, nil, nil, function(line)
             local version = line:match( "%w+" );
             if version then 
                 os_version = version;
