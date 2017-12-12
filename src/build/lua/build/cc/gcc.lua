@@ -11,7 +11,7 @@ function gcc.append_defines( target, flags )
     table.insert( flags, ('-DBUILD_VARIANT_%s'):format(upper(variant)) );
     table.insert( flags, ('-DBUILD_LIBRARY_TYPE_%s'):format(upper(target.settings.library_type)) );
     table.insert( flags, ('-DBUILD_BIN_DIRECTORY="\\"%s\\""'):format(target.settings.bin) );
-    table.insert( flags, ('-DBUILD_MODULE_DIRECTORY="\\"%s\\""'):format(target:get_working_directory():path()) );
+    table.insert( flags, ('-DBUILD_MODULE_DIRECTORY="\\"%s\\""'):format(target:working_directory():path()) );
 
     if string.find(target.settings.runtime_library, "debug", 1, true) then
         table.insert( flags, "-D_DEBUG" );

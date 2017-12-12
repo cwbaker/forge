@@ -125,8 +125,8 @@ void Target::recover( Graph* graph )
 
     if ( referenced_by_script_ )
     {
-        graph->get_build_tool()->get_script_interface()->recover_target( this );
-        graph->get_build_tool()->get_script_interface()->update_target( this, get_prototype() );
+        graph->build_tool()->script_interface()->recover_target( this );
+        graph->build_tool()->script_interface()->update_target( this, prototype() );
     }
 
     for ( vector<Target*>::const_iterator i = targets_.begin(); i != targets_.end(); ++i )
@@ -145,7 +145,7 @@ void Target::recover( Graph* graph )
 //  The id or the empty string if this Target doesn't have an 
 //  id.
 */
-const std::string& Target::get_id() const
+const std::string& Target::id() const
 {
     return id_;
 }
@@ -156,11 +156,11 @@ const std::string& Target::get_id() const
 // @return
 //  The full path to this Target.
 */
-const std::string& Target::get_path() const
+const std::string& Target::path() const
 {
     if ( path_.empty() )
     {
-        path_ = get_branch() + get_id();
+        path_ = branch() + id();
     }
 
     return path_;
@@ -172,17 +172,17 @@ const std::string& Target::get_path() const
 // @return
 //  The branch path that this target is in.
 */
-const std::string& Target::get_branch() const
+const std::string& Target::branch() const
 {
     if ( branch_.empty() )
     {
         vector<Target*> targets_to_root;
 
-        Target* parent = get_parent();
+        Target* parent = Target::parent();
         while ( parent )
         {
             targets_to_root.push_back( parent );
-            parent = parent->get_parent();
+            parent = parent->parent();
         }
 
         if ( !targets_to_root.empty() )
@@ -190,7 +190,7 @@ const std::string& Target::get_branch() const
             vector<Target*>::const_reverse_iterator i = targets_to_root.rbegin();
             ++i;
 
-            if ( i == targets_to_root.rend() || (*i)->get_id().find(path::BasicPathTraits<char>::DRIVE) == std::string::npos )
+            if ( i == targets_to_root.rend() || (*i)->id().find(path::BasicPathTraits<char>::DRIVE) == std::string::npos )
             {
                 branch_ += "/";
             }
@@ -199,7 +199,7 @@ const std::string& Target::get_branch() const
             {
                 Target* target = *i;
                 SWEET_ASSERT( target != 0 );
-                branch_ += target->get_id() + "/";
+                branch_ += target->id() + "/";
                 ++i;
             }
         }
@@ -214,7 +214,7 @@ const std::string& Target::get_branch() const
 // @return
 //  The Graph.
 */
-Graph* Target::get_graph() const
+Graph* Target::graph() const
 {
     SWEET_ASSERT( graph_ );
     return graph_;
@@ -233,9 +233,9 @@ void Target::set_prototype( TargetPrototype* target_prototype )
     if ( !prototype_ || prototype_ != target_prototype )
     {
         prototype_ = target_prototype;
-        if ( is_referenced_by_script() )
+        if ( referenced_by_script() )
         {
-            graph_->get_build_tool()->get_script_interface()->update_target( this, target_prototype );
+            graph_->build_tool()->script_interface()->update_target( this, target_prototype );
         }
     }
 }
@@ -246,7 +246,7 @@ void Target::set_prototype( TargetPrototype* target_prototype )
 // @return
 //  The TargetPrototype or null if this Target has no TargetPrototype.
 */
-TargetPrototype* Target::get_prototype() const
+TargetPrototype* Target::prototype() const
 {
     return prototype_;
 }
@@ -298,7 +298,7 @@ void Target::bind_to_file()
 
             for ( vector<string>::const_iterator filename = filenames_.begin(); filename != filenames_.end(); ++filename )
             {
-                OsInterface* os_interface = graph_->get_build_tool()->get_os_interface();
+                OsInterface* os_interface = graph_->build_tool()->os_interface();
                 if ( os_interface->exists(*filename) )
                 {
                     if ( !dependencies_.empty() || os_interface->is_regular(*filename) )
@@ -359,8 +359,8 @@ void Target::bind_to_dependencies()
             {
                 Target* dependency = *i;
                 SWEET_ASSERT( dependency );
-                outdated = outdated || dependency->get_timestamp() > get_last_write_time();
-                timestamp = std::max( timestamp, dependency->get_timestamp() );
+                outdated = outdated || dependency->timestamp() > last_write_time();
+                timestamp = std::max( timestamp, dependency->timestamp() );
             }
         }
         else
@@ -369,8 +369,8 @@ void Target::bind_to_dependencies()
             {
                 Target* dependency = *i;
                 SWEET_ASSERT( dependency );
-                outdated = outdated || dependency->is_outdated();
-                timestamp = std::max( timestamp, dependency->get_timestamp() );
+                outdated = outdated || dependency->outdated();
+                timestamp = std::max( timestamp, dependency->timestamp() );
             }
         }
 
@@ -401,7 +401,7 @@ void Target::set_referenced_by_script( bool referenced_by_script )
 // @return
 //  True if this Target is referenced by a scripting object otherwise false.
 */
-bool Target::is_referenced_by_script() const
+bool Target::referenced_by_script() const
 {
     return referenced_by_script_;
 }
@@ -427,7 +427,7 @@ void Target::set_required_to_exist( bool required_to_exist )
 //  True if this Target is required to be bound to an existing file otherwise
 //  false.
 */
-bool Target::is_required_to_exist() const
+bool Target::required_to_exist() const
 {
     return required_to_exist_;
 }
@@ -482,7 +482,7 @@ void Target::set_timestamp( std::time_t timestamp )
 // @return
 //  The timestamp.
 */
-std::time_t Target::get_timestamp() const
+std::time_t Target::timestamp() const
 {
     return timestamp_;
 }
@@ -498,7 +498,7 @@ std::time_t Target::get_timestamp() const
 // @return
 //  The last write time of the file that this Target is bound to.
 */
-std::time_t Target::get_last_write_time() const
+std::time_t Target::last_write_time() const
 {
     return last_write_time_;
 }
@@ -520,7 +520,7 @@ void Target::set_last_scan_time( std::time_t last_scan_time )
 // @return
 //  The last scan time of this Target.
 */
-std::time_t Target::get_last_scan_time() const
+std::time_t Target::last_scan_time() const
 {
     return last_scan_time_;
 }
@@ -542,7 +542,7 @@ void Target::set_outdated( bool outdated )
 // @return
 //  True if this Target is out of date otherwise false.
 */
-bool Target::is_outdated() const
+bool Target::outdated() const
 {
     return outdated_;
 }
@@ -554,7 +554,7 @@ bool Target::is_outdated() const
 //  True if this Target's last write time has changed between its previous
 //  and most recent bindings.
 */
-bool Target::is_changed() const
+bool Target::changed() const
 {
     return changed_;
 }
@@ -565,7 +565,7 @@ bool Target::is_changed() const
 // @return
 //  True if this Target is bound otherwise false.
 */
-bool Target::is_bound_to_file() const
+bool Target::bound_to_file() const
 {
     return bound_to_file_;
 }
@@ -645,7 +645,7 @@ void Target::set_working_directory( Target* target )
 //  The relative parent of this Target or null if this Target doesn't have a
 //  relative parent.
 */
-Target* Target::get_working_directory() const
+Target* Target::working_directory() const
 {
     return working_directory_;
 }
@@ -665,9 +665,10 @@ void Target::set_parent( Target* target )
 // Get the Target that is a parent of this Target.
 //
 // @return
-//  The Target that is a parent of this Target.
+//  The Target that is a parent of this Target or null if this Target is the
+//  root Target.
 */
-Target* Target::get_parent() const
+Target* Target::parent() const
 {
     return parent_;
 }
@@ -690,8 +691,8 @@ void Target::add_target( Target* target, Target* this_target )
     SWEET_ASSERT( target );
     SWEET_ASSERT( this_target == this );
     SWEET_ASSERT( std::find(targets_.begin(), targets_.end(), target) == targets_.end() );
-    SWEET_ASSERT( target->get_id().empty() || !find_target_by_id(target->get_id()) );
-    SWEET_ASSERT( !target->get_parent() );
+    SWEET_ASSERT( target->id().empty() || !find_target_by_id(target->id()) );
+    SWEET_ASSERT( !target->parent() );
 
     targets_.push_back( target );
     target->set_parent( this_target );
@@ -709,7 +710,7 @@ void Target::add_target( Target* target, Target* this_target )
 Target* Target::find_target_by_id( const std::string& id ) const
 {
     vector<Target*>::const_iterator i = targets_.begin();
-    while ( i != targets_.end() && (*i)->get_id() != id )
+    while ( i != targets_.end() && (*i)->id() != id )
     {
         ++i;
     }
@@ -722,7 +723,7 @@ Target* Target::find_target_by_id( const std::string& id ) const
 // @return
 //  The Targets.
 */
-const std::vector<Target*>& Target::get_targets() const
+const std::vector<Target*>& Target::targets() const
 {
     return targets_;
 }
@@ -756,7 +757,7 @@ void Target::add_dependency( Target* target )
 {
     if ( target && target != this )
     {
-        SWEET_ASSERT( target->get_graph() == get_graph() );
+        SWEET_ASSERT( target->graph() == graph() );
         if ( !is_dependency(target) )
         {
             dependencies_.push_back( target );
@@ -788,7 +789,7 @@ void Target::remove_dependency( Target* target )
 {
     if ( target && target != this )
     {
-        SWEET_ASSERT( target->get_graph() == get_graph() );
+        SWEET_ASSERT( target->graph() == graph() );
         vector<Target*>::iterator i = find( dependencies_.begin(), dependencies_.end(), target );
         if ( i != dependencies_.end() )
         {
@@ -821,7 +822,7 @@ void Target::clear_implicit_dependencies()
 */
 bool Target::is_dependency( Target* target ) const
 {
-    SWEET_ASSERT( target && target->get_graph() == get_graph() );
+    SWEET_ASSERT( target && target->graph() == graph() );
     return target && std::find( dependencies_.begin(), dependencies_.end(), target ) != dependencies_.end();
 }
 
@@ -831,7 +832,7 @@ bool Target::is_dependency( Target* target ) const
 // @return
 //  True if all of this Target's dependencies were built successfully.
 */
-bool Target::is_buildable() const
+bool Target::buildable() const
 {
     bool successful = true;
     vector<Target*>::const_iterator i = dependencies_.begin(); 
@@ -839,7 +840,7 @@ bool Target::is_buildable() const
     {
         Target* target = *i;
         SWEET_ASSERT( target );
-        if ( !target->is_successful() )
+        if ( !target->successful() )
         {
             successful = false;
         }        
@@ -857,19 +858,19 @@ bool Target::is_buildable() const
 */
 std::string Target::generate_failed_dependencies_message() const
 {
-    SWEET_ASSERT( !is_buildable() );
+    SWEET_ASSERT( !buildable() );
 
 //
 // Append the identifier for this Target.
 //
     std::string message;
-    if ( !get_id().empty() )
+    if ( !id().empty() )
     {
-        message += "'" + get_id() + "'";
+        message += "'" + id() + "'";
     }
-    else if ( get_prototype() != 0 )
+    else if ( prototype() != NULL )
     {
-        message += get_prototype()->get_id();
+        message += prototype()->id();
     }
     else
     {
@@ -885,7 +886,7 @@ std::string Target::generate_failed_dependencies_message() const
 // Append the first failed dependency.
 //
     vector<Target*>::const_iterator i = dependencies_.begin();
-    while ( i != dependencies_.end() && (*i)->is_successful() )
+    while ( i != dependencies_.end() && (*i)->successful() )
     {
         ++i;
     }
@@ -895,13 +896,13 @@ std::string Target::generate_failed_dependencies_message() const
     {
         Target* dependency = *i;
         SWEET_ASSERT( dependency );
-        if ( !dependency->get_id().empty() )
+        if ( !dependency->id().empty() )
         {
-            message += "'" + dependency->get_id() + "'";
+            message += "'" + dependency->id() + "'";
         }
-        else if ( dependency->get_prototype() != 0 )
+        else if ( dependency->prototype() != NULL )
         {
-            message += dependency->get_prototype()->get_id();
+            message += dependency->prototype()->id();
         }
         else
         {
@@ -919,15 +920,15 @@ std::string Target::generate_failed_dependencies_message() const
         Target* dependency = *i;
         SWEET_ASSERT( dependency );
         
-        if ( !dependency->is_successful() )
+        if ( !dependency->successful() )
         {
-            if ( !dependency->get_id().empty() )
+            if ( !dependency->id().empty() )
             {
-                message += ", '" + dependency->get_id() + "'";
+                message += ", '" + dependency->id() + "'";
             }
-            else if ( dependency->get_prototype() != 0 )
+            else if ( dependency->prototype() != 0 )
             {
-                message += ", " + dependency->get_prototype()->get_id();
+                message += ", " + dependency->prototype()->id();
             }
             else
             {
@@ -966,7 +967,7 @@ Target* Target::dependency( int n ) const
 // @return
 //  The dependencies.
 */
-const std::vector<Target*>& Target::get_dependencies() const
+const std::vector<Target*>& Target::dependencies() const
 {
     return dependencies_;
 }
@@ -990,7 +991,7 @@ void Target::set_visiting( bool visiting )
 //  True if this Target is currently in the process of being visited (it or
 //  any of its dependencies are being visited) otherwise false.
 */
-bool Target::is_visiting() const
+bool Target::visiting() const
 {
     return visiting_;
 }
@@ -1004,7 +1005,7 @@ bool Target::is_visiting() const
 void Target::set_visited( bool visited )
 {
     SWEET_ASSERT( graph_ );
-    visited_revision_ = visited ? graph_->get_visited_revision() : graph_->get_visited_revision() - 1;
+    visited_revision_ = visited ? graph_->visited_revision() : graph_->visited_revision() - 1;
 }
 
 /**
@@ -1013,10 +1014,10 @@ void Target::set_visited( bool visited )
 // @return
 //  True if this Target has been visited in the current pass otherwise false.
 */
-bool Target::is_visited() const
+bool Target::visited() const
 {
     SWEET_ASSERT( graph_ );
-    return visited_revision_ == graph_->get_visited_revision();
+    return visited_revision_ == graph_->visited_revision();
 }
 
 /**
@@ -1028,7 +1029,7 @@ bool Target::is_visited() const
 void Target::set_successful( bool successful )
 {
     SWEET_ASSERT( graph_ );
-    successful_revision_ = successful ? graph_->get_successful_revision() : graph_->get_successful_revision() - 1;
+    successful_revision_ = successful ? graph_->successful_revision() : graph_->successful_revision() - 1;
 }
 
 /**
@@ -1037,10 +1038,10 @@ void Target::set_successful( bool successful )
 // @return
 //  True if this Target has been visited successfully in the current pass.
 */
-bool Target::is_successful() const
+bool Target::successful() const
 {
     SWEET_ASSERT( graph_ );
-    return successful_revision_ == graph_->get_successful_revision();
+    return successful_revision_ == graph_->successful_revision();
 }
 
 /**

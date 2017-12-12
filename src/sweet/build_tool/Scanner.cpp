@@ -40,7 +40,7 @@ Scanner::Scanner( unsigned int patterns_reserve, BuildTool* build_tool )
 */
 Scanner::~Scanner()
 {
-    build_tool_->get_script_interface()->destroy_scanner( this );    
+    build_tool_->script_interface()->destroy_scanner( this );    
 }
 
 /**
@@ -143,7 +143,7 @@ void Scanner::add_pattern( const std::string& regex, lua::Lua& lua, lua_State* l
 // @return
 //  The patterns in this Scanner.
 */
-const std::vector<Pattern>& Scanner::get_patterns() const
+const std::vector<Pattern>& Scanner::patterns() const
 {
     return patterns_;
 }

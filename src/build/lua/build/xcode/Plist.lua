@@ -10,7 +10,7 @@ function Plist.create( settings, filename, input )
 end
 
 function Plist.build( plist )
-    if plist:is_outdated() then
+    if plist:outdated() then
         local command_line = {
             ('xcrun --sdk %s plutil'):format( ios.sdkroot_by_target_and_platform(plist, platform) );
             '-convert binary1';

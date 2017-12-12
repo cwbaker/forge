@@ -36,14 +36,13 @@ class Job
     public:
         Job( Target* target, int height );
 
-        Target* get_target() const;
-        Target* get_working_directory() const;
-        int get_height() const;
-
-        void set_state( JobState state );
-        JobState get_state() const;
-        
+        Target* target() const;
+        Target* working_directory() const;
+        int height() const;
+        JobState state() const;
         bool operator<( const Job& job ) const;
+
+        void set_state( JobState state );        
 };
 
 }

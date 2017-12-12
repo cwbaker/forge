@@ -31,7 +31,7 @@ TargetPrototype::TargetPrototype( const std::string& id, BuildTool* build_tool )
 */
 TargetPrototype::~TargetPrototype()
 {
-    build_tool_->get_script_interface()->destroy_prototype( this );
+    build_tool_->script_interface()->destroy_prototype( this );
 }
 
 /**
@@ -40,7 +40,7 @@ TargetPrototype::~TargetPrototype()
 // @return
 //  The id.
 */
-const std::string& TargetPrototype::get_id() const
+const std::string& TargetPrototype::id() const
 {
     return id_;
 }

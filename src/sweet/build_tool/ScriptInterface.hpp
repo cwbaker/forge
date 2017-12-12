@@ -47,15 +47,14 @@ class ScriptInterface
         ScriptInterface( OsInterface* os_interface, BuildTool* build_tool );
         ~ScriptInterface();
 
-        lua::Lua& get_lua();
-
-        Environment* get_environment() const;
+        lua::Lua& lua();
+        Environment* environment() const;
 
         void set_root_directory( const path::Path& root_directory );
-        const path::Path& get_root_directory() const;
+        const path::Path& root_directory() const;
 
         void set_initial_directory( const path::Path& initial_directory );
-        const path::Path& get_initial_directory() const;
+        const path::Path& initial_directory() const;
 
         void create_prototype( TargetPrototype* target_prototype );
         void destroy_prototype( TargetPrototype* target_prototype );
@@ -119,15 +118,15 @@ class ScriptInterface
         void save_binary();
 
     private:
-        Target* get_parent( Target* target );
-        Target* get_working_directory( Target* target );
+        Target* parent( Target* target );
+        Target* target_working_directory( Target* target );
         Target* add_target( lua_State* lua_state );
         static int target_prototype__( lua_State* lua_state );
         static int set_filename( lua_State* lua_state );
         static int filename( lua_State* lua_state );
-        static int get_targets( lua_State* lua_state );
+        static int targets( lua_State* lua_state );
         static int dependency( lua_State* lua_state );
-        static int get_dependencies( lua_State* lua_state );
+        static int dependencies( lua_State* lua_state );
         static int absolute_( lua_State* lua_state );
         static int relative_( lua_State* lua_state );
         static int root_( lua_State* lua_state );

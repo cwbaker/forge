@@ -46,14 +46,10 @@ class Scheduler
     std::deque<std::function<void()> > results_; ///< The functions to be executed as a result of jobs processing in the thread pool.
     int jobs_; ///< The number of jobs that are running.
     int failures_; ///< The number of failures in the most recent preorder or postorder traversal.
-    bool traversing_; ///< True if a preorder or postorder traversal is happening otherwise false.
 
     public:
         Scheduler( BuildTool* build_tool );
         ~Scheduler();
-
-        void set_traversing( bool traversing );
-        bool is_traversing() const;
 
         void load( const path::Path& path );
         void command( const path::Path& path, const std::string& command );

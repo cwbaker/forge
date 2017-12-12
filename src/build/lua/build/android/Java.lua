@@ -26,11 +26,11 @@ function Java.create( settings, definition )
 end
 
 function Java.build( java )
-    if java:is_outdated() then
+    if java:outdated() then
         local jars = {};
         local source_files = {};
         table.insert( jars, ("%s/platforms/%s/android.jar"):format(settings.android.sdk_directory, settings.android.sdk_platform) );
-        for dependency in java:get_dependencies() do 
+        for dependency in java:dependencies() do 
             local prototype = dependency:prototype();
             if prototype == nil then
                 table.insert( source_files, relative(dependency:filename()) );

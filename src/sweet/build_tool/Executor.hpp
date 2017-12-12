@@ -53,7 +53,7 @@ class Executor
         Executor( BuildTool* build_tool );
         ~Executor();
         void set_maximum_parallel_jobs( int maximum_parallel_jobs );
-        int get_maximum_parallel_jobs() const;
+        int maximum_parallel_jobs() const;
         void execute( const std::string& command, const std::string& command_line, Scanner* scanner, Arguments* arguments, Environment* environment );
         void scan( Target* target, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment );
 

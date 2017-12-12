@@ -21,31 +21,25 @@ Job::Job( Target* target, int height )
     SWEET_ASSERT( height_ >= 0 );
 }
 
-Target* Job::get_target() const
+Target* Job::target() const
 {
     SWEET_ASSERT( target_ );
     return target_;
 }
 
-Target* Job::get_working_directory() const
+Target* Job::working_directory() const
 {
     SWEET_ASSERT( target_ );
-    return target_->get_working_directory();
+    return target_->working_directory();
 }
 
-int Job::get_height() const
+int Job::height() const
 {
     SWEET_ASSERT( height_ >= 0 );
     return height_;
 }
 
-void Job::set_state( JobState state )
-{
-    SWEET_ASSERT( state >= JOB_WAITING && state <= JOB_COMPLETE );
-    state_ = state;
-}
-
-JobState Job::get_state() const
+JobState Job::state() const
 {
     SWEET_ASSERT( state_ >= JOB_WAITING && state_ <= JOB_COMPLETE );
     return state_;
@@ -54,4 +48,10 @@ JobState Job::get_state() const
 bool Job::operator<( const Job& job ) const
 {
     return height_ < job.height_;
+}
+
+void Job::set_state( JobState state )
+{
+    SWEET_ASSERT( state >= JOB_WAITING && state <= JOB_COMPLETE );
+    state_ = state;
 }

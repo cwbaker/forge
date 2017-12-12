@@ -36,11 +36,11 @@ function App.call( app, definition )
 end
 
 function App.build( app )
-    if app:is_outdated() then
+    if app:outdated() then
         local xcrun = app.settings.ios.xcrun;
         if app.settings.generate_dsym_bundle then 
             local executable;
-            for dependency in app:get_dependencies() do 
+            for dependency in app:dependencies() do 
                 if dependency:prototype() == Lipo then 
                     executable = dependency:filename();
                     break;

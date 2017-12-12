@@ -35,15 +35,15 @@ class SWEET_BUILD_TOOL_DECLSPEC Graph
         Graph( BuildTool* build_tool );
         ~Graph();
 
-        Target* get_root_target() const;
-        Target* get_cache_target() const;
-        BuildTool* get_build_tool() const;
+        Target* root_target() const;
+        Target* cache_target() const;
+        BuildTool* build_tool() const;
 
         void begin_traversal();
         void end_traversal();
-        bool is_traversal_in_progress() const;
-        int get_visited_revision() const;
-        int get_successful_revision() const;             
+        bool traversal_in_progress() const;
+        int visited_revision() const;
+        int successful_revision() const;             
 
         Target* target( const std::string& id, TargetPrototype* target_prototype = NULL, Target* working_directory = NULL );
         Target* find_target( const std::string& path, Target* working_directory );

@@ -172,8 +172,8 @@ function android.cc( target )
 
     local ccflags = table.concat( flags, " " );
     local gcc = ("%s/bin/arm-linux-androideabi-gcc"):format( android.toolchain_directory(target.settings, target.architecture) );
-    for dependency in target:get_dependencies() do
-        if dependency:is_outdated() then
+    for dependency in target:dependencies() do
+        if dependency:outdated() then
             print( leaf(dependency.source) );
             build.system( gcc, ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, dependency:filename(), dependency.source), GccScanner );
         end    
@@ -187,10 +187,10 @@ function android.build_library( target )
     
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     local objects = {};
-    for compile in target:get_dependencies() do
+    for compile in target:dependencies() do
         local prototype = compile:prototype();
         if prototype == Cc or prototype == Cxx then
-            for object in compile:get_dependencies() do
+            for object in compile:dependencies() do
                 table.insert( objects, relative(object:filename()) )
             end
         end
@@ -234,10 +234,10 @@ function android.build_executable( target )
     local libraries = {};
 
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
-    for dependency in target:get_dependencies() do
+    for dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
-            for object in dependency:get_dependencies() do
+            for object in dependency:dependencies() do
                 if object:prototype() == nil then
                     table.insert( objects, relative(object:filename()) );
                 end
@@ -289,7 +289,7 @@ function android.deploy( directory )
     if sdk_directory then 
         local directory = directory or find_target( initial() );
         local apk = nil;
-        for dependency in directory:get_dependencies() do
+        for dependency in directory:dependencies() do
             if dependency:prototype() == android.Apk then 
                 apk = dependency;
                 break;
@@ -316,7 +316,7 @@ function android.deploy( directory )
 end
 
 function android.obj_directory( target )
-    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, relative(target:get_working_directory():path(), root()) );
+    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, relative(target:working_directory():path(), root()) );
 end
 
 function android.cc_name( name )

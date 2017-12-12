@@ -23,7 +23,7 @@ class SWEET_BUILD_TOOL_DECLSPEC TargetPrototype
     public:
         TargetPrototype( const std::string& id, BuildTool* build_tool );
         ~TargetPrototype();
-        const std::string& get_id() const;
+        const std::string& id() const;
 };
 
 }

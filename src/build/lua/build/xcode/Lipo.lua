@@ -19,7 +19,7 @@ function Lipo.call( lipo, definition )
 end
 
 function Lipo.build( self )
-    if self:is_outdated() then
+    if self:outdated() then
         lipo_executable( self );
     end
 end

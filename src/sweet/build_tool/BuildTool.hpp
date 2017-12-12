@@ -45,20 +45,20 @@ class SWEET_BUILD_TOOL_DECLSPEC BuildTool
         ~BuildTool();
 
         error::ErrorPolicy& error_policy() const;
-        OsInterface* get_os_interface() const;
-        ScriptInterface* get_script_interface() const;
-        Graph* get_graph() const;
-        Executor* get_executor() const;
-        Scheduler* get_scheduler() const;
+        OsInterface* os_interface() const;
+        ScriptInterface* script_interface() const;
+        Graph* graph() const;
+        Executor* executor() const;
+        Scheduler* scheduler() const;
 
         void set_warning_level( int warning_level );
-        int get_warning_level() const;
+        int warning_level() const;
 
         void set_stack_trace_enabled( bool stack_trace_enabled );
-        bool is_stack_trace_enabled() const;
+        bool stack_trace_enabled() const;
 
         void set_maximum_parallel_jobs( int maximum_parallel_jobs );
-        int get_maximum_parallel_jobs() const;
+        int maximum_parallel_jobs() const;
 
         void search_up_for_root_directory( const std::string& directory );
         void assign( const std::vector<std::string>& assignments_and_commands );

@@ -37,7 +37,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Scanner
         void set_maximum_matches( int maximum_matches );
         int maximum_matches() const;
         void add_pattern( const std::string& regex, lua::Lua& lua, lua_State* lua_state, int position );
-        const std::vector<Pattern>& get_patterns() const;
+        const std::vector<Pattern>& patterns() const;
 };
 
 }

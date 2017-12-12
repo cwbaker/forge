@@ -46,8 +46,8 @@ function macosx.cc( target )
     local ccflags = table.concat( flags, " " );
     local xcrun = target.settings.macosx.xcrun;
 
-    for dependency in target:get_dependencies() do
-        if dependency:is_outdated() then
+    for dependency in target:dependencies() do
+        if dependency:outdated() then
             print( leaf(dependency.source) );
             build.system( xcrun, ('xcrun --sdk macosx clang %s -o "%s" "%s"'):format(ccflags, dependency:filename(), absolute(dependency.source)) );
         end    
@@ -61,10 +61,10 @@ function macosx.build_library( target )
 
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     local objects =  {};
-    for compile in target:get_dependencies() do
+    for compile in target:dependencies() do
         local prototype = compile:prototype();
         if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
-            for object in compile:get_dependencies() do
+            for object in compile:dependencies() do
                 table.insert( objects, relative(object:filename()) );
             end
         end
@@ -95,10 +95,10 @@ function macosx.build_executable( target )
     local libraries = {};
 
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
-    for dependency in target:get_dependencies() do
+    for dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
-            for object in dependency:get_dependencies() do
+            for object in dependency:dependencies() do
                 if object:prototype() == nil then
                     table.insert( objects, relative(object:filename()) );
                 end
@@ -128,7 +128,7 @@ end
 
 function macosx.lipo_executable( target )
     local executables = {};
-    for executable in target:get_dependencies() do 
+    for executable in target:dependencies() do 
         local prototype = executable:prototype();
         if prototype == Executable or prototype == DynamicLibrary then
             table.insert( executable, executable:filename() );
@@ -141,7 +141,7 @@ function macosx.lipo_executable( target )
 end
 
 function macosx.obj_directory( target )
-    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, relative(target:get_working_directory():path(), root()) );
+    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, relative(target:working_directory():path(), root()) );
 end
 
 function macosx.cc_name( name )

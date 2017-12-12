@@ -39,8 +39,8 @@ function windows.cc( target )
     msvc.append_compile_flags( target, flags );
     
     local sources_by_directory = {};
-    for dependency in target:get_dependencies() do
-        if dependency:is_outdated() then
+    for dependency in target:dependencies() do
+        if dependency:outdated() then
             local directory = branch( dependency.source );
             local sources = sources_by_directory[directory];
             if not sources then 
@@ -73,10 +73,10 @@ function windows.build_library( target )
     
     pushd( ("%s%s"):format(obj_directory(target), target.architecture) );
     local objects = {};
-    for dependency in target:get_dependencies() do
+    for dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == Cc or prototype == Cxx then
-            for object in dependency:get_dependencies() do
+            for object in dependency:dependencies() do
                 table.insert( objects, relative(object:filename()) );
             end
         end
@@ -105,10 +105,10 @@ function windows.build_executable( target )
     local objects = {};
     local libraries = {};
 
-    for dependency in target:get_dependencies() do
+    for dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == Cc or prototype == Cxx then
-            for object in dependency:get_dependencies() do
+            for object in dependency:dependencies() do
                 table.insert( objects, obj_name(object:id()) );
             end
         elseif prototype == StaticLibrary or prototype == DynamicLibrary then
@@ -192,7 +192,7 @@ function windows.lipo_executable( target )
 end
 
 function windows.obj_directory( target )
-    return ("%s/%s/"):format( target.settings.obj, relative(target:get_working_directory():path(), root()) );
+    return ("%s/%s/"):format( target.settings.obj, relative(target:working_directory():path(), root()) );
 end
 
 function windows.cc_name( name )

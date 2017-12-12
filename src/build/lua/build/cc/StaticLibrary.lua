@@ -20,7 +20,7 @@ function StaticLibrary.call( static_library, definition )
 end
 
 function StaticLibrary.build( static_library )
-    if static_library:is_outdated() then
+    if static_library:outdated() then
         build_library( static_library );
     end    
 end

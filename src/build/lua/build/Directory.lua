@@ -6,7 +6,7 @@ function Directory.create( settings, id )
 end
 
 function Directory.build( directory )
-    if directory:is_outdated() then
+    if directory:outdated() then
         mkdir( directory:filename() );
     end
 end

@@ -157,7 +157,7 @@ function mingw.cc( target )
     table.insert( defines, ('-DBUILD_VERSION="\\"%s\\""'):format(version) );
     cppdefines = table.concat( defines, " " );
 
-    for dependency in target:get_dependencies() do
+    for dependency in target:dependencies() do
         if dependency:is_outdated() and dependency ~= target.precompiled_header then
             if dependency:prototype() == nil then
                 print( leaf(dependency.source) );
@@ -181,14 +181,10 @@ function mingw.build_library( target )
     
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     local objects = {};
-    for dependency in target:get_dependencies() do
+    for dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == Cc or prototype == Cxx then
-            -- if dependency.precompiled_header ~= nil then
-            --     objects = objects.." "..obj_name( dependency.precompiled_header:id() );
-            -- end
-            
-            for object in dependency:get_dependencies() do
+            for object in dependency:dependencies() do
                 if object:prototype() == nil and object ~= dependency.precompiled_header then
                     table.insert( objects, relative(object:filename()) );
                 end
@@ -262,10 +258,10 @@ function mingw.build_executable( target )
     local objects = {};
     local libraries = {};
 
-    for dependency in target:get_dependencies() do
+    for dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == Cc or prototype == Cxx then
-            for object in dependency:get_dependencies() do
+            for object in dependency:dependencies() do
                 if object:prototype() == nil and object ~= dependency.precompiled_header then
                     table.insert( objects, relative(object:filename()) );
                 end
@@ -305,7 +301,7 @@ function mingw.clean_executable( target )
 end
 
 function mingw.obj_directory( target )
-    return ("%s/%s_%s/%s/"):format( target.settings.obj, platform, variant, relative(target:get_working_directory():path(), root()) );
+    return ("%s/%s_%s/%s/"):format( target.settings.obj, platform, variant, relative(target:working_directory():path(), root()) );
 end
 
 function mingw.cc_name( name )

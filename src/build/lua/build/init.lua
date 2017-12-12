@@ -392,7 +392,7 @@ end
 function build.load( goal, force )
     local load_start = ticks();
     local cache_target = load_binary( settings.cache, initial(goal) );
-    if cache_target == nil or cache_target:is_outdated() or build.local_settings.updated or force then
+    if cache_target == nil or cache_target:outdated() or build.local_settings.updated or force then
         clear();
         build.push_settings( build.settings );
         buildfile( settings.buildfile );
@@ -558,15 +558,15 @@ function build.copy( value )
 end
 
 function build.gen_directory( target )
-    return string.format( "%s/%s", target.settings.gen, relative(target:get_working_directory():path(), root()) );
+    return string.format( "%s/%s", target.settings.gen, relative(target:working_directory():path(), root()) );
 end
 
 function build.classes_directory( target )
-    return string.format( "%s/%s", target.settings.classes, relative(target:get_working_directory():path(), root()) );
+    return string.format( "%s/%s", target.settings.classes, relative(target:working_directory():path(), root()) );
 end
 
 function build.obj_directory( target )
-    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, relative(target:get_working_directory():path(), root()) );
+    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, relative(target:working_directory():path(), root()) );
 end;
 
 function build.cc_name( name )

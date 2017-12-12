@@ -90,7 +90,7 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
 
     target_prototype_prototype_.members()
         .type( SWEET_STATIC_TYPEID(TargetPrototype) )
-        ( "id", &TargetPrototype::get_id )
+        ( "id", &TargetPrototype::id )
     ;
 
     scanner_metatable_.members()
@@ -113,38 +113,38 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
 
     target_prototype_.members()
         .type( SWEET_STATIC_TYPEID(Target) )
-        ( "id", &Target::get_id )
-        ( "path", &Target::get_path )
-        ( "branch", &Target::get_branch )
-        ( "directory", &Target::get_branch )
-        ( "parent", &ScriptInterface::get_parent, this, _1 )
-        ( "prototype", &Target::get_prototype )
+        ( "id", &Target::id )
+        ( "path", &Target::path )
+        ( "branch", &Target::branch )
+        ( "directory", &Target::branch )
+        ( "parent", &ScriptInterface::parent, this, _1 )
+        ( "prototype", &Target::prototype )
         ( "set_required_to_exist", &Target::set_required_to_exist )
-        ( "is_required_to_exist", &Target::is_required_to_exist )
+        ( "required_to_exist", &Target::required_to_exist )
         ( "set_cleanable", &Target::set_cleanable )
         ( "cleanable", &Target::cleanable )
         ( "set_timestamp", &Target::set_timestamp )
-        ( "get_timestamp", &Target::get_timestamp )
-        ( "get_last_write_time", &Target::get_last_write_time )
+        ( "timestamp", &Target::timestamp )
+        ( "last_write_time", &Target::last_write_time )
         ( "set_outdated", &Target::set_outdated )
-        ( "is_outdated", &Target::is_outdated )
+        ( "outdated", &Target::outdated )
         ( "set_filename", raw(&ScriptInterface::set_filename) )
         ( "filename", raw(&ScriptInterface::filename) )
         ( "filenames", &Target::filenames )
         ( "set_working_directory", &Target::set_working_directory )
-        ( "get_working_directory", &ScriptInterface::get_working_directory, this, _1 )
-        ( "get_targets", raw(&ScriptInterface::get_targets), this )
+        ( "working_directory", &ScriptInterface::working_directory, this, _1 )
+        ( "targets", raw(&ScriptInterface::targets), this )
         ( "add_dependency", &Target::add_dependency )
         ( "remove_dependency", &Target::remove_dependency )
         ( "dependency", raw(&ScriptInterface::dependency), this )
-        ( "get_dependencies", raw(&ScriptInterface::get_dependencies), this )
+        ( "dependencies", raw(&ScriptInterface::dependencies), this )
     ;
 
     lua_.globals()
         ( "set_maximum_parallel_jobs", &BuildTool::set_maximum_parallel_jobs, build_tool_ )
-        ( "get_maximum_parallel_jobs", &BuildTool::get_maximum_parallel_jobs, build_tool_ )
+        ( "get_maximum_parallel_jobs", &BuildTool::maximum_parallel_jobs, build_tool_ )
         ( "set_stack_trace_enabled", &BuildTool::set_stack_trace_enabled, build_tool_ )
-        ( "is_stack_trace_enabled", &BuildTool::is_stack_trace_enabled, build_tool_ )
+        ( "stack_trace_enabled", &BuildTool::stack_trace_enabled, build_tool_ )
     ;
 
     lua_.globals()
@@ -223,14 +223,14 @@ ScriptInterface::~ScriptInterface()
     }
 }
 
-lua::Lua& ScriptInterface::get_lua()
+lua::Lua& ScriptInterface::lua()
 {
     return lua_;
 }
 
-Environment* ScriptInterface::get_environment() const
+Environment* ScriptInterface::environment() const
 {
-    return build_tool_->get_scheduler()->environment();
+    return build_tool_->scheduler()->environment();
 }
 
 void ScriptInterface::set_root_directory( const path::Path& root_directory )
@@ -239,7 +239,7 @@ void ScriptInterface::set_root_directory( const path::Path& root_directory )
     root_directory_ = root_directory;
 }
 
-const path::Path& ScriptInterface::get_root_directory() const
+const path::Path& ScriptInterface::root_directory() const
 {
     return root_directory_;
 }
@@ -250,7 +250,7 @@ void ScriptInterface::set_initial_directory( const path::Path& initial_directory
     initial_directory_ = initial_directory;
 }
 
-const path::Path& ScriptInterface::get_initial_directory() const
+const path::Path& ScriptInterface::initial_directory() const
 {
     return initial_directory_;
 }
@@ -264,31 +264,31 @@ void ScriptInterface::create_prototype( TargetPrototype* target_prototype )
         .metatable( target_prototype_metatable_ )
         .this_pointer( target_prototype )
         ( lua::PTR_KEYWORD, value(target_prototype) )
-        ( "id", &Target::get_id )
-        ( "path", &Target::get_path )
-        ( "branch", &Target::get_branch )
-        ( "directory", &Target::get_branch )
-        ( "parent", &ScriptInterface::get_parent, this, _1 )
-        ( "prototype", &Target::get_prototype )
+        ( "id", &Target::id )
+        ( "path", &Target::path )
+        ( "branch", &Target::branch )
+        ( "directory", &Target::branch )
+        ( "parent", &ScriptInterface::parent, this, _1 )
+        ( "prototype", &Target::prototype )
         ( "set_required_to_exist", &Target::set_required_to_exist )
-        ( "is_required_to_exist", &Target::is_required_to_exist )
+        ( "required_to_exist", &Target::required_to_exist )
         ( "set_cleanable", &Target::set_cleanable )
         ( "cleanable", &Target::cleanable )
         ( "set_timestamp", &Target::set_timestamp )
-        ( "get_timestamp", &Target::get_timestamp )
-        ( "get_last_write_time", &Target::get_last_write_time )
+        ( "timestamp", &Target::timestamp )
+        ( "last_write_time", &Target::last_write_time )
         ( "set_outdated", &Target::set_outdated )
-        ( "is_outdated", &Target::is_outdated )
+        ( "outdated", &Target::outdated )
         ( "set_filename", raw(&ScriptInterface::set_filename) )
         ( "filename", raw(&ScriptInterface::filename) )
         ( "filenames", &Target::filenames )
         ( "set_working_directory", &Target::set_working_directory )
-        ( "get_working_directory", &ScriptInterface::get_working_directory, this, _1 )
-        ( "get_targets", raw(&ScriptInterface::get_targets), this )
+        ( "working_directory", &ScriptInterface::working_directory, this, _1 )
+        ( "targets", raw(&ScriptInterface::targets), this )
         ( "add_dependency", &Target::add_dependency )
         ( "remove_dependency", &Target::remove_dependency )
         ( "dependency", raw(&ScriptInterface::dependency), this )
-        ( "get_dependencies", raw(&ScriptInterface::get_dependencies), this )
+        ( "dependencies", raw(&ScriptInterface::dependencies), this )
     ;
     
     lua_.members( target_prototype )
@@ -326,7 +326,7 @@ void ScriptInterface::create_target( Target* target )
 {
     SWEET_ASSERT( target );
 
-    if ( !target->is_referenced_by_script() )
+    if ( !target->referenced_by_script() )
     {
         lua_.create( target );
         target->set_referenced_by_script( true );
@@ -374,7 +374,7 @@ TargetPrototype* ScriptInterface::target_prototype( const std::string& id )
     SWEET_ASSERT( !id.empty() );
 
     vector<TargetPrototype* >::const_iterator i = target_prototypes_.begin(); 
-    while ( i != target_prototypes_.end() && (*i)->get_id() != id )
+    while ( i != target_prototypes_.end() && (*i)->id() != id )
     {
         ++i;
     }
@@ -395,10 +395,10 @@ TargetPrototype* ScriptInterface::target_prototype( const std::string& id )
 
 Target* ScriptInterface::find_target( const std::string& id )
 {
-    Environment* environment = get_environment();
+    Environment* environment = ScriptInterface::environment();
     SWEET_ASSERT( environment );
-    Target* target = build_tool_->get_graph()->find_target( id, environment->working_directory() );
-    if ( target && !target->is_referenced_by_script() )
+    Target* target = build_tool_->graph()->find_target( id, environment->working_directory() );
+    if ( target && !target->referenced_by_script() )
     {
         create_target( target );
     }
@@ -413,7 +413,7 @@ std::string ScriptInterface::absolute( const std::string& path, const path::Path
     }
     else if ( working_directory.empty() )
     {
-        Environment* environment = get_environment();
+        Environment* environment = ScriptInterface::environment();
         SWEET_ASSERT( environment );
         path::Path absolute_path( environment->directory() );
         absolute_path /= path;
@@ -433,7 +433,7 @@ std::string ScriptInterface::relative( const std::string& path, const path::Path
 {
     if ( working_directory.empty() )
     {
-        Environment* environment = get_environment();
+        Environment* environment = ScriptInterface::environment();
         SWEET_ASSERT( environment );
         return environment->directory().relative( path::Path(path) ).string();
     }
@@ -498,7 +498,7 @@ std::string ScriptInterface::home( const std::string& path ) const
 
 std::string ScriptInterface::anonymous() const
 {
-    Environment* environment = get_environment();
+    Environment* environment = ScriptInterface::environment();
     SWEET_ASSERT( environment );
     Target* working_directory = environment->working_directory();
     SWEET_ASSERT( working_directory );
@@ -519,39 +519,39 @@ bool ScriptInterface::is_relative( const std::string& path )
 
 void ScriptInterface::cd( const std::string& path )
 {
-    Environment* environment = get_environment();
+    Environment* environment = ScriptInterface::environment();
     SWEET_ASSERT( environment );
     environment->change_directory( path );
 }
 
 void ScriptInterface::pushd( const std::string& path )
 {
-    Environment* environment = get_environment();
+    Environment* environment = ScriptInterface::environment();
     SWEET_ASSERT( environment );
     environment->push_directory( path );
 }
 
 void ScriptInterface::popd()
 {
-    Environment* environment = get_environment();
+    Environment* environment = ScriptInterface::environment();
     SWEET_ASSERT( environment );
     environment->pop_directory();
 }
 
 const std::string& ScriptInterface::pwd() const
 {
-    Environment* environment = get_environment();
+    Environment* environment = ScriptInterface::environment();
     SWEET_ASSERT( environment );
     return environment->directory().string();
 }
 
 Target* ScriptInterface::working_directory()
 {
-    Environment* environment = get_environment();
+    Environment* environment = ScriptInterface::environment();
     SWEET_ASSERT( environment );
     
     Target* target = environment->working_directory();
-    if ( target && !target->is_referenced_by_script() )
+    if ( target && !target->referenced_by_script() )
     {
         create_target( target );
     }
@@ -645,7 +645,7 @@ void ScriptInterface::mkdir( const std::string& path )
 
 void ScriptInterface::cpdir( const std::string& from, const std::string& to )
 {
-    Environment* environment = get_environment();
+    Environment* environment = ScriptInterface::environment();
     SWEET_ASSERT( environment );
     return os_interface_->cpdir( absolute(from), absolute(to), environment->directory().branch() );
 }
@@ -693,44 +693,44 @@ float ScriptInterface::ticks()
 void ScriptInterface::buildfile( const std::string& filename, Target* target )
 {
     SWEET_ASSERT( build_tool_ );
-    return build_tool_->get_graph()->buildfile( filename, target );
+    return build_tool_->graph()->buildfile( filename, target );
 }
 
 int ScriptInterface::bind( Target* target )
 {
     SWEET_ASSERT( build_tool_ );
-    return build_tool_->get_graph()->bind( target );
+    return build_tool_->graph()->bind( target );
 }
 
 void ScriptInterface::mark_implicit_dependencies()
 {
     SWEET_ASSERT( build_tool_ );
-    return build_tool_->get_graph()->mark_implicit_dependencies();
+    return build_tool_->graph()->mark_implicit_dependencies();
 }
 
 void ScriptInterface::print_dependencies( Target* target )
 {
     SWEET_ASSERT( build_tool_ );
-    return build_tool_->get_graph()->print_dependencies( target, get_environment()->directory().string() );
+    return build_tool_->graph()->print_dependencies( target, environment()->directory().string() );
 }
 
 void ScriptInterface::print_namespace( Target* target )
 {
     SWEET_ASSERT( build_tool_ );
-    return build_tool_->get_graph()->print_namespace( target );
+    return build_tool_->graph()->print_namespace( target );
 }
 
 void ScriptInterface::wait()
 {
     SWEET_ASSERT( build_tool_ );
-    build_tool_->get_scheduler()->wait();
+    build_tool_->scheduler()->wait();
 }
 
 void ScriptInterface::clear()
 {
-    Environment* environment = get_environment();
-    string working_directory = environment->working_directory()->get_path();
-    Graph* graph = build_tool_->get_graph();
+    Environment* environment = ScriptInterface::environment();
+    string working_directory = environment->working_directory()->path();
+    Graph* graph = build_tool_->graph();
     graph->clear();
     environment->reset_directory( working_directory );
 }
@@ -738,11 +738,11 @@ void ScriptInterface::clear()
 Target* ScriptInterface::load_xml( const std::string& filename )
 {
     SWEET_ASSERT( build_tool_ );
-    SWEET_ASSERT( build_tool_->get_graph() );
+    SWEET_ASSERT( build_tool_->graph() );
 
-    Environment* environment = get_environment();
-    string working_directory = environment->working_directory()->get_path();
-    Target* cache_target = build_tool_->get_graph()->load_xml( absolute(filename) );
+    Environment* environment = ScriptInterface::environment();
+    string working_directory = environment->working_directory()->path();
+    Target* cache_target = build_tool_->graph()->load_xml( absolute(filename) );
     environment->reset_directory( working_directory );
     if ( cache_target )
     {
@@ -754,17 +754,17 @@ Target* ScriptInterface::load_xml( const std::string& filename )
 void ScriptInterface::save_xml()
 {
     SWEET_ASSERT( build_tool_ );
-    build_tool_->get_graph()->save_xml();
+    build_tool_->graph()->save_xml();
 }
 
 Target* ScriptInterface::load_binary( const std::string& filename )
 {
     SWEET_ASSERT( build_tool_ );
-    SWEET_ASSERT( build_tool_->get_graph() );
+    SWEET_ASSERT( build_tool_->graph() );
         
-    Environment* environment = get_environment();
-    string working_directory = environment->working_directory()->get_path();
-    Target* cache_target = build_tool_->get_graph()->load_binary( absolute(filename) );
+    Environment* environment = ScriptInterface::environment();
+    string working_directory = environment->working_directory()->path();
+    Target* cache_target = build_tool_->graph()->load_binary( absolute(filename) );
     environment->reset_directory( working_directory );
     if ( cache_target )
     {
@@ -776,18 +776,18 @@ Target* ScriptInterface::load_binary( const std::string& filename )
 void ScriptInterface::save_binary()
 {
     SWEET_ASSERT( build_tool_ );
-    build_tool_->get_graph()->save_binary();
+    build_tool_->graph()->save_binary();
 }
 
-Target* ScriptInterface::get_parent( Target* target )
+Target* ScriptInterface::parent( Target* target )
 {
     SWEET_ASSERT( target );
     
     Target* parent;
     if ( target )
     {
-        parent = target->get_parent();
-        if ( parent && !parent->is_referenced_by_script() )
+        parent = target->parent();
+        if ( parent && !parent->referenced_by_script() )
         {
             create_target( parent );
         }
@@ -795,15 +795,15 @@ Target* ScriptInterface::get_parent( Target* target )
     return parent;
 }
 
-Target* ScriptInterface::get_working_directory( Target* target )
+Target* ScriptInterface::target_working_directory( Target* target )
 {
     SWEET_ASSERT( target );
     
     Target* working_directory;
     if ( target )
     {
-        working_directory = target->get_working_directory();
-        if ( !working_directory->is_referenced_by_script() )
+        working_directory = target->working_directory();
+        if ( !working_directory->referenced_by_script() )
         {
             create_target( working_directory );
         }
@@ -813,10 +813,10 @@ Target* ScriptInterface::get_working_directory( Target* target )
 
 Target* ScriptInterface::add_target( lua_State* lua_state )
 {
-    Environment* environment = get_environment();
+    Environment* environment = ScriptInterface::environment();
     SWEET_ASSERT( environment );
 
-    Graph* graph = build_tool_->get_graph();
+    Graph* graph = build_tool_->graph();
     SWEET_ASSERT( graph );
 
     Target* working_directory = environment->working_directory();
@@ -835,7 +835,7 @@ Target* ScriptInterface::add_target( lua_State* lua_state )
     TargetPrototype* target_prototype = LuaConverter<TargetPrototype* >::to( lua_state, PROTOTYPE_PARAMETER );
 
     Target* target = graph->target( id, target_prototype, working_directory );
-    if ( !target->is_referenced_by_script() )
+    if ( !target->referenced_by_script() )
     {
         const int TABLE_PARAMETER = 3;
         if ( !lua_isnoneornil(lua_state, TABLE_PARAMETER) )
@@ -969,7 +969,7 @@ struct GetTargetsTargetReferencedByScript
     bool operator()( lua_State* lua_state, Target* target ) const
     {
         SWEET_ASSERT( target );
-        if ( !target->is_referenced_by_script() )
+        if ( !target->referenced_by_script() )
         {
             script_interface_->create_target( target );
         }
@@ -977,7 +977,7 @@ struct GetTargetsTargetReferencedByScript
     }
 };
 
-int ScriptInterface::get_targets( lua_State* lua_state )
+int ScriptInterface::targets( lua_State* lua_state )
 {
     SWEET_ASSERT( lua_state );
 
@@ -993,7 +993,7 @@ int ScriptInterface::get_targets( lua_State* lua_state )
             SWEET_ERROR( RuntimeError("Target is null when iterating over children") );
         }
 
-        const vector<Target* >& dependencies = target->get_targets();
+        const vector<Target* >& dependencies = target->targets();
         lua_push_iterator( lua_state, dependencies.begin(), dependencies.end(), GetTargetsTargetReferencedByScript(script_interface) );
         return 1;
     }
@@ -1026,10 +1026,10 @@ int ScriptInterface::dependency( lua_State* lua_state )
     }
     --index;
 
-    if ( index < target->get_dependencies().size() )
+    if ( index < target->dependencies().size() )
     {
         Target* dependency = target->dependency( index );
-        if ( !dependency->is_referenced_by_script() )
+        if ( !dependency->referenced_by_script() )
         {
             ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
             SWEET_ASSERT( script_interface );
@@ -1057,7 +1057,7 @@ struct GetDependenciesTargetReferencedByScript
     bool operator()( lua_State* lua_state, Target* target ) const
     {
         SWEET_ASSERT( target );
-        if ( !target->is_referenced_by_script() )
+        if ( !target->referenced_by_script() )
         {
             script_interface_->create_target( target );
         }
@@ -1065,7 +1065,7 @@ struct GetDependenciesTargetReferencedByScript
     }
 };
 
-int ScriptInterface::get_dependencies( lua_State* lua_state )
+int ScriptInterface::dependencies( lua_State* lua_state )
 {
     SWEET_ASSERT( lua_state );
 
@@ -1081,7 +1081,7 @@ int ScriptInterface::get_dependencies( lua_State* lua_state )
             SWEET_ERROR( RuntimeError("Null Target passed to 'Target.get_dependencies()'") );
         }
 
-        const vector<Target*>& dependencies = target->get_dependencies();
+        const vector<Target*>& dependencies = target->dependencies();
         lua_push_iterator( lua_state, dependencies.begin(), dependencies.end(), GetDependenciesTargetReferencedByScript(script_interface) );
         return 1;
     }
@@ -1290,7 +1290,7 @@ int ScriptInterface::file( lua_State* lua_state )
         ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
         SWEET_ASSERT( script_interface );        
         Target* target = script_interface->add_target( lua_state );
-        target->set_filename( target->get_path() );
+        target->set_filename( target->path() );
         LuaConverter<Target* >::push( lua_state, target );
         return 1;
     }
@@ -1378,7 +1378,7 @@ int ScriptInterface::preorder( lua_State* lua_state )
             target = LuaConverter<Target* >::to( lua_state, TARGET_PARAMETER );
         }
         
-        int failures = script_interface->build_tool_->get_scheduler()->preorder( function, target );
+        int failures = script_interface->build_tool_->scheduler()->preorder( function, target );
         lua_pushinteger( lua_state, failures );        
         return 1;
     }
@@ -1409,7 +1409,7 @@ int ScriptInterface::postorder( lua_State* lua_state )
             target = LuaConverter<Target* >::to( lua_state, TARGET_PARAMETER );
         }
         
-        int failures = script_interface->build_tool_->get_scheduler()->postorder( function, target );
+        int failures = script_interface->build_tool_->scheduler()->postorder( function, target );
         lua_pushinteger( lua_state, failures );
         return 1;
     }
@@ -1450,7 +1450,7 @@ int ScriptInterface::execute( lua_State* lua_state )
             arguments.reset( new Arguments(script_interface->lua_, lua_state, ARGUMENTS_PARAMETER, lua_gettop(lua_state) + 1) );
         }
 
-        script_interface->build_tool_->get_scheduler()->execute( command, command_line, scanner, arguments.release(), script_interface->get_environment() );
+        script_interface->build_tool_->scheduler()->execute( command, command_line, scanner, arguments.release(), script_interface->environment() );
         return lua_yield( lua_state, 0 );
     }
 
@@ -1490,18 +1490,18 @@ int ScriptInterface::scan( lua_State* lua_state )
             }
 
             target->bind_to_file();
-            if ( target->is_required_to_exist() && target->get_last_write_time() == 0 )
+            if ( target->required_to_exist() && target->last_write_time() == 0 )
             {
                 SWEET_ERROR( ScannedFileNotFoundError("The scanned file '%s' was not found", target->filename(0).c_str()) );
             }
             
-            if ( target->get_last_write_time() != target->get_last_scan_time() )
+            if ( target->last_write_time() != target->last_scan_time() )
             {
                 target->clear_implicit_dependencies();
-                target->set_last_scan_time( target->get_last_write_time() );
-                Environment* environment = script_interface->get_environment();
+                target->set_last_scan_time( target->last_write_time() );
+                Environment* environment = script_interface->environment();
                 SWEET_ASSERT( environment );
-                script_interface->build_tool_->get_scheduler()->scan( target, scanner, arguments.release(), environment->working_directory(), environment );
+                script_interface->build_tool_->scheduler()->scan( target, scanner, arguments.release(), environment->working_directory(), environment );
             }    
         }
 

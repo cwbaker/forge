@@ -11,7 +11,7 @@ function BuildConfig.create( settings, package )
 end
 
 function BuildConfig.build( build_config )
-    if build_config:is_outdated() then
+    if build_config:outdated() then
         local build_config_template = [[
 /** Automatically generated file. DO NOT MODIFY */
 package ${package};

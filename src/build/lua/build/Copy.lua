@@ -12,7 +12,7 @@ function Copy.create( settings, destination, source )
 end
 
 function Copy.build( copy )
-    if copy:is_outdated() then
+    if copy:outdated() then
         if is_file(copy.source) then 
             rm( copy:filename() );
             cp( copy.source, copy:filename() );

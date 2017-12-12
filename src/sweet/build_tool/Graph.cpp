@@ -70,7 +70,7 @@ Graph::~Graph()
 // @return
 //  The root Target.
 */
-Target* Graph::get_root_target() const
+Target* Graph::root_target() const
 {
     return root_target_;
 }
@@ -82,7 +82,7 @@ Target* Graph::get_root_target() const
 //  The Target for this file that this Graph is loaded from or null if this
 //  Graph was loaded from buildfiles and not a cache file.
 */
-Target* Graph::get_cache_target() const
+Target* Graph::cache_target() const
 {
     return cache_target_;
 }
@@ -93,7 +93,7 @@ Target* Graph::get_cache_target() const
 // @return
 //  The BuildTool.
 */
-BuildTool* Graph::get_build_tool() const
+BuildTool* Graph::build_tool() const
 {
     SWEET_ASSERT( build_tool_ );
     return build_tool_;
@@ -133,7 +133,7 @@ void Graph::end_traversal()
 // @return
 //  True if this graph is being traversed otherwise false.
 */
-bool Graph::is_traversal_in_progress() const
+bool Graph::traversal_in_progress() const
 {
     return traversal_in_progress_;
 }
@@ -152,7 +152,7 @@ bool Graph::is_traversal_in_progress() const
 // @return
 //  The current visited revision for this Graph.
 */
-int Graph::get_visited_revision() const
+int Graph::visited_revision() const
 {
     return visited_revision_;
 }
@@ -161,13 +161,13 @@ int Graph::get_visited_revision() const
 // Get the current success revision for this Graph.
 //
 // This is used to determine whether or not Targets have been visited 
-// successfully during a pass.  See Graph::get_visit_revision() for a
+// successfully during a pass.  See Graph::visited_revision() for a
 // description of how the revision values are used.
 //
 // @return
 //  The current successful revision for this Graph.
 */
-int Graph::get_successful_revision() const
+int Graph::successful_revision() const
 {
     return successful_revision_;
 }
@@ -234,9 +234,9 @@ Target* Graph::target( const std::string& id, TargetPrototype* target_prototype,
             else if ( element == ".." )
             {
                 SWEET_ASSERT( target );
-                SWEET_ASSERT( target->get_parent() );
-                SWEET_ASSERT( target->get_parent()->get_graph() == this );
-                target = target->get_parent();
+                SWEET_ASSERT( target->parent() );
+                SWEET_ASSERT( target->parent()->graph() == this );
+                target = target->parent();
             }
             else
             {
@@ -263,20 +263,20 @@ Target* Graph::target( const std::string& id, TargetPrototype* target_prototype,
         target = next_target;
     }
 
-    if ( target_prototype && target->get_prototype() == NULL )
+    if ( target_prototype && target->prototype() == NULL )
     {
         target->set_prototype( target_prototype );
         target->set_working_directory( working_directory );
     }
 
-    if ( target->get_working_directory() == NULL )
+    if ( target->working_directory() == NULL )
     {
         target->set_working_directory( working_directory );
     }
 
-    if ( target_prototype && target->get_prototype() != target_prototype )
+    if ( target_prototype && target->prototype() != target_prototype )
     {
-        SWEET_ERROR( PrototypeConflictError("The target '%s' has been created with prototypes '%s' and '%s'", id.c_str(), target->get_prototype()->get_id().c_str(), target_prototype ? target_prototype->get_id().c_str() : "none" ) );
+        SWEET_ERROR( PrototypeConflictError("The target '%s' has been created with prototypes '%s' and '%s'", id.c_str(), target->prototype()->id().c_str(), target_prototype ? target_prototype->id().c_str() : "none" ) );
     }
 
     return target;
@@ -318,7 +318,7 @@ Target* Graph::find_target( const std::string& id, Target* working_directory )
             }
             else if ( *i == ".." )
             {
-                target = target->get_parent();
+                target = target->parent();
             }
             else
             {
@@ -341,9 +341,9 @@ Target* Graph::find_target( const std::string& id, Target* working_directory )
 void Graph::destroy_target( Target* target )
 {
     SWEET_ASSERT( target );
-    if ( target && target->is_referenced_by_script() )
+    if ( target && target->referenced_by_script() )
     {
-        ScriptInterface* script_interface = build_tool_->get_script_interface();
+        ScriptInterface* script_interface = build_tool_->script_interface();
         SWEET_ASSERT( script_interface );
         script_interface->destroy_target( target );
     }
@@ -365,7 +365,7 @@ void Graph::buildfile( const std::string& filename, Target* target )
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( root_target_ );
      
-    path::Path path( build_tool_->get_script_interface()->absolute(filename) );
+    path::Path path( build_tool_->script_interface()->absolute(filename) );
     SWEET_ASSERT( path.is_absolute() );
     
     Target* buildfile_target = Graph::target( path.string(), NULL, NULL );
@@ -374,7 +374,7 @@ void Graph::buildfile( const std::string& filename, Target* target )
     {
         cache_target_->add_dependency( buildfile_target );
     }
-    build_tool_->get_scheduler()->buildfile( path );
+    build_tool_->scheduler()->buildfile( path );
 }
 
 struct ScopedVisit
@@ -385,7 +385,7 @@ struct ScopedVisit
     : target_( target )
     {
         SWEET_ASSERT( target_ );
-        SWEET_ASSERT( target_->is_visiting() == false );
+        SWEET_ASSERT( target_->visiting() == false );
         target_->set_visited( true );
         target_->set_visiting( true );
     }
@@ -393,7 +393,7 @@ struct ScopedVisit
     ~ScopedVisit()
     {
         SWEET_ASSERT( target_ );
-        SWEET_ASSERT( target_->is_visiting() == true );
+        SWEET_ASSERT( target_->visiting() == true );
         target_->set_visiting( false );
     }
 };
@@ -408,35 +408,35 @@ struct Bind
       failures_( 0 )
     {
         SWEET_ASSERT( build_tool_ );
-        build_tool_->get_graph()->begin_traversal();
+        build_tool_->graph()->begin_traversal();
     }
     
     ~Bind()
     {
-        build_tool_->get_graph()->end_traversal();
+        build_tool_->graph()->end_traversal();
     }
 
     void visit( Target* target )
     {
         SWEET_ASSERT( target );
 
-        if ( !target->is_visited() )
+        if ( !target->visited() )
         {
             ScopedVisit visit( target );
 
-            const vector<Target*>& dependencies = target->get_dependencies();
+            const vector<Target*>& dependencies = target->dependencies();
             for ( vector<Target*>::const_iterator i = dependencies.begin(); i != dependencies.end(); ++i )
             {
                 Target* dependency = *i;
                 SWEET_ASSERT( dependency );
 
-                if ( !dependency->is_visiting() )
+                if ( !dependency->visiting() )
                 {
                     Bind::visit( dependency );
                 }
                 else
                 {
-                    build_tool_->warning( "Ignoring cyclic dependency from '%s' to '%s' during binding", target->get_id().c_str(), dependency->get_id().c_str() );
+                    build_tool_->warning( "Ignoring cyclic dependency from '%s' to '%s' during binding", target->id().c_str(), dependency->id().c_str() );
                     dependency->set_successful( true );
                 }
             }
@@ -444,7 +444,7 @@ struct Bind
             target->bind();
             target->set_successful( true );
 
-            if ( target->is_required_to_exist() && target->is_bound_to_file() && target->get_last_write_time() == 0 )
+            if ( target->required_to_exist() && target->bound_to_file() && target->last_write_time() == 0 )
             {
                 build_tool_->error( "The source file '%s' does not exist", target->filename(0).c_str() );
                 ++failures_;
@@ -466,7 +466,7 @@ struct Bind
 */
 int Graph::bind( Target* target )
 {
-    SWEET_ASSERT( !target || target->get_graph() == this );
+    SWEET_ASSERT( !target || target->graph() == this );
 
     Bind bind( build_tool_ );
     bind.visit( target ? target : root_target_ );
@@ -579,7 +579,7 @@ Target* Graph::load_xml( const std::string& filename )
     filename_ = filename;
     cache_target_ = NULL;
 
-    if ( build_tool_->get_os_interface()->exists(filename) )
+    if ( build_tool_->os_interface()->exists(filename) )
     {
         path::Path path( filename );
         SWEET_ASSERT( path.is_absolute() );
@@ -636,7 +636,7 @@ Target* Graph::load_binary( const std::string& filename )
     filename_ = filename;
     cache_target_ = NULL;
 
-    if ( build_tool_->get_os_interface()->exists(filename) )
+    if ( build_tool_->os_interface()->exists(filename) )
     {
         path::Path path( filename );
         SWEET_ASSERT( path.is_absolute() );
@@ -692,13 +692,13 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
         : target_( target )
         {
             SWEET_ASSERT( target_ );
-            SWEET_ASSERT( target_->is_visiting() == false );
+            SWEET_ASSERT( target_->visiting() == false );
             target_->set_visiting( true );
         }
 
         ~ScopedVisit()
         {
-            SWEET_ASSERT( target_->is_visiting() );
+            SWEET_ASSERT( target_->visiting() );
             target_->set_visiting( false );
         }
     };
@@ -722,13 +722,13 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
         static const char* id( Target* target )
         {
             SWEET_ASSERT( target );
-            if ( !target->get_id().empty() )
+            if ( !target->id().empty() )
             {
-                return target->get_id().c_str();
+                return target->id().c_str();
             }
             else if ( target->filenames().empty() )
             {
-                return target->get_path().c_str();
+                return target->path().c_str();
             }
             else
             {
@@ -749,16 +749,16 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                 printf( "    " );
             }
 
-            if ( target->get_prototype() )
+            if ( target->prototype() )
             {
-                printf( "%s ", target->get_prototype()->get_id().c_str() );
+                printf( "%s ", target->prototype()->id().c_str() );
             }
 
-            std::time_t timestamp = target->get_timestamp();
+            std::time_t timestamp = target->timestamp();
             struct tm* time = ::localtime( &timestamp );
             printf( "'%s' %s %04d-%02d-%02d %02d:%02d:%02d", 
                 id(target),
-                target->is_outdated() ? "true" : "false", 
+                target->outdated() ? "true" : "false", 
                 time ? time->tm_year + 1900 : 9999, 
                 time ? time->tm_mon + 1 : 99, 
                 time ? time->tm_mday : 99, 
@@ -770,7 +770,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
             if ( !target->filenames().empty() )
             {
-                timestamp = target->get_last_write_time();
+                timestamp = target->last_write_time();
                 time = ::localtime( &timestamp );
                 path::Path filename = directory.relative( path::Path(target->filename(0)) );
                 printf( " '%s' %04d-%02d-%02d %02d:%02d:%02d", 
@@ -784,24 +784,24 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                 );
             }
 
-            if ( !target->is_visited() )
+            if ( !target->visited() )
             {
                 target->set_visited( true );            
             
-                const vector<Target*>& dependencies = target->get_dependencies();
+                const vector<Target*>& dependencies = target->dependencies();
                 for ( vector<Target*>::const_iterator i = dependencies.begin(); i != dependencies.end(); ++i )
                 {
                     Target* dependency = *i;
                     SWEET_ASSERT( dependency );
-                    if ( !dependency->is_visiting() )
+                    if ( !dependency->visiting() )
                     {
                         print( dependency, directory, level + 1 );
                     }
                     else
                     {
-                        BuildTool* build_tool = target->get_graph()->get_build_tool();
+                        BuildTool* build_tool = target->graph()->build_tool();
                         SWEET_ASSERT( build_tool );
-                        build_tool->warning( "Ignoring cyclic dependency from '%s' to '%s' while printing dependencies", target->get_id().c_str(), dependency->get_id().c_str() );
+                        build_tool->warning( "Ignoring cyclic dependency from '%s' to '%s' while printing dependencies", target->id().c_str(), dependency->id().c_str() );
                     }
                 }
             }
@@ -843,7 +843,7 @@ void Graph::print_namespace( Target* target )
             SWEET_ASSERT( target != 0 );
             SWEET_ASSERT( level >= 0 );
 
-            if ( !target->get_id().empty() )
+            if ( !target->id().empty() )
             {
                 printf( "\n" );
                 for ( int i = 0; i < level; ++i )
@@ -851,19 +851,19 @@ void Graph::print_namespace( Target* target )
                     printf( "    " );
                 }
 
-                if ( target->get_prototype() != 0 )
+                if ( target->prototype() != NULL )
                 {
-                    printf( "%s ", target->get_prototype()->get_id().c_str() );
+                    printf( "%s ", target->prototype()->id().c_str() );
                 }
 
-                printf( "'%s'", target->get_id().c_str() );
+                printf( "'%s'", target->id().c_str() );
             }
 
-            if ( !target->is_visited() )
+            if ( !target->visited() )
             {
                 target->set_visited( true );            
             
-                const vector<Target*>& targets = target->get_targets();
+                const vector<Target*>& targets = target->targets();
                 for ( vector<Target*>::const_iterator i = targets.begin(); i != targets.end(); ++i )
                 {
                     Target* target = *i;

@@ -16,7 +16,7 @@ end
 
 function Parser.build( parser )
     local parser_ = parser.settings.parser.executable;
-    if not exists(parser:filename()) or parser:is_outdated() then
+    if not exists(parser:filename()) or parser:outdated() then
         print( parser.grammar );
         local arguments = ("parser -r parser/cxx %s"):format( parser.grammar );
         local result = execute( parser_, arguments );

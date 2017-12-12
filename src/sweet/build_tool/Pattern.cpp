@@ -15,12 +15,12 @@ Pattern::Pattern( const std::string& regex, lua::Lua& lua, lua_State* lua_state,
 {
 }
 
-const std::regex& Pattern::get_regex() const
+const std::regex& Pattern::regex() const
 {
     return regex_;
 }
 
-const lua::LuaValue& Pattern::get_function() const
+const lua::LuaValue& Pattern::function() const
 {
     return function_;
 }

@@ -44,7 +44,7 @@ local function included( jar, filename )
 end
 
 function Jar.build( jar )
-    if jar:is_outdated() then
+    if jar:outdated() then
         print( leaf(jar:filename()) );
         local jar_ = native( ("%s/bin/jar"):format(jar.settings.android.jdk_directory) );
         local directory = build.classes_directory( jar );

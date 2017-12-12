@@ -56,70 +56,70 @@ class SWEET_BUILD_TOOL_DECLSPEC Target
         ~Target();
         void recover( Graph* graph );
 
-        const std::string& get_id() const;
-        const std::string& get_path() const;
-        const std::string& get_branch() const;
-        Graph* get_graph() const;
+        const std::string& id() const;
+        const std::string& path() const;
+        const std::string& branch() const;
+        Graph* graph() const;
 
         void set_prototype( TargetPrototype* target_prototype );
-        TargetPrototype* get_prototype() const;
+        TargetPrototype* prototype() const;
 
         void bind();
         void bind_to_file();
         void bind_to_dependencies();
 
         void set_referenced_by_script( bool referenced_by_script );
-        bool is_referenced_by_script() const;
+        bool referenced_by_script() const;
 
         void set_required_to_exist( bool required_to_exist );
-        bool is_required_to_exist() const;
+        bool required_to_exist() const;
 
         void set_cleanable( bool cleanable );
         bool cleanable() const;
 
         void set_timestamp( std::time_t timestamp );
-        std::time_t get_timestamp() const;
-        std::time_t get_last_write_time() const;
+        std::time_t timestamp() const;
+        std::time_t last_write_time() const;
 
         void set_last_scan_time( std::time_t last_scan_time );
-        std::time_t get_last_scan_time() const;
+        std::time_t last_scan_time() const;
 
         void set_outdated( bool outdated );
-        bool is_outdated() const;
-        bool is_changed() const;
-        bool is_bound_to_file() const;
+        bool outdated() const;
+        bool changed() const;
+        bool bound_to_file() const;
 
         void set_filename( const std::string& filename, int index = 0 );
         const std::string& filename( int index = 0 ) const;
         const std::vector<std::string>& filenames() const;
 
         void set_working_directory( Target* target );
-        Target* get_working_directory() const;
+        Target* working_directory() const;
 
         void set_parent( Target* target );
-        Target* get_parent() const;
+        Target* parent() const;
 
         void add_target( Target* target, Target* this_target );
         Target* find_target_by_id( const std::string& id ) const;
-        const std::vector<Target*>& get_targets() const;
+        const std::vector<Target*>& targets() const;
 
         void add_dependency( Target* target );
         void remove_dependency( Target* target );
         void clear_implicit_dependencies();
         bool is_dependency( Target* target ) const;
-        bool is_buildable() const;
+        bool buildable() const;
         std::string generate_failed_dependencies_message() const;
         Target* dependency( int n ) const;
-        const std::vector<Target*>& get_dependencies() const;
+        const std::vector<Target*>& dependencies() const;
 
         void set_visiting( bool visiting );
-        bool is_visiting() const;
+        bool visiting() const;
 
         void set_visited( bool visited );
-        bool is_visited() const;
+        bool visited() const;
 
         void set_successful( bool successful );
-        bool is_successful() const;
+        bool successful() const;
 
         void set_postorder_height( int height );
         int postorder_height() const;

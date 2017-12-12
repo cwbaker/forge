@@ -21,7 +21,7 @@ function DynamicLibrary.call( dynamic_library, definition )
 end
 
 function DynamicLibrary.build( dynamic_library )
-    if dynamic_library:is_outdated() then
+    if dynamic_library:outdated() then
         build_executable( dynamic_library );
     end
 end

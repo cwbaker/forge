@@ -44,8 +44,7 @@ Scheduler::Scheduler( BuildTool* build_tool )
   results_condition_(),
   results_(),
   jobs_( 0 ),
-  failures_( 0 ),
-  traversing_( false )
+  failures_( 0 )
 {
     SWEET_ASSERT( build_tool_ );
 }
@@ -57,16 +56,6 @@ Scheduler::~Scheduler()
         delete environments_.back();
         environments_.pop_back();
     }
-}
-
-void Scheduler::set_traversing( bool traversing )
-{
-    traversing_ = traversing;
-}
-
-bool Scheduler::is_traversing() const
-{
-    return traversing_;
 }
 
 void Scheduler::load( const path::Path& path )
@@ -91,11 +80,11 @@ void Scheduler::execute( const char* start, const char* finish )
     SWEET_ASSERT( finish );
     SWEET_ASSERT( start <= finish );
 
-    Graph* graph = build_tool_->get_graph();
-    ScriptInterface* script_interface = build_tool_->get_script_interface();
-    Environment* environment = allocate_environment( graph->target(script_interface->get_initial_directory().string()) );
+    Graph* graph = build_tool_->graph();
+    ScriptInterface* script_interface = build_tool_->script_interface();
+    Environment* environment = allocate_environment( graph->target(script_interface->initial_directory().string()) );
     process_begin( environment );
-    environment->get_environment_thread().resume( start, finish, "BuildTool" )
+    environment->environment_thread().resume( start, finish, "BuildTool" )
     .end();
     process_end( environment );
 
@@ -108,9 +97,9 @@ void Scheduler::buildfile( const path::Path& path )
 {
     SWEET_ASSERT( path.is_absolute() );
 
-    Environment* environment = allocate_environment( build_tool_->get_graph()->target(path.branch().string()) );
+    Environment* environment = allocate_environment( build_tool_->graph()->target(path.branch().string()) );
     process_begin( environment );
-    environment->get_environment_thread().resume( path.string().c_str(), path.leaf().c_str() )
+    environment->environment_thread().resume( path.string().c_str(), path.leaf().c_str() )
     .end();
     process_end( environment );
 }
@@ -119,9 +108,9 @@ void Scheduler::call( const path::Path& path, const std::string& function )
 {
     if ( !function.empty() )
     {
-        Environment* environment = allocate_environment( build_tool_->get_graph()->target(path.branch().string()) );
+        Environment* environment = allocate_environment( build_tool_->graph()->target(path.branch().string()) );
         process_begin( environment );
-        environment->get_environment_thread().resume( function.c_str() )
+        environment->environment_thread().resume( function.c_str() )
         .end();
         process_end( environment );
     }
@@ -131,9 +120,9 @@ void Scheduler::preorder_visit( const lua::LuaValue& function, Target* target )
 {
     SWEET_ASSERT( target );
 
-    Environment* environment = allocate_environment( target->get_working_directory() );
+    Environment* environment = allocate_environment( target->working_directory() );
     process_begin( environment );
-    environment->get_environment_thread().resume( function )
+    environment->environment_thread().resume( function )
         ( target )
     .end();
     
@@ -141,7 +130,7 @@ void Scheduler::preorder_visit( const lua::LuaValue& function, Target* target )
     if ( errors > 0 )
     {
         ++failures_;
-        build_tool_->error( "Preorder visit of '%s' failed", target->get_id().c_str() );
+        build_tool_->error( "Preorder visit of '%s' failed", target->id().c_str() );
     }
 }
 
@@ -149,27 +138,27 @@ void Scheduler::postorder_visit( const lua::LuaValue& function, Job* job )
 {
     SWEET_ASSERT( job );
 
-    if ( job->get_target()->is_buildable() )
+    if ( job->target()->buildable() )
     {
-        Environment* environment = allocate_environment( job->get_working_directory(), job );
+        Environment* environment = allocate_environment( job->working_directory(), job );
         process_begin( environment );
-        environment->get_environment_thread().resume( function )
-            ( job->get_target() )
+        environment->environment_thread().resume( function )
+            ( job->target() )
         .end();
         
         int errors = process_end( environment );
         if ( errors > 0 )
         {
             ++failures_;
-            build_tool_->error( "Postorder visit of '%s' failed", job->get_target()->get_id().c_str() );
+            build_tool_->error( "Postorder visit of '%s' failed", job->target()->id().c_str() );
         }
 
-        job->get_target()->set_successful( errors == 0 );
+        job->target()->set_successful( errors == 0 );
     }
     else
     {
-        build_tool_->error( "%s", job->get_target()->generate_failed_dependencies_message().c_str() );
-        job->get_target()->set_successful( false );
+        build_tool_->error( "%s", job->target()->generate_failed_dependencies_message().c_str() );
+        job->target()->set_successful( false );
         job->set_state( JOB_COMPLETE );
     }    
 }
@@ -179,7 +168,7 @@ void Scheduler::execute_finished( int exit_code, Environment* environment, Argum
     SWEET_ASSERT( environment );
 
     process_begin( environment );
-    environment->get_environment_thread().resume()
+    environment->environment_thread().resume()
         ( exit_code )
     .end();
     process_end( environment );
@@ -204,17 +193,17 @@ void Scheduler::output( const std::string& output, Scanner* scanner, Arguments* 
     if ( scanner )
     {
         int matches = 0;
-        const vector<Pattern>& patterns = scanner->get_patterns();
+        const vector<Pattern>& patterns = scanner->patterns();
         for ( vector<Pattern>::const_iterator pattern = patterns.begin(); pattern != patterns.end(); ++pattern )
         {
             std::match_results<const char*> match;
-            if ( regex_search(output.c_str(), output.c_str() + output.length(), match, pattern->get_regex()) ) 
+            if ( regex_search(output.c_str(), output.c_str() + output.length(), match, pattern->regex()) ) 
             {
                 ++matches;
                 
                 Environment* environment = allocate_environment( working_directory );
                 process_begin( environment );
-                lua::AddParameter add_parameter = environment->get_environment_thread().call( pattern->get_function() );
+                lua::AddParameter add_parameter = environment->environment_thread().call( pattern->function() );
                 for ( size_t i = 1; i < match.size(); ++i )
                 {
                     add_parameter( std::string(match[i].first, match[i].second) );
@@ -247,7 +236,7 @@ void Scheduler::match( const Pattern* pattern, Target* target, const std::string
     
     Environment* environment = allocate_environment( working_directory );
     process_begin( environment );
-    AddParameter add_parameter = environment->get_environment_thread().call( pattern->get_function() )
+    AddParameter add_parameter = environment->environment_thread().call( pattern->function() )
         ( target )
         ( match )
     ;
@@ -311,14 +300,14 @@ void Scheduler::push_scan_finished( Arguments* arguments )
 void Scheduler::execute( const std::string& command, const std::string& command_line, Scanner* scanner, Arguments* arguments, Environment* environment )
 {
     thread::ScopedLock lock( results_mutex_ );
-    build_tool_->get_executor()->execute( command, command_line, scanner, arguments, environment );
+    build_tool_->executor()->execute( command, command_line, scanner, arguments, environment );
     ++jobs_;
 }
 
 void Scheduler::scan( Target* target, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment )
 {
     thread::ScopedLock lock( results_mutex_ );
-    build_tool_->get_executor()->scan( target, scanner, arguments, working_directory, environment );
+    build_tool_->executor()->scan( target, scanner, arguments, working_directory, environment );
     ++jobs_;
 }
 
@@ -343,12 +332,12 @@ int Scheduler::preorder( const lua::LuaValue& function, Target* target )
           next_targets_()
         {
             SWEET_ASSERT( build_tool_ );
-            build_tool_->get_graph()->begin_traversal();
+            build_tool_->graph()->begin_traversal();
         }
         
         ~Preorder()
         {
-            build_tool_->get_graph()->end_traversal();
+            build_tool_->graph()->end_traversal();
         }
     
         bool empty() const
@@ -379,7 +368,7 @@ int Scheduler::preorder( const lua::LuaValue& function, Target* target )
             {
                 Target* target = *i;
                 SWEET_ASSERT( target );
-                targets += target->get_dependencies().size();
+                targets += target->dependencies().size();
             }
 
             next_targets_.clear();
@@ -388,12 +377,12 @@ int Scheduler::preorder( const lua::LuaValue& function, Target* target )
             {
                 Target* target = *i;
                 SWEET_ASSERT( target );
-                const vector<Target*>& dependencies = target->get_dependencies();
+                const vector<Target*>& dependencies = target->dependencies();
                 for ( vector<Target*>::const_iterator j = dependencies.begin(); j != dependencies.end(); ++j )
                 {
                     Target* dependency = *j;
                     SWEET_ASSERT( dependency );
-                    if ( !dependency->is_visited() )
+                    if ( !dependency->visited() )
                     {
                         dependency->set_visited( true );
                         next_targets_.push_back( dependency );
@@ -404,15 +393,15 @@ int Scheduler::preorder( const lua::LuaValue& function, Target* target )
         }
     };    
 
-    Graph* graph = build_tool_->get_graph();    
-    if ( graph->is_traversal_in_progress() )
+    Graph* graph = build_tool_->graph();    
+    if ( graph->traversal_in_progress() )
     {
         SWEET_ERROR( PreorderCalledRecursivelyError("Preorder called from within another preorder or postorder traversal") );
     }
 
     failures_ = 0;
     Preorder preorder( build_tool_ );
-    preorder.start( target ? target : graph->get_root_target() );
+    preorder.start( target ? target : graph->root_target() );
 
     while ( !preorder.empty() )
     {
@@ -421,7 +410,7 @@ int Scheduler::preorder( const lua::LuaValue& function, Target* target )
         {
             Target* target = *i;
             SWEET_ASSERT( target );
-            if ( target->is_referenced_by_script() && target->get_working_directory() )
+            if ( target->referenced_by_script() && target->working_directory() )
             {
                 preorder_visit( function, target );
             }
@@ -445,14 +434,14 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
         : target_( target )
         {
             SWEET_ASSERT( target_ );
-            SWEET_ASSERT( !target_->is_visiting() );
+            SWEET_ASSERT( !target_->visiting() );
             target_->set_visited( true );
             target_->set_visiting( true );
         }
 
         ~ScopedVisit()
         {
-            SWEET_ASSERT( target_->is_visiting() );
+            SWEET_ASSERT( target_->visiting() );
             target_->set_visiting( false );
         }
     };
@@ -469,12 +458,12 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
           jobs_()
         {
             SWEET_ASSERT( build_tool_ );
-            build_tool_->get_graph()->begin_traversal();
+            build_tool_->graph()->begin_traversal();
         }
         
         ~Postorder()
         {
-            build_tool_->get_graph()->end_traversal();
+            build_tool_->graph()->end_traversal();
         }
     
         void remove_complete_jobs()
@@ -482,7 +471,7 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
             list<Job>::iterator job = jobs_.begin();
             while ( job != jobs_.end() )
             {
-                if ( job->get_state() == JOB_COMPLETE )
+                if ( job->state() == JOB_COMPLETE )
                 {
                     job = jobs_.erase( job );
                 }
@@ -498,15 +487,15 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
             int height = INT_MAX;
             list<Job>::iterator job = jobs_.begin();
 
-            while ( job != jobs_.end() && (job->get_state() != JOB_WAITING || job->get_height() > height) )
+            while ( job != jobs_.end() && (job->state() != JOB_WAITING || job->height() > height) )
             {
-                height = std::min( height, job->get_height() );
+                height = std::min( height, job->height() );
                 ++job;
             }
 
             if ( job != jobs_.end() )
             {
-                SWEET_ASSERT( job->get_state() == JOB_WAITING );
+                SWEET_ASSERT( job->state() == JOB_WAITING );
                 job->set_state( JOB_PROCESSING );
             }
 
@@ -522,30 +511,30 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
         {
             SWEET_ASSERT( target );
 
-            if ( !target->is_visited() )
+            if ( !target->visited() )
             {
                 ScopedVisit visit( target );
 
                 int height = 0;
-                const vector<Target*>& dependencies = target->get_dependencies();
+                const vector<Target*>& dependencies = target->dependencies();
                 for ( vector<Target*>::const_iterator i = dependencies.begin(); i != dependencies.end(); ++i )
                 {
                     Target* dependency = *i;
                     SWEET_ASSERT( dependency );
 
-                    if ( !dependency->is_visiting() )
+                    if ( !dependency->visiting() )
                     {
                         Postorder::visit( dependency );
                         height = std::max( height, dependency->postorder_height() + 1 );
                     }
                     else
                     {
-                        build_tool_->warning( "Ignoring cyclic dependency from '%s' to '%s'", target->get_id().c_str(), dependency->get_id().c_str() );
+                        build_tool_->warning( "Ignoring cyclic dependency from '%s' to '%s'", target->id().c_str(), dependency->id().c_str() );
                         dependency->set_successful( true );
                     }
                 }
 
-                if ( target->is_referenced_by_script() && target->get_working_directory() )
+                if ( target->referenced_by_script() && target->working_directory() )
                 {
                     target->set_postorder_height( height );
                     jobs_.push_back( Job(target, height) );
@@ -559,15 +548,15 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
         }
     };
 
-    Graph* graph = build_tool_->get_graph();
-    if ( graph->is_traversal_in_progress() )
+    Graph* graph = build_tool_->graph();
+    if ( graph->traversal_in_progress() )
     {
         SWEET_ERROR( PostorderCalledRecursivelyError("Postorder called from within another preorder or postorder traversal") );
     }
     
     failures_ = 0;
     Postorder postorder( function, build_tool_ );
-    postorder.visit( target ? target : graph->get_root_target() );
+    postorder.visit( target ? target : graph->root_target() );
 
     postorder.remove_complete_jobs();
     while ( !postorder.empty() )
@@ -595,7 +584,7 @@ Environment* Scheduler::environment() const
 Environment* Scheduler::allocate_environment( Target* working_directory, Job* job )
 {
     SWEET_ASSERT( working_directory );
-    SWEET_ASSERT( !job || job->get_working_directory() == working_directory );
+    SWEET_ASSERT( !job || job->working_directory() == working_directory );
     
     if ( free_environments_.empty() )
     {
@@ -622,7 +611,7 @@ void Scheduler::free_environment( Environment* environment )
     SWEET_ASSERT( environment );
     SWEET_ASSERT( std::find(free_environments_.begin(), free_environments_.end(), environment) == free_environments_.end() );
 
-    Job* job = environment->get_job();
+    Job* job = environment->job();
     if ( job )
     {
         job->set_state( JOB_COMPLETE );
@@ -636,11 +625,11 @@ void Scheduler::destroy_environment( Environment* environment )
 {
     SWEET_ASSERT( environment );
 
-    Job* job = environment->get_job();
+    Job* job = environment->job();
     if ( job )
     {
         job->set_state( JOB_COMPLETE );
-        job->get_target()->set_successful( false );
+        job->target()->set_successful( false );
     }
 }
 
@@ -679,7 +668,7 @@ int Scheduler::process_end( Environment* environment )
 
     active_environments_.pop_back();
     int errors = build_tool_->error_policy().pop_errors();
-    LuaThreadState state = environment->get_environment_thread().get_state();
+    LuaThreadState state = environment->environment_thread().get_state();
     if ( errors == 0 && state != lua::LUA_THREAD_ERROR )
     {
         if ( state == lua::LUA_THREAD_READY )

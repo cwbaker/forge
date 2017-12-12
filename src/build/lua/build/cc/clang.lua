@@ -6,7 +6,7 @@ function clang.append_defines( target, defines )
     table.insert( defines, ('-DBUILD_VARIANT_%s'):format(upper(variant)) );
     table.insert( defines, ('-DBUILD_LIBRARY_TYPE_%s'):format(upper(target.settings.library_type)) );
     table.insert( defines, ('-DBUILD_BIN_DIRECTORY="\\"%s\\""'):format(target.settings.bin) );
-    table.insert( defines, ('-DBUILD_MODULE_DIRECTORY="\\"%s\\""'):format(target:get_working_directory():path()) );
+    table.insert( defines, ('-DBUILD_MODULE_DIRECTORY="\\"%s\\""'):format(target:working_directory():path()) );
     table.insert( defines, ('-DBUILD_VERSION="\\"%s\\""'):format(version) );
 
     if string.find(target.settings.runtime_library, "debug", 1, true) then

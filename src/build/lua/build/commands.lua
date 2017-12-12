@@ -57,7 +57,7 @@ function compile()
     local object_file = source_file.object;
     assert( object_file, "No object file found at '"..obj_directory(source_file.unit)..obj_name(source_file:id()).."'" );
     local unit = source_file.unit;
-    for dependency in unit:get_dependencies() do
+    for dependency in unit:dependencies() do
         if dependency:prototype() == nil and dependency ~= unit.precompiled_header then
             dependency:set_outdated( false );
         end

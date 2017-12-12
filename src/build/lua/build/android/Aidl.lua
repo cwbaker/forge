@@ -11,7 +11,7 @@ function Aidl.create( settings, source )
 end
 
 function Aidl.build( aidl )
-    if aidl:is_outdated() then
+    if aidl:outdated() then
         local settings = aidl.settings;
         local aidl_ = ("%s/aidl"):format( settings.android.build_tools_directory );
         local output = aidl.gen_directory;

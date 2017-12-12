@@ -40,7 +40,7 @@ function Generate.static_depend( generated_file )
 end
 
 function Generate.build( generated_file )
-    if generated_file:is_outdated() then
+    if generated_file:outdated() then
         generated_file:generate();
     end
 end

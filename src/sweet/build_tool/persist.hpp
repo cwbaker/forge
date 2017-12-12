@@ -27,7 +27,7 @@ template <class Archive> void Graph::enter( Archive& archive )
     using namespace sweet::persist;
     SWEET_ASSERT( build_tool_ );
     archive.set_context( SWEET_STATIC_TYPEID(BuildTool), build_tool_ );
-    sweet::lua::enter( archive, build_tool_->get_script_interface()->get_lua() );
+    sweet::lua::enter( archive, build_tool_->script_interface()->lua() );
     archive.template declare<Graph>( "Graph", PERSIST_NORMAL );
     archive.template declare<Target>( "Target", PERSIST_NORMAL );
 }
@@ -41,7 +41,7 @@ template <class Archive> void Graph::enter( Archive& archive )
 template <class Archive> void Graph::exit( Archive& archive )
 {
     SWEET_ASSERT( build_tool_ );
-    sweet::lua::exit( archive, build_tool_->get_script_interface()->get_lua() );
+    sweet::lua::exit( archive, build_tool_->script_interface()->lua() );
 }
 
 /**
@@ -112,7 +112,7 @@ template <class Archive> void save( Archive& archive, int mode, const char* name
 
     if ( target_prototype )
     {
-        std::string id = target_prototype->get_id();
+        std::string id = target_prototype->id();
         archive.value( name, id );
     }
     else
@@ -149,7 +149,7 @@ template <class Archive> void load( Archive& archive, int mode, const char* name
     {
         BuildTool* build_tool = reinterpret_cast<BuildTool*>( archive.get_context(SWEET_STATIC_TYPEID(BuildTool)) );
         SWEET_ASSERT( build_tool );
-        target_prototype = build_tool->get_script_interface()->target_prototype( id );
+        target_prototype = build_tool->script_interface()->target_prototype( id );
     }
 }
 

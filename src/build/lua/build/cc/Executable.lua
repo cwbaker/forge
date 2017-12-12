@@ -21,7 +21,7 @@ function Executable.call( executable, definition )
 end
 
 function Executable.build( executable )
-    if executable:is_outdated() then
+    if executable:outdated() then
         build_executable( executable );
     end
 end

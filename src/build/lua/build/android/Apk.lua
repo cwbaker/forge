@@ -23,7 +23,7 @@ function Apk.call( package, definition )
 end
 
 function Apk.build( package )
-    if package:is_outdated() then
+    if package:outdated() then
         local settings = package.settings;
         local aapt = ("%s/aapt"):format( settings.android.build_tools_directory );
         local resources = table.concat( settings.resources, " -S " );
@@ -40,7 +40,7 @@ function Apk.build( package )
         local jarsigner = ("%s/bin/jarsigner"):format( settings.android.jdk_directory );
         local key = _G.key or "androiddebugkey";
         local keypass = _G.keypass or "android";
-        local keystore = _G.keystore or relative( ("%s/debug.keystore"):format(package:get_working_directory():path()) );
+        local keystore = _G.keystore or relative( ("%s/debug.keystore"):format(package:working_directory():path()) );
         build.system( jarsigner, ("jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s -storepass %s %s.unaligned %s"):format(keystore, keypass, relative(package:filename()), key) );
 
         local zipalign = ("%s/tools/zipalign"):format( settings.android.sdk_directory );

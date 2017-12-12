@@ -87,7 +87,7 @@ error::ErrorPolicy& BuildTool::error_policy() const
 // @return
 //  The OsInterface.
 */
-OsInterface* BuildTool::get_os_interface() const
+OsInterface* BuildTool::os_interface() const
 {
     SWEET_ASSERT( os_interface_ );
     return os_interface_;
@@ -99,7 +99,7 @@ OsInterface* BuildTool::get_os_interface() const
 // @return
 //  The ScriptInterface.
 */
-ScriptInterface* BuildTool::get_script_interface() const
+ScriptInterface* BuildTool::script_interface() const
 {
     SWEET_ASSERT( script_interface_ );
     return script_interface_;
@@ -111,7 +111,7 @@ ScriptInterface* BuildTool::get_script_interface() const
 // @return
 //  The Graph.
 */
-Graph* BuildTool::get_graph() const
+Graph* BuildTool::graph() const
 {
     SWEET_ASSERT( graph_ );
     return graph_;
@@ -123,7 +123,7 @@ Graph* BuildTool::get_graph() const
 // @return
 //  The Executor.
 */
-Executor* BuildTool::get_executor() const
+Executor* BuildTool::executor() const
 {
     SWEET_ASSERT( executor_ );
     return executor_;
@@ -135,7 +135,7 @@ Executor* BuildTool::get_executor() const
 // @return
 //  The Scheduler.
 */
-Scheduler* BuildTool::get_scheduler() const
+Scheduler* BuildTool::scheduler() const
 {
     SWEET_ASSERT( scheduler_ );
     return scheduler_;
@@ -161,7 +161,7 @@ void BuildTool::set_warning_level( int warning_level )
 // @return
 //  The warning level.
 */
-int BuildTool::get_warning_level() const
+int BuildTool::warning_level() const
 {
     return warning_level_;
 }
@@ -175,7 +175,7 @@ int BuildTool::get_warning_level() const
 void BuildTool::set_stack_trace_enabled( bool stack_trace_enabled )
 {
     SWEET_ASSERT( script_interface_ );
-    script_interface_->get_lua().set_stack_trace_enabled( stack_trace_enabled );
+    script_interface_->lua().set_stack_trace_enabled( stack_trace_enabled );
 }
 
 /**
@@ -184,10 +184,10 @@ void BuildTool::set_stack_trace_enabled( bool stack_trace_enabled )
 // @return
 //  True if a stack trace is reported when an error occurs otherwise false.
 */
-bool BuildTool::is_stack_trace_enabled() const
+bool BuildTool::stack_trace_enabled() const
 {
     SWEET_ASSERT( script_interface_ );
-    return script_interface_->get_lua().is_stack_trace_enabled();
+    return script_interface_->lua().is_stack_trace_enabled();
 }
 
 /**
@@ -208,10 +208,10 @@ void BuildTool::set_maximum_parallel_jobs( int maximum_parallel_jobs )
 // @return
 //  The maximum number of parallel jobs.
 */
-int BuildTool::get_maximum_parallel_jobs() const
+int BuildTool::maximum_parallel_jobs() const
 {
     SWEET_ASSERT( executor_ );
-    return executor_->get_maximum_parallel_jobs();
+    return executor_->maximum_parallel_jobs();
 }
 
 /**
@@ -257,7 +257,7 @@ void BuildTool::assign( const std::vector<std::string>& assignments )
         {
             std::string attribute = i->substr( 0, position );
             std::string value = i->substr( position + 1, std::string::npos );
-            script_interface_->get_lua().globals()
+            script_interface_->lua().globals()
                 ( attribute.c_str(), value )
             ;
         }
@@ -279,11 +279,11 @@ void BuildTool::execute( const std::string& filename, const std::vector<std::str
     path::Path path( filename );
     if ( path.empty() )
     {
-        path = script_interface_->get_root_directory() / string( ROOT_FILENAME );
+        path = script_interface_->root_directory() / string( ROOT_FILENAME );
     }
     else if ( path.is_relative() )
     {
-        path = script_interface_->get_initial_directory() / filename;
+        path = script_interface_->initial_directory() / filename;
         path.normalize();
     }
     

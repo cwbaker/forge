@@ -23,8 +23,8 @@ class SWEET_BUILD_TOOL_DECLSPEC Pattern
 
     public:
         Pattern( const std::string& regex, lua::Lua& lua, lua_State* lua_state, int position );
-        const std::regex& get_regex() const;
-        const lua::LuaValue& get_function() const;
+        const std::regex& regex() const;
+        const lua::LuaValue& function() const;
 };
 
 }

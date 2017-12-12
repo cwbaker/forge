@@ -69,7 +69,7 @@ end
 local function add_legacy_target( target, platform )
     assert( target );
     local filename = target:filename();
-    local working_directory = target:get_working_directory():path();
+    local working_directory = target:working_directory():path();
     local settings = target.settings;
     local legacy_target = legacy_targets [filename];
     if not legacy_target then
@@ -374,7 +374,7 @@ local function find_targets_by_prototype( target, prototype )
         table.insert( targets, target );
         return targets;
     end
-    for dependency in target:get_dependencies() do 
+    for dependency in target:dependencies() do 
         if dependency:prototype() == prototype then 
             table.insert( targets, dependency );
         end

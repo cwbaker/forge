@@ -26,7 +26,7 @@ local function depend( cc )
 end
 
 local function build_( cc_ )
-    if cc_:is_outdated() then
+    if cc_:outdated() then
         cc( cc_ );
     end
 end

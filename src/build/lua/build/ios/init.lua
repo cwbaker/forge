@@ -126,8 +126,8 @@ function ios.cc( target )
     local ccflags = table.concat( flags, " " );
     local xcrun = target.settings.ios.xcrun;
 
-    for dependency in target:get_dependencies() do
-        if dependency:is_outdated() then
+    for dependency in target:dependencies() do
+        if dependency:outdated() then
             print( leaf(dependency.source) );
             build.system( xcrun, ('xcrun --sdk %s clang %s -o "%s" "%s"'):format(sdkroot, ccflags, dependency:filename(), absolute(dependency.source)) );
         end    
@@ -141,10 +141,10 @@ function ios.build_library( target )
 
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     local objects =  {};
-    for dependency in target:get_dependencies() do
+    for dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
-            for object in dependency:get_dependencies() do
+            for object in dependency:dependencies() do
                 table.insert( objects, relative(object:filename()) );
             end
         end
@@ -188,10 +188,10 @@ function ios.build_executable( target )
     local libraries = {};
 
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
-    for dependency in target:get_dependencies() do
+    for dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
-            for object in dependency:get_dependencies() do
+            for object in dependency:dependencies() do
                 table.insert( objects, relative(object:filename()) );
             end
         elseif prototype == StaticLibrary or prototype == DynamicLibrary then
@@ -221,7 +221,7 @@ end
 
 function ios.lipo_executable( target )
     local executables = {};
-    for executable in target:get_dependencies() do 
+    for executable in target:dependencies() do 
         table.insert( executables, executable:filename() );
     end
     print( leaf(target:filename()) );
@@ -238,7 +238,7 @@ function ios.deploy( directory )
     if ios_deploy then 
         local directory = directory or find_target( initial() );
         local app = nil;
-        for dependency in directory:get_dependencies() do
+        for dependency in directory:dependencies() do
             if dependency:prototype() == ios.App then 
                 app = dependency;
                 break;
@@ -253,7 +253,7 @@ function ios.deploy( directory )
 end
 
 function ios.obj_directory( target )
-    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, relative(target:get_working_directory():path(), root()) );
+    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, relative(target:working_directory():path(), root()) );
 end
 
 function ios.cc_name( name )

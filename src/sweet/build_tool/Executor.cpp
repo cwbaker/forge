@@ -48,7 +48,7 @@ void Executor::set_maximum_parallel_jobs( int maximum_parallel_jobs )
     maximum_parallel_jobs_ = max( 1, maximum_parallel_jobs );
 }
 
-int Executor::get_maximum_parallel_jobs() const
+int Executor::maximum_parallel_jobs() const
 {
     return maximum_parallel_jobs_;
 }
@@ -134,7 +134,7 @@ void Executor::thread_execute( Process* process, Scanner* scanner, Arguments* ar
             while ( pos != finish )
             {
                 *pos = 0;
-                build_tool_->get_scheduler()->push_output( string(start, pos), scanner, arguments, working_directory );
+                build_tool_->scheduler()->push_output( string(start, pos), scanner, arguments, working_directory );
                 start = pos + 1;
                 pos = std::find( start, finish, '\n' );
             }
@@ -146,7 +146,7 @@ void Executor::thread_execute( Process* process, Scanner* scanner, Arguments* ar
             else if ( finish >= end )
             {
                 *finish = 0;
-                build_tool_->get_scheduler()->push_output( string(start, finish), scanner, arguments, working_directory );
+                build_tool_->scheduler()->push_output( string(start, finish), scanner, arguments, working_directory );
                 start = buffer;
                 finish = buffer;
             }
@@ -158,17 +158,17 @@ void Executor::thread_execute( Process* process, Scanner* scanner, Arguments* ar
         if ( pos > buffer )
         {
             *pos = 0;
-            build_tool_->get_scheduler()->push_output( string(buffer, pos), scanner, arguments, working_directory );
+            build_tool_->scheduler()->push_output( string(buffer, pos), scanner, arguments, working_directory );
         }
 
         process->wait();
-        build_tool_->get_scheduler()->push_execute_finished( process->exit_code(), environment, arguments );
+        build_tool_->scheduler()->push_execute_finished( process->exit_code(), environment, arguments );
         delete process;
     }
 
     catch ( const std::exception& exception )
     {
-        Scheduler* scheduler = build_tool_->get_scheduler();
+        Scheduler* scheduler = build_tool_->scheduler();
         scheduler->push_error( exception, environment );
         scheduler->push_execute_finished( EXIT_FAILURE, environment, arguments );
         delete process;
@@ -182,10 +182,10 @@ void Executor::thread_scan( Target* target, Scanner* scanner, Arguments* argumen
     SWEET_ASSERT( working_directory );
     SWEET_ASSERT( environment );
     
-    Scheduler* scheduler = build_tool_->get_scheduler();
+    Scheduler* scheduler = build_tool_->scheduler();
     SWEET_ASSERT( scheduler );
     
-    FILE* file = ::fopen( target->get_path().c_str(), "rb" );
+    FILE* file = ::fopen( target->path().c_str(), "rb" );
     if ( file )
     {
         try
@@ -204,14 +204,14 @@ void Executor::thread_scan( Target* target, Scanner* scanner, Arguments* argumen
                 buffer [sizeof(buffer) - 1] = '\0';
 
                 bool matched = false;
-                const vector<Pattern>& patterns = scanner->get_patterns();
+                const vector<Pattern>& patterns = scanner->patterns();
                 for ( vector<Pattern>::const_iterator pattern = patterns.begin(); pattern != patterns.end(); ++pattern )
                 {
                     std::match_results<const char*> match;
-                    if ( regex_search(buffer, match, pattern->get_regex()) ) 
+                    if ( regex_search(buffer, match, pattern->regex()) ) 
                     {
                         matched = true;
-                        build_tool_->get_scheduler()->push_match( &(*pattern), string(match[1].first, match[1].second), arguments, working_directory, target );
+                        build_tool_->scheduler()->push_match( &(*pattern), string(match[1].first, match[1].second), arguments, working_directory, target );
                     }
                 }
 

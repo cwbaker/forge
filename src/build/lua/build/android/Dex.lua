@@ -20,7 +20,7 @@ function Dex.call( dex, definition )
 end
 
 function Dex.build( dex )
-    if dex:is_outdated() then
+    if dex:outdated() then
         print( leaf(dex:filename()) );
 
         local jars = {};
@@ -31,7 +31,7 @@ function Dex.build( dex )
         else
             table.insert( jars, build.classes_directory(dex) );
         end
-        for dependency in dex:get_dependencies() do 
+        for dependency in dex:dependencies() do 
             if dependency:prototype() == Jar then 
                 table.insert( jars, relative(dependency:filename()) );
             end

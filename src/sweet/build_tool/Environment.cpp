@@ -30,7 +30,7 @@ using namespace sweet::build_tool;
 Environment::Environment( int index, const path::Path& directory, BuildTool* build_tool )
 : index_( index ),
   build_tool_( build_tool ),
-  environment_thread_( build_tool->get_script_interface()->get_lua() ),
+  environment_thread_( build_tool->script_interface()->lua() ),
   working_directory_( NULL ), 
   directories_(), 
   job_( NULL ),
@@ -45,7 +45,7 @@ Environment::Environment( int index, const path::Path& directory, BuildTool* bui
 // @return
 //  The LuaThread that this Environment uses to make script calls.
 */
-lua::LuaThread& Environment::get_environment_thread()
+lua::LuaThread& Environment::environment_thread()
 {
     return environment_thread_;
 }
@@ -62,7 +62,7 @@ void Environment::reset_directory_to_target( Target* directory )
 {
     SWEET_ASSERT( directory );
     directories_.clear();
-    directories_.push_back( directory->get_path() );
+    directories_.push_back( directory->path() );
     working_directory_ = directory;
 }
 
@@ -78,7 +78,7 @@ void Environment::reset_directory( const path::Path& directory )
     SWEET_ASSERT( directory.empty() || directory.is_absolute() );
     directories_.clear();
     directories_.push_back( directory );
-    working_directory_ = build_tool_->get_graph()->target( directory.string() );
+    working_directory_ = build_tool_->graph()->target( directory.string() );
 }
 
 /**
@@ -105,7 +105,7 @@ void Environment::change_directory( const path::Path& directory )
         directories_.back().normalize();
     }
 
-    working_directory_ = build_tool_->get_graph()->target( directories_.back().string() );
+    working_directory_ = build_tool_->graph()->target( directories_.back().string() );
 }
 
 /**
@@ -135,7 +135,7 @@ void Environment::push_directory( const path::Path& directory )
         directories_.back().normalize();
     }
 
-    working_directory_ = build_tool_->get_graph()->target( directories_.back().string() );
+    working_directory_ = build_tool_->graph()->target( directories_.back().string() );
 }
 
 /**
@@ -150,7 +150,7 @@ void Environment::pop_directory()
     if ( directories_.size() > 1 )
     {
         directories_.pop_back();
-        working_directory_ = build_tool_->get_graph()->target( directories_.back().string() );
+        working_directory_ = build_tool_->graph()->target( directories_.back().string() );
     }
 }
 
@@ -195,7 +195,7 @@ void Environment::set_job( Job* job )
 // @return
 //  The current Job or null if this Environment doesn't have a current Job.
 */
-Job* Environment::get_job() const
+Job* Environment::job() const
 {
     return job_;
 }
@@ -217,7 +217,7 @@ void Environment::set_exit_code( int exit_code )
 // @return
 //  The exit code.
 */
-int Environment::get_exit_code() const
+int Environment::exit_code() const
 {
     return exit_code_;
 }

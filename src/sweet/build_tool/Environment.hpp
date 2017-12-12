@@ -32,7 +32,7 @@ class Environment
     public:
         Environment( int index, const path::Path& directory, BuildTool* build_tool );
 
-        lua::LuaThread& get_environment_thread();
+        lua::LuaThread& environment_thread();
 
         void reset_directory_to_target( Target* directory );
         void reset_directory( const path::Path& directory );
@@ -43,13 +43,13 @@ class Environment
         Target* working_directory() const;
 
         void set_job( Job* job );
-        Job* get_job() const;
+        Job* job() const;
 
         void set_echo( bool echo );
-        bool is_echo() const;
+        bool echo() const;
 
         void set_exit_code( int exit_code );
-        int get_exit_code() const;
+        int exit_code() const;
 };
 
 }

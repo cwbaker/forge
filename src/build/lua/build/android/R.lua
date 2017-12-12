@@ -50,13 +50,13 @@ function R.generate( resource )
 end
 
 function R.build( resource )
-    if resource:is_outdated() then
+    if resource:outdated() then
         resource:generate();
     end
 end
 
 function R.clean( resource )
-    for dependency in resource:get_dependencies() do 
+    for dependency in resource:dependencies() do 
         rm( dependency:filename() );
     end
 end
