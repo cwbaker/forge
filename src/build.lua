@@ -34,6 +34,12 @@ function initialize()
                 "sweet/build_tool/build_tool_test"
             };
         };
+        zero_brane_studio = {
+            mobdebug = build.switch { operating_system();
+                macosx = "/Applications/ZeroBraneStudio.app/Contents/ZeroBraneStudio/lualibs/mobdebug/mobdebug.lua";
+                windows = "C:\\Program Files (x86)\\ZeroBraneStudio\\lualibs\\mobdebug\\mobdebug.lua";
+            };
+        };
     };
 
     if operating_system() == "windows" then    
