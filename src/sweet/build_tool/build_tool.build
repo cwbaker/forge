@@ -16,13 +16,6 @@ Library "build_tool" {
         "sweet/thread/thread"
     };    
 
-    third_party_libraries = {
-        boost_library( "boost_filesystem" ),
-        boost_library( "boost_regex" ),
-        boost_library( "boost_system" ),
-        boost_library( "boost_thread" )
-    };    
-
     Cxx {
         pch = "stdafx.hpp";
         "BuildTool.cpp",

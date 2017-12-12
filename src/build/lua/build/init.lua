@@ -319,7 +319,6 @@ function build.load()
         local script = build.script;
         cache_target:add_dependency( file(root("build.lua")) );
         cache_target:add_dependency( file(root("local_settings.lua")) );
-        cache_target:add_dependency( file(script("build")) );
         cache_target:add_dependency( file(script("build/default_settings")) );
         cache_target:add_dependency( file(script("build/Generate")) );
         cache_target:add_dependency( file(script("build/PrecompiledHeader")) );
@@ -329,8 +328,6 @@ function build.load()
         cache_target:add_dependency( file(script("build/DynamicLibrary")) );
         cache_target:add_dependency( file(script("build/Executable")) );
         cache_target:add_dependency( file(script("build/CcScanner")) );
-        cache_target:add_dependency( file(script("build/ObjCScanner")) );
-        cache_target:add_dependency( file(script("build/default_settings")) );
         cache_target:add_dependency( file(script("build/commands")) );
 
         mark_implicit_dependencies();
