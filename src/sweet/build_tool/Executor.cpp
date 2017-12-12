@@ -132,8 +132,8 @@ void Executor::thread_execute( const std::string& command, const std::string& co
 
         intptr_t read_dependencies_pipe = dependencies_filter && !build_hooks_library_.empty() ? process.pipe( PIPE_USER_0 ) : -1;
         intptr_t write_dependencies_pipe = (intptr_t) process.write_pipe( 0 );
-        intptr_t stdout_pipe = stdout_filter ? process.pipe( PIPE_STDOUT ) : -1;
-        intptr_t stderr_pipe = stderr_filter ? process.pipe( PIPE_STDERR ) : -1;
+        intptr_t stdout_pipe = process.pipe( PIPE_STDOUT );
+        intptr_t stderr_pipe = process.pipe( PIPE_STDERR );
         process.run( command_line.c_str() );
         inject_build_hooks_windows( &process, write_dependencies_pipe );
         process.resume();

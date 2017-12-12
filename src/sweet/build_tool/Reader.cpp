@@ -47,18 +47,15 @@ Reader::~Reader()
 
 void Reader::read( intptr_t fd_or_handle, lua::LuaValue* filter, Arguments* arguments, Target* working_directory )
 {
-    if ( filter )
+    std::unique_lock<std::mutex> lock( jobs_mutex_ );
+    jobs_.push_back( std::bind(&Reader::thread_read, this, fd_or_handle, filter, arguments, working_directory) );
+    ++active_jobs_;
+    while ( active_jobs_ > int(threads_.size()) )
     {
-        std::unique_lock<std::mutex> lock( jobs_mutex_ );
-        jobs_.push_back( std::bind(&Reader::thread_read, this, fd_or_handle, filter, arguments, working_directory) );
-        ++active_jobs_;
-        while ( active_jobs_ > int(threads_.size()) )
-        {
-            unique_ptr<std::thread> thread( new std::thread(&Reader::thread_main, this) );
-            threads_.push_back( thread.release() );
-        }
-        jobs_ready_condition_.notify_all();
+        unique_ptr<std::thread> thread( new std::thread(&Reader::thread_main, this) );
+        threads_.push_back( thread.release() );
     }
+    jobs_ready_condition_.notify_all();
 }
 
 int Reader::thread_main( void* context )
