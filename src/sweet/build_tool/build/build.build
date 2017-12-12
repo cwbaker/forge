@@ -7,6 +7,8 @@ Executable "build" {
     }; 
     
     libraries = {    
+        "boost/libs/filesystem/src/boost_filesystem",
+        "boost/libs/system/src/boost_system",
         "sweet/build_tool/build_tool",
         "sweet/cmdline/cmdline",
         "sweet/lua/lua",
@@ -21,13 +23,6 @@ Executable "build" {
         "sweet/assert/assert"
     };
     
-    third_party_libraries = {
-        boost_library( "boost_filesystem" ),
-        boost_library( "boost_regex" ),
-        boost_library( "boost_system" ),
-        boost_library( "boost_thread" )
-    };    
-
     Cxx {
         pch = "stdafx.hpp";
         "Application.cpp", 

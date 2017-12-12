@@ -20,7 +20,6 @@
 #include <sweet/thread/ScopedLock.hpp>
 #include <sweet/lua/LuaThread.hpp>
 #include <sweet/lua/ptr.hpp>
-#include <boost/bind.hpp>
 #include <list>
 #include <string>
 #include <algorithm>
@@ -196,7 +195,7 @@ void Scheduler::output( const std::string& output, ptr<Scanner> scanner, ptr<Arg
         const vector<Pattern>& patterns = scanner->get_patterns();
         for ( vector<Pattern>::const_iterator pattern = patterns.begin(); pattern != patterns.end(); ++pattern )
         {
-            boost::match_results<const char*> match;
+            std::match_results<const char*> match;
             if ( regex_search(output.c_str(), output.c_str() + output.length(), match, pattern->get_regex()) ) 
             {
                 ++matches;
@@ -261,21 +260,21 @@ void Scheduler::error( const std::string& what, ptr<Environment> environment )
 void Scheduler::push_output( const std::string& output, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory )
 {
     thread::ScopedLock lock( results_mutex_ );
-    results_.push_back( boost::bind(&Scheduler::output, this, output, scanner, arguments, working_directory) );
+    results_.push_back( std::bind(&Scheduler::output, this, output, scanner, arguments, working_directory) );
     results_condition_.notify_all();
 }
 
 void Scheduler::push_error( const std::exception& exception, ptr<Environment> environment )
 {
     thread::ScopedLock lock( results_mutex_ );
-    results_.push_back( boost::bind(&Scheduler::error, this, string(exception.what()), environment) );
+    results_.push_back( std::bind(&Scheduler::error, this, string(exception.what()), environment) );
     results_condition_.notify_all();
 }
 
 void Scheduler::push_match( const Pattern* pattern, const std::string& match, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Target> target )
 {
     thread::ScopedLock lock( results_mutex_ );
-    results_.push_back( boost::bind(&Scheduler::match, this, pattern, target, match, arguments, working_directory) );
+    results_.push_back( std::bind(&Scheduler::match, this, pattern, target, match, arguments, working_directory) );
     results_condition_.notify_all();
 }
 
@@ -283,7 +282,7 @@ void Scheduler::push_execute_finished( int exit_code, ptr<Environment> environme
 {
     thread::ScopedLock lock( results_mutex_ );
     --jobs_;
-    results_.push_back( boost::bind(&Scheduler::execute_finished, this, exit_code, environment) );
+    results_.push_back( std::bind(&Scheduler::execute_finished, this, exit_code, environment) );
     results_condition_.notify_all();
 }
 
@@ -291,7 +290,7 @@ void Scheduler::push_scan_finished( ptr<Arguments> arguments )
 {
     thread::ScopedLock lock( results_mutex_ );
     --jobs_;
-    results_.push_back( boost::bind(&Scheduler::scan_finished, this, arguments) );
+    results_.push_back( std::bind(&Scheduler::scan_finished, this, arguments) );
     results_condition_.notify_all();
 }
 
@@ -634,7 +633,7 @@ bool Scheduler::dispatch_results()
 
     while ( !results_.empty() )
     {
-        boost::function<void()> result = results_.front();
+        std::function<void()> result = results_.front();
         results_.pop_front();
         lock.unlock();
         result();

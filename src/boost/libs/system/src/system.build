@@ -1,0 +1,6 @@
+
+Library "boost_system" {
+    Cxx {
+        "error_code.cpp"
+    };
+}

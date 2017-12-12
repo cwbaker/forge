@@ -15,7 +15,7 @@ Pattern::Pattern( const std::string& regex, lua::Lua& lua, lua_State* lua_state,
 {
 }
 
-const boost::regex& Pattern::get_regex() const
+const std::regex& Pattern::get_regex() const
 {
     return regex_;
 }

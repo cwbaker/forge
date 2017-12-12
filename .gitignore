@@ -9,6 +9,10 @@ sweet_build_tool.xcodeproj
 sweet_build_tool.sublime-project
 sweet_build_tool.sublime-workspace
 msvc_debug/
+msvc_release/
 msvc_shipping/
+clang_debug/
+clang_release/
+clang_shipping/
 *.sdf
 *.suo

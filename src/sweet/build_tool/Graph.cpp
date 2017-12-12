@@ -748,13 +748,14 @@ void Graph::print_dependencies( ptr<Target> target, const std::string& directory
             printf( "'%s' %s %04d-%02d-%02d %02d:%02d:%02d", 
                 id(target),
                 target->is_outdated() ? "true" : "false", 
-                time->tm_year + 1900, 
-                time->tm_mon + 1, 
-                time->tm_mday, 
-                time->tm_hour, 
-                time->tm_min, 
-                time->tm_sec 
+                time ? time->tm_year + 1900 : 9999, 
+                time ? time->tm_mon + 1 : 99, 
+                time ? time->tm_mday : 99, 
+                time ? time->tm_hour : 99, 
+                time ? time->tm_min : 99, 
+                time ? time->tm_sec : 99
             );
+
 
             if ( !target->get_filename().empty() )
             {

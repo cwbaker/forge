@@ -32,7 +32,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public pointer::enable_ptr_from_this<Ta
 {
     std::string id_; ///< The identifier of this Target.
     mutable std::string path_; ///< The full path to this Target in the Target namespace.
-    mutable std::string directory_; ///< The branch path to this Target in the Target namespace.
+    mutable std::string branch_; ///< The branch path to this Target in the Target namespace.
     Graph* graph_; ///< The Graph that this Target is part of.
     ptr<TargetPrototype> prototype_; ///< The TargetPrototype for this Target or null if this Target has no TargetPrototype.
     std::time_t timestamp_; ///< The timestamp for this Target.
@@ -40,7 +40,6 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public pointer::enable_ptr_from_this<Ta
     std::time_t last_scan_time_; ///< The last write time of the file that this Target was bound to when it was scanned.
     bool outdated_; ///< Whether or not this Target is out of date.
     bool changed_; ///< Whether or not this Target's timestamp has changed since the last time it was bound to a file.
-    bool regular_file_; ///< Whether or not this Target is bound to a regular file.
     bool bound_to_file_; ///< Whether or not this Target is bound to a file.
     bool bound_to_dependencies_; ///< Whether or not this Target is bound to its dependencies.
     bool referenced_by_script_; ///< Whether or not this Target is referenced by a scripting object.  
@@ -64,7 +63,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public pointer::enable_ptr_from_this<Ta
 
         const std::string& get_id() const;
         const std::string& get_path() const;
-        const std::string& get_directory() const;
+        const std::string& get_branch() const;
         Graph* get_graph() const;
 
         void set_prototype( ptr<TargetPrototype> target_prototype );

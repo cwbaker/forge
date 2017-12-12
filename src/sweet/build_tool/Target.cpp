@@ -25,7 +25,7 @@ Target::Target()
 : pointer::enable_ptr_from_this<Target>(),
   id_(),
   path_(),
-  directory_(),
+  branch_(),
   graph_( NULL ),
   prototype_(),
   timestamp_( 0 ),
@@ -33,7 +33,6 @@ Target::Target()
   last_scan_time_( 0 ),
   outdated_( false ),
   changed_( false ),
-  regular_file_( false ),
   bound_to_file_( false ),
   bound_to_dependencies_( false ),
   referenced_by_script_( false ),
@@ -65,7 +64,7 @@ Target::Target( const std::string& id, Graph* graph )
 : pointer::enable_ptr_from_this<Target>(),
   id_( id ),
   path_(),
-  directory_(),
+  branch_(),
   graph_( graph ),
   prototype_(),
   timestamp_( 0 ),
@@ -73,7 +72,6 @@ Target::Target( const std::string& id, Graph* graph )
   last_scan_time_( 0 ),
   outdated_( false ),
   changed_( false ),
-  regular_file_( false ),
   bound_to_file_( false ),
   bound_to_dependencies_( false ),
   referenced_by_script_( false ),
@@ -143,22 +141,21 @@ const std::string& Target::get_path() const
 {
     if ( path_.empty() )
     {
-        path_ = get_directory() + get_id();
+        path_ = get_branch() + get_id();
     }
 
     return path_;
 }
 
 /**
-// Get the directory that this Target is in.
+// Get the branch path to this Target is in.
 //
 // @return
-//  The directory that the relative paths in this Target should be relative 
-//  to.
+//  The branch path that this target is in.
 */
-const std::string& Target::get_directory() const
+const std::string& Target::get_branch() const
 {
-    if ( directory_.empty() )
+    if ( branch_.empty() )
     {
         vector<ptr<Target> > targets_to_root;
 
@@ -176,20 +173,20 @@ const std::string& Target::get_directory() const
 
             if ( i == targets_to_root.rend() || (*i)->get_id().find(path::BasicPathTraits<char>::DRIVE) == std::string::npos )
             {
-                directory_ += "/";
+                branch_ += "/";
             }
 
             while ( i != targets_to_root.rend() )
             {
                 Target* target = i->get();
                 SWEET_ASSERT( target != 0 );
-                directory_ += target->get_id() + "/";
+                branch_ += target->get_id() + "/";
                 ++i;
             }
         }
     }
 
-    return directory_;
+    return branch_;
 }
 
 /**
@@ -280,16 +277,15 @@ void Target::bind_to_file()
                 {
                     std::time_t last_write_time = os_interface->last_write_time( filename_ );
                     changed_ = last_write_time_ != last_write_time;
-                    timestamp_ = 0;
+                    timestamp_ = last_write_time;
                     last_write_time_ = last_write_time;
-                    regular_file_ = true;
                 }
                 outdated_ = false;
             }
             else
             {
                 changed_ = last_write_time_ != 0;
-                timestamp_ = 0;
+                timestamp_ = std::numeric_limits<time_t>::max();
                 last_write_time_ = 0;
                 outdated_ = true;
             }
@@ -318,20 +314,28 @@ void Target::bind_to_dependencies()
 {
     if ( !bound_to_dependencies_ )
     {
-        time_t timestamp = get_last_write_time();
+        time_t timestamp = timestamp_;
         bool outdated = outdated_;
 
-        if ( timestamp == 0 && regular_file_ && !filename_.empty() && !dependencies_.empty() )
+        if ( !filename_.empty() )
         {
-            timestamp = time( NULL );
+            for ( vector<Target*>::const_iterator i = dependencies_.begin(); i != dependencies_.end(); ++i )
+            {
+                Target* dependency = *i;
+                SWEET_ASSERT( dependency );
+                outdated = outdated || dependency->get_timestamp() > get_last_write_time();
+                timestamp = std::max( timestamp, dependency->get_timestamp() );
+            }
         }
-
-        for ( vector<Target*>::const_iterator i = dependencies_.begin(); i != dependencies_.end(); ++i )
+        else
         {
-            Target* dependency = *i;
-            SWEET_ASSERT( dependency );
-            outdated = outdated || dependency->get_timestamp() > get_last_write_time();
-            timestamp = std::max( timestamp, dependency->get_timestamp() );
+            for ( vector<Target*>::const_iterator i = dependencies_.begin(); i != dependencies_.end(); ++i )
+            {
+                Target* dependency = *i;
+                SWEET_ASSERT( dependency );
+                outdated = outdated || dependency->is_outdated();
+                timestamp = std::max( timestamp, dependency->get_timestamp() );
+            }
         }
 
         set_timestamp( timestamp );

@@ -14,7 +14,7 @@
 #include <sweet/thread/Thread.hpp>
 #include <sweet/thread/ScopedLock.hpp>
 #include <sweet/process/Process.hpp>
-#include <boost/bind.hpp>
+#include <stdlib.h>
 
 using std::max;
 using std::find;
@@ -62,7 +62,7 @@ void Executor::execute( const std::string& command, const std::string& command_l
         start();
         thread::ScopedLock lock( jobs_mutex_ );
         ptr<process::Process> process( new Process(command.c_str(), command_line.c_str(), environment->directory().string().c_str(), PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR) );
-        jobs_.push_back( boost::bind(&Executor::thread_execute, this, process, scanner, arguments, environment->working_directory(), environment) );
+        jobs_.push_back( std::bind(&Executor::thread_execute, this, process, scanner, arguments, environment->working_directory(), environment) );
         jobs_ready_condition_.notify_all();
     }
 }
@@ -77,7 +77,7 @@ void Executor::scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Arguments> ar
     {
         start();
         thread::ScopedLock lock( jobs_mutex_ );
-        jobs_.push_back( boost::bind(&Executor::thread_scan, this, target, scanner, arguments, working_directory, environment) );
+        jobs_.push_back( std::bind(&Executor::thread_scan, this, target, scanner, arguments, working_directory, environment) );
         jobs_ready_condition_.notify_all();        
     }
 }
@@ -97,7 +97,7 @@ void Executor::thread_process()
     {
         if ( !jobs_.empty() )
         {
-            boost::function<void()> function = jobs_.front();
+            std::function<void()> function = jobs_.front();
             jobs_.pop_front();
             lock.unlock();
             function();
@@ -201,7 +201,7 @@ void Executor::thread_scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Argume
                 const vector<Pattern>& patterns = scanner->get_patterns();
                 for ( vector<Pattern>::const_iterator pattern = patterns.begin(); pattern != patterns.end(); ++pattern )
                 {
-                    boost::match_results<const char*> match;
+                    std::match_results<const char*> match;
                     if ( regex_search(buffer, match, pattern->get_regex()) ) 
                     {
                         matched = true;

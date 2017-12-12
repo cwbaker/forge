@@ -1,0 +1,19 @@
+
+Library "boost_filesystem" {
+    Cxx {
+        "codecvt_error_category.cpp",
+        "operations.cpp",
+        "path.cpp",
+        "path_traits.cpp",
+        "portability.cpp",
+        "unique_path.cpp",
+        "utf8_codecvt_facet.cpp",
+    };
+
+    Cxx {
+        settings = {
+            platforms = { "mingw", "msvc" };
+        };
+        "windows_file_codecvt.cpp"
+    };
+}

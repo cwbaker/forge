@@ -20,13 +20,6 @@ Executable "build_tool_test" {
         "unit/libUnitTest"
     };
 
-    third_party_libraries = {
-        boost_library( "boost_filesystem" ),
-        boost_library( "boost_regex" ),
-        boost_library( "boost_system" ),
-        boost_library( "boost_thread" )
-    };    
-
     Cxx {
         pch = "stdafx.hpp";
         "main.cpp",

@@ -19,7 +19,7 @@ function msvc.configure( settings )
     end
 
     local function autodetect_visual_studio_directory()
-        local visual_studio_directory = os.getenv( "VS100COMNTOOLS" ) or os.getenv( "VS120COMNTOOLS" );
+        local visual_studio_directory = os.getenv( "VS120COMNTOOLS" );
         if visual_studio_directory then
             visual_studio_directory = string.gsub( visual_studio_directory, "\\Common7\\Tools\\", "" );
         end    
@@ -160,7 +160,7 @@ function msvc.cc( target )
     };
 
     local language = target.language or "c++";
-    assert( language == "c" or language == "c++", "Only 'c' and 'c++' languages are supported by Microsoft Visual C++" );
+    assert( language == "c" or language == "c++", "Only the 'c' and 'c++' languages are supported by Microsoft Visual C++" );
 
     if language == "c" then 
         table.insert( flags, "/TC" );

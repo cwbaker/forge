@@ -1,11 +1,8 @@
-//
-// BasicPath.ipp
-// Copyright (c) 2006 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_PATH_BASICPATH_IPP_INCLUDED
 #define SWEET_PATH_BASICPATH_IPP_INCLUDED
 
+#include "BasicPath.hpp"
+#include <sweet/assert/assert.hpp>
 #include <iterator>
 
 namespace sweet

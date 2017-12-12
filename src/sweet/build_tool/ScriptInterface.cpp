@@ -20,6 +20,7 @@
 #include <sweet/lua/vector.hpp>
 #include <sweet/lua/ptr.hpp>
 #include <sweet/lua/Lua.hpp>
+#include <stdlib.h>
 
 using std::string;
 using std::vector;
@@ -110,7 +111,8 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         .type( SWEET_STATIC_TYPEID(Target) )
         ( "id", &Target::get_id )
         ( "path", &Target::get_path )
-        ( "directory", &Target::get_directory )
+        ( "branch", &Target::get_branch )
+        ( "directory", &Target::get_branch )
         ( "parent", &ScriptInterface::get_parent, this, _1 )
         ( "prototype", &Target::get_prototype )
         ( "set_required_to_exist", &Target::set_required_to_exist )
@@ -261,7 +263,8 @@ void ScriptInterface::create_prototype( ptr<TargetPrototype> target_prototype )
         ( lua::PTR_KEYWORD, value(target_prototype) )
         ( "id", &Target::get_id )
         ( "path", &Target::get_path )
-        ( "directory", &Target::get_directory )
+        ( "branch", &Target::get_branch )
+        ( "directory", &Target::get_branch )
         ( "parent", &ScriptInterface::get_parent, this, _1 )
         ( "prototype", &Target::get_prototype )
         ( "set_required_to_exist", &Target::set_required_to_exist )

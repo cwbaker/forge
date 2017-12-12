@@ -3,8 +3,7 @@
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/convenience.hpp>
-#include <boost/function.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 
 #ifndef NOMINMAX
 #define NOMINMAX

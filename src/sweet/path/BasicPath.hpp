@@ -6,6 +6,7 @@
 #ifndef SWEET_PATH_PATH_BASICPATH_HPP_INCLUDED
 #define SWEET_PATH_PATH_BASICPATH_HPP_INCLUDED
 
+#include "BasicPathTraits.hpp"
 #include <string>
 
 namespace sweet

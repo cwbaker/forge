@@ -1,10 +1,7 @@
-//
-// BasicPathTraits.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
+#ifndef SWEET_PATH_BASICPATHTRAITS_HPP_INCLUDED
+#define SWEET_PATH_BASICPATHTRAITS_HPP_INCLUDED
 
-#ifndef SWEET_PATH_PATH_BASICPATHTRAITS_HPP_INCLUDED
-#define SWEET_PATH_PATH_BASICPATHTRAITS_HPP_INCLUDED
+#include "declspec.hpp"
 
 namespace sweet
 {
