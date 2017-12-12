@@ -1,6 +1,6 @@
 //
 // Executor.cpp
-// Copyright (c) Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
 #include "Executor.hpp"
@@ -381,6 +381,7 @@ bool Executor::is_64_bit_process_windows( process::Process* process ) const
         !is_32_bit_process
     ;
 #else
+    (void) process;
     return true;
 #endif
 }
