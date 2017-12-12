@@ -143,16 +143,8 @@ void Executor::thread_execute( const std::string& command, const std::string& co
             build_tool_->reader()->read( read_dependencies_pipe, dependencies_filter, arguments, working_directory );
         }
 
-        if ( stdout_filter )
-        {
-            build_tool_->reader()->read( stdout_pipe, stdout_filter, arguments, working_directory );
-        }
-
-        if ( stderr_filter )
-        {
-            build_tool_->reader()->read( stderr_pipe, stderr_filter, arguments, working_directory );
-        }
-
+        build_tool_->reader()->read( stdout_pipe, stdout_filter, arguments, working_directory );
+        build_tool_->reader()->read( stderr_pipe, stderr_filter, arguments, working_directory );
         process.wait();
         build_tool_->scheduler()->push_execute_finished( process.exit_code(), context, environment );
     }
