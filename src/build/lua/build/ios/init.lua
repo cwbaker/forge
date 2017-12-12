@@ -117,7 +117,6 @@ function ios.initialize( settings )
         lib_name = ios.lib_name;
         dll_name = ios.dll_name;
         exe_name = ios.exe_name;
-        module_name = ios.module_name;
     end
 end;
 
@@ -295,10 +294,6 @@ end
 
 function ios.exe_name( name )
     return ("%s"):format( name );
-end
-
-function ios.module_name( name, architecture )
-    return ("%s_%s"):format( name, architecture );
 end
 
 require "build.ios.App";

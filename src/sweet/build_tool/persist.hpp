@@ -4,9 +4,6 @@
 #include "Graph.hpp"
 #include "Error.hpp"
 #include <sweet/rtti/macros.hpp>
-#include <sweet/lua/LuaTraits.hpp>
-#include <sweet/lua/persist.hpp>
-#include <sweet/persist/lua.hpp>
 #include <sweet/persist/vector.hpp>
 #include <sweet/persist/persist.hpp>
 
@@ -27,7 +24,6 @@ template <class Archive> void Graph::enter( Archive& archive )
     using namespace sweet::persist;
     SWEET_ASSERT( build_tool_ );
     archive.set_context( SWEET_STATIC_TYPEID(BuildTool), build_tool_ );
-    sweet::lua::enter( archive, *build_tool_->lua() );
     archive.template declare<Graph>( "Graph", PERSIST_NORMAL );
     archive.template declare<Target>( "Target", PERSIST_NORMAL );
 }
@@ -38,10 +34,8 @@ template <class Archive> void Graph::enter( Archive& archive )
 // @param archive
 //  The Archive that state was created for.
 */
-template <class Archive> void Graph::exit( Archive& archive )
+template <class Archive> void Graph::exit( Archive& /*archive*/ )
 {
-    SWEET_ASSERT( build_tool_ );
-    sweet::lua::exit( archive, *build_tool_->lua() );
 }
 
 /**
@@ -52,7 +46,7 @@ template <class Archive> void Graph::exit( Archive& archive )
 */
 template <class Archive> void Graph::persist( Archive& archive )
 {
-    const int BUILD_GRAPH_VERSION = 23;
+    const int BUILD_GRAPH_VERSION = 24;
     archive.enter( "Sweet Build Graph", BUILD_GRAPH_VERSION, *this );
     if ( archive.version() == BUILD_GRAPH_VERSION )
     {
@@ -74,7 +68,6 @@ template <class Archive> void Target::persist( Archive& archive )
     archive.value( "id", id_ );
     archive.value( "prototype", prototype_ );
     archive.value( "last_write_time", last_write_time_ );
-    archive.value( "referenced_by_script", referenced_by_script_ );
     archive.value( "required_to_exist", required_to_exist_ );
     archive.value( "cleanable", cleanable_ );
     archive.value( "built", built_ );
@@ -84,10 +77,6 @@ template <class Archive> void Target::persist( Archive& archive )
     archive.refer( "dependencies", "dependency", dependencies_ );
     archive.refer( "implicit_dependencies", "dependency", implicit_dependencies_ );
     archive.refer( "ordering_dependencies", "dependency", ordering_dependencies_ );
-    if ( referenced_by_script_ )
-    {
-        sweet::lua::persist<Target, lua::LuaByReference>( archive, "object", *this );
-    }
 }
 
 /**

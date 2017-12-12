@@ -93,7 +93,6 @@ function macosx.initialize( settings )
         lib_name = macosx.lib_name;
         dll_name = macosx.dll_name;
         exe_name = macosx.exe_name;
-        module_name = macosx.module_name;
     end
 end
 
@@ -248,10 +247,6 @@ end
 
 function macosx.exe_name( name, architecture )
     return name;
-end
-
-function macosx.module_name( name, architecture )
-    return ("%s_%s"):format( name, architecture );
 end
 
 build.register_module( macosx );

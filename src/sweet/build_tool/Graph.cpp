@@ -838,7 +838,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             }
         }
 
-        void print( Target* target, const boost::filesystem::path& directory, int level )
+        void print( Target* target, const boost::filesystem::path& directory, int level, bool ordering )
         {
             SWEET_ASSERT( target );
             SWEET_ASSERT( level >= 0 );
@@ -852,7 +852,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
             std::time_t timestamp = target->timestamp();
             struct tm* time = ::localtime( &timestamp );
-            printf( "'%s' %c%c%c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d", 
+            printf( "'%s' %c%c%c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %s", 
                 id(target),
                 target->outdated() ? 'O' : 'o',
                 target->changed() ? 'T' : 't',
@@ -866,16 +866,15 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                 time ? time->tm_mday : 99, 
                 time ? time->tm_hour : 99, 
                 time ? time->tm_min : 99, 
-                time ? time->tm_sec : 99
+                time ? time->tm_sec : 99,
+                ordering ? "*" : ""
             );
 
             if ( !target->filenames().empty() )
             {
                 timestamp = target->last_write_time();
                 time = ::localtime( &timestamp );
-                boost::filesystem::path filename = sweet::build_tool::relative( boost::filesystem::path(target->filename(0)), directory );
-                printf( " '%s' %04d-%02d-%02d %02d:%02d:%02d", 
-                    filename.generic_string().c_str(),
+                printf( " %04d-%02d-%02d %02d:%02d:%02d", 
                     time->tm_year + 1900, 
                     time->tm_mon + 1, 
                     time->tm_mday, 
@@ -883,13 +882,21 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                     time->tm_min, 
                     time->tm_sec 
                 );
+
+                const vector<string>& filenames = target->filenames();
+                for ( vector<string>::const_iterator filename = filenames.begin(); filename != filenames.end(); ++filename )
+                {
+                    boost::filesystem::path generic_filename = sweet::build_tool::relative( boost::filesystem::path(*filename), directory );
+                    indent( level + 1 );
+                    printf( ">'%s'", generic_filename.generic_string().c_str() );
+                }
             }
         }
 
         void print_recursively( Target* target, const boost::filesystem::path& directory, int level )
         {
             ScopedVisit visit( target );
-            print( target, directory, level );
+            print( target, directory, level, false );
             if ( !target->visited() )
             {
                 target->set_visited( true );            
@@ -916,7 +923,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                 dependency = target->ordering_dependency( i );
                 while ( dependency )
                 {
-                    print( dependency, directory, level + 1 );
+                    print( dependency, directory, level + 1, true );
                     ++i;
                     dependency = target->ordering_dependency( i );
                 }

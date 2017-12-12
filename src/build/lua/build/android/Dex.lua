@@ -2,29 +2,25 @@
 local Dex = build.TargetPrototype( "android.Dex" );
 
 function Dex:depend( dependencies )
-    local proguard = dependencies.proguard;
-    if proguard then 
-        self:add_dependency( proguard );
-        self.proguard = proguard;
-        dependencies.proguard = nil;
-    end
-
     local jars = dependencies.jars;
     if jars then 
         java.add_jar_dependencies( self, dependencies.jars );
         dependencies.jars = nil;
     end
-
     return build.default_depend( self, dependencies );
 end
 
 function Dex:build()
     local jars = {};
 
-    if self.proguard and self.settings.android.proguard_enabled then 
-        local proguard = self.proguard; 
+    local proguard = self:dependency( 1 );
+    if proguard and self.settings.android.proguard_enabled then 
         local proguard_sh = ("%s/tools/proguard/bin/proguard.sh"):format( self.settings.android.sdk_directory );
-        build.system( proguard_sh, ('proguard.sh -printmapping \"%s/%s.map\" "@%s"'):format(build.classes_directory(self), build.leaf(self), proguard:filename()) );
+        build.system( proguard_sh, {
+            'proguard.sh',
+            ('-printmapping \"%s/%s.map\"'):format( build.classes_directory(self), build.leaf(self) ),
+            ('"@%s"'):format( proguard ) 
+        } );
         table.insert( jars, ('\"%s/classes.jar\"'):format(build.classes_directory(self)) );
     else
         table.insert( jars, build.classes_directory(self) );

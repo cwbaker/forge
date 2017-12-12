@@ -161,7 +161,6 @@ function android.initialize( settings )
         dll_name = android.dll_name;
         exe_name = android.exe_name;        
         ilk_name = android.ilk_name;
-        module_name = android.module_name;
     end
 end
 
@@ -358,10 +357,6 @@ end
 
 function android.exe_name( name, architecture )
     return ("%s_%s_%s_%s"):format( name, architecture, platform, variant );
-end
-
-function android.module_name( name, architecture )
-    return ("%s_%s"):format( name, architecture );
 end
 
 function android.android_jar( settings )

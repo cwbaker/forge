@@ -40,21 +40,6 @@ local settings = build.initialize {
     };
 };
 
-build.default_buildfiles {
-    "boost/boost.build",
-    "lua/lua.build",
-    "sweet/assert/assert.build",
-    "sweet/build_tool/build_tool.build",
-    "sweet/cmdline/cmdline.build",
-    "sweet/error/error.build",
-    "sweet/lua/lua.build",
-    "sweet/persist/persist.build",
-    "sweet/process/process.build",
-    "sweet/rtti/rtti.build",
-    "sweet/traits/traits.build",
-    "unit/unit.build"
-};
-
 -- Targets built when building from the root directory and as targets when
 -- generating XCode projects and Visual Studio solutions.
 build.default_targets {
@@ -62,3 +47,16 @@ build.default_targets {
     "sweet/build_tool/build_hooks",
     "sweet/build_tool/build_tool_test"
 };
+
+buildfile "boost/boost.build";
+buildfile "lua/lua.build";
+buildfile "sweet/assert/assert.build";
+buildfile "sweet/build_tool/build_tool.build";
+buildfile "sweet/cmdline/cmdline.build";
+buildfile "sweet/error/error.build";
+buildfile "sweet/lua/lua.build";
+buildfile "sweet/persist/persist.build";
+buildfile "sweet/process/process.build";
+buildfile "sweet/rtti/rtti.build";
+buildfile "sweet/traits/traits.build";
+buildfile "unit/unit.build";

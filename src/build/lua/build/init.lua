@@ -16,28 +16,24 @@ function errorf( format, ... )
     error( string.format(format, ...) );
 end
 
--- Split a '.' delimited string into a table hierarchy returning the last 
--- level table and identifier.
-function split_modules( module, qualified_id )
-    local start = qualified_id:find( ".", 1, true );
-    if start then
-        local id = qualified_id:sub( 1, start - 1 );
-        local submodule = module[id];
-        if submodule == nil then 
-            submodule = {};
-            module[id] = submodule;
-        end
-        local remaining = qualified_id:sub( start + 1 );
-        return split_modules( submodule, remaining );
+build.buildfiles_stack = {};
+
+function build.current_buildfile()
+    local buildfiles_stack = build.buildfiles_stack;
+    local back = #buildfiles_stack;
+    if back > 0 then 
+        return buildfiles_stack[back];
     end
-    return module, qualified_id;
 end
 
 -- Provide buildfile() that restores the settings stack position.
 local original_buildfile = build.buildfile;
 function buildfile( ... )
     local position = build.store_settings();
+    local buildfiles_stack = build.buildfiles_stack;
+    table.insert( buildfiles_stack, build.file(select(1, ...)) );
     local success, errors_or_error_message = pcall( original_buildfile, ... );
+    table.remove( buildfiles_stack );
     build.restore_settings( position );
     assertf( success and errors_or_error_message == 0, "Loading buildfile '%s' failed", tostring(select(1, ...)) );
 end
@@ -79,9 +75,8 @@ function build.default_create( target_prototype, ... )
     end
 end
 
-function build.default_depend( target, ... )
+function build.default_depend( target, dependencies )
     local settings = build.current_settings();
-    local dependencies = select( 1, ... );
     if type(dependencies) == "string" then
         local source_file = build.SourceFile( dependencies, settings );
         target:add_dependency( source_file );
@@ -96,6 +91,23 @@ function build.default_depend( target, ... )
 end
 
 function build.TargetPrototype( id, create_function )
+    -- Split a '.' delimited string into a table hierarchy returning the last 
+    -- level table and identifier.
+    local function split_modules( module, qualified_id )
+        local start = qualified_id:find( ".", 1, true );
+        if start then
+            local id = qualified_id:sub( 1, start - 1 );
+            local submodule = module[id];
+            if submodule == nil then 
+                submodule = {};
+                module[id] = submodule;
+            end
+            local remaining = qualified_id:sub( start + 1 );
+            return split_modules( submodule, remaining );
+        end
+        return module, qualified_id;
+    end
+
     local target_prototype = build.target_prototype( id );
     getmetatable( target_prototype ).__call = create_function or function( target_prototype, ... )
         local create_function = target_prototype.create;
@@ -121,14 +133,16 @@ function build.Target( id, target_prototype, definition )
 end
 
 function build.File( filename, target_prototype, definition )
-    local target_ = build.file( filename, target_prototype, definition );
-    target_:set_cleanable( true );
-    getmetatable( target_ ).__call = function( target, ... )
+    local settings = build.current_settings();
+    local filename = build.interpolate( filename, settings );
+    local target = build.file( filename, target_prototype, definition );
+    target:set_cleanable( true );
+    getmetatable( target ).__call = function( target, ... )
         local depend_function = target.call or target.depend or build.default_depend;
         depend_function( target, ... );
         return target;
     end;
-    return target_;
+    return target;
 end
 
 function build.GeneratedFile( filename, target_prototype, definition )
@@ -268,13 +282,14 @@ function build.initialize( project_settings )
 
     default_settings.cache = build.root( ("%s/%s_%s.cache"):format(settings.obj, platform, variant) );
     _G.settings = settings;
-    build.default_buildfiles_ = {};
-    build.default_targets_ = {};
     build.default_settings = default_settings;
     build.local_settings = local_settings;
     build.settings = settings;
     build.configure_modules( settings );
     build.initialize_modules( settings );
+    build.load_binary( settings.cache );
+    build.clear();
+    build.push_settings( settings );
     return settings;
 end
 
@@ -342,26 +357,10 @@ end
 -- Add targets to the current directory's target so that they will be built 
 -- when a build is invoked from that directory.
 function build.default_targets( targets )
-    for _, target in ipairs(targets) do 
-        local all = build.absolute( "all" );
-        local target = ("%s/all"):format( target );
-        table.insert( build.default_targets_, {all, target} );
-    end
-end
-
--- Set the root buildfiles to be load to populate the dependency graph.
-function build.default_buildfiles( buildfiles )
-    build.default_buildfiles_ = buildfiles;
-end
-
--- Visit a target by calling a member function /pass/ if it has one.
-function build.visit( pass, ... )
-    local args = {...};
-    return function( target )
-        local fn = target[pass];
-        if fn then
-            fn( target, table.unpack(args) );
-        end
+    local all = build.all();
+    for _, default_target in ipairs(targets) do
+        local target = build.target( ("%s/all"):format(default_target) );
+        all:add_dependency( target );
     end
 end
 
@@ -450,42 +449,42 @@ function build.dump( t )
     end
 end
 
--- Serialize values to to a Lua file (typically the local settings table).
-function build.serialize( file, value, level )
-    local function indent( level )
-        for i = 1, level do
-            file:write( "  " );
-        end
-    end
-
-    if type(value) == "boolean" then
-        file:write( tostring(value) );
-    elseif type(value) == "number" then
-        file:write( value );
-    elseif type(value) == "string" then
-        file:write( string.format("%q", value) );
-    elseif type(value) == "table" then
-        file:write( "{\n" );
-        for _, v in ipairs(value) do
-            indent( level + 1 );
-            build.serialize( file, v, level + 1 );
-            file:write( ",\n" );
-        end
-        for k, v in pairs(value) do
-            if type(k) == "string" then
-                indent( level + 1 );
-                file:write( ("%s = "):format(k) );
-                build.serialize( file, v, level + 1 );
-                file:write( ";\n" );
-            end
-        end
-        indent( level );
-        file:write( "}" );
-    end
-end
-
 -- Save a settings table to a file.
 function build.save_settings( settings, filename )
+    -- Serialize values to to a Lua file (typically the local settings table).
+    local function serialize( file, value, level )
+        local function indent( level )
+            for i = 1, level do
+                file:write( "  " );
+            end
+        end
+
+        if type(value) == "boolean" then
+            file:write( tostring(value) );
+        elseif type(value) == "number" then
+            file:write( value );
+        elseif type(value) == "string" then
+            file:write( string.format("%q", value) );
+        elseif type(value) == "table" then
+            file:write( "{\n" );
+            for _, v in ipairs(value) do
+                indent( level + 1 );
+                build.serialize( file, v, level + 1 );
+                file:write( ",\n" );
+            end
+            for k, v in pairs(value) do
+                if type(k) == "string" then
+                    indent( level + 1 );
+                    file:write( ("%s = "):format(k) );
+                    build.serialize( file, v, level + 1 );
+                    file:write( ";\n" );
+                end
+            end
+            indent( level );
+            file:write( "}" );
+        end
+    end
+
     local file = io.open( filename, "wb" );
     assertf( file, "Opening %s to write settings failed", filename );
     file:write( "\nreturn " );
@@ -512,23 +511,9 @@ function build.merge_settings( settings, source_settings )
     return settings;
 end
 
--- Inherit settings from /settings/ to /target/.
-function build.inherit_settings( target, settings )
-    local inherited = false;
-    if target.settings then
-        if not getmetatable(target.settings) then
-            setmetatable( target.settings, {__index = settings} );
-            inherited = true;
-        end
-    else
-        target.settings = settings;
-        inherited = true;
-    end
-    return inherited;
-end
-
--- Merge fields from /source/ to /destination/.
+-- Merge fields with string keys from /source/ to /destination/.
 function build.merge( destination, source )
+    local destination = destination or {};
     for k, v in pairs(source) do
         if type(k) == "string" then
             if type(v) == "table" then
@@ -543,10 +528,6 @@ end
 
 -- Get the *all* target for the current working directory adding any 
 -- targets that are passed in as dependencies.
---
--- The *all* target is the target that targets that are passed to 
--- `build.default_target()` and `build.default_targets()` are added to and 
--- that the build tool will build by default.
 function build.all( dependencies )
     local all = build.target( "all" );
     if dependencies then 
@@ -587,32 +568,6 @@ function build.find_initial_target( goal )
         return all;
     end
     return nil;
-end
-
--- Load the dependency graph from the file specified by /settings.cache/ and
--- running depend and bind passes over the target specified by /goal/ and its
--- dependencies.
-function build.load()
-    build.load_binary( settings.cache );
-
-    build.clear();
-    build.push_settings( build.settings );
-    for _, filename in ipairs(build.default_buildfiles_) do
-        buildfile( filename );
-    end
-    build.pop_settings();
-
-    -- Add default targets as dependencies of the working directory that
-    -- was in effect when `build.default_target(s)` was called.
-    for _, default_target in ipairs(build.default_targets_) do
-        local all = build.target( default_target[1] );
-        local target = build.target( default_target[2] );
-        all:add_dependency( target );
-    end
-    
-    local all = build.find_initial_target( goal );
-    assert( all, ("No target found at '%s'"):format(goal) );
-    return all;
 end
 
 -- Save the dependency graph to the file specified by /settings.cache/.
@@ -659,17 +614,6 @@ function build.generated( filename, architecture, settings )
         return ("%s/%s/%s"):format( settings.gen, architecture, filename );
     end
     return ("%s/%s"):format( settings.gen, filename );
-end
-
--- Strip the extension from a path (e.g. "foo.txt" -> "foo" and "bar/foo.txt"
--- -> "bar/foo".
-function build.strip( path )
-    local branch = build.branch( path );
-    if branch ~= "" then 
-        return ("%s/%s"):format( branch, build.basename(path) );
-    else
-        return build.basename( path );
-    end
 end
 
 -- Return a string for a specific indentation level.
@@ -745,7 +689,7 @@ end
 
 -- Append values from /value/ to /values/.
 function build.append( values, value )
-    values = values or {};
+    local values = values or {};
     if type(value) == "table" then 
         for _, other_value in ipairs(value) do 
             table.insert( values, other_value );
@@ -754,15 +698,6 @@ function build.append( values, value )
         table.insert( values, value );
     end
     return values;
-end
-
--- Return a shallow copy of the table *value*.
-function build.copy( value )
-    local copied_table = {};
-    for k, v in pairs(value) do 
-        copied_table[k] = v;
-    end
-    return copied_table;
 end
 
 -- Recursively walk the dependencies of *target* until a target with a 
@@ -832,10 +767,6 @@ function build.exe_name( name, architecture )
     return ("%s"):format( name );
 end;
 
-function build.module_name( name, architecture )
-    return ("%s_%s"):format( name, architecture );
-end
-
 obj_directory = build.obj_directory;
 cc_name = build.cc_name;
 cxx_name = build.cxx_name;
@@ -843,7 +774,6 @@ obj_name = build.obj_name;
 lib_name = build.lib_name;
 dll_name = build.dll_name;
 exe_name = build.exe_name;
-module_name = build.module_name;
 
 require "build.commands";
 require "build.Generate";

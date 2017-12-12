@@ -3,7 +3,7 @@ local Apk = build.TargetPrototype( "android.Apk" );
 
 function Apk:build()
     local android_manifest = self:dependency( 1 );
-    assertf( android_manifest and build.leaf(android_manifest:filename()) == "AndroidManifest.xml", "Android APK '%s' does not specify an AndroidManifest.xml as its firest dependency'", self:path() );
+    assertf( android_manifest and build.leaf(android_manifest:filename()) == "AndroidManifest.xml", "Android APK '%s' does not specify 'AndroidManifest.xml' as its first dependency'", self:path() );
 
     local settings = self.settings;
     local aapt = ("%s/aapt"):format( settings.android.build_tools_directory );

@@ -20,7 +20,6 @@ function windows.initialize( settings )
         dll_name = windows.dll_name;
         exe_name = windows.exe_name;
         ilk_name = windows.ilk_name;
-        module_name = windows.module_name;
     end
 end
 
@@ -242,10 +241,6 @@ end
 
 function windows.ilk_name( name )
     return ("%s.ilk"):format( name );
-end
-
-function windows.module_name( name, architecture )
-    return name;
 end
 
 build.register_module( windows );
