@@ -17,34 +17,38 @@ for _, architecture in ipairs(settings.architectures) do
                 macosx = { "LUA_USE_POSIX", "LUA_USE_DLOPEN" };
             };
             "lapi.c",
+            "lauxlib.c",
+            "lbaselib.c",
+            "lbitlib.c",
             "lcode.c",
+            "lcorolib.c",
+            "lctype.c",
+            "ldblib.c",
             "ldebug.c",
             "ldo.c",
             "ldump.c",
             "lfunc.c",
             "lgc.c",
+            "linit.c",
+            "liolib.c",
             "llex.c",
+            "lmathlib.c",
             "lmem.c",
+            "loadlib.c",
             "lobject.c",
             "lopcodes.c",
+            "loslib.c",
             "lparser.c",
             "lstate.c",
             "lstring.c",
+            "lstrlib.c",
             "ltable.c",
+            "ltablib.c",
             "ltm.c",
             "lundump.c",
+            "lutf8lib.c",
             "lvm.c",
-            "lzio.c",
-            "lauxlib.c",
-            "lbaselib.c",
-            "ldblib.c",
-            "liolib.c",
-            "lmathlib.c",
-            "loslib.c",
-            "ltablib.c",
-            "lstrlib.c",
-            "loadlib.c",
-            "linit.c", 
+            "lzio.c"
         };
     };
 end
@@ -61,8 +65,7 @@ if build.platform_matches("macosx") or build.platform_matches("windows") then
                     defines = { 
                         "_CRT_SECURE_NO_DEPRECATE" 
                     };
-                    "luac.c",
-                    "print.c"
+                    "luac.c"
                 };
             };        
         end
@@ -77,7 +80,7 @@ if build.platform_matches("macosx") or build.platform_matches("windows") then
                 defines = { 
                     "_CRT_SECURE_NO_DEPRECATE" 
                 };
-                "lua.c",
+                "lua.c"
             };
         };
     end

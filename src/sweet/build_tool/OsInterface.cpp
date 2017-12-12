@@ -6,6 +6,7 @@
 #include "stdafx.hpp"
 #include "OsInterface.hpp"
 #include "Error.hpp"
+#include <sweet/fsys/fsys.hpp>
 
 #if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
@@ -178,8 +179,8 @@ void OsInterface::cpdir( const std::string& from, const std::string& to )
 {
     using namespace boost::filesystem;
 
-    path::Path from_path( from );
-    path::Path to_path( to );
+    fsys::Path from_path( from );
+    fsys::Path to_path( to );
 
     if ( exists(from_path.string()) )
     {
@@ -192,7 +193,7 @@ void OsInterface::cpdir( const std::string& from, const std::string& to )
             const boost::filesystem::path& source = i->path();
             if ( !source.empty() && source.filename().string().at(0) != '.' )
             {
-                path::Path destination = to_path / from_path.relative( source.string() );
+                fsys::Path destination = to_path / from_path.relative( source.string() );
                 if ( is_directory(source.string()) )
                 {
                     if ( !exists(destination.string()) )

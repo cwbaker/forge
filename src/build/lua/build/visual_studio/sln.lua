@@ -1,5 +1,5 @@
 
-module( "build.visual_studio.sln", package.seeall );
+local sln = {};
 
 local function generate_header( write )
     local HEADER = [[
@@ -171,7 +171,7 @@ local function write_function( file )
 	end
 end
 
-function generate( filename, projects, directories )
+function sln.generate( filename, projects, directories )
     print( leaf(filename) );
     pushd( branch(absolute(filename)) );
     local file = io.open( absolute(filename), "wb" );
@@ -190,3 +190,5 @@ function generate( filename, projects, directories )
     file:close();
     file = nil;
 end
+
+return sln;

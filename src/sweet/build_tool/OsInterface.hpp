@@ -2,7 +2,6 @@
 #define SWEET_BUILD_TOOL_OSINTERFACE_HPP_INCLUDED
 
 #include "declspec.hpp"
-#include <sweet/path/Path.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include <string>

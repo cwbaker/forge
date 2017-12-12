@@ -1,5 +1,5 @@
 
-module( "build.fs", package.seeall );
+local fs = {};
 
 local function filter( filename, includes, excludes )
     if is_directory(filename) then 
@@ -23,7 +23,7 @@ local function filter( filename, includes, excludes )
     return true;
 end
 
-function ls( path, includes, excludes )
+function fs.ls( path, includes, excludes )
 	local files = {};
 	for filename in _G.ls(path or pwd()) do 
 		if filter(filename, includes, excludes) then
@@ -33,7 +33,7 @@ function ls( path, includes, excludes )
 	return files;
 end
 
-function find( path, includes, excludes )
+function fs.find( path, includes, excludes )
     local files = {};
     for filename in _G.find(path or pwd()) do 
         if filter(filename, includes, excludes) then
@@ -42,3 +42,5 @@ function find( path, includes, excludes )
     end
     return files;
 end
+
+return ls;

@@ -1,5 +1,5 @@
 
-module( "build.visual_studio.vcxproj", package.seeall );
+local vcxproj = {};
 
 local function generate_header( target, write )
     local HEADER = [[
@@ -58,7 +58,7 @@ local function generate_configuration_property_groups( target, write )
     end
 end
 
-function generate_import( target, write )
+local function generate_import( target, write )
     local IMPORT = [[
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
 ]];
@@ -183,7 +183,7 @@ local function write_function( file )
 end
 
 -- Generate a Visual Studio `.vcxproj` project file for a target and files.
-function generate( target, files )
+function vcxproj.generate( target, files )
   local filename = ("%s.vcxproj"):format( target:path() );
   print( leaf(filename) );
     pushd( target:working_directory():path() );
@@ -203,3 +203,5 @@ function generate( target, files )
     file = nil;
     popd();
 end
+
+return vcxproj;

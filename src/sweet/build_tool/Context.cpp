@@ -27,7 +27,7 @@ using namespace sweet::build_tool;
 // @param build_tool
 //  The BuildTool that this Context is part of.
 */
-Context::Context( int index, const path::Path& directory, BuildTool* build_tool )
+Context::Context( int index, const fsys::Path& directory, BuildTool* build_tool )
 : index_( index ),
   build_tool_( build_tool ),
   context_thread_( build_tool->script_interface()->lua() ),
@@ -73,7 +73,7 @@ void Context::reset_directory_to_target( Target* directory )
 //  The directory to set the working directory stack to contain (assumed
 //  to be absolute or empty).
 */
-void Context::reset_directory( const path::Path& directory )
+void Context::reset_directory( const fsys::Path& directory )
 {
     SWEET_ASSERT( directory.empty() || directory.is_absolute() );
     directories_.clear();
@@ -91,7 +91,7 @@ void Context::reset_directory( const path::Path& directory )
 // @param directory
 //  The directory to change the current working directory to.
 */
-void Context::change_directory( const path::Path& directory )
+void Context::change_directory( const fsys::Path& directory )
 {
     SWEET_ASSERT( !directories_.empty() );
 
@@ -121,7 +121,7 @@ void Context::change_directory( const path::Path& directory )
 // @param directory
 //  The directory to change the current working directory to.
 */
-void Context::push_directory( const path::Path& directory )
+void Context::push_directory( const fsys::Path& directory )
 {
     SWEET_ASSERT( !directories_.empty() );
 
@@ -160,7 +160,7 @@ void Context::pop_directory()
 // @return
 //  The current working directory.
 */
-const path::Path& Context::directory() const
+const fsys::Path& Context::directory() const
 {
     SWEET_ASSERT( !directories_.empty() );
     return directories_.back();

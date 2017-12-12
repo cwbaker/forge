@@ -1,5 +1,5 @@
 
-module( "build.visual_studio", package.seeall );
+local visual_studio = {};
 
 require "build.fs";
 require "build.visual_studio.vcxproj";
@@ -93,7 +93,7 @@ end
 -- Generate a Visual Studio solution with projects for all of the 
 -- `Executable`, `StaticLibrary`, and `DynamicLibrary` targets that are 
 -- recursively dependencies of the root directory.
-function solution()
+function visual_studio.solution()
     platform = "";
     variant = "";
     build.load();    
@@ -124,3 +124,5 @@ function solution()
 end
 
 _G.sln = solution;
+
+return visual_studio;

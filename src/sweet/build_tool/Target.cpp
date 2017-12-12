@@ -190,7 +190,7 @@ const std::string& Target::branch() const
             vector<Target*>::const_reverse_iterator i = targets_to_root.rbegin();
             ++i;
 
-            if ( i == targets_to_root.rend() || (*i)->id().find(path::BasicPathTraits<char>::DRIVE) == std::string::npos )
+            if ( i == targets_to_root.rend() || (*i)->id().find(fsys::BasicPathTraits<char>::DRIVE) == std::string::npos )
             {
                 branch_ += "/";
             }

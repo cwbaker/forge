@@ -1,5 +1,5 @@
 
-boost = {};
+local boost = {};
 
 function boost.configure( settings )
     local local_settings = build.local_settings;
@@ -86,3 +86,6 @@ function boost.llvmgcc_boost_library( name )
 
     return ("%s-%s-%s-%s"):format( name, toolset, runtime, version );
 end
+
+_G.boost = boost;
+return boost;

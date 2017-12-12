@@ -213,13 +213,13 @@ int Graph::successful_revision() const
 */
 Target* Graph::target( const std::string& id, TargetPrototype* target_prototype, Target* working_directory )
 {
-    path::Path path( id );
+    fsys::Path path( id );
     Target* target = working_directory && path.is_relative() ? working_directory : root_target_;
     SWEET_ASSERT( target );
 
     if ( !id.empty() )
     {
-        path::Path::const_iterator i = path.begin();
+        fsys::Path::const_iterator i = path.begin();
         while ( i != path.end() )
         {
             const string& element = *i;
@@ -303,11 +303,11 @@ Target* Graph::find_target( const std::string& id, Target* working_directory )
 
     if ( !id.empty() )
     {
-        path::Path path( id );
+        fsys::Path path( id );
         target = working_directory && path.is_relative() ? working_directory : root_target_;
         SWEET_ASSERT( target );
 
-        path::Path::const_iterator i = path.begin();
+        fsys::Path::const_iterator i = path.begin();
         while ( i != path.end() && target )
         {       
             if ( *i == "." )
@@ -358,7 +358,7 @@ void Graph::buildfile( const std::string& filename )
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( root_target_ );
      
-    path::Path path( build_tool_->script_interface()->absolute(filename) );
+    fsys::Path path( build_tool_->script_interface()->absolute(filename) );
     SWEET_ASSERT( path.is_absolute() );
     
     Target* buildfile_target = Graph::target( path.string(), NULL, NULL );
@@ -561,7 +561,7 @@ Target* Graph::load_xml( const std::string& filename )
 
     if ( build_tool_->os_interface()->exists(filename) )
     {
-        path::Path path( filename );
+        fsys::Path path( filename );
         SWEET_ASSERT( path.is_absolute() );
         sweet::persist::XmlReader reader( build_tool_->error_policy() );
         enter( reader );
@@ -586,7 +586,7 @@ void Graph::save_xml()
 
     if ( !filename_.empty() )
     {
-        path::Path path( filename_ );
+        fsys::Path path( filename_ );
         sweet::persist::XmlWriter writer( build_tool_->error_policy() );
         enter( writer );
         writer.write( path.string().c_str(), "graph", *this );
@@ -618,7 +618,7 @@ Target* Graph::load_binary( const std::string& filename )
 
     if ( build_tool_->os_interface()->exists(filename) )
     {
-        path::Path path( filename );
+        fsys::Path path( filename );
         SWEET_ASSERT( path.is_absolute() );
         sweet::persist::BinaryReader reader( build_tool_->error_policy() );
         enter( reader );
@@ -641,7 +641,7 @@ void Graph::save_binary()
 
     if ( !filename_.empty() )
     {
-        path::Path path( filename_ );
+        fsys::Path path( filename_ );
         sweet::persist::BinaryWriter writer( build_tool_->error_policy() );
         enter( writer );
         writer.write( path.string().c_str(), "graph", *this );
@@ -717,7 +717,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             }
         }
         
-        void print( Target* target, const path::Path& directory, int level )
+        void print( Target* target, const fsys::Path& directory, int level )
         {
             SWEET_ASSERT( target );
             SWEET_ASSERT( level >= 0 );
@@ -753,7 +753,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             {
                 timestamp = target->last_write_time();
                 time = ::localtime( &timestamp );
-                path::Path filename = directory.relative( path::Path(target->filename(0)) );
+                fsys::Path filename = directory.relative( fsys::Path(target->filename(0)) );
                 printf( " '%s' %04d-%02d-%02d %02d:%02d:%02d", 
                     filename.string().c_str(),
                     time->tm_year + 1900, 
@@ -792,7 +792,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
     bind( target );
     RecursivePrinter recursive_printer( this );
-    recursive_printer.print( target ? target : root_target_, path::Path(directory), 0 );
+    recursive_printer.print( target ? target : root_target_, fsys::Path(directory), 0 );
     printf( "\n\n" );
 }
 

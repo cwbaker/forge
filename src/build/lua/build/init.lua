@@ -121,6 +121,16 @@ function build.SourceFile( value, settings )
     return target;
 end
 
+function build.ImplicitSourceFile( value, settings )
+    local target = value;
+    if type(target) == "string" then 
+        settings = settings or build.current_settings();
+        target = file( build.interpolate(value, settings) );
+        target:set_cleanable( false );
+    end
+    return target;
+end
+
 function build.SourceDirectory( value, settings )
     local target = build.SourceFile( value, settings );
     target:set_always_bind( true );
@@ -286,7 +296,7 @@ function build.visit( pass, ... )
     return function( target )
         local fn = target[pass];
         if fn then
-            fn( target, unpack(args) );
+            fn( target, table.unpack(args) );
         end
     end
 end
@@ -592,7 +602,7 @@ function build.dependencies_filter( target )
             if filename then
                 local within_source_tree = relative( absolute(filename), root() ):find( "..", 1, true ) == nil;
                 if within_source_tree then 
-                    local header = build.SourceFile( filename );
+                    local header = build.ImplicitSourceFile( filename );
                     target:add_implicit_dependency( header );
                 end
             end

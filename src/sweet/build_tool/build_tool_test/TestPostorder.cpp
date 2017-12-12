@@ -32,7 +32,7 @@ SUITE( TestPostorder )
             "postorder( function(target) foo.bar = 2; end, unexpected_error_in_postorder_visit ); \n"
         ;        
         test( script );
-        CHECK_EQUAL( "[string \"BuildTool\"]:3: attempt to index global 'foo' (a nil value)", messages[0] );
+        CHECK_EQUAL( "[string \"BuildTool\"]:3: attempt to index a nil value (global 'foo')", messages[0] );
         CHECK_EQUAL( "Postorder visit of 'unexpected_error_in_postorder_visit' failed", messages[1] );
         CHECK( errors == 2 );
     }

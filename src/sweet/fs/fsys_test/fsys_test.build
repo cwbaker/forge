@@ -1,0 +1,19 @@
+
+local settings = build.current_settings();
+for _, architecture in ipairs(settings.architectures) do
+    build.Executable ("fsys_test", architecture) {
+        libraries = {
+            "sweet/assert/assert", 
+            "sweet/error/error",
+            "sweet/fsys/fsys",
+            "unit/libUnitTest"
+        };
+
+        build.Cxx (architecture) {
+            precompiled_header = "stdafx.hpp";
+            "main.cpp",
+            "TestPath.cpp",
+            "TestWidePath.cpp"
+        };
+    };
+end
