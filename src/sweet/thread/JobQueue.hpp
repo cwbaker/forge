@@ -6,15 +6,6 @@
 #include <functional>
 #include <vector>
 
-#ifdef BUILD_PLATFORM_IOS
-#include <tr1/functional>
-namespace std 
-{ 
-    using std::tr1::function;
-    using std::tr1::bind; 
-}
-#endif
-
 namespace sweet
 {
     

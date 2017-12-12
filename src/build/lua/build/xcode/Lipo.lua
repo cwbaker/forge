@@ -6,9 +6,6 @@ function Lipo.create( _, id, settings )
     local lipo = build.Target( id, Lipo );
     lipo.settings = settings;
     lipo:set_filename( ("%s/%s"):format(settings.bin, id) );
-    build.push_settings {
-        bin = obj_directory( lipo );
-    };
     working_directory():add_dependency( lipo );
     return lipo;
 end

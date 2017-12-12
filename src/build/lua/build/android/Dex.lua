@@ -6,14 +6,12 @@ function Dex.create( _, id, settings )
     local dex = build.Target( "", Dex, definition );
     dex:set_filename( ("%s/%s.dex"):format(settings.bin, id) );
     dex.settings = settings;
+    build.add_jar_dependencies( dex, settings.jars );
     return dex;
 end
 
 function Dex.call( dex, definition )
-    local jars = definition.jars;
-    if jars then
-        build.add_jar_dependencies( dex, jars );
-    end
+    build.add_jar_dependencies( dex, definition.jars );
     for _, dependency in ipairs(definition) do 
         dex:add_dependency( dependency );
         dependency.module = dex;
@@ -33,7 +31,7 @@ function Dex.build( dex )
             table.insert( jars, build.classes_directory(dex) );
         end
         for dependency in dex:get_dependencies() do 
-            if dependency:prototype() == JarPrototype then 
+            if dependency:prototype() == Jar then 
                 table.insert( jars, relative(dependency:get_filename()) );
             end
         end

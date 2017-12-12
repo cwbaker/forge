@@ -75,12 +75,19 @@ end
 
 -- Perform per run initialization of the build system.
 function build.initialize( project_settings )
-    platform = platform or build.switch { operating_system(); windows = "msvc"; macosx = "clang" };
+    platform = platform or operating_system();
     variant = variant or "debug";
     version = version or ("%s %s %s"):format( os.date("%Y.%m.%d.%H%M"), platform, variant );
     environment = environment or "dev";
     goal = goal or "";
     jobs = jobs or 4;
+    toolset = toolset or build.switch { 
+        platform; 
+        android = "gcc"; 
+        ios = "clang"; 
+        macosx = "clang";
+        windows = "msvc"; 
+    };
 
     set_maximum_parallel_jobs( jobs );
 
@@ -190,7 +197,7 @@ end
 -- it doesn't return 0.
 function build.system( command, arguments, filter )
     if execute(command, arguments, filter) ~= 0 then       
-        error( arguments.." failed", 0 );
+        error( ("%s failed"):format(arguments), 0 );
     end
 end
 

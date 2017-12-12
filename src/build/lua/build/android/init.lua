@@ -143,110 +143,26 @@ function android.initialize( settings )
 end
 
 function android.cc( target )
-    local defines = {
+    local flags = {
         "-DBUILD_OS_ANDROID";
-        ("-DBUILD_PLATFORM_%s"):format( upper(platform) ),
-        ("-DBUILD_VARIANT_%s"):format( upper(variant) ),
-        ("-DBUILD_LIBRARY_SUFFIX=\"\\\"_%s_%s.lib\\\"\""):format( platform, variant ),
-        ("-DBUILD_LIBRARY_TYPE_%s"):format( upper(target.settings.library_type) ),
         "-D__ARM_ARCH_5__",
         "-D__ARM_ARCH_5T__",
         "-D__ARM_ARCH_5E__",
         "-D__ARM_ARCH_5TE__",
         "-DANDROID"
     };
+    gcc.append_defines( target, flags );
+    gcc.append_version_defines( target, flags );
 
-    if target.settings.debug then
-        table.insert( defines, "-D_DEBUG" );
-        table.insert( defines, "-DDEBUG" );
-    else
-        table.insert( defines, "-DNDEBUG" );
-    end
+    table.insert( flags, ("--sysroot=%s"):format(android.platform_directory(target.settings, target.architecture)) );
 
-    if target.settings.defines then
-        for _, define in ipairs(target.settings.defines) do
-            table.insert( defines, ("-D%s"):format(define) );
-        end
-    end    
-    if target.defines then
-        for _, define in ipairs(target.defines) do
-            table.insert( defines, ("-D%s"):format(define) );
-        end
-    end
-
-    local include_directories = {};
+    gcc.append_include_directories( target, flags );
     for _, directory in ipairs(android.include_directories(target.settings, target.architecture)) do
         assert( exists(directory), ("The include directory '%s' does not exist"):format(directory) );
-        table.insert( include_directories, ([[-I"%s"]]):format(directory) );
-    end
-    if target.include_directories then
-        for _, directory in ipairs(target.include_directories) do
-            table.insert( include_directories, ([[-I"%s"]]):format(relative(directory)) );
-        end
-    end
-    if target.settings.include_directories then
-        for _, directory in ipairs(target.settings.include_directories) do
-            table.insert( include_directories, ([[-I"%s"]]):format(directory) );
-        end
+        table.insert( flags, ([[-I"%s"]]):format(directory) );
     end
 
-    local flags = {
-        ("--sysroot=%s"):format( android.platform_directory(target.settings, target.architecture) ),
-        "-c",
-        "-fpic",
-        "-ffunction-sections",
-        "-funwind-tables",
-        "-fstack-protector",
-        "-no-canonical-prefixes",
-        "-fomit-frame-pointer",
-        "-fno-strict-aliasing",
-        "-finline",
-        "-finline-limit=64",
-        "-mtune=xscale",
-        "-msoft-float",
-        "-mthumb";
-        "-Wa,--noexecstack";
-    };
-
-    if target.architecture == "armv5" then
-        table.insert( flags, "-march=armv5te" );
-    elseif target.architecture == "armv7" then
-        table.insert( flags, "-march=armv7" );
-    end
-
-    local language = target.language or "c++";
-    if language then
-        table.insert( flags, ("-x %s"):format(language) );
-        if string.find(language, "c++", 1, true) then
-            table.insert( flags, "--std=c++0x" );
-            table.insert( flags, "-Wno-deprecated" );
-            table.insert( flags, "-fpermissive" );
-            if target.settings.exceptions then
-                table.insert( flags, "-fexceptions" );
-            end
-            if target.settings.run_time_type_info then
-                table.insert( flags, "-frtti" );
-            end
-        end
-    end
-
-    if target.settings.debug then
-        table.insert( flags, "-g" );
-    end
-
-    if target.settings.optimization then
-        table.insert( flags, "-O3" );
-        table.insert( flags, "-Ofast" );
-    end
-    
-    if target.settings.preprocess then
-        table.insert( flags, "-E" );
-    end
-
-    local gcc = ("%s/bin/arm-linux-androideabi-gcc"):format( android.toolchain_directory(target.settings, target.architecture) );
-    local cppdefines = table.concat( defines, " " );
-    local cppdirs = table.concat( include_directories, " " );
-    local ccflags = table.concat( flags, " " );
+    gcc.append_compile_flags( target, flags );
 
     local GccScanner = Scanner {
         [ [[((?:[A-Z]\:)?[^\:]+)\:([0-9]+)\:[0-9]+\: ([^\:]+)\:(.*)]] ] = function( filename, line, class, message )
@@ -254,22 +170,12 @@ function android.cc( target )
         end;
     };
 
-    table.insert( defines, ('-DBUILD_VERSION="\\"%s\\""'):format(version) );
-    cppdefines = table.concat( defines, " " );
-
+    local ccflags = table.concat( flags, " " );
+    local gcc = ("%s/bin/arm-linux-androideabi-gcc"):format( android.toolchain_directory(target.settings, target.architecture) );
     for dependency in target:get_dependencies() do
-        if dependency:is_outdated() and dependency ~= target.precompiled_header then
-            if dependency:prototype() == nil then
-                print( leaf(dependency.source) );
-                build.system( gcc, ([[arm-linux-androideabi-gcc %s %s %s -o %s %s]]):format(cppdirs, cppdefines, ccflags, dependency:get_filename(), dependency.source), GccScanner );
-            elseif dependency.results then
-                for _, result in ipairs(dependency.results) do
-                    if result:is_outdated() then
-                        print( leaf(result.source) );
-                        build.system( gcc, ([[arm-linux-androideabi-gcc %s %s %s -o %s%s %s]]):format(cppdirs, cppdefines, ccflags, obj_directory(target), obj_name(result.source), result.source), GccScanner );
-                    end
-                end
-            end
+        if dependency:is_outdated() then
+            print( leaf(dependency.source) );
+            build.system( gcc, ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, dependency:get_filename(), dependency.source), GccScanner );
         end    
     end
 end
@@ -285,19 +191,17 @@ function android.build_library( target )
         local prototype = compile:prototype();
         if prototype == Cc or prototype == Cxx then
             for object in compile:get_dependencies() do
-                if object:prototype() == nil and object ~= compile.precompiled_header then
-                    table.insert( objects, relative(object:get_filename()) )
-                end
+                table.insert( objects, relative(object:get_filename()) )
             end
         end
     end
     
     if #objects > 0 then
         print( leaf(target:get_filename()) );
-        local ar = ("%s/bin/arm-linux-androideabi-ar"):format( android.toolchain_directory(target.settings, target.architecture) );
         local arflags = table.concat( flags, " " );
-        local arobjects = table.concat( objects, [[" "]] );
-        build.system( ar, ([[ar %s "%s" "%s"]]):format(arflags, native(target:get_filename()), arobjects) );
+        local arobjects = table.concat( objects, '" "' );
+        local ar = ("%s/bin/arm-linux-androideabi-ar"):format( android.toolchain_directory(target.settings, target.architecture) );
+        build.system( ar, ('ar %s "%s" "%s"'):format(arflags, native(target:get_filename()), arobjects) );
     end
     popd();
 end
@@ -319,47 +223,34 @@ function android.build_executable( target )
         "-Wl,-z,now",
         ('-o "%s"'):format( native(target:get_filename()) )
     };
-    
-    if target.settings.verbose_linking then
-        table.insert( flags, "--verbose" );
-    end
-    
-    if target.settings.debug then
-        table.insert( flags, "-debug" );
-    end
+    gcc.append_link_flags( target, flags );
+    gcc.append_library_directories( target, flags );
 
-    if target.settings.generate_map_file then
-        table.insert( flags, ("-Wl,-Map,%s"):format(native(("%s/%s.map"):format(obj_directory(target), target:id()))) );
-    end
-
-    if target.settings.strip then
-        table.insert( flags, "-Wl,--strip-all" );
-    end
-
-    local library_directories = {};
     for _, directory in ipairs(android.library_directories(target.settings, target.architecture)) do
-        table.insert( library_directories, ([[-L"%s"]]):format(directory) );
+        table.insert( flags, ('-L"%s"'):format(directory) );
     end
-    if target.settings.library_directories then
-        for _, directory in ipairs(target.settings.library_directories) do
-            table.insert( library_directories, ([[-L"%s"]]):format(directory) );
-        end
-    end
-    
+
+    local objects = {};
     local libraries = {};
-    if target.settings.third_party_libraries then
-        for _, library in ipairs(target.settings.third_party_libraries) do
-            table.insert( libraries, ("-l%s"):format(library) );
+
+    pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
+    for dependency in target:get_dependencies() do
+        local prototype = dependency:prototype();
+        if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
+            for object in dependency:get_dependencies() do
+                if object:prototype() == nil then
+                    table.insert( objects, relative(object:get_filename()) );
+                end
+            end
+        elseif prototype == StaticLibrary or prototype == DynamicLibrary then
+            table.insert( libraries, ("-l%s"):format(dependency:id()) );
         end
     end
-    if target.third_party_libraries then
-        for _, library in ipairs(target.third_party_libraries) do
-            table.insert( libraries, ("-l%s"):format(library) );
-        end
-    end
+
+    gcc.append_link_libraries( target, libraries );
+
     if target.system_libraries then 
         for _, library in ipairs(target.system_libraries) do 
-            table.insert( libraries, ("-l%s"):format(library) );
             local destination = ("%s/lib%s.so"):format( branch(target:get_filename()), library );
             if not exists(destination) then 
                 print( ("lib%s.so"):format(library) );
@@ -374,29 +265,14 @@ function android.build_executable( target )
         end
     end
 
-    pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
-    local objects = {};
-    for dependency in target:get_dependencies() do
-        local prototype = dependency:prototype();
-        if prototype == Cc or prototype == Cxx then
-            for object in dependency:get_dependencies() do
-                if object:prototype() == nil and object ~= dependency.precompiled_header then
-                    table.insert( objects, relative(object:get_filename()) );
-                end
-            end
-        elseif prototype == StaticLibrary or prototype == DynamicLibrary then
-            table.insert( libraries, ("-l%s"):format(dependency:id()) );
-        end
-    end
-
     if #objects > 0 then
-        local gxx = ("%s/bin/arm-linux-androideabi-g++"):format( android.toolchain_directory(target.settings, target.architecture) );
         local ldflags = table.concat( flags, " " );
-        local lddirs = table.concat( library_directories, " " );
-        local ldobjects = table.concat( objects, [[" "]] );
+        local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, " " );
+        local gxx = ("%s/bin/arm-linux-androideabi-g++"):format( android.toolchain_directory(target.settings, target.architecture) );
+
         print( leaf(target:get_filename()) );
-        build.system( gxx, ('arm-linux-androideabi-g++ %s %s "%s" %s'):format(ldflags, lddirs, ldobjects, ldlibs) );
+        build.system( gxx, ('arm-linux-androideabi-g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
     end
     popd();
 end 

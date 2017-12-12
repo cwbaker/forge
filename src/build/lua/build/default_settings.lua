@@ -51,7 +51,7 @@ build.default_settings = {
             };
         };
 
-        ["clang"] = {
+        ["macosx"] = {
             architectures = {
                 "i386", "x86_64"
             };
@@ -94,33 +94,7 @@ build.default_settings = {
             provisioning_profile = home( "sweet/sweet_software/dev.mobileprovision" );
         };
 
-        ["llvmgcc"] = {
-            architectures = {
-                "i386", "x86_64"
-            };
-            variants = {
-                "debug", "release", "shipping"
-            };
-        };
-
-        ["mingw"] = {
-            architectures = {
-                "x86_64"
-            };
-            variants = {
-                "debug", "debug_dll", "release", "release_dll", "shipping", "shipping_dll"
-            };
-            third_party_libraries = {
-                "advapi32",
-                "gdi32",
-                "kernel32",
-                "user32",
-                "ws2_32",
-                "wsock32"
-            };
-        };
-
-        ["msvc"] = {
+        ["windows"] = {
             architectures = {
                 "x86_64"
             };
