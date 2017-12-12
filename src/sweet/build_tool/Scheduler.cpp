@@ -87,20 +87,10 @@ void Scheduler::execute( const char* start, const char* finish )
     ScriptInterface* script_interface = build_tool_->get_script_interface();
     ptr<Environment> environment = allocate_environment( graph->target(script_interface->get_initial_directory().string()) );
 
-    try
-    {
-        process_begin( environment );
-        environment->get_environment_thread().resume( start, finish, "BuildTool" )
-        .end();
-        process_end( environment );
-    }
-
-    catch ( const std::exception& exception )
-    {
-        build_tool_->error( "%s", exception.what() );
-        build_tool_->get_script_interface()->pop_environment();
-        destroy_environment( environment );
-    }    
+    process_begin( environment );
+    environment->get_environment_thread().resume( start, finish, "BuildTool" )
+    .end();
+    process_end( environment );
 
     while ( dispatch_results() )
     {
@@ -112,21 +102,10 @@ void Scheduler::buildfile( const path::Path& path )
     SWEET_ASSERT( path.is_absolute() );
 
     ptr<Environment> environment = allocate_environment( build_tool_->get_graph()->target(path.branch().string()) );
-
-    try
-    {
-        process_begin( environment );
-        environment->get_environment_thread().resume( path.string().c_str(), path.leaf().c_str() )
-        .end();
-        process_end( environment );
-    }
-
-    catch ( const std::exception& exception )
-    {
-        build_tool_->error( "%s", exception.what() );
-        build_tool_->get_script_interface()->pop_environment();
-        destroy_environment( environment );
-    }    
+    process_begin( environment );
+    environment->get_environment_thread().resume( path.string().c_str(), path.leaf().c_str() )
+    .end();
+    process_end( environment );
 }
 
 void Scheduler::call( const path::Path& path, const std::string& function )
@@ -134,21 +113,10 @@ void Scheduler::call( const path::Path& path, const std::string& function )
     if ( !function.empty() )
     {
         ptr<Environment> environment = allocate_environment( build_tool_->get_graph()->target(path.branch().string()) );
-
-        try
-        {
-            process_begin( environment );
-            environment->get_environment_thread().resume( function.c_str() )
-            .end();
-            process_end( environment );
-        }
-
-        catch ( const std::exception& exception )
-        {
-            build_tool_->error( "%s", exception.what() );
-            build_tool_->get_script_interface()->pop_environment();
-            destroy_environment( environment );
-        }
+        process_begin( environment );
+        environment->get_environment_thread().resume( function.c_str() )
+        .end();
+        process_end( environment );
     }
 }
 
@@ -158,21 +126,16 @@ void Scheduler::preorder_visit( const lua::LuaValue& function, ptr<Target> targe
 
     ptr<Environment> environment = allocate_environment( target->get_working_directory() );
 
-    try
-    {
-        process_begin( environment );
-        environment->get_environment_thread().resume( function )
-            ( target )
-        .end();
-        process_end( environment );
-    }
-
-    catch ( const std::exception& exception )
+    process_begin( environment );
+    environment->get_environment_thread().resume( function )
+        ( target )
+    .end();
+    
+    int errors = process_end( environment );
+    if ( errors > 0 )
     {
         ++failures_;
-        build_tool_->error( "%s (in preorder for '%s')", exception.what(), target->get_id().c_str() );
-        build_tool_->get_script_interface()->pop_environment();
-        destroy_environment( environment );
+        build_tool_->error( "Preorder visit of '%s' failed", target->get_id().c_str() );
     }
 }
 
@@ -180,54 +143,40 @@ void Scheduler::postorder_visit( const lua::LuaValue& function, Job* job )
 {
     SWEET_ASSERT( job );
 
-    ptr<Environment> environment = allocate_environment( job->get_working_directory(), job );
-
-    try
+    if ( job->get_target()->is_buildable() )
     {
+        ptr<Environment> environment = allocate_environment( job->get_working_directory(), job );
         process_begin( environment );
-        if ( job->get_target()->is_buildable() )
+        environment->get_environment_thread().resume( function )
+            ( job->get_target() )
+        .end();
+        
+        int errors = process_end( environment );
+        if ( errors > 0 )
         {
-            environment->get_environment_thread().resume( function )
-                ( job->get_target() )
-            .end();
-            job->get_target()->set_successful( true );
+            ++failures_;
+            build_tool_->error( "Postorder visit of '%s' failed", job->get_target()->get_id().c_str() );
         }
-        else
-        {
-            build_tool_->error( "%s", job->get_target()->generate_failed_dependencies_message().c_str() );
-            job->get_target()->set_successful( false );
-        }
-        process_end( environment );
-    }
 
-    catch ( const std::exception& exception )
-    {
-        ++failures_;
-        build_tool_->error( "%s (in postorder for '%s')", exception.what(), job->get_target()->get_id().c_str() );
-        build_tool_->get_script_interface()->pop_environment();
-        destroy_environment( environment );
+        job->get_target()->set_successful( errors == 0 );
     }
+    else
+    {
+        build_tool_->error( "%s", job->get_target()->generate_failed_dependencies_message().c_str() );
+        job->get_target()->set_successful( false );
+        job->set_state( JOB_COMPLETE );
+    }    
 }
 
 void Scheduler::execute_finished( int exit_code, ptr<Environment> environment )
 {
     SWEET_ASSERT( environment );
 
-    try
-    {
-        process_begin( environment );
-        environment->get_environment_thread().resume()
-            ( exit_code )
-        .end();
-        process_end( environment );
-    }
-
-    catch ( const std::exception& exception )
-    {
-        build_tool_->error( "%s", exception.what() );
-        build_tool_->get_script_interface()->pop_environment();
-        destroy_environment( environment );
-    }
+    process_begin( environment );
+    environment->get_environment_thread().resume()
+        ( exit_code )
+    .end();
+    process_end( environment );
 }
 
 void Scheduler::scan_finished()
@@ -249,28 +198,18 @@ void Scheduler::output( const std::string& output, ptr<Scanner> scanner, ptr<Arg
                 ++matches;
                 
                 ptr<Environment> environment = allocate_environment( working_directory );
-                try
+                process_begin( environment );
+                lua::AddParameter add_parameter = environment->get_environment_thread().call( pattern->get_function() );
+                for ( size_t i = 1; i < match.size(); ++i )
                 {
-                    process_begin( environment );
-                    lua::AddParameter add_parameter = environment->get_environment_thread().call( pattern->get_function() );
-                    for ( size_t i = 1; i < match.size(); ++i )
-                    {
-                        add_parameter( std::string(match[i].first, match[i].second) );
-                    }
-                    if ( arguments )
-                    {
-                        arguments->push_arguments( add_parameter );
-                    }
-                    add_parameter.end();
-                    process_end( environment );
+                    add_parameter( std::string(match[i].first, match[i].second) );
                 }
-
-                catch ( const std::exception& exception )
+                if ( arguments )
                 {
-                    build_tool_->error( "%s", exception.what() );
-                    build_tool_->get_script_interface()->pop_environment();
-                    destroy_environment( environment );
+                    arguments->push_arguments( add_parameter );
                 }
+                add_parameter.end();                
+                process_end( environment );
             }
         }
         
@@ -293,27 +232,17 @@ void Scheduler::match( const Pattern* pattern, ptr<Target> target, const std::st
     
     ptr<Environment> environment = allocate_environment( working_directory );
 
-    try
+    process_begin( environment );
+    AddParameter add_parameter = environment->get_environment_thread().call( pattern->get_function() )
+        ( target )
+        ( match )
+    ;
+    if ( arguments )
     {
-        process_begin( environment );
-        AddParameter add_parameter = environment->get_environment_thread().call( pattern->get_function() )
-            ( target )
-            ( match )
-        ;
-        if ( arguments )
-        {
-            arguments->push_arguments( add_parameter );
-        }
-        add_parameter.end();
-        process_end( environment );
+        arguments->push_arguments( add_parameter );
     }
-
-    catch ( const std::exception& exception )
-    {
-        build_tool_->error( "%s", exception.what() );
-        build_tool_->get_script_interface()->pop_environment();
-        destroy_environment( environment );
-    }
+    add_parameter.end();
+    process_end( environment );
 }
 
 void Scheduler::error( const std::string& what, ptr<Environment> environment )
@@ -672,7 +601,7 @@ void Scheduler::process_begin( ptr<Environment> environment )
     build_tool_->get_script_interface()->push_environment( environment );
 }
 
-void Scheduler::process_end( ptr<Environment> environment )
+int Scheduler::process_end( ptr<Environment> environment )
 {
     SWEET_ASSERT( environment );
 
@@ -690,4 +619,6 @@ void Scheduler::process_end( ptr<Environment> environment )
     {
         destroy_environment( environment );
     }
+    
+    return errors;
 }

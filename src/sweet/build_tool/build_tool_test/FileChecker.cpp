@@ -41,6 +41,12 @@ void FileChecker::create( const char* filename, const char* content, std::time_t
     }
 }
 
+void FileChecker::remove( const char* filename )
+{
+    SWEET_ASSERT( filename );
+    boost::filesystem::remove( filename );    
+}
+
 void FileChecker::touch( const char* filename, std::time_t last_write_time )
 {
     SWEET_ASSERT( filename );            

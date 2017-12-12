@@ -63,6 +63,7 @@ function mingw.initialize( settings )
         dll_name = mingw.dll_name;
         exe_name = mingw.exe_name;
         ilk_name = mingw.ilk_name;
+        module_name = mingw.module_name;
     end
 end
 
@@ -316,4 +317,8 @@ end
 
 function mingw.ilk_name( name )
     return "%s_%s_%s.ilk" % { name, platform, variant };
+end
+
+function mingw.module_name( name, architecture )
+    return name;
 end

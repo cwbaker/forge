@@ -1,6 +1,6 @@
 //
 // TestGraph.cpp
-// Copyright (c) 2010 - 2011 Charles Baker.  All rights reserved.
+// Copyright (c) 2010 - 2013 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -90,6 +90,72 @@ SUITE( TestGraph )
         CHECK( errors == 0 );
     }
 
+    TEST_FIXTURE( FileChecker, header_files_that_are_removed_behave_correctly )
+    {
+        const char* script = 
+            "local filename = 'header_files_that_are_removed_behave_correctly.cache'; \n"
+            "local success = load_binary( filename ); \n"
+            "assert( not success, 'Graph already exists' ); \n"
+            "local foo_cpp = file( 'foo.cpp' ); \n"
+            "foo_cpp:set_required_to_exist( true ); \n"
+            "local foo_hpp = file( 'foo.hpp' ); \n"
+            "foo_cpp:add_dependency( foo_hpp ); \n"
+            "bind( foo_cpp ); \n"
+            "save_binary( filename ); \n"
+        ;
+        remove( "header_files_that_are_removed_behave_correctly.cache" );
+        create( "foo.cpp", "" );
+        create( "foo.hpp", "" );
+        test( script );
+        CHECK( errors == 0 );
+
+        const char* second_script = 
+            "local filename = 'header_files_that_are_removed_behave_correctly.cache'; \n"
+            "local success = load_binary( filename ); \n"
+            "assert( success, 'Loading graph failed' ); \n"
+            "local foo_cpp = file( 'foo.cpp' ); \n"
+            "bind( foo_cpp ); \n"
+        ;
+        remove( "foo.hpp" );
+        test( second_script );
+        remove( "header_files_that_are_removed_behave_correctly.cache" );
+        CHECK( errors == 0 );
+    }
+
+    TEST_FIXTURE( FileChecker, explicit_dependencies_are_not_removed_by_scan )
+    {
+        const char* script = 
+            "local foo_hpp = file( 'foo.hpp' ); \n"
+            "local foo_g = file( 'foo.g' ); \n"
+            "foo_hpp:add_dependency( foo_g ); \n"
+            "mark_implicit_dependencies(); \n"
+            "local bar_hpp = file( 'bar.hpp' ); \n"
+            "foo_hpp:add_dependency( bar_hpp ); \n"
+            "local baz_hpp = file( 'baz.hpp' ); \n"
+            "foo_hpp:add_dependency( baz_hpp ); \n"
+            " \n"
+            "local dependencies = {}; \n"
+            "for dependency in foo_hpp:get_dependencies() do \n"
+            "    table.insert( dependencies, dependency ); \n"
+            "end \n"
+            "assert( #dependencies == 3, '#dependencies == 3' ); \n"
+            "assert( dependencies[1] == foo_g, 'foo.g' ); \n"
+            "assert( dependencies[2] == bar_hpp, 'bar.hpp' ); \n"
+            "assert( dependencies[3] == baz_hpp, 'baz.hpp' ); \n"
+            " \n"
+            "scan( foo_hpp, Scanner {} ); \n"
+            "local dependencies = {}; \n"
+            "for dependency in foo_hpp:get_dependencies() do \n"
+            "    table.insert( dependencies, dependency ); \n"
+            "end \n"
+            "assert( #dependencies == 1, '#dependencies == 1' ); \n"
+            "assert( dependencies[1] == foo_g, 'foo.g' ); \n"
+        ;                
+        create( "foo.hpp", "" );
+        test( script );
+        CHECK( errors == 0 );
+    }
+
     TEST_FIXTURE( ErrorChecker, creating_the_same_target_with_different_prototypes_fails )
     {
         const char* expected_message = 
@@ -102,7 +168,7 @@ SUITE( TestGraph )
             "target( 'foo.cpp', FilePrototype ); \n"
         ;
         test( script );
-        CHECK_EQUAL( expected_message, message );
+        CHECK_EQUAL( expected_message, messages[0] );
         CHECK( errors == 1 );
     }
 

@@ -16,14 +16,20 @@ function ExecutablePrototype.clean( executable )
 end
 
 function Executable( id )
+    build.begin_target();
     return function( dependencies )
-        local executables = {};
-        local settings = build.current_settings();
-        for _, architecture in ipairs(settings.architectures) do 
-            local executable = target( "%s_%s" % {id, architecture}, ExecutablePrototype, build.copy(dependencies) );
-            build.add_module_dependencies( executable, "%s/%s" % {settings.bin, exe_name(id, architecture)}, build.current_settings(), architecture );
-            table.insert( executables, executable );
-        end
-        return executables;
+        return build.end_target( function()
+            local executables = {};
+            local settings = build.push_settings( dependencies.settings );
+            if build.built_for_platform_and_variant(settings) then
+                for _, architecture in ipairs(settings.architectures) do 
+                    local executable = target( module_name(id, architecture), ExecutablePrototype, build.copy(dependencies) );
+                    build.add_module_dependencies( executable, "%s/%s" % {settings.bin, exe_name(id, architecture)}, architecture );
+                    table.insert( executables, executable );
+                end
+            end
+            build.pop_settings();
+            return executables;
+        end);
     end
 end

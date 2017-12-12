@@ -24,9 +24,10 @@ end
 
 function AndroidResource( resources, package )
     local android_resource;
-    if build.built_for_platform_and_variant(resources) then
+    local settings = build.current_settings();
+    if build.built_for_platform_and_variant(settings) then
         android_resource = target( "", AndroidResourcePrototype, resources );
-        android_resource.settings = build.current_settings();
+        android_resource.settings = settings;
         android_resource:set_filename( "%s/gen/%s/R.java" % {obj_directory(android_resource), package} );
         android_resource:add_dependency( Directory(branch(android_resource:get_filename())) );
     end    

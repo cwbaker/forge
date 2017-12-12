@@ -37,7 +37,7 @@ function initialize()
             boost_library_directory
         };
         sln = root( "../sweet_build_tool.sln" );
-        xcodeproj = root( "../sweet_build_tool" );
+        xcodeproj = root( "../sweet_build_tool.xcodeproj" );
     };
 
     if operating_system() == "windows" then    

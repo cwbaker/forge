@@ -89,7 +89,7 @@ class Scheduler
     private:
         bool dispatch_results();
         void process_begin( ptr<Environment> environment );
-        void process_end( ptr<Environment> environment );
+        int process_end( ptr<Environment> environment );
         ptr<Environment> allocate_environment( ptr<Target> working_directory, Job* job = NULL );
         void free_environment( ptr<Environment> environment );
         void destroy_environment( ptr<Environment> environment );

@@ -44,7 +44,7 @@ end;
 
 function msvc.initialize( settings )
     msvc.configure( settings );
-    if platform == "msvc" then
+    if platform == "msvc" or platform == "" then
         -- Make sure that the environment variable VS_UNICODE_OUTPUT is not set.  
         -- Visual Studio sets this to signal its tools to communicate back to 
         -- Visual Studio using named pipes rather than stdout so that unicode output 
@@ -106,6 +106,7 @@ function msvc.initialize( settings )
         dll_name = msvc.dll_name;
         exe_name = msvc.exe_name;
         ilk_name = msvc.ilk_name;
+        module_name = msvc.module_name;
     end
 end;
 
@@ -441,4 +442,8 @@ end
 
 function msvc.ilk_name( name )
     return "%s_%s_%s.ilk" % { name, platform, variant };
+end
+
+function msvc.module_name( name, architecture )
+    return name;
 end

@@ -57,12 +57,13 @@ template <class Archive> void Graph::exit( Archive& archive )
 */
 template <class Archive> void Graph::persist( Archive& archive )
 {
-    const int BUILD_GRAPH_VERSION = 9;
+    const int BUILD_GRAPH_VERSION = 10;
     archive.enter( "Sweet Build Graph", BUILD_GRAPH_VERSION, *this );
     if ( archive.version() != BUILD_GRAPH_VERSION )
     {
-        SWEET_ERROR( GraphVersionInvalidError("The graph file '%s' has an invalid version", sweet::persist::narrow(archive.get_filename()).c_str()) );
+        SWEET_ERROR( GraphVersionInvalidError("The graph file '%s' has an invalid version -- delete it!", sweet::persist::narrow(archive.get_filename()).c_str()) );
     }    
+    archive.value( "implicit_dependencies", implicit_dependencies_ );
     archive.value( "root", root_target_ );
 }
 
@@ -86,6 +87,7 @@ template <class Archive> void Target::persist( Archive& archive )
     archive.refer( "working_directory", working_directory_ );
     archive.value( "targets", "target", targets_ );
     archive.refer( "dependencies", "dependency", dependencies_ );
+    archive.value( "explicit_dependencies", explicit_dependencies_ );
     if ( referenced_by_script_ )
     {
         sweet::lua::persist<Target, lua::LuaByReference>( archive, "object", *this );

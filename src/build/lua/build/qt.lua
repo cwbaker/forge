@@ -17,33 +17,39 @@ function qt.initialize( settings )
     qt.configure( settings );
 end
 
-QtMocPrototype = TargetPrototype { "QtMoc", BIND_GENERATED_FILE };
+QtMocPrototype = TargetPrototype { "QtMoc" };
 
-function QtMocPrototype.load( target )
-    target:set_filename( target:path() );
-    local header = file( target[1] );
-    header:set_required_to_exist( true );
-    target:add_dependency( header );
+function QtMocPrototype.static_depend( qtmoc )
+    qtmoc:build();
 end
 
-function QtMocPrototype.build( target )
-    if target:is_outdated() then
+function QtMocPrototype.build( qtmoc )
+    if not exists(qtmoc:get_filename()) or qtmoc:is_outdated() then
         local moc = build.settings.qt.moc;
-        print( target[1] );
-        build.system( moc, [[moc %s -o %s]] % {target[1], target:id()} );
+        print( qtmoc[1] );
+        build.system( moc, [[moc %s -o %s]] % {qtmoc[1], relative(qtmoc:get_filename())} );
     end
 end
 
-function QtMocPrototype.clean( target )
-    rm( target:id() );
+function QtMocPrototype.clean( qtmoc )
+    rm( qtmoc:get_filename() );
 end
 
-function QtMoc( moc )
-    assert( moc and type(moc) == "table" );
-    local source = Source();
-    for _, value in ipairs(moc) do
-        local output = target( cxx_name("moc_%s" % value), QtMocPrototype, {value} );
-        table.insert( source, output );        
+function QtMoc( definition )
+    assert( definition and type(definition) == "table" );
+
+    local cxx_files = {};
+    for _, value in ipairs(definition) do
+        local cxx_file = "moc_%s.cpp" % basename( value );
+        table.insert( cxx_files, cxx_file );
+
+        local qtmoc = target( cxx_file, QtMocPrototype, {value} );
+        qtmoc:set_filename( qtmoc:path() );
+
+        local header = file( value );
+        header:set_required_to_exist( true );
+        qtmoc:add_dependency( header );
     end
-    return source;
+
+    return Cxx( cxx_files );
 end

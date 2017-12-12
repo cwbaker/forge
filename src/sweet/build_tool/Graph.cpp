@@ -62,6 +62,7 @@ Graph::Graph()
   filename_(),
   root_target_(),
   cache_target_(),
+  implicit_dependencies_( false ),
   traversal_in_progress_( false ),
   visited_revision_( 0 ),
   successful_revision_( 0 )
@@ -79,6 +80,7 @@ Graph::Graph( BuildTool* build_tool )
   filename_(),
   root_target_(),
   cache_target_(),
+  implicit_dependencies_( false ),
   traversal_in_progress_( false ),
   visited_revision_( 0 ),
   successful_revision_( 0 )
@@ -198,9 +200,12 @@ int Graph::get_successful_revision() const
 /**
 // Find or create a Target.
 //
-// Finds or create the Target by breaking \e id into '/' delimited elements.
+// Finds or create the Target by breaking \e id into '/' delimited elements
+// and searching up or down the target hierarchy relative to 
+// \e working_directory or the root directory.  
+//
 // If a ".." element is encountered then the relative parent is moved up a 
-// level otherwise a new Target is added with that identifier as a child of 
+// level otherwise a new target is added with that identifier as a child of 
 // the current relative parent and the next element is considered.
 //
 // @param id
@@ -219,11 +224,6 @@ int Graph::get_successful_revision() const
 */
 ptr<Target> Graph::target( const std::string& id, ptr<TargetPrototype> target_prototype, ptr<Target> working_directory )
 {
-//
-// Find the Target by breaking the id into '/' delimited elements and 
-// searching up or down the Target hierarchy relative to the current 
-// working directory.
-//
     path::Path path( id );
     ptr<Target> target( working_directory && path.is_relative() ? working_directory : root_target_ );
     SWEET_ASSERT( target );
@@ -257,7 +257,6 @@ ptr<Target> Graph::target( const std::string& id, ptr<TargetPrototype> target_pr
                     if ( i != path.end() )
                     {
                         new_target->set_working_directory( target );
-                        target->add_dependency( new_target );
                     }
                 }
 
@@ -341,30 +340,6 @@ ptr<Target> Graph::find_target( const std::string& id, ptr<Target> working_direc
 }
 
 /**
-// Add \e target to this Graph as a child of \e working_directory.
-//
-// If the identifier of \e target is not empty then \e target is also added
-// as a dependency of \e working_directory.
-//
-// @param target
-//  The Target to add to this Graph (assumed not null).
-//
-// @param working_directory
-//  The Target to add \e target to (assumed not null).
-*/
-void Graph::insert_target( ptr<Target> target, ptr<Target> working_directory )
-{
-    SWEET_ASSERT( target );
-    SWEET_ASSERT( working_directory );
-    
-    working_directory->add_target( target, working_directory );
-    if ( !target->get_id().empty() )
-    {
-        working_directory->add_dependency( target );
-    }
-}
-
-/**
 // Load a buildfile into this Graph.
 //
 // @param filename
@@ -383,10 +358,6 @@ void Graph::buildfile( const std::string& filename, ptr<Target> target )
     path::Path path( build_tool_->get_script_interface()->absolute(filename) );
     SWEET_ASSERT( path.is_absolute() );
     
-    ptr<Target> working_directory = Graph::target( path.branch().string(), ptr<TargetPrototype>(), ptr<Target>() );
-    root_target_->add_dependency( working_directory );
-    working_directory->get_parent()->add_dependency( working_directory );
-
     ptr<Target> buildfile_target = Graph::target( path.string(), ptr<TargetPrototype>(), ptr<Target>() );
     buildfile_target->set_filename( path.string() );
     if ( cache_target_ )
@@ -500,6 +471,7 @@ int Graph::bind( ptr<Target> target )
 */
 void Graph::swap( Graph& graph )
 {
+    std::swap( implicit_dependencies_, graph.implicit_dependencies_ );
     root_target_.swap( graph.root_target_ );
 }
 
@@ -524,6 +496,7 @@ void Graph::clear()
     root_target_.reset( new Target("", this) );
     cache_target_.reset();
     recover();
+    implicit_dependencies_ = false;
 }
 
 /**
@@ -539,6 +512,42 @@ void Graph::recover()
     cache_target_ = target( filename_, ptr<TargetPrototype>(), ptr<Target>() );
     cache_target_->set_filename( filename_ );
     bind( cache_target_ );
+}
+
+/**
+// Mark added dependencies as being implicit.
+//
+// Dependencies are added as explicit dependencies from when a Graph is 
+// initially created or cleared (see Graph::clear()) until the 
+// Graph::mark_implicit_dependencies() is called.  After 
+// Graph::mark_implicit_dependencies() has been called dependencies are added
+// as implicit dependencies.
+//
+// Implicit dependencies are cleared whenever the Target that depends on them 
+// is scanned -- they are intended to represent the implicit dependency 
+// relationships discovered while scanning source files (e.g. when scanning 
+// C/C++ source files for the header files that they include).
+//
+// Explicit dependencies are not cleared when the Target that depends on them 
+// is scanned -- they are intended to represent the explicit dependency 
+// relationships expressed directly in the buildfiles loaded to specify the 
+// initial dependency graph.
+*/
+void Graph::mark_implicit_dependencies()
+{
+    implicit_dependencies_ = true;
+}
+
+/**
+// Are dependencies added to Targets implicit?
+//
+// @return
+//  True if added dependencies are implicit dependencies otherwise false to 
+//  indicate that added dependencies are explicit.
+*/
+bool Graph::implicit_dependencies() const
+{
+    return implicit_dependencies_;
 }
 
 /**

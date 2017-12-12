@@ -188,6 +188,7 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "bind", &ScriptInterface::bind, this )
         ( "preorder", raw(&ScriptInterface::preorder), this )
         ( "postorder", raw(&ScriptInterface::postorder), this )
+        ( "mark_implicit_dependencies", &ScriptInterface::mark_implicit_dependencies, this )
         ( "print_dependencies", &ScriptInterface::print_dependencies, this )
         ( "print_namespace", &ScriptInterface::print_namespace, this )
         ( "wait", &ScriptInterface::wait, this )
@@ -700,6 +701,12 @@ int ScriptInterface::bind( ptr<Target> target )
     return build_tool_->get_graph()->bind( target );
 }
 
+void ScriptInterface::mark_implicit_dependencies()
+{
+    SWEET_ASSERT( build_tool_ );
+    return build_tool_->get_graph()->mark_implicit_dependencies();
+}
+
 void ScriptInterface::print_dependencies( ptr<Target> target )
 {
     SWEET_ASSERT( build_tool_ );
@@ -721,10 +728,10 @@ void ScriptInterface::wait()
 void ScriptInterface::clear()
 {
     Environment* environment = environments_.back().get();
-    ptr<Target> working_directory = environment->working_directory();
+    string working_directory = environment->working_directory()->get_path();
     Graph* graph = build_tool_->get_graph();
     graph->clear();
-    environment->reset_directory( working_directory->get_path() );
+    environment->reset_directory( working_directory );
 }
 
 Target* ScriptInterface::load_xml( const std::string& filename )
@@ -732,7 +739,10 @@ Target* ScriptInterface::load_xml( const std::string& filename )
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( build_tool_->get_graph() );
 
+    Environment* environment = environments_.back().get();
+    string working_directory = environment->working_directory()->get_path();
     ptr<Target> cache_target = build_tool_->get_graph()->load_xml( absolute(filename) );
+    environment->reset_directory( working_directory );
     if ( cache_target )
     {
         create_target( cache_target );
@@ -751,7 +761,10 @@ Target* ScriptInterface::load_binary( const std::string& filename )
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( build_tool_->get_graph() );
         
+    Environment* environment = environments_.back().get();
+    string working_directory = environment->working_directory()->get_path();
     ptr<Target> cache_target = build_tool_->get_graph()->load_binary( absolute(filename) );
+    environment->reset_directory( working_directory );
     if ( cache_target )
     {
         create_target( cache_target );
@@ -1401,6 +1414,7 @@ int ScriptInterface::scan( lua_State* lua_state )
             
             if ( target->get_last_write_time() != target->get_last_scan_time() )
             {
+                target->clear_implicit_dependencies();
                 target->set_last_scan_time( target->get_last_write_time() );
                 ptr<Environment> environment = script_interface->get_environment();
                 SWEET_ASSERT( environment );

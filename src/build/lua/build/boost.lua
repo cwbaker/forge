@@ -20,6 +20,7 @@ end;
 function boost.initialize( settings )
     boost.configure(settings);
     local boost_library_by_platform = {
+        [""] = boost.default_boost_library;
         llvmgcc = boost.llvmgcc_boost_library;
         msvc = boost.msvc_boost_library;
         mingw = boost.mingw_boost_library;
@@ -27,6 +28,10 @@ function boost.initialize( settings )
     assert( boost_library_by_platform[platform], "No boost_library() implementation for the platform '%s'!" % platform );
     boost_library = boost_library_by_platform[platform];
 end;
+
+function boost.default_boost_library( name )
+    return name;
+end
 
 function boost.msvc_boost_library( name )
     local toolset = "vc90";

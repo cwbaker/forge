@@ -103,8 +103,9 @@ function android.initialize( settings )
         lib_name = android.lib_name;
         exp_name = android.exp_name;
         dll_name = android.dll_name;
-        exe_name = android.exe_name;
+        exe_name = android.exe_name;        
         ilk_name = android.ilk_name;
+        module_name = android.module_name;
     end
 end
 
@@ -127,11 +128,12 @@ function android.cc( target )
     };
 
     if target.settings.debug then
-        table.insert( defines, "-DNDEBUG" );
-    else
         table.insert( defines, "-D_DEBUG" );
         table.insert( defines, "-DDEBUG" );
+    else
+        table.insert( defines, "-DNDEBUG" );
     end
+
     if target.settings.defines then
         for _, define in ipairs(target.settings.defines) do
             table.insert( defines, " -D%s" % define );
@@ -336,7 +338,22 @@ function android.build_executable( target )
             table.insert( libraries, "-l%s" % library );
         end
     end
-    table.insert( libraries, "-lgnustl_shared" );
+    if target.system_libraries then 
+        for _, library in ipairs(target.system_libraries) do 
+            table.insert( libraries, "-l%s" % library );
+            local destination = "%s/lib%s.so" % { branch(target:get_filename()), library };
+            if not exists(destination) then 
+                print( "lib%s.so" % library );
+                for _, directory in ipairs(android.library_directories(target.settings, target.architecture)) do
+                    local source = "%s/lib%s.so" % { directory, library };
+                    if exists(source) then
+                        cp( source, destination );
+                        break;
+                    end
+                end
+            end
+        end
+    end
 
     local objects = {
         " "
@@ -398,4 +415,8 @@ end
 
 function android.exe_name( name, architecture )
     return "%s_%s_%s_%s" % { name, architecture, platform, variant };
+end
+
+function android.module_name( name, architecture )
+    return "%s_%s" % { name, architecture };
 end

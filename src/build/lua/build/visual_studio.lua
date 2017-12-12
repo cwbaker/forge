@@ -57,7 +57,7 @@ local function configurations( vcproj, target, include_directories )
             
             local output = "";
             if target:prototype() == ExecutablePrototype then
-                output = relative( target.settings.bin.."/"..module.."_"..platform.."_"..variant..".exe" );
+                output = native( relative(root("../%s_%s/bin/%s_%s_%s.exe" % {platform, variant, module, platform, variant})) );
             end
             
             local defines = "";
@@ -86,9 +86,9 @@ local function configurations( vcproj, target, include_directories )
                 >
                 <Tool
                     Name="VCNMakeTool"
-                    BuildCommandLine="]]..build_tool..[[ variant=]]..variant..[[ platform=]]..platform..[[ goal=]]..target:id()..[["
-                    ReBuildCommandLine="]]..build_tool..[[ clean default variant=]]..variant..[[ platform=]]..platform..[[ goal=]]..target:id()..[["
-                    CleanCommandLine="]]..build_tool..[[ clean variant=]]..variant..[[ platform=]]..platform..[[ goal=]]..target:id()..[["
+                    BuildCommandLine="]]..build_tool..[[ variant=]]..variant..[[ platform=]]..platform..[["
+                    ReBuildCommandLine="]]..build_tool..[[ clean default variant=]]..variant..[[ platform=]]..platform..[["
+                    CleanCommandLine="]]..build_tool..[[ clean variant=]]..variant..[[ platform=]]..platform..[["
                     Output="]]..output..[["
                     PreprocessorDefinitions="]]..defines..[["
                     IncludeSearchPath="]]..include_directories..[["
@@ -147,36 +147,50 @@ end
 local function generate_project( filename, module )
     print( filename );
 
-    local function populate( basedir, files, directories )
-        local function add_directory( target )
-            local directory = directories[target:path()];
-            if directory == nil then
-                directory = { target = target; children = {} };
-                directories[target:path()] = directory;
-                if target:parent() then
-                    local parent = add_directory( target:parent() );
-                    table.insert( parent.children, directory );
-                end
-            end
-            return directory;
-        end
+    local files = {};
+    local directories = {};
 
-        local function add_file( target )
-            local file = files[target:path()];
-            if not file then
-                file = { target = target };
-                files[target:path()] = file;
-                if target:parent() then
-                    local parent = add_directory( target:parent() );
-                    table.insert( parent.children, file );
-                end
+    local function add_directory( target )
+        local directory = directories[target:path()];
+        if directory == nil then
+            directory = { target = target; children = {} };
+            directories[target:path()] = directory;
+            if target:parent() then
+                local parent = add_directory( target:parent() );
+                table.insert( parent.children, directory );
             end
-            return file;
         end
+        return directory;
+    end
 
+    local function add_file( target )
+        local file = files[target:path()];
+        if not file then
+            file = { target = target };
+            files[target:path()] = file;
+            if target:parent() then
+                local parent = add_directory( target:parent() );
+                table.insert( parent.children, file );
+            end
+        end
+        return file;
+    end
+
+    local function populate( basedir )
         return function( target )
             if not string.find(relative(target:directory(), basedir), "..", 1, true) and target:prototype() == nil then
                 add_file( target );
+            end
+        end
+    end
+
+    local function populate_via_ls( basedir, patterns )
+        for filename in ls(basedir) do 
+            for _, pattern in ipairs(patterns) do 
+                if string.find(filename, pattern, 1) then
+                    add_file( file(filename) );
+                    break;
+                end
             end
         end
     end
@@ -186,9 +200,10 @@ local function generate_project( filename, module )
         include_directories = include_directories..native(directory)..";";
     end
     
-    local files = {};
-    local directories = {};
-    preorder( populate(module:directory(), files, directories), module );
+    preorder( populate(module:directory()), module );
+    if module.project_files then
+        populate_via_ls( module:directory(), module.project_files );
+    end
 
     local vcproj = io.open( absolute(filename), "wb" );
     header( vcproj, module );
@@ -256,7 +271,7 @@ EndProject
     end
     generate_directories( directories );
 
-    local build_hpp = native( relative(root("build.hpp")) );
+    local build_hpp = native( relative(root("sweet/build.hpp")) );
     local build_lua = native( relative(root("build.lua")) );
     local local_settings_lua = native( relative(root("local_settings.lua")) );
     sln:write( [[
@@ -423,6 +438,8 @@ end
 
 -- The "sln" command entry point (global).
 function sln()
+    platform = "";
+    variant = "";
     build.load();
     local all = all or find_target( root() );
     assert( all, "No target found at '"..tostring(root()).."'" );

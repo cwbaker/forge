@@ -15,7 +15,7 @@ function JavaPrototype.build( java )
         if #source_files > 0 then
             local javac = "%s/bin/javac.exe" % java.settings.android.jdk_directory;
             local output = "%s/classes" % obj_directory( java );
-            local sourcepath = "%s/gen" % obj_directory( java );
+            local sourcepath = "%s;%s/gen" % { absolute("src/%s" % java.package), obj_directory(java) };
             local classpath = output;
             local bootclasspath = "%s/platforms/%s/android.jar" % { java.settings.android.sdk_directory, java.settings.android.sdk_platform };
             pushd( "src/%s" % java.package );
@@ -34,38 +34,40 @@ function JavaPrototype.clean( java )
 end
 
 function Java( definition )
-    assert( type(definition) == "table" );
+    build.begin_target();
+    return build.end_target( function()
+        local java;
+        local settings = build.push_settings( definition.settings );
+        if build.built_for_platform_and_variant(settings) then
+            java = target( "", JavaPrototype, definition );
+            java.settings = settings;
 
-    local java = target( "", JavaPrototype, definition );
-    local settings = build.current_settings();
-    java.settings = settings;
-
-    if build.built_for_platform_and_variant(java) then
-        local directory = Directory( "%s/classes/%s" % {obj_directory(java), java.package} );
-
-        local resources;
-        if java.resources then
-            resources = AndroidResource( build.expand(java.resources), java.package );
-            java:add_dependency( resources );
-        end
-
-        for _, value in ipairs(java) do
-            if type(value) == "string" then
-                local source_file = file( "src/%s/%s" % {java.package, value} );
-                source_file:set_required_to_exist( true );
-                source_file.unit = java;
-                source_file.settings = settings;
-
-                local class_file = file( "%s/classes/%s/%s.class" % {obj_directory(java), java.package, basename(value)} );
-                class_file.source = value;
-                java.class_file = class_file;
-                class_file:add_dependency( source_file );
-                class_file:add_dependency( directory );
-                class_file:add_dependency( resources );
-                java:add_dependency( class_file );
+            local resources;
+            if java.resources then
+                resources = AndroidResource( build.expand(java.resources), java.package );
+                java:add_dependency( resources );
             end
-        end
-    end
-    
-    return java;
+
+            local directory = Directory( "%s/classes/%s" % {obj_directory(java), java.package} );
+
+            for _, value in ipairs(java) do
+                if type(value) == "string" then
+                    local source_file = file( "src/%s/%s" % {java.package, value} );
+                    source_file:set_required_to_exist( true );
+                    source_file.unit = java;
+                    source_file.settings = settings;
+
+                    local class_file = file( "%s/classes/%s/%s.class" % {obj_directory(java), java.package, basename(value)} );
+                    class_file.source = value;
+                    java.class_file = class_file;
+                    class_file:add_dependency( source_file );
+                    class_file:add_dependency( directory );
+                    class_file:add_dependency( resources );
+                    java:add_dependency( class_file );
+                end
+            end
+        end        
+        build.pop_settings();
+        return java;
+    end);
 end

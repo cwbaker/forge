@@ -24,6 +24,15 @@ build.default_settings = {
     variants = {};
 
     settings_by_platform = {
+        [""] = {
+            architectures = {
+                ""
+            };
+            variants = {
+                "debug", "debug_dll", "release", "release_dll", "shipping", "shipping_dll"
+            };
+        };
+
         ["android"] = {
             architectures = { 
                 "armv5", "armv7" 
@@ -62,6 +71,10 @@ build.default_settings = {
     };
 
     settings_by_variant = {
+        [""] = {        
+            library_type = "static";
+        };
+
         ["debug"] = {
             compile_as_c = false;
             debug = true;

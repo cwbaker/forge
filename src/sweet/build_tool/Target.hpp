@@ -50,6 +50,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public pointer::enable_ptr_from_this<Ta
     weak_ptr<Target> parent_; ///< The parent of this Target in the Target namespace or null if this Target has no parent.
     std::vector<ptr<Target> > targets_; ///< The children of this Target in the Target namespace.
     std::vector<Target*> dependencies_; ///< The Targets that this Target depends on.
+    int explicit_dependencies_; ///< The number of dependencies that are explicit and not removed by Target::clear_dependencies().
     bool visiting_; ///< Whether or not this Target is in the process of being visited.
     int visited_revision_; ///< The visited revision the last time this Target was visited.
     int successful_revision_; ///< The successful revision the last time this Target was successfully visited.
@@ -106,7 +107,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public pointer::enable_ptr_from_this<Ta
 
         void add_dependency( ptr<Target> target );
         void remove_dependency( ptr<Target> target );
-        void clear_dependencies();
+        void clear_implicit_dependencies();
         bool is_dependency( ptr<Target> target ) const;
         bool is_buildable() const;
         std::string generate_failed_dependencies_message() const;

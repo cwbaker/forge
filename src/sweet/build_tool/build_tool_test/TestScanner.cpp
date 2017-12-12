@@ -26,7 +26,7 @@ SUITE( TestScanner )
             "} \n"
         ;        
         test( script );
-        CHECK_EQUAL( expected_message, message );
+        CHECK_EQUAL( expected_message, messages[0] );
         CHECK( errors == 1 );  
     }
 

@@ -22,33 +22,32 @@ function CxxPrototype.clean( source )
         end
     end
 end
-
 function Cxx( definition )
-    assert( type(definition) == "table" );
-    return function( architecture )
-        local source = target( "", CxxPrototype, build.copy(definition) );
-        local settings = build.current_settings();
-        source.settings = settings;
-        source.architecture = architecture;
+    build.begin_target();
+    return build.end_target( function( architecture )
+        local cxx;
+        local settings = build.push_settings( definition.settings );
+        if build.built_for_platform_and_variant(settings) then
+            cxx = target( "", CxxPrototype, build.copy(definition) );
+            cxx.settings = settings;
+            cxx.architecture = architecture;
 
-        if build.built_for_platform_and_variant(source) then
-            local directory = Directory( "%s/%s" % {obj_directory(source), architecture} );
+            local directory = Directory( "%s/%s" % {obj_directory(cxx), architecture} );
 
-            for _, value in ipairs(source) do
+            for _, value in ipairs(cxx) do
                 local source_file = file( value );
                 source_file:set_required_to_exist( true );
-                source_file.unit = source;
+                source_file.unit = cxx;
                 source_file.settings = settings;
 
                 local object = file( "%s/%s/%s" % {obj_directory(source_file), architecture, obj_name(value)} );
                 object.source = value;
-                source.object = object;
                 object:add_dependency( source_file );
                 object:add_dependency( directory );
-                source:add_dependency( object );
+                cxx:add_dependency( object );
             end
         end
-        
-        return source;
-    end
+        build.pop_settings();        
+        return cxx;
+    end );
 end

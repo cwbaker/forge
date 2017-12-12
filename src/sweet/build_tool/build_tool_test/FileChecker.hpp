@@ -19,6 +19,7 @@ struct FileChecker : public ErrorChecker
     FileChecker();
     ~FileChecker();
     void create( const char* filename, const char* content, std::time_t last_write_time = 0 );
+    void remove( const char* filename );
     void touch( const char* filename, std::time_t last_write_time );
 };
 

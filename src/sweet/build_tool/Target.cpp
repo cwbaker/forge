@@ -43,6 +43,7 @@ Target::Target()
   parent_(),
   targets_(),
   dependencies_(),
+  explicit_dependencies_( 0 ),
   visiting_( false ),
   visited_revision_( 0 ),
   successful_revision_( 0 ),
@@ -82,6 +83,7 @@ Target::Target( const std::string& id, Graph* graph )
   parent_(),
   targets_(),
   dependencies_(),
+  explicit_dependencies_( 0 ),
   visiting_( false ),
   visited_revision_( 0 ),
   successful_revision_( 0 ),
@@ -654,6 +656,10 @@ const std::vector<ptr<Target> >& Target::get_targets() const
 // because its outdated flag and timestamp have potentially changed because it
 // may now have outdated and/or newer dependencies.
 //
+// The count of explicit dependencies is incremented if this Target's Graph is
+// in explicit dependency mode after being cleared (see Graph::clear() and 
+// Graph::mark_future_dependencies_as_implicit()).
+//
 // @param target
 //  The Target to add as a dependency.
 */
@@ -666,6 +672,10 @@ void Target::add_dependency( ptr<Target> target )
         {
             dependencies_.push_back( target.get() );
             bound_to_dependencies_ = false;
+            if ( !graph_->implicit_dependencies() )
+            {
+                ++explicit_dependencies_;
+            }
         }
     }
 }
@@ -700,15 +710,15 @@ void Target::remove_dependency( ptr<Target> target )
 }
 
 /**
-// Remove all dependencies from this Target.
+// Remove all implicit dependencies from this Target.
 //
 // Removing a dependency clears the bound to dependencies flag for this Target 
 // because its outdated flag and timestamp have potentially changed because it
 // may now not have outdated and/or newer dependencies.
 */
-void Target::clear_dependencies()
+void Target::clear_implicit_dependencies()
 {
-    dependencies_.clear();
+    dependencies_.erase( dependencies_.begin() + explicit_dependencies_, dependencies_.end() );
     bound_to_dependencies_ = false;
 }
 

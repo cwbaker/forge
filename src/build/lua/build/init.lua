@@ -15,6 +15,7 @@ end
 build = {};
 
 require "build/default_settings";
+require "build/Lua";
 require "build/PrecompiledHeader";
 require "build/Directory";
 require "build/Cxx";
@@ -28,7 +29,7 @@ require "build/commands";
 function build.initialize( project_settings )
     platform = platform or build.switch { operating_system(); windows = "msvc"; macosx = "llvmgcc" };
     variant = variant or "debug";
-    version = version or "%s %s %s" % { os.date("%Y.%m.%d %H:%M:%S"), platform, variant };
+    version = version or "%s %s %s" % { os.date("%Y.%m.%d.%H%M"), platform, variant };
     goal = goal or "";
     jobs = jobs or 4;
 
@@ -67,7 +68,7 @@ function build.initialize( project_settings )
     elseif settings.library_type == "dynamic" then
         Library = DynamicLibrary;
     else
-        error( string.format("The library type '%s' is not 'static' or 'dynamic'", settings.library_type) );
+        error( string.format("The library type '%s' is not 'static' or 'dynamic'", tostring(settings.library_type)) );
     end
 
     build.default_settings.cache = root( "%s/%s_%s.cache" % {settings.obj, platform, variant} );
@@ -76,6 +77,37 @@ function build.initialize( project_settings )
     build.local_settings = local_settings;
     build.settings = settings;
     return settings;
+end
+
+-- Convert a version string into a date table (assuming that the version 
+-- string is of the form '%Y.%m.%d.%H%M').
+function build.version_date( version )
+    version = version or _G.version;
+    local _, _, year, month, day, hour, minute = string.find( version, "(%d%d%d%d)%.(%d%d)%.(%d%d)%.(%d%d)(%d%d)" );
+    return {
+        year = year;
+        month = month;
+        day = day;
+        hour = hour;
+        min = min;
+        sec = 0;
+    };
+end
+
+-- Convert a version string into a time (assuming that the version string is
+-- of the form '%Y.%m.%d.%H%M').
+function build.version_time( version )
+    return os.time( build.version_date(version) );
+end
+
+-- Convert a version string into the number of hours passed since the 
+-- reference time of 2013/01/01 00:00 (assuming that the version string is of
+-- the form '%Y.%m.%d.%H%M').
+function build.version_code( version )
+    local SECONDS_PER_HALF_DAY = 12 * 60 * 60;
+    local reference_time = os.time( {year = 2013; month = 1; day = 1; hour = 0; min = 0; sec = 0} );
+    local version_time = build.version_time( version );
+    return math.ceil( os.difftime(version_time, reference_time) / SECONDS_PER_HALF_DAY );
 end
 
 -- Visit a target by calling a member function /pass/ if it has one.
@@ -89,13 +121,13 @@ function build.visit( pass, ... )
     end
 end
 
--- Determine whether or not a Target should be built based on whether or not
--- it has platforms and variants attributes that contain the current platform
--- and/or variant.
+-- Determine whether or not to load or build based on whether or not a 
+-- settings table has platforms and variants fields that match the current
+-- platform(s) and/or variant(s).
 --
 -- @return
 --  True if \e target should be built otherwise false.
-function build.built_for_platform_and_variant( target )
+function build.built_for_platform_and_variant( settings )
     function contains( value, values )
         for _, v in ipairs(values) do
             if v == value then
@@ -103,8 +135,11 @@ function build.built_for_platform_and_variant( target )
             end
         end        
         return false;
-    end    
-    return (target.platforms == nil or contains(platform, target.platforms)) and (target.variants == nil or contains(variant, target.variants));
+    end
+    return 
+        (platform == "" or settings.platforms == nil or contains(platform, settings.platforms)) and 
+        (variant == "" or settings.variants == nil or contains(variant, settings.variants))
+    ;
 end
 
 -- Execute command with arguments and optional filter and raise an error if 
@@ -136,6 +171,11 @@ end
 -- Return a value from a table using the first key as a lookup.
 function build.switch( values )
     return values[values[1]];
+end
+
+-- Provide shell like string interpolation.
+function build.interpolate(template, variables)
+    return (template:gsub('($%b{})', function(word) return variables[word:sub(3, -2)] or word end));
 end
 
 -- Dump the keys, values, and prototype of a table for debugging.
@@ -243,7 +283,10 @@ function build.load()
     assert( initialize and type(initialize) == "function", "The 'initialize' function is not defined" );
     assert( buildfiles and type(buildfiles) == "function", "The 'buildfiles' function is not defined" );
 
-    initialize();
+    if not build.initialized then
+        initialize();
+        build.initialized = true;
+    end
 
     local cache_target = load_binary( settings.cache, initial(goal) );
     if cache_target == nil or cache_target:is_outdated() or build.local_settings.updated then
@@ -276,6 +319,8 @@ function build.load()
         cache_target:add_dependency( file(script("build/ObjCScanner")) );
         cache_target:add_dependency( file(script("build/default_settings")) );
         cache_target:add_dependency( file(script("build/commands")) );
+
+        mark_implicit_dependencies();
     end
 
     local all = find_target( initial(goal) );
@@ -315,10 +360,16 @@ build.settings_stack = {};
 
 function build.push_settings( settings )
     local settings_stack = build.settings_stack;
-    if #settings_stack > 0 then
-        setmetatable( settings, {__index = settings_stack[#settings_stack]} );
+    if settings then
+        if #settings_stack > 0 then
+            setmetatable( settings, {__index = settings_stack[#settings_stack]} );
+        end
+    else
+        assert( #settings_stack > 0 );
+        settings = settings_stack[#settings_stack];
     end
     table.insert( settings_stack, settings );
+    return settings;
 end
 
 function build.pop_settings( settings )
@@ -337,58 +388,93 @@ function build.current_settings( settings )
     return settings;
 end
 
+build.level = 0;
+
+function build.begin_target()
+    local level = build.level + 1;
+    build.level = level;
+    return level;
+end
+
+function build.end_target( create )
+    local level = build.level - 1;
+    build.level = level;    
+
+    local result;
+    if level == 0 then
+        result = build.expand_target( create );
+    else
+        result = create;
+    end
+    return result;
+end
+
+function build.expand_target( create, ... )
+    return create( ... );
+end
+
 function build.add_library_dependencies( target )
     local libraries = {};
-    if build.built_for_platform_and_variant(target) then
-        if target.libraries then
-            for _, value in ipairs(target.libraries) do
-                local library = find_target( root("%s_%s" % {value, target.architecture}) );
-                assert( library, "Failed to find library '%s'" % value );
-                table.insert( libraries, library );
-                target:add_dependency( library );
-            end
+    if target.libraries then
+        for _, value in ipairs(target.libraries) do
+            local library = find_target( root(module_name(value, target.architecture)) );
+            assert( library, "Failed to find library '%s' for '%s'" % {value, relative(target:path(), root())} );
+            table.insert( libraries, library );
+            target:add_dependency( library );
         end
     end
     target.libraries = libraries;
 end
 
-function build.add_module_dependencies( target, filename, settings, architecture )
+function build.add_module_dependencies( target, filename, architecture )
     if build.built_for_platform_and_variant(target) then
         local working_directory = working_directory();
         working_directory:add_dependency( target );
 
-        target.settings = settings;
+        local root_target = find_target( root() );
+        assert( root_target , "No root target found at '%s'" % tostring(root()) );
+        root_target:add_dependency( target );
+
+        target.settings = build.current_settings();
         target.architecture = architecture;
         target:set_filename( filename );
         target:add_dependency( Directory(branch(filename)) );        
 
         for _, dependency in ipairs(target) do 
             if type(dependency) == "function" then
-                dependency = dependency( architecture );
+                dependency = build.expand_target( dependency, architecture );
             end
-            target:add_dependency( dependency );
-            dependency.module = target;
+            if dependency then
+                target:add_dependency( dependency );
+                dependency.module = target;
+            end
         end
     end
 end
 
-function build.add_package_dependencies( target, filename, settings, dependencies )
+function build.add_package_dependencies( target, filename, dependencies )
     if build.built_for_platform_and_variant(target) then
         local working_directory = working_directory();
         working_directory:add_dependency( target );
 
-        target.settings = settings;
+        local root_target = find_target( root() );
+        assert( root_target , "No root target found at '%s'" % tostring(root()) );
+        root_target:add_dependency( target );
+
+        target.settings = build.current_settings();
         target:set_filename( filename );
         target:add_dependency( Directory(branch(filename)) );
 
         for _, dependency in ipairs(dependencies) do 
             if type(dependency) == "function" then
-                dependency = dependency( abi );
+                dependency = build.expand_target( dependency );
             end
-            for _, dependency_target in ipairs(dependency) do 
-                working_directory:remove_dependency( dependency_target );
-                target:add_dependency( dependency_target );
-                dependency_target.module = target;
+            if dependency then
+                for _, dependency_target in ipairs(dependency) do 
+                    working_directory:remove_dependency( dependency_target );
+                    target:add_dependency( dependency_target );
+                    dependency_target.module = target;
+                end
             end
         end
     end

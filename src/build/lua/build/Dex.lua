@@ -14,10 +14,18 @@ function DexPrototype.clean( jar )
 end
 
 function Dex( id )
+    build.begin_target();
     return function( dependencies )
-        local settings = build.current_settings();
-        local jar = target( "", DexPrototype, dependencies );
-        build.add_module_dependencies( jar, "%s/%s.dex" % {settings.bin, id}, settings );
-        return { jar };
+        return build.end_target( function()            
+            local jars = {};
+            local settings = build.push_settings( dependencies.settings );
+            if build.built_for_platform_and_variant(settings) then
+                local jar = target( "", DexPrototype, dependencies );
+                build.add_module_dependencies( jar, "%s/%s.dex" % {settings.bin, id} );
+                table.insert( jars, jar );
+            end
+            build.pop_settings();
+            return jars;
+        end);
     end
 end

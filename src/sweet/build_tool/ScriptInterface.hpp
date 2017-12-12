@@ -117,6 +117,7 @@ class ScriptInterface
         
         void buildfile( const std::string& filename, ptr<Target> target );
         int bind( ptr<Target> target );
+        void mark_implicit_dependencies();
         void print_dependencies( ptr<Target> target );
         void print_namespace( ptr<Target> target );
         void wait();
