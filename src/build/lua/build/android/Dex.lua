@@ -7,7 +7,7 @@ function Dex:depend( dependencies )
         java.add_jar_dependencies( self, dependencies.jars );
         dependencies.jars = nil;
     end
-    return build.default_depend( self, dependencies );
+    return build.Target.depend( self, dependencies );
 end
 
 function Dex:build()

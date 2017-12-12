@@ -23,7 +23,7 @@ function Jar.depend( jar, dependencies )
         java.add_jar_dependencies( java, dependencies.jars );
         dependencies.jars = nil;
     end
-    return build.default_depend( jar, dependencies );
+    return build.Target.depend( jar, dependencies );
 end
 
 local function included( jar, filename )

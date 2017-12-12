@@ -2,43 +2,42 @@
 local Target = build.Target;
 
 setmetatable( Target, {
-    __call = function( _, id, target_prototype, definition )
-        local target_ = build.target( id, target_prototype, definition );
+    __call = function( _, identifier, target_prototype, definition )
+        local target_ = build.target( identifier, target_prototype, definition );
         getmetatable( target_ ).__call = function( target, ... )
-            local depend_function = target.call or target.depend or Target.depend;
-            depend_function( target, ... );
+            target:depend( ... );
             return target;
         end;
         return target_;
     end
 } );
 
-function Target.depend( target, dependencies )
+function Target:depend( dependencies )
     local settings = build.current_settings();
     if type(dependencies) == "string" then
         local source_file = build.SourceFile( dependencies, settings );
-        target:add_dependency( source_file );
+        self:add_dependency( source_file );
     elseif type(dependencies) == "table" then
-        build.merge( target, dependencies );
+        build.merge( self, dependencies );
         for _, value in ipairs(dependencies) do 
             local source_file = build.SourceFile( value, settings );
-            target:add_dependency( source_file );
+            self:add_dependency( source_file );
         end
     end
-    return target;
+    return self;
 end
 
-function Target.implicit_depend( target, dependencies )
+function Target:implicit_depend( dependencies )
     local settings = build.current_settings();
     if type(dependencies) == "string" then
         local source_file = build.SourceFile( dependencies, settings );
-        target:add_implicit_dependency( source_file );
+        self:add_implicit_dependency( source_file );
     elseif type(dependencies) == "table" then
-        build.merge( target, dependencies );
+        build.merge( self, dependencies );
         for _, value in ipairs(dependencies) do 
             local source_file = build.SourceFile( value, settings );
-            target:add_implicit_dependency( source_file );
+            self:add_implicit_dependency( source_file );
         end
     end
-    return target;
+    return self;
 end

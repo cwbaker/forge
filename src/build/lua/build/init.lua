@@ -16,16 +16,6 @@ function errorf( format, ... )
     error( string.format(format, ...) );
 end
 
-build.buildfiles_stack = {};
-
-function build.current_buildfile()
-    local buildfiles_stack = build.buildfiles_stack;
-    local back = #buildfiles_stack;
-    if back > 0 then 
-        return buildfiles_stack[back];
-    end
-end
-
 -- Provide buildfile() that restores the settings stack position.
 local original_buildfile = build.buildfile;
 function buildfile( ... )
@@ -39,6 +29,17 @@ function buildfile( ... )
 end
 
 build = _G.build or {};
+build.buildfiles_stack = {};
+build.settings_stack = {};
+build.modules = {};
+
+function build.current_buildfile()
+    local buildfiles_stack = build.buildfiles_stack;
+    local back = #buildfiles_stack;
+    if back > 0 then 
+        return buildfiles_stack[back];
+    end
+end
 
 function build.matches( value, ... )
     for i = 1, select("#", ...) do 
@@ -57,102 +58,27 @@ function build.variant_matches( ... )
     return variant == "" or build.matches( variant, ... );
 end
 
-function build.default_create( target_prototype, ... )
-    local identifier_or_sources = select( 1, ... );
-    if type(identifier_or_sources) ~= "table" then   
-        local settings = build.current_settings();
-        local identifier = build.interpolate( identifier_or_sources, settings );
-        local target = build.Target( identifier, target_prototype, select(2, ...) );
-        if build.is_relative(identifier) then 
-            target:set_filename( build.object(identifier) );
-        else
-            target:set_filename( identifier );
-        end
-        target:set_cleanable( true );
-        target:add_ordering_dependency( build.Directory(build.branch(target)) );
-        target.settings = settings;
-        return target;
-    end
-end
-
-function build.default_depend( target, dependencies )
-    local settings = build.current_settings();
-    if type(dependencies) == "string" then
-        local source_file = build.SourceFile( dependencies, settings );
-        target:add_dependency( source_file );
-    elseif type(dependencies) == "table" then
-        build.merge( target, dependencies );
-        for _, value in ipairs(dependencies) do 
-            local source_file = build.SourceFile( value, settings );
-            target:add_dependency( source_file );
-        end
-    end
-    return target;
-end
-
-function build.TargetPrototype( id, create_function )
-    -- Split a '.' delimited string into a table hierarchy returning the last 
-    -- level table and identifier.
-    local function split_modules( module, qualified_id )
-        local start = qualified_id:find( ".", 1, true );
-        if start then
-            local id = qualified_id:sub( 1, start - 1 );
-            local submodule = module[id];
-            if submodule == nil then 
-                submodule = {};
-                module[id] = submodule;
-            end
-            local remaining = qualified_id:sub( start + 1 );
-            return split_modules( submodule, remaining );
-        end
-        return module, qualified_id;
-    end
-
-    local target_prototype = build.target_prototype( id );
-    getmetatable( target_prototype ).__call = create_function or function( target_prototype, ... )
-        local create_function = target_prototype.create;
-        if create_function then 
-            local settings = build.current_settings();
-            return create_function( settings, ... );
-        end
-        return build.default_create( target_prototype, ... );
-    end;
-    local module, id = split_modules( build, id );
-    module[id] = target_prototype;
-    return target_prototype;
-end
-
 function build.File( filename, target_prototype, definition )
-    local settings = build.current_settings();
-    local filename = build.interpolate( filename, settings );
-    local target = build.file( filename, target_prototype, definition );
+    local target = build.Target( build.interpolate(filename), target_prototype, definition );
+    target:set_filename( target:path() );
     target:set_cleanable( true );
-    getmetatable( target ).__call = function( target, ... )
-        local depend_function = target.call or target.depend or build.default_depend;
-        depend_function( target, ... );
-        return target;
-    end;
     return target;
-end
-
-function build.GeneratedFile( filename, target_prototype, definition )
-    local target_ = build.file( filename, target_prototype, definition );
-    target_:set_cleanable( false );
-    getmetatable( target_ ).__call = function( target, ... )
-        local depend_function = target.call or target.depend or build.default_depend;
-        depend_function( target, ... );
-        return target;
-    end;
-    return target_;
 end
 
 function build.SourceFile( value, settings )
     local target = value;
     if type(target) == "string" then 
-        settings = settings or build.current_settings();
-        target = build.file( build.interpolate(value, settings) );
-        target:set_required_to_exist( true );
-        target:set_cleanable( false );
+        target = build.Target( build.interpolate(value, settings) );
+        target:set_filename( target:path() );
+        -- This check is attempting to not require that targets exist if they
+        -- have been defined somewhere else with an explicit target prototype.
+        -- There should be either a way of having `build.file()` indicate 
+        -- whether or not it actually created a target or perhaps relaxing the
+        -- required to exist rules to perhaps only apply to targets that don't
+        -- have targets.
+        if not target:prototype() then 
+            target:set_cleanable( false );
+        end
     end
     return target;
 end
@@ -160,9 +86,17 @@ end
 function build.ImplicitSourceFile( value, settings )
     local target = value;
     if type(target) == "string" then 
-        settings = settings or build.current_settings();
-        target = build.file( build.interpolate(value, settings) );
-        target:set_cleanable( false );
+        target = build.Target( build.interpolate(value, settings) );
+        target:set_filename( target:path() );
+        -- This check is attempting to not require that targets exist if they
+        -- have been defined somewhere else with an explicit target prototype.
+        -- There should be either a way of having `build.file()` indicate 
+        -- whether or not it actually created a target or perhaps relaxing the
+        -- required to exist rules to perhaps only apply to targets that don't
+        -- have targets.
+        if not target:prototype() then 
+            target:set_cleanable( false );
+        end
     end
     return target;
 end
@@ -300,8 +234,6 @@ function build.initialize( project_settings )
     build.push_settings( settings );
     return settings;
 end
-
-build.modules = {};
 
 -- Register *module* to be configured and initialized when the build sysetm 
 -- is initialized.
@@ -521,7 +453,7 @@ end
 function build.all( dependencies )
     local all = build.target( "all" );
     if dependencies then 
-        build.default_depend( all, dependencies );
+        all:depend( dependencies );
     end
     return all;
 end
@@ -610,8 +542,6 @@ end
 function build.indent( level )
     return string.rep("  ", level );
 end
-
-build.settings_stack = {};
 
 function build.push_settings( settings )
     local settings_stack = build.settings_stack;
@@ -766,8 +696,9 @@ dll_name = build.dll_name;
 exe_name = build.exe_name;
 
 require "build.commands";
+require "build.TargetPrototype";
+require "build.Target";
 require "build.Generate";
 require "build.Directory";
 require "build.Copy";
 require "build.CopyDirectory";
-require "build.Target";

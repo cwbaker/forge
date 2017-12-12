@@ -34,7 +34,6 @@ class Target
     bool bound_to_file_; ///< Whether or not this Target is bound to a file.
     bool bound_to_dependencies_; ///< Whether or not this Target is bound to its dependencies.
     bool referenced_by_script_; ///< Whether or not this Target is referenced by a scripting object.  
-    bool required_to_exist_; ///< Whether or not this Target is required to be bound to an existing file.
     bool cleanable_; ///< Whether or not this Target is able to be cleaned.
     bool built_; ///< Whether or not this Target has had `Target::clear_implicit_dependencies()` called on it.
     Target* working_directory_; ///< The Target that relative paths expressed when this Target is visited are relative to.
@@ -71,9 +70,6 @@ class Target
 
         void set_referenced_by_script( bool referenced_by_script );
         bool referenced_by_script() const;
-
-        void set_required_to_exist( bool required_to_exist );
-        bool required_to_exist() const;
 
         void set_cleanable( bool cleanable );
         bool cleanable() const;

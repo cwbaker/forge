@@ -6,9 +6,11 @@ function R.create( settings, packages )
     r.settings = settings;
     r.packages = packages;
     for index, package in ipairs(packages) do 
-        local filename = ("%s/R.java"):format( package:gsub("%.", "/") );
-        r:set_filename( build.generated(filename), index );
+        local filename = build.generated( ("%s/R.java"):format(package:gsub("%.", "/")) );
+        r:set_filename( filename, index );
+        r:add_ordering_dependency( build.Directory(build.branch(filename)) );
     end
+    r:add_implicit_dependency( build.current_buildfile() );
     return r;
 end
 

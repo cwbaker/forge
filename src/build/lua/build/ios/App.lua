@@ -31,7 +31,7 @@ function App:depend( dependencies )
         self.entitlements = ("%s/%s"):format( obj_directory(self), "Entitlements.plist" );
         table.insert( dependencies, build.Generate (self.entitlements) (entitlements) );
     end
-    return build.default_depend( self, dependencies );
+    return build.Target.depend( self, dependencies );
 end
 
 function App.build( app )

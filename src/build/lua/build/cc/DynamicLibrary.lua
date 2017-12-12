@@ -40,7 +40,7 @@ function DynamicLibrary:depend( dependencies )
             self:add_dependency( build.target(build.root(library)) );
         end
     end
-    return build.default_depend( self, dependencies );
+    return build.Target.depend( self, dependencies );
 end
 
 function DynamicLibrary:build()

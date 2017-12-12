@@ -366,7 +366,7 @@ end
 
 function android.DynamicLibrary( name, architecture )
     local filename = ("${apk}/%s"):format( android.dll_name(name, architecture) );
-    local dynamic_library = build.default_create( build.DynamicLibrary, filename );
+    local dynamic_library = build.DynamicLibrary( filename );
     dynamic_library.architecture = architecture or settings.default_architecture;
 
     local group = build.Target( build.anonymous() );

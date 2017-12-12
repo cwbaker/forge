@@ -9,7 +9,6 @@ function QtMoc.create( settings, definition )
         local cxx_file = ("moc_%s.cpp"):format( build.basename(value) );
 
         local qtmoc = build.File( cxx_file, QtMoc, {value} );
-        qtmoc:set_required_to_exist( false );
         table.insert( cxx_files, qtmoc );
 
         local header = build.SourceFile( value );

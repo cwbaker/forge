@@ -1,5 +1,5 @@
 
-local function call( cc, definition )
+local function depend( cc, definition )
     build.merge( cc, definition );
     local settings = cc.settings;
     local architecture = cc.architecture;
@@ -32,7 +32,7 @@ local function create_target_prototype( id, language )
     end
     
     target_prototype.create = create;
-    target_prototype.call = call;
+    target_prototype.depend = depend;
     target_prototype.build = build_;
     return target_prototype;
 end

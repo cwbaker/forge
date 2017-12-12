@@ -540,13 +540,6 @@ struct Bind
 
             target->bind();
             target->set_successful( true );
-
-            if ( target->required_to_exist() && target->bound_to_file() && target->last_write_time() == 0 )
-            {
-                const vector<string>& filenames = target->filenames();
-                build_tool_->error( "The source file '%s' does not exist", !filenames.empty() ? filenames[0].c_str() : target->path().c_str() );
-                ++failures_;
-            }
         }
     }
 };
@@ -852,13 +845,12 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
             std::time_t timestamp = target->timestamp();
             struct tm* time = ::localtime( &timestamp );
-            printf( "'%s' %c%c%c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %s", 
+            printf( "'%s' %c%c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %s", 
                 id(target),
                 target->outdated() ? 'O' : 'o',
                 target->changed() ? 'T' : 't',
                 target->bound_to_file() ? 'F' : 'f',
                 target->referenced_by_script() ? 'S' : 's',
-                target->required_to_exist() ? 'E' : 'e',
                 target->cleanable() ? 'C' : 'c',
                 target->built() ? 'B' : 'b',
                 time ? time->tm_year + 1900 : 9999, 

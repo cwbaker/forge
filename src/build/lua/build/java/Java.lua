@@ -9,13 +9,8 @@ function Java.create( settings, definition )
 
     build.pushd( java_.sourcepath or "." );
     for _, value in ipairs(definition) do
-        if type(value) == "string" then
-            local source = build.file( value );
-            source:set_required_to_exist( true );
-            java_:add_dependency( source );
-        elseif type(value) == "table" then
-            java_:add_dependency( value );
-        end
+        local source = build.SourceFile( value );
+        java_:add_dependency( source );
     end
     build.popd();
 
