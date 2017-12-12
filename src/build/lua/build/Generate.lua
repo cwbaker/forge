@@ -10,7 +10,9 @@ function Generate.create( settings, filename, template )
     generated_file.template = template;
     generated_file.settings = settings;
     generated_file:add_dependency( template_file );
-    generated_file:add_ordering_dependency( build.Directory(generated_file:directory()) );
+    if generated_file:directory() ~= build.pwd() then
+        generated_file:add_ordering_dependency( build.Directory(generated_file:directory()) );
+    end
     generated_file:build();
     return generated_file;
 end
