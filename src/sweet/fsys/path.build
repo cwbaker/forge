@@ -1,0 +1,19 @@
+
+buildfile "path_test/path_test.build";
+
+local settings = build.current_settings();
+for _, architecture in ipairs(settings.architectures) do
+    build.Library ("path", architecture) {
+        libraries = {
+            "sweet/assert/assert",
+            "sweet/error/error"
+        };
+
+        build.Cxx (architecture) {
+            precompiled_header = "stdafx.hpp";
+            "BasicPath.cpp",
+            "BasicPathTraits.cpp",
+            "path.cpp"
+        };
+    };
+end
