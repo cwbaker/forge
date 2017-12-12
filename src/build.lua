@@ -18,22 +18,23 @@ function initialize()
 
     local boost_include_directory, boost_library_directory;
     if operating_system() == "windows" then
-        boost_include_directory = "C:/boost/include/boost-1_43";
-        boost_library_directory = "C:/boost/lib";
+        boost_include_directory = "C:/local/boost_1_56_0";
+        boost_library_directory = "C:/local/boost_1_56_0/lib32-msvc-12.0";
     elseif operating_system() == "macosx" then
         boost_include_directory = home( "boost/include/boost-1_43" );
         boost_library_directory = home( "boost/lib" );
     end
 
     local settings = build.initialize {
-        bin = root( "../bin" );
-        lib = root( "../lib" );
-        obj = root( "../obj" );
+        bin = root( "../%s_%s/bin" % {platform, variant} );
+        lib = root( "../%s_%s/lib" % {platform, variant} );
+        obj = root( "../%s_%s/obj" % {platform, variant} );
         include_directories = {
             root(),
             boost_include_directory
         };
         library_directories = {
+            root( "../%s_%s/lib" % {platform, variant} ),
             boost_library_directory
         };
         sln = root( "../sweet_build_tool.sln" );
@@ -51,13 +52,10 @@ function initialize()
 
     boost.initialize( settings );
     parser.initialize( settings );
-
-    exe_name = function( name, architecture )
-        return "%s_%s" % { name, variant };
-    end
 end
 
 function buildfiles()
+    buildfile( "lua/lua.build" );
     buildfile( "sweet/assert/assert.build" );
     buildfile( "sweet/atomic/atomic.build" );
     buildfile( "sweet/build_tool/build_tool.build" );
@@ -71,5 +69,5 @@ function buildfiles()
     buildfile( "sweet/rtti/rtti.build" );
     buildfile( "sweet/thread/thread.build" );
     buildfile( "sweet/traits/traits.build" );
-    buildfile( "sweet/unit/unit.build" );
+    buildfile( "unit/unit.build" );
 end
