@@ -106,7 +106,7 @@ Target::~Target()
 
     if ( graph_ )
     {
-        graph_->destroy_target( this );
+        graph_->destroy_target_lua_binding( this );
     }
 }
 
@@ -206,6 +206,20 @@ const std::string& Target::branch() const
     }
 
     return branch_;
+}
+
+/**
+// Is this target an anonymous target?
+//
+// A target is considered anonymous if its identifier starts with the string
+// '$$'.
+//
+// @return
+//  True if this target is anonymous otherwise false.
+*/
+bool Target::anonymous() const
+{
+    return id_.size() > 2 && id_[0] == '$' && id_[1] == '$';
 }
 
 /**
@@ -731,6 +745,18 @@ void Target::add_target( Target* target, Target* this_target )
 }
 
 /**
+// Destroy any anonymous targets that are direct children of this target.
+*/
+void Target::destroy_anonymous_targets()
+{
+    int i = 0; 
+    while ( i < int(targets_.size()) )
+    {
+        ++i;
+    }
+}
+
+/**
 // Find a Target by id.
 //
 // @param id
@@ -827,17 +853,15 @@ bool Target::is_explicit_dependency( Target* target ) const
 // potentially invalid.
 //
 // @param target
-//  The Target to add as an implicit dependency.
+//  The Target to add as an implicit dependency (quietly ignored if null,
+//  the same as this target, an anonymous target, or already a dependency).
 */
 void Target::add_implicit_dependency( Target* target )
 {
-    if ( target && target != this ) 
+    if ( target && target != this && !target->anonymous() && !is_dependency(target) )
     {
-        if ( !is_dependency(target) )
-        {
-            implicit_dependencies_.push_back( target );
-            bound_to_dependencies_ = false;
-        }
+        implicit_dependencies_.push_back( target );
+        bound_to_dependencies_ = false;
     }
 }
 
@@ -1188,7 +1212,7 @@ int Target::postorder_height() const
 // @return
 //  The next anonymous index.
 */
-int Target::anonymous()
+int Target::next_anonymous_index()
 {
     return anonymous_++;
 }

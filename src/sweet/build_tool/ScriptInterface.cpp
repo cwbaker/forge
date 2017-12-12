@@ -484,7 +484,7 @@ std::string ScriptInterface::anonymous() const
     Target* working_directory = context->working_directory();
     SWEET_ASSERT( working_directory );
     char anonymous [256];
-    unsigned int length = sprintf( anonymous, "$$%d", working_directory->anonymous() );
+    unsigned int length = sprintf( anonymous, "$$%d", working_directory->next_anonymous_index() );
     return string( anonymous, length );
 }
 

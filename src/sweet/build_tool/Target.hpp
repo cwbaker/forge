@@ -61,6 +61,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target
         const std::string& path() const;
         const std::string& branch() const;
         Graph* graph() const;
+        bool anonymous() const;
 
         void set_prototype( TargetPrototype* target_prototype );
         TargetPrototype* prototype() const;
@@ -104,6 +105,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target
         Target* parent() const;
 
         void add_target( Target* target, Target* this_target );
+        void destroy_anonymous_targets();
         Target* find_target_by_id( const std::string& id ) const;
         const std::vector<Target*>& targets() const;
 
@@ -132,7 +134,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target
         void set_postorder_height( int height );
         int postorder_height() const;
         
-        int anonymous();
+        int next_anonymous_index();
 
         template <class Archive> void persist( Archive& archive );
 };

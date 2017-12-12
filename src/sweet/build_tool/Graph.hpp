@@ -46,7 +46,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Graph
 
         Target* target( const std::string& id, TargetPrototype* target_prototype = NULL, Target* working_directory = NULL );
         Target* find_target( const std::string& path, Target* working_directory );
-        void destroy_target( Target* target );
+        void destroy_target_lua_binding( Target* target );
                 
         void buildfile( const std::string& filename );
         int bind( Target* target = NULL );        

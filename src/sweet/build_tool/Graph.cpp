@@ -336,7 +336,7 @@ Target* Graph::find_target( const std::string& id, Target* working_directory )
 // @param target
 //  The Target to destroy (assumed not null).
 */
-void Graph::destroy_target( Target* target )
+void Graph::destroy_target_lua_binding( Target* target )
 {
     SWEET_ASSERT( target );
     if ( target && target->referenced_by_script() )
@@ -501,6 +501,8 @@ void Graph::clear()
         {
             SWEET_ASSERT( target );
             target->clear_explicit_dependencies();
+            target->destroy_anonymous_targets();
+            target->graph()->destroy_target_lua_binding( target );
 
             const vector<Target*>& targets = target->targets();
             for ( vector<Target*>::const_iterator i = targets.begin(); i != targets.end(); ++i )
