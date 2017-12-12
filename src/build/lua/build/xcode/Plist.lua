@@ -1,7 +1,7 @@
 
 local Plist = build:TargetPrototype( "xcode.Plist" );
 
-function Plist.build( plist )
+function Plist.build( build, plist )
     local command_line = {
         'plutil';
         '-convert binary1';

@@ -1,7 +1,7 @@
 
 buildfile "error_test/error_test.build";
 
-for _, build in build:default_builds() do 
+for _, build in build:default_builds("cc_.*") do 
     build:Library "error" {
         libraries = {
             "sweet/assert/assert"

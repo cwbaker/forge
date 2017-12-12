@@ -146,7 +146,8 @@ function android.initialize( settings )
     settings.android.proguard_enabled = settings.android.proguard_enabled or variant == "shipping";
     
     for _, architecture in ipairs(settings.android.architectures) do 
-        build:default_build( ("android-%s"):format(architecture), build:configure {
+        build:default_build( ("cc_android_%s"):format(architecture), build:configure {
+            obj = build:root( ("../%s/obj/cc_android_%s"):format(variant, architecture) );
             platform = "android";
             architecture = architecture;
             default_architecture = architecture;
@@ -171,6 +172,14 @@ function android.initialize( settings )
             ilk_name = android.ilk_name;
         } );
     end
+
+    build:default_build( "java_android", build:configure {
+        classes = build:root( ("../%s/classes/java_android"):format(variant) );
+        gen = build:root( ("../%s/gen/java_android"):format(variant) );
+        system_jars = {
+            ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
+        };
+    } );
 end
 
 function android.cc( target )
@@ -381,8 +390,8 @@ function android.DynamicLibrary( build, name )
 
     local group = build:Target( build:anonymous() );
     group:add_dependency( dynamic_library );
-    group.depend = function( group, dependencies )
-        return dynamic_library:depend( dependencies );
+    group.depend = function( build, group, ... )
+        return dynamic_library.depend( dynamic_library.build_, dynamic_library, ... );
     end
 
     local runtime_library = dynamic_library.settings.runtime_library;

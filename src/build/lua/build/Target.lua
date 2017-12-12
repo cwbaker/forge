@@ -3,41 +3,28 @@ local Target = build.Target;
 
 setmetatable( Target, {
     __call = function( _, build, identifier, target_prototype )
-        local target_ = build:target( identifier, target_prototype );
-        getmetatable( target_ ).__call = function( target, ... )
-            target:depend( ... );
+        local target = build:target( identifier, target_prototype );
+        getmetatable( target ).__call = function( target, ... )
+            local depend_function = target.depend;
+            depend_function( target.build_, target, ... );
             return target;
         end;
-        return target_;
+        target.build_ = build;
+        return target;
     end
 } );
 
-function Target:depend( dependencies )
-    local settings = self.settings;
+function Target.depend( build, target, dependencies )
+    local settings = target.settings;
     if type(dependencies) == "string" then
         local source_file = build:SourceFile( dependencies, settings );
-        self:add_dependency( source_file );
+        target:add_dependency( source_file );
     elseif type(dependencies) == "table" then
-        build:merge( self, dependencies );
+        build:merge( target, dependencies );
         for _, value in ipairs(dependencies) do 
             local source_file = build:SourceFile( value, settings );
-            self:add_dependency( source_file );
+            target:add_dependency( source_file );
         end
     end
-    return self;
-end
-
-function Target:implicit_depend( dependencies )
-    local settings = self.settings;
-    if type(dependencies) == "string" then
-        local source_file = build:SourceFile( dependencies, settings );
-        self:add_implicit_dependency( source_file );
-    elseif type(dependencies) == "table" then
-        build:merge( self, dependencies );
-        for _, value in ipairs(dependencies) do 
-            local source_file = build:SourceFile( value, settings );
-            self:add_implicit_dependency( source_file );
-        end
-    end
-    return self;
+    return target;
 end

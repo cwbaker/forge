@@ -1,15 +1,15 @@
 
 local Pdf = build:TargetPrototype( "asciidoc.Pdf" );
 
-function Pdf.build( pdf )
-    local settings = pdf.settings;
+function Pdf.build( build, target )
+    local settings = target.settings;
     local python = settings.python.executable;
     local arguments = {
         "python",
         settings.a2x.executable,
-        "-f pdf",
-        ('-o "%s"'):format( pdf ),
-        ('"%s"'):format( pdf:dependency() )
+        "-f target",
+        ('-o "%s"'):format( target ),
+        ('"%s"'):format( target:dependency() )
     };
-    build:system( python, arguments, nil, build:dependencies_filter(pdf) );
+    build:system( python, arguments, nil, build:dependencies_filter(target) );
 end;

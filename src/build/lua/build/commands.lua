@@ -5,7 +5,7 @@
 local function clean_visit( target )
     local clean_function = target.clean;
     if clean_function then 
-        clean_function( target );
+        clean_function( target.build_, target );
     elseif target:cleanable() and target:filename() ~= "" then 
         build:rm( target:filename() );
     end
@@ -22,7 +22,7 @@ local function build_visit( target )
             printf( build:leaf(filename) );
         end
         target:clear_implicit_dependencies();
-        local success, error_message = pcall( build_function, target );
+        local success, error_message = pcall( build_function, target.build_, target );
         target:set_built( success );
         if not success then 
             clean_visit( target );

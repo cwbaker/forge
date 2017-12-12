@@ -10,20 +10,20 @@ local function default_filename( identifier, settings )
     return ("%s/%s.jar"):format( branch, build:basename(identifier) );
 end
 
-function Jar.create( settings, identifier )
+function Jar.create( build, settings, identifier )
     local jar = build:Target( identifier, Jar );
     jar:set_filename( default_filename(identifier, settings) );
     jar.settings = settings;
     return jar;
 end
 
-function Jar.depend( jar, dependencies )
+function Jar.depend( build, target, dependencies )
     local jars = dependencies.jars;
     if jars then 
         java.add_jar_dependencies( java, dependencies.jars );
         dependencies.jars = nil;
     end
-    return build.Target.depend( jar, dependencies );
+    return build.Target.depend( build, target, dependencies );
 end
 
 local function included( jar, filename )
@@ -51,20 +51,20 @@ local function included( jar, filename )
     return true;
 end
 
-function Jar.build( jar )
-    local settings = jar.settings;
-    local jar_ = build:native( ("%s/bin/jar"):format(jar.settings.java.jdk_directory) );
-    local directory = settings.classes_directory( jar );
+function Jar.build( build, target )
+    local settings = target.settings;
+    local jar = build:native( ("%s/bin/jar"):format(settings.java.jdk_directory) );
+    local directory = settings.classes_directory( target );
     build:pushd( directory );
 
     local classes = {};
     for filename in build:find(".") do 
-        if included(jar, filename) then
+        if included(target, filename) then
             table.insert( classes, build:relative(filename) );
         end
     end
 
-    build:system( jar_, ('jar cvf "%s" "%s"'):format(jar:filename(), table.concat(classes, [[" "]])) );
+    build:system( jar, ('jar cvf "%s" "%s"'):format(target:filename(), table.concat(classes, [[" "]])) );
     build:popd();
 end
 

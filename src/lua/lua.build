@@ -1,5 +1,5 @@
 
-for _, build in build:default_builds() do
+for _, build in build:default_builds("cc_.*") do
     local build = build:configure {
         warning_level = 0;
     };
@@ -54,7 +54,7 @@ for _, build in build:default_builds() do
 end
 
 if build:platform_matches("macosx") or build:platform_matches("windows") then
-    for _, build in build:default_builds(("%s-.*"):format(platform)) do
+    for _, build in build:default_builds(("cc_%s_.*"):format(platform)) do
         local build = build:configure {
             warning_level = 0;
         };

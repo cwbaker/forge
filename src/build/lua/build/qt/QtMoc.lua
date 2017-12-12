@@ -1,12 +1,12 @@
 
 local QtMoc = build:TargetPrototype( "qt.QtMoc" );
 
-function QtMoc:build()
-    local moc = self.settings.qt.moc;
+function QtMoc.build( build, target )
+    local moc = target.settings.qt.moc;
     local command_line = {
         'moc',
-        ('-o "%s"'):format( build:relative(self) ),
-        ('"%s"'):format( self:dependency() )
+        ('-o "%s"'):format( build:relative(target) ),
+        ('"%s"'):format( target:dependency() )
     };
     build:system( moc, command_line );
 end

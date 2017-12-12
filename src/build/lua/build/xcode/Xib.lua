@@ -1,7 +1,7 @@
 
 local Xib = build:TargetPrototype( "xcode.Xib" );
 
-function Xib.build( xib )
+function Xib.build( build, xib )
     local command_line = {
         'xcrun';
         ('--sdk %s'):format( ios.sdkroot_by_target_and_platform(xib, platform) );

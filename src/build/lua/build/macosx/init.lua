@@ -80,7 +80,8 @@ end
 function macosx.initialize( settings )
     if build:operating_system() == "macosx" then
         for _, architecture in ipairs(settings.architectures) do 
-            build:default_build( ("macosx-%s"):format(architecture), build:configure {
+            build:default_build( ("cc_macosx_%s"):format(architecture), build:configure {
+                obj = build:root( ("../%s/obj/cc_macosx_%s"):format(variant, architecture) );
                 platform = "macosx";
                 architecture = architecture;
                 default_architecture = architecture;
@@ -103,6 +104,7 @@ function macosx.initialize( settings )
 
         local settings = build.settings;
         local architecture = settings.default_architecture;
+        settings.obj = build:root( ("../%s/obj/cc_macosx_%s"):format(variant, architecture) );
         settings.platform = "macosx";
         settings.architecture = architecture;
         settings.default_architecture = architecture;

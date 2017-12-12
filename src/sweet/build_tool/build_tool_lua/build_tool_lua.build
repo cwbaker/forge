@@ -1,5 +1,5 @@
 
-for _, build in build:default_builds() do
+for _, build in build:default_builds("cc_.*") do
     local build = build:configure {
         defines = {
             "_CRT_SECURE_NO_DEPRECATE",

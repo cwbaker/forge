@@ -14,7 +14,7 @@ local function default_identifier_filename( identifier, architecture, settings )
     return identifier, filename;
 end
 
-function App.create( settings, identifier )
+function App.create( build, settings, identifier )
     local identifier, filename = default_identifier_filename( identifier, architecture, settings );
     local app = build:Target( identifier, App );
     app:set_filename( filename );
@@ -25,38 +25,38 @@ function App.create( settings, identifier )
     return app;
 end
 
-function App:depend( dependencies )
-    local settings = self.settings;
+function App.depend( build, target, dependencies )
+    local settings = target.settings;
     local entitlements = dependencies.entitlements;
     if entitlements then 
-        self.entitlements = ("%s/%s"):format( settings.obj_directory(self), "Entitlements.plist" );
-        table.insert( dependencies, build:Generate (self.entitlements) (entitlements) );
+        target.entitlements = ("%s/%s"):format( settings.obj_directory(target), "Entitlements.plist" );
+        table.insert( dependencies, build:Generate (target.entitlements) (entitlements) );
         dependencies.entitlements = nil;
     end
-    return build.Target.depend( self, dependencies );
+    return build.Target.depend( build, target, dependencies );
 end
 
-function App.build( app )
-    local xcrun = app.settings.ios.xcrun;
-    if app.settings.generate_dsym_bundle then 
+function App.build( build, target )
+    local xcrun = target.settings.ios.xcrun;
+    if target.settings.generate_dsym_bundle then 
         local executable;
-        for _, dependency in app:dependencies() do 
+        for _, dependency in target:dependencies() do 
             if dependency:prototype() == build.xcode.Lipo then 
                 executable = dependency:filename();
                 break;
             end
         end
         if executable then 
-            build:system( xcrun, ('xcrun dsymutil -o "%s.dSYM" "%s"'):format(app:filename(), executable) );
-            if app.settings.strip then 
+            build:system( xcrun, ('xcrun dsymutil -o "%s.dSYM" "%s"'):format(target:filename(), executable) );
+            if target.settings.strip then 
                 build:system( xcrun, ('xcrun strip "%s"'):format(executable) );
             end
         end
     end
 
-    local provisioning_profile = _G.provisioning_profile or app.settings.provisioning_profile;
+    local provisioning_profile = _G.provisioning_profile or target.settings.provisioning_profile;
     if provisioning_profile then
-        local embedded_provisioning_profile = ("%s/embedded.mobileprovision"):format( app:filename() );
+        local embedded_provisioning_profile = ("%s/embedded.mobileprovision"):format( target:filename() );
         build:rm( embedded_provisioning_profile );
         build:cp( embedded_provisioning_profile, provisioning_profile );
     end
@@ -64,24 +64,24 @@ function App.build( app )
     if platform == "ios" then
         local command_line = {
             "codesign";
-            ('-s "%s"'):format( _G.signing_identity or app.settings.ios.signing_identity );
+            ('-s "%s"'):format( _G.signing_identity or target.settings.ios.signing_identity );
             "--force";
             "--no-strict";
             "-vv";
-            ('"%s"'):format( app );
+            ('"%s"'):format( target );
         };
-        local entitlements = app.entitlements;
+        local entitlements = target.entitlements;
         if entitlements then 
             table.insert( command_line, ('--entitlements "%s"'):format(entitlements) );
         end
 
-        local codesign = app.settings.ios.codesign;
+        local codesign = target.settings.ios.codesign;
         build:system( codesign, table.concat(command_line, " "), environment );
     end
 end
 
-function App.clean( app )
-    build:rmdir( app:filename() );
+function App.clean( build, target )
+    build:rmdir( target:filename() );
 end
 
 ios.App = App;

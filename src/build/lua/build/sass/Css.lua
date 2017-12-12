@@ -1,8 +1,8 @@
 
 local Css = build:TargetPrototype( "sass.Css" );
 
-function Css.build( css )
-    local settings = css.settings;
+function Css.build( build, target )
+    local settings = target.settings;
 
     local load_paths = {};
     if settings.sass.load_paths then
@@ -10,8 +10,8 @@ function Css.build( css )
             table.insert( load_paths, ('-I "%s"'):format(directory) );
         end
     end
-    if css.load_paths then
-        for _, directory in ipairs(css.load_paths) do
+    if target.load_paths then
+        for _, directory in ipairs(target.load_paths) do
             table.insert( load_paths, ('-I "%s"'):format(directory) );
         end
     end
@@ -22,11 +22,11 @@ function Css.build( css )
         settings.sass.executable,
         table.concat( load_paths, " " ),
         ('--cache-location "%s"'):format( build:interpolate("${obj}/.sass-cache", settings) ),
-        ('"%s"'):format( css:dependency():filename() ),
-        ('"%s"'):format( css:filename() ),
+        ('"%s"'):format( target:dependency():filename() ),
+        ('"%s"'):format( target:filename() ),
     };
     local environment = {
         PATH = os.getenv( "PATH" );
     };
-    build:system( ruby, arguments, environment, build:dependencies_filter(css) );
+    build:system( ruby, arguments, environment, build:dependencies_filter(target) );
 end

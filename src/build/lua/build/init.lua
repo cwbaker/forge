@@ -406,7 +406,7 @@ end
 function build:all( dependencies )
     local all = self:target( "all" );
     if dependencies then 
-        all:depend( dependencies );
+        all.depend( self, all, dependencies );
     end
     return all;
 end

@@ -14,7 +14,7 @@ local function default_identifier_filename( identifier, architecture, settings )
     return identifier, filename;
 end
 
-function DynamicLibrary.create( settings, identifier, architecture )
+function DynamicLibrary.create( build, settings, identifier, architecture )
     local architecture = architecture or settings.architecture or settings.default_architecture;
     local identifier, filename = default_identifier_filename( identifier, architecture, settings );
     local dynamic_library = build:Target( identifier, DynamicLibrary );
@@ -26,20 +26,20 @@ function DynamicLibrary.create( settings, identifier, architecture )
     return dynamic_library;
 end
 
-function DynamicLibrary:depend( dependencies )
+function DynamicLibrary.depend( build, target, dependencies )
     local libraries = dependencies.libraries;
     if libraries and platform ~= "" then
-        local platform = self.settings.platform;
-        local architecture = self.architecture;
+        local platform = target.settings.platform;
+        local architecture = target.architecture;
         for _, value in ipairs(libraries) do
             local library = ("%s_%s_%s"):format( value, platform, architecture );
-            self:add_dependency( build:target(build:root(library)) );
+            target:add_dependency( build:target(build:root(library)) );
         end
     end
-    return build.Target.depend( self, dependencies );
+    return build.Target.depend( build, target, dependencies );
 end
 
-function DynamicLibrary:build()
-    local settings = self.settings;
-    settings.build_executable( self );
+function DynamicLibrary.build( build, target )
+    local settings = target.settings;
+    settings.build_executable( target );
 end

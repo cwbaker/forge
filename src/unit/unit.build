@@ -1,7 +1,7 @@
 
 buildfile "unit_test/unit_test.build";
 
-for _, build in build:default_builds() do
+for _, build in build:default_builds("cc_.*") do
     local build = build:configure {
         warning_level = 0;
     };
@@ -27,7 +27,7 @@ for _, build in build:default_builds() do
         };    
     };
 
-    if platform == "windows" then
+    if build:platform_matches("windows") then
         libUnitTest {
             build:Cxx () {
                 "Win32/TimeHelpers.cpp"
@@ -35,7 +35,7 @@ for _, build in build:default_builds() do
         };
     end
 
-    if platform == "macosx" then
+    if build:platform_matches("macosx") then
         libUnitTest {
             build:Cxx () {
                 "Posix/SignalTranslator.cpp",

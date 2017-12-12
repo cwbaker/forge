@@ -144,6 +144,7 @@ int LuaBuildTool::execute( lua_State* lua_state )
         const int ARGUMENTS = 8;
 
         BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+        luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
         const char* command = luaL_checkstring( lua_state, COMMAND );
         const char* command_line = luaL_checkstring( lua_state, COMMAND_LINE );
         unique_ptr<process::Environment> environment;
@@ -234,6 +235,7 @@ int LuaBuildTool::print( lua_State* lua_state )
     const int BUILD_TOOL = 1;
     const int TEXT = 2;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     build_tool->output( luaL_checkstring(lua_state, TEXT) );
     return 0;
 }

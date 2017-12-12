@@ -1,12 +1,12 @@
 
 local BuildConfig = build:TargetPrototype( "android.BuildConfig" );
 
-function BuildConfig.create( settings, packages )
+function BuildConfig.create( build, settings, packages )
     local build_config = build:Target( build:anonymous(), BuildConfig );
     build_config.settings = settings;
     build_config.packages = packages;
     for index, package in ipairs(packages) do 
-        local filename = build:generated( ("%s/BuildConfig.java"):format(package:gsub("%.", "/")) );
+        local filename = build:generated( ("%s/BuildConfig.java"):format(package:gsub("%.", "/")), nil, settings );
         build_config:set_filename( filename, index );
         build_config:add_ordering_dependency( build:Directory(build:branch(filename)) );
     end
@@ -14,7 +14,7 @@ function BuildConfig.create( settings, packages )
     return build_config;
 end
 
-function BuildConfig:build()
+function BuildConfig.build( build, target )
     local HEADER = [[
 /** Automatically generated file. DO NOT MODIFY */
 package %s;
@@ -42,15 +42,15 @@ public final class BuildConfig {
 }
 ]];
 
-    for index, package in ipairs(self.packages) do
-        local filename = self:filename( index );
+    for index, package in ipairs(target.packages) do
+        local filename = target:filename( index );
         local output_file = io.open( filename, "wb" );
         assert( output_file, ("Opening '%s' to write generated text failed"):format(filename) );
         output_file:write( HEADER:format(package) );
-        if self.DEBUG == nil then 
-            output_file:write( BOOLEAN_BODY:format("DEBUG", tostring(self.settings.debug)) );
+        if target.DEBUG == nil then 
+            output_file:write( BOOLEAN_BODY:format("DEBUG", tostring(target.settings.debug)) );
         end
-        for key, value in pairs(self) do 
+        for key, value in pairs(target) do 
             if type(value) == "boolean" then
                 output_file:write( BOOLEAN_BODY:format(key, tostring(value)) );
             elseif type(value) == "number" then

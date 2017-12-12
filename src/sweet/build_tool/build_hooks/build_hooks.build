@@ -1,10 +1,9 @@
 
 if build:operating_system() == "macosx" then
-    for _, build in build:default_builds() do
-        local architecture = build.settings.architecture;
+    for _, build in build:default_builds("cc_.*") do
         build:all {
             build:Lipo "${bin}/build_hooks.dylib" { 
-                build:DynamicLibrary (("build_hooks_%s"):format(architecture)) {
+                build:DynamicLibrary "build_hooks_${architecture}" {
                     build:Cxx () {
                         "build_hooks_macosx.cpp"
                     };

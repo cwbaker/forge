@@ -1,7 +1,7 @@
 
 local Java = build:TargetPrototype( "Java" );
 
-function Java.create( settings )
+function Java.create( build, settings )
     local java_ = build:Target( build:anonymous(), Java );
     java_.settings = settings;
     java_:set_filename( ("%s/Java.%s.timestamp"):format(settings.classes_directory(java_), java_:id()) );
@@ -10,41 +10,42 @@ function Java.create( settings )
     return java_;
 end
 
-function Java:depend( dependencies )
+function Java.depend( build, target, dependencies )
     build:pushd( dependencies.sourcepath or "." );
     for _, value in ipairs(dependencies) do
         local source = build:SourceFile( value, settings );
-        self:add_dependency( source );
+        target:add_dependency( source );
     end
     build:popd();
 
     local jars = dependencies.jars;
     if jars then 
-        java.add_jar_dependencies( self, jars );
+        java.add_jar_dependencies( target, jars );
         dependencies.jars = nil;
     end
 
-    build:merge( self, dependencies );
-    return self
+    build:merge( target, dependencies );
+    return target
 end
 
-function Java.build( java )
-    local jars = {};
-    local third_party_jars = java.third_party_jars;
-    if third_party_jars then 
-        for _, jar in ipairs(third_party_jars) do 
-            table.insert( jars, jar );
-        end
-    end
-    local third_party_jars = java.settings.third_party_jars;
-    if third_party_jars then 
-        for _, jar in ipairs(third_party_jars) do 
-            table.insert( jars, jar );
-        end
+function Java.build( build, target )
+    local function add_jars( jars, other_jars )
+        if other_jars then 
+            for _, jar in ipairs(other_jars) do 
+                table.insert( jars, jar );
+            end
+        end        
     end
 
+    local settings = target.settings;
+    local jars = {};
+    add_jars( jars, target.third_party_jars );
+    add_jars( jars, target.system_jars );
+    add_jars( jars, target.settings.third_party_jars );
+    add_jars( jars, target.settings.system_jars );
+
     local source_files = {};
-    for _, dependency in java:dependencies() do 
+    for _, dependency in target:dependencies() do 
         local prototype = dependency:prototype();
         if prototype == nil then
             table.insert( source_files, build:relative(dependency:filename()) );
@@ -54,24 +55,23 @@ function Java.build( java )
     end
 
     if #source_files > 0 then
-        local settings = java.settings;
         local javac = ("%s/bin/javac"):format( settings.java.jdk_directory );
-        local output = settings.classes_directory( java );
+        local output = settings.classes_directory( target );
         local classpath = output;
 
         local sourcepaths = {};
-        if java.sourcepaths then
-            for _, path in ipairs(java.sourcepaths) do 
+        if target.sourcepaths then
+            for _, path in ipairs(target.sourcepaths) do 
                 table.insert( sourcepaths, path );
             end
         end
         if settings.sourcepaths then 
-            for _, path in ipairs(java.settings.sourcepaths) do 
+            for _, path in ipairs(target.settings.sourcepaths) do 
                 table.insert( sourcepaths, path );
             end
         end
-        table.insert( sourcepaths, java.sourcepath or "." );
-        table.insert( sourcepaths, settings.gen_directory(java) );
+        table.insert( sourcepaths, target.sourcepath or "." );
+        table.insert( sourcepaths, settings.gen_directory(target) );
         
         local command_line = {
             'javac',
@@ -88,17 +88,17 @@ function Java.build( java )
         };
         build:system( javac, command_line );
 
-        local timestamp_file = io.open( java:filename(), "wb" );
-        assertf( timestamp_file, "Opening '%s' to write generated text failed", java:filename() );
-        timestamp_file:write( ("# Timestamp for '%s'"):format(java:path()) );
+        local timestamp_file = io.open( target:filename(), "wb" );
+        assertf( timestamp_file, "Opening '%s' to write generated text failed", target:filename() );
+        timestamp_file:write( ("# Timestamp for '%s'"):format(target:path()) );
         timestamp_file:close();
         timestamp_file = nil;
     end
 end
 
-function Java.clean( java )
-    build:rm( java:filename() );
-    build:rmdir( settings.classes_directory(java) )
+function Java.clean( build, target )
+    build:rm( target:filename() );
+    build:rmdir( settings.classes_directory(target) )
 end
 
 java.Java = Java;

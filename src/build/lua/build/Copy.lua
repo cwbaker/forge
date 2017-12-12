@@ -1,7 +1,7 @@
 
 local Copy = build:TargetPrototype( "Copy" );
 
-function Copy.build( copy )
-    build:rm( copy );
-    build:cp( copy, copy:dependency() );
+function Copy.build( build, target )
+    build:rm( target );
+    build:cp( target, target:dependency() );
 end

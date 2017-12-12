@@ -1,53 +1,49 @@
 
 local Dex = build:TargetPrototype( "android.Dex" );
 
-function Dex:depend( dependencies )
+function Dex.depend( build, target, dependencies )
     local jars = dependencies.jars;
     if jars then 
-        java.add_jar_dependencies( self, dependencies.jars );
+        java.add_jar_dependencies( target, dependencies.jars );
         dependencies.jars = nil;
     end
-    return build.Target.depend( self, dependencies );
+    return build.Target.depend( build, target, dependencies );
 end
 
-function Dex:build()
-    local jars = {};
+function Dex.build( build, target )
+    local function add_jars( jars, other_jars )
+        if other_jars then 
+            for _, jar in ipairs(other_jars) do 
+                table.insert( jars, jar );
+            end
+        end        
+    end
 
-    local settings = self.settings;
-    local proguard = self:dependency( 1 );
-    if proguard and self.settings.android.proguard_enabled then 
-        local proguard_sh = ("%s/tools/proguard/bin/proguard.sh"):format( self.settings.android.sdk_directory );
+    local jars = {};
+    local settings = target.settings;
+    local proguard = target:dependency( 1 );
+    if proguard and target.settings.android.proguard_enabled then 
+        local proguard_sh = ("%s/tools/proguard/bin/proguard.sh"):format( target.settings.android.sdk_directory );
         build:system( proguard_sh, {
             'proguard.sh',
-            ('-printmapping \"%s/%s.map\"'):format( settings.classes_directory(self), build:leaf(self) ),
+            ('-printmapping \"%s/%s.map\"'):format( settings.classes_directory(target), build:leaf(target) ),
             ('"@%s"'):format( proguard ) 
         } );
-        table.insert( jars, ('\"%s/classes.jar\"'):format(settings.classes_directory(self)) );
+        table.insert( jars, ('\"%s/classes.jar\"'):format(settings.classes_directory(target)) );
     else
-        table.insert( jars, settings.classes_directory(self) );
+        table.insert( jars, settings.classes_directory(target) );
     end
 
-    local third_party_jars = self.third_party_jars;
-    if third_party_jars then 
-        for _, jar in ipairs(third_party_jars) do 
-            table.insert( jars, jar );
-        end
-    end
-    
-    local third_party_jars = self.settings.third_party_jars 
-    if third_party_jars then
-        for _, jar in ipairs(third_party_jars) do 
-            table.insert( jars, jar );
-        end
-    end
+    add_jars( jars, target.third_party_jars );
+    add_jars( jars, settings.third_party_jars );
 
-    for _, dependency in self:dependencies() do 
+    for _, dependency in target:dependencies() do 
         if dependency:prototype() == build.Jar then 
             table.insert( jars, build:relative(dependency:filename()) );
         end
     end
 
-    local dx = build:native( ("%s/dx"):format(self.settings.android.build_tools_directory) );
+    local dx = build:native( ("%s/dx"):format(target.settings.android.build_tools_directory) );
     if build:operating_system() == "windows" then
         dx = ("%s.bat"):format( dx );
     end
@@ -55,7 +51,7 @@ function Dex:build()
         ('\"%s\"'):format( dx ),
         '--dex',
         '--verbose',
-        ('--output=\"%s\"'):format( self ), 
+        ('--output=\"%s\"'):format( target ), 
         ('%s'):format( table.concat(jars, " ") )
     } );
 end

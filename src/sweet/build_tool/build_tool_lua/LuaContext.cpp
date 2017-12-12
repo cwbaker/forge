@@ -76,6 +76,7 @@ int LuaContext::cd( lua_State* lua_state )
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, PATH, &length );
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     build_tool->context()->change_directory( boost::filesystem::path(string(path, length)) );
     return 0;
 }
@@ -87,6 +88,7 @@ int LuaContext::pushd( lua_State* lua_state )
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, PATH, &length );
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     build_tool->context()->push_directory( boost::filesystem::path(string(path, length)) );
     return 0;
 }
@@ -95,6 +97,7 @@ int LuaContext::popd( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     build_tool->context()->pop_directory();
     return 0;
 }
@@ -103,6 +106,7 @@ int LuaContext::pwd( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     const boost::filesystem::path& path = build_tool->context()->directory();
     lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     return 1;
@@ -113,6 +117,10 @@ int LuaContext::absolute( lua_State* lua_state )
     const int BUILD_TOOL = 1;
     const int PATH = 2;
     const int BASE_PATH = 3;
+
+    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
+
     if ( !lua_isnoneornil(lua_state, BASE_PATH) )
     {
         const char* base_path = luaL_tolstring( lua_state, BASE_PATH, nullptr );
@@ -121,7 +129,6 @@ int LuaContext::absolute( lua_State* lua_state )
     }
     else
     {
-        BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
         boost::filesystem::path path = build_tool->absolute( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
@@ -133,6 +140,10 @@ int LuaContext::relative( lua_State* lua_state )
     const int BUILD_TOOL = 1;
     const int PATH = 2;
     const int BASE_PATH = 3;
+
+    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
+
     if ( !lua_isnoneornil(lua_state, BASE_PATH) )
     {
         const char* base_path = luaL_tolstring( lua_state, BASE_PATH, nullptr );
@@ -141,7 +152,6 @@ int LuaContext::relative( lua_State* lua_state )
     }
     else
     {
-        BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
         boost::filesystem::path path = build_tool->relative( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
@@ -154,6 +164,8 @@ int LuaContext::root( lua_State* lua_state )
     const int PATH = 2;
 
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
+
     if ( lua_isnoneornil(lua_state, PATH) )
     {
         const boost::filesystem::path& path = build_tool->root();
@@ -174,6 +186,8 @@ int LuaContext::initial( lua_State* lua_state )
     const int PATH = 2;
 
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
+
     if ( lua_isnoneornil(lua_state, PATH) )
     {
         const boost::filesystem::path& path = build_tool->initial();
@@ -194,6 +208,8 @@ int LuaContext::executable( lua_State* lua_state )
     const int PATH = 2;
 
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
+
     if ( lua_isnoneornil(lua_state, PATH) )
     {
         const boost::filesystem::path& path = build_tool->executable();
@@ -214,6 +230,8 @@ int LuaContext::home( lua_State* lua_state )
     const int PATH = 2;
 
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
+
     if ( lua_isnoneornil(lua_state, PATH) )
     {
         const boost::filesystem::path& path = build_tool->home();

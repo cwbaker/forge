@@ -4,14 +4,14 @@ buildfile "build_hooks/build_hooks.build";
 buildfile "build_tool_lua/build_tool_lua.build";
 buildfile "build_tool_test/build_tool_test.build";
 
-for _, build in build:default_builds() do
+for _, build in build:default_builds("cc_.*") do
     local build = build:configure {
         defines = {
             "_CRT_SECURE_NO_DEPRECATE",
             "_SCL_SECURE_NO_DEPRECATE",
             "_WIN32_WINNT=0x0500",
             "WIN32_LEAN_AND_MEAN"
-        }
+        };
     };
 
     build:Library "build_tool" {
@@ -47,5 +47,5 @@ for _, build in build:default_builds() do
             "TargetPrototype.cpp",
             "path_functions.cpp"
         };
-    }
+    };
 end

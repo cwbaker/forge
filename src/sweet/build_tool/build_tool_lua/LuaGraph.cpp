@@ -75,6 +75,7 @@ Target* LuaGraph::add_target( lua_State* lua_state )
     const int TABLE = 4;
 
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     Context* context = build_tool->context();
     Graph* graph = build_tool->graph();
     Target* working_directory = context->working_directory();
@@ -145,6 +146,7 @@ int LuaGraph::target_prototype( lua_State* lua_state )
         }
         
         BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+        luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
         TargetPrototype* target_prototype = build_tool->graph()->target_prototype( id );
         lua_create_object( lua_state, target_prototype );
         build_tool->create_target_prototype_lua_binding( target_prototype );
@@ -180,6 +182,7 @@ int LuaGraph::find_target( lua_State* lua_state )
     const int BUILD_TOOL = 1;
     const int ID = 2;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     Context* context = build_tool->context();
     const char* id = luaL_checkstring( lua_state, ID );
     Target* target = build_tool->graph()->find_target( string(id), context->working_directory() );
@@ -195,6 +198,7 @@ int LuaGraph::anonymous( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     Context* context = build_tool->context();
     Target* working_directory = context->working_directory();
     char anonymous [256];
@@ -208,6 +212,7 @@ int LuaGraph::working_directory( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     Context* context = build_tool->context();
     Target* target = context->working_directory();
     if ( target && !target->referenced_by_script() )
@@ -223,6 +228,7 @@ int LuaGraph::buildfile( lua_State* lua_state )
     const int BUILD_TOOL = 1;
     const int FILENAME = 2;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     const char* filename = luaL_checkstring( lua_state, FILENAME );
     int errors = build_tool->graph()->buildfile( string(filename) );
     if ( errors >= 0 )
@@ -240,6 +246,7 @@ int LuaGraph::postorder( lua_State* lua_state )
     const int TARGET_PARAMETER = 3;
 
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     Graph* graph = build_tool->graph();
     if ( graph->traversal_in_progress() )
     {
@@ -270,6 +277,7 @@ int LuaGraph::print_dependencies( lua_State* lua_state )
     const int BUILD_TOOL = 1;
     const int TARGET = 2;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
     build_tool->graph()->print_dependencies( target, build_tool->context()->directory().string() );
     return 0;
@@ -280,6 +288,7 @@ int LuaGraph::print_namespace( lua_State* lua_state )
     const int BUILD_TOOL = 1;
     const int TARGET = 2;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
     build_tool->graph()->print_namespace( target );
     return 0;
@@ -289,6 +298,7 @@ int LuaGraph::wait( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     build_tool->scheduler()->wait();
     return 0;
 }
@@ -297,6 +307,7 @@ int LuaGraph::clear( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     Context* context = build_tool->context();
     string working_directory = context->working_directory()->path();
     build_tool->graph()->clear();
@@ -309,6 +320,7 @@ int LuaGraph::load_xml( lua_State* lua_state )
     const int BUILD_TOOL = 1;
     const int FILENAME = 2;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     Context* context = build_tool->context();
     const char* filename = luaL_checkstring( lua_state, FILENAME );
     string working_directory = context->working_directory()->path();
@@ -326,6 +338,7 @@ int LuaGraph::save_xml( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     build_tool->graph()->save_xml();
     return 0;
 }
@@ -335,6 +348,7 @@ int LuaGraph::load_binary( lua_State* lua_state )
     const int BUILD_TOOL = 1;
     const int FILENAME = 2;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     Context* context = build_tool->context();
     const char* filename = luaL_checkstring( lua_state, FILENAME );
     string working_directory = context->working_directory()->path();
@@ -352,6 +366,7 @@ int LuaGraph::save_binary( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     build_tool->graph()->save_binary();
     return 0;
 }

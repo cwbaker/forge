@@ -239,6 +239,7 @@ boost::filesystem::path LuaFileSystem::absolute( lua_State* lua_state, int index
 {
     const int BUILD_TOOL = 1;
     BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
+    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, index, &length );
     return build_tool->absolute( string(path, length) );

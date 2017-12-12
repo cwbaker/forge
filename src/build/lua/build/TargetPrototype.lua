@@ -20,7 +20,7 @@ setmetatable( TargetPrototype, {
             return module, qualified_id;
         end
 
-        local function create( target_prototype, build, identifier )
+        local function create( build, target_prototype, identifier )
             local settings = build:current_settings();
             local identifier = build:interpolate( identifier, settings );
             local target = build:Target( identifier, target_prototype );
@@ -41,13 +41,13 @@ setmetatable( TargetPrototype, {
             local create_function = target_prototype.create;
             if create_function then 
                 local settings = build:current_settings();
-                target = create_function( settings, ... );
+                target = create_function( build, settings, ... );
             else
-                target = create( target_prototype, build, ... );
+                target = create( build, target_prototype, ... );
             end
             local annotate_function = target.annotate;
             if annotate_function then 
-                annotate_function( target, build, ... );
+                annotate_function( build, target, ... );
             end
             return target;
         end;

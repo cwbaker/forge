@@ -19,7 +19,7 @@ local function default_identifier_filename( identifier, platform, architecture, 
     return identifier, filename;
 end
 
-function StaticLibrary.create( settings, identifier, architecture )
+function StaticLibrary.create( build, settings, identifier, architecture )
     local platform = settings.platform;
     local architecture = architecture or settings.architecture or settings.default_architecture;
     local identifier, filename = default_identifier_filename( identifier, platform, architecture, settings );
@@ -31,8 +31,8 @@ function StaticLibrary.create( settings, identifier, architecture )
     return static_library;
 end
 
-function StaticLibrary:build()
-    assertf( build, "Nil build for '%s'", self:path() );
-    local settings = self.settings;
-    settings.build_library( self );
+function StaticLibrary.build( build, target )
+    assertf( build, "Nil build for '%s'", target:path() );
+    local settings = target.settings;
+    settings.build_library( target );
 end
