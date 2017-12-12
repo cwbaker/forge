@@ -122,16 +122,6 @@ function build.TargetPrototype( id, create_function )
     return target_prototype;
 end
 
-function build.Target( id, target_prototype, definition )
-    local target_ = build.target( id, target_prototype, definition );
-    getmetatable( target_ ).__call = function( target, ... )
-        local depend_function = target.call or target.depend or build.default_depend;
-        depend_function( target, ... );
-        return target;
-    end;
-    return target_;
-end
-
 function build.File( filename, target_prototype, definition )
     local settings = build.current_settings();
     local filename = build.interpolate( filename, settings );
@@ -230,6 +220,24 @@ end
 
 -- Perform per run initialization of the build system.
 function build.initialize( project_settings )
+    -- Merge settings from /source_settings/ into /settings/.
+    local function merge_settings( settings, source_settings )
+        settings = settings or {};
+        for _, v in ipairs(source_settings) do
+            table.insert( settings, v );
+        end
+        for k, v in pairs(source_settings) do
+            if type(k) == "string" then
+                if type(v) == "table" then
+                    settings[k] = merge_settings( settings[k], v );
+                else
+                    settings[k] = v;
+                end
+            end
+        end
+        return settings;
+    end
+
     -- Set default values for variables that can be passed on the command line.
     platform = platform or build.operating_system();
     variant = variant or "debug";
@@ -252,12 +260,12 @@ function build.initialize( project_settings )
 
     local user_settings_filename = default_settings.user_settings_filename;
     if build.exists(user_settings_filename) then
-        build.merge_settings( local_settings, dofile(user_settings_filename) );
+        merge_settings( local_settings, dofile(user_settings_filename) );
     end
 
     local local_settings_filename = default_settings.local_settings_filename;
     if build.exists(local_settings_filename) then
-        build.merge_settings( local_settings, dofile(local_settings_filename) );
+        merge_settings( local_settings, dofile(local_settings_filename) );
     end
 
     local variant_settings = default_settings.settings_by_variant[variant];
@@ -268,9 +276,9 @@ function build.initialize( project_settings )
 
     local settings = {};
     setmetatable( settings, {__index = local_settings} );
-    build.merge_settings( settings, variant_settings );
-    build.merge_settings( settings, platform_settings );
-    build.merge_settings( settings, project_settings );
+    merge_settings( settings, variant_settings );
+    merge_settings( settings, platform_settings );
+    merge_settings( settings, project_settings );
 
     if settings.library_type == "static" then
         build.Library = build.StaticLibrary;
@@ -491,24 +499,6 @@ function build.save_settings( settings, filename )
     serialize( file, settings, 0 );
     file:write( "\n" );
     file:close();
-end
-
--- Merge settings from /source_settings/ into /settings/.
-function build.merge_settings( settings, source_settings )
-    settings = settings or {};
-    for _, v in ipairs(source_settings) do
-        table.insert( settings, v );
-    end
-    for k, v in pairs(source_settings) do
-        if type(k) == "string" then
-            if type(v) == "table" then
-                settings[k] = build.merge_settings( settings[k], v );
-            else
-                settings[k] = v;
-            end
-        end
-    end
-    return settings;
 end
 
 -- Merge fields with string keys from /source/ to /destination/.
@@ -780,3 +770,4 @@ require "build.Generate";
 require "build.Directory";
 require "build.Copy";
 require "build.CopyDirectory";
+require "build.Target";

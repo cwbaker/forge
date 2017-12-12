@@ -12,8 +12,8 @@ function parser.configure( settings )
             };
         else
             local_settings.parser = {
-                executable = "/usr/local/bin/parser.exe";
-                lua_path = "/usr/local/lua/?.lua";
+                executable = build.home( "bin/parser" );
+                lua_path = build.home( "lua/?.lua" );
             };
         end
     end
