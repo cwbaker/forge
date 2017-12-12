@@ -22,7 +22,6 @@ build:all {
             "sweet/process/process",
             "sweet/persist/persist",
             "sweet/luaxx/luaxx",
-            "sweet/lua/lua",
             "sweet/cmdline/cmdline",
             "sweet/rtti/rtti",
             "sweet/error/error",

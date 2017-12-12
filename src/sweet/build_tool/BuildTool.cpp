@@ -40,7 +40,6 @@ static const char* ROOT_FILENAME = "build.lua";
 BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& error_policy, BuildToolEventSink* event_sink )
 : error_policy_( error_policy ),
   event_sink_( event_sink ),
-  lua_( NULL ),
   lua_build_tool_( NULL ),
   system_( NULL ),
   reader_( NULL ),
@@ -54,8 +53,7 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
 {
     SWEET_ASSERT( boost::filesystem::path(initial_directory).is_absolute() );
 
-    lua_ = new lua::Lua( error_policy_ );
-    lua_build_tool_ = new LuaBuildTool( this, lua_->get_lua_state() );
+    lua_build_tool_ = new LuaBuildTool( this );
     system_ = new System;
     reader_ = new Reader( this );
     graph_ = new Graph( this );
@@ -83,7 +81,6 @@ BuildTool::~BuildTool()
     delete reader_;
     delete system_;
     delete lua_build_tool_;
-    delete lua_;
 }
 
 /**
@@ -170,10 +167,10 @@ Context* BuildTool::context() const
     return scheduler_->context();
 }
 
-lua::Lua* BuildTool::lua() const
+lua_State* BuildTool::lua_state() const
 {
-    SWEET_ASSERT( lua_ );
-    return lua_;
+    SWEET_ASSERT( lua_build_tool_ );
+    return lua_build_tool_->lua_state();
 }
 
 const boost::filesystem::path& BuildTool::root() const
@@ -264,10 +261,10 @@ boost::filesystem::path BuildTool::relative( const boost::filesystem::path& path
 // @param
 //  True to enable stack traces or false to disable them.
 */
-void BuildTool::set_stack_trace_enabled( bool stack_trace_enabled )
+void BuildTool::set_stack_trace_enabled( bool /*stack_trace_enabled*/ )
 {
-    SWEET_ASSERT( lua_ );
-    lua_->set_stack_trace_enabled( stack_trace_enabled );
+    // SWEET_ASSERT( lua_ );
+    // lua_->set_stack_trace_enabled( stack_trace_enabled );
 }
 
 /**
@@ -278,8 +275,9 @@ void BuildTool::set_stack_trace_enabled( bool stack_trace_enabled )
 */
 bool BuildTool::stack_trace_enabled() const
 {
-    SWEET_ASSERT( lua_ );
-    return lua_->is_stack_trace_enabled();
+    // SWEET_ASSERT( lua_ );
+    // return lua_->is_stack_trace_enabled();
+    return false;
 }
 
 /**
@@ -365,20 +363,10 @@ void BuildTool::search_up_for_root_directory( const std::string& directory )
 //  The assignments specified on the command line used to create global 
 //  variables before any scripts are loaded (e.g. 'variant=release' etc).
 */
-void BuildTool::assign( const std::vector<std::string>& assignments )
+void BuildTool::assign_global_variables( const std::vector<std::string>& assignments )
 {
-    for ( std::vector<std::string>::const_iterator i = assignments.begin(); i != assignments.end(); ++i )
-    {
-        std::string::size_type position = i->find( "=" );
-        if ( position != std::string::npos )
-        {
-            std::string attribute = i->substr( 0, position );
-            std::string value = i->substr( position + 1, std::string::npos );
-            lua_->globals()
-                ( attribute.c_str(), value )
-            ;
-        }
-    }
+    SWEET_ASSERT( lua_build_tool_ );
+    lua_build_tool_->assign_global_variables( assignments );
 }
 
 /**

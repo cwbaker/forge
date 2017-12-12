@@ -29,7 +29,7 @@ using namespace sweet::lua;
 using namespace sweet::luaxx;
 using namespace sweet::build_tool;
 
-LuaBuildTool::LuaBuildTool( BuildTool* build_tool, lua_State* lua_state )
+LuaBuildTool::LuaBuildTool( BuildTool* build_tool )
 : build_tool_( nullptr ),
   lua_state_( nullptr ),
   lua_file_system_( nullptr ),
@@ -39,12 +39,18 @@ LuaBuildTool::LuaBuildTool( BuildTool* build_tool, lua_State* lua_state )
   lua_target_( nullptr ),
   lua_target_prototype_( nullptr )
 {
-    create( build_tool, lua_state );
+    create( build_tool );
 }
 
 LuaBuildTool::~LuaBuildTool()
 {
     destroy();
+}
+
+lua_State* LuaBuildTool::lua_state() const
+{
+    SWEET_ASSERT( lua_state_ );
+    return lua_state_;
 }
 
 LuaTarget* LuaBuildTool::lua_target() const
@@ -59,15 +65,14 @@ LuaTargetPrototype* LuaBuildTool::lua_target_prototype() const
     return lua_target_prototype_;
 }
 
-void LuaBuildTool::create( BuildTool* build_tool, lua_State* lua_state )
+void LuaBuildTool::create( BuildTool* build_tool )
 {
     SWEET_ASSERT( build_tool );
-    SWEET_ASSERT( lua_state );
 
     destroy();
 
     build_tool_ = build_tool;
-    lua_state_ = lua_state;
+    lua_state_ = luaxx_newstate();
     lua_file_system_ = new LuaFileSystem;
     lua_context_ = new LuaContext;
     lua_graph_ = new LuaGraph;
@@ -102,11 +107,6 @@ void LuaBuildTool::create( BuildTool* build_tool, lua_State* lua_state )
 
 void LuaBuildTool::destroy()
 {
-    if ( lua_state_ )
-    {
-        luaxx_destroy( lua_state_, build_tool_ );
-    }
-
     delete lua_target_prototype_;
     lua_target_prototype_ = nullptr;
 
@@ -125,8 +125,41 @@ void LuaBuildTool::destroy()
     delete lua_file_system_;
     lua_file_system_ = nullptr;
 
+    if ( lua_state_ )
+    {
+        luaxx_destroy( lua_state_, build_tool_ );
+        lua_close( lua_state_ );
+    }
+
     lua_state_ = nullptr;
     build_tool_ = nullptr;
+}
+
+/**
+// Extract assignments from \e assignments_and_commands and use them to 
+// assign values to global variables.
+//
+// This is used to accept variable assignments on the command line and have 
+// them available for scripts to use for configuration when commands are
+// executed.
+//
+// @param assignments
+//  The assignments specified on the command line used to create global 
+//  variables before any scripts are loaded (e.g. 'variant=release' etc).
+*/
+void LuaBuildTool::assign_global_variables( const std::vector<std::string>& assignments )
+{
+    for ( std::vector<std::string>::const_iterator i = assignments.begin(); i != assignments.end(); ++i )
+    {
+        std::string::size_type position = i->find( "=" );
+        if ( position != std::string::npos )
+        {
+            std::string attribute = i->substr( 0, position );
+            std::string value = i->substr( position + 1, std::string::npos );
+            lua_pushlstring( lua_state_, value.c_str(), value.size() );
+            lua_setglobal( lua_state_, attribute.c_str() );
+        }
+    }
 }
 
 int LuaBuildTool::set_maximum_parallel_jobs( lua_State* lua_state )

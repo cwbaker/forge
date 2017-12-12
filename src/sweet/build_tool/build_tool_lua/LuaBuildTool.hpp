@@ -33,12 +33,14 @@ class LuaBuildTool
     LuaTargetPrototype* lua_target_prototype_;
 
 public:
-    LuaBuildTool( BuildTool* build_tool, lua_State* lua_state );
+    LuaBuildTool( BuildTool* build_tool );
     ~LuaBuildTool();
+    lua_State* lua_state() const;
     LuaTarget* lua_target() const;
     LuaTargetPrototype* lua_target_prototype() const;
-    void create( BuildTool* build_tool, lua_State* lua_state );
+    void create( BuildTool* build_tool );
     void destroy();
+    void assign_global_variables( const std::vector<std::string>& assignments );
 
 private:
     static int set_maximum_parallel_jobs( lua_State* lua_state );

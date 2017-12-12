@@ -121,12 +121,6 @@ void Target::recover( Graph* graph )
 
     graph_ = graph;
 
-    if ( referenced_by_script_ )
-    {
-        graph->build_tool()->recover_target_lua_binding( this );
-        graph->build_tool()->update_target_lua_binding( this );
-    }
-
     for ( vector<Target*>::const_iterator i = targets_.begin(); i != targets_.end(); ++i )
     {
         Target* target = *i;

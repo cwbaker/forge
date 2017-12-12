@@ -94,7 +94,7 @@ Application::Application( int argc, char** argv )
             BuildTool build_tool( directory, error_policy, this );
             build_tool.set_stack_trace_enabled( stack_trace_enabled );
             build_tool.search_up_for_root_directory( directory );
-            build_tool.assign( assignments );
+            build_tool.assign_global_variables( assignments );
             build_tool.execute( filename, *command );
             ++command;
         }

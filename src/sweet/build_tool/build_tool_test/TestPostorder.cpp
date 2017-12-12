@@ -3,7 +3,6 @@
 #include "ErrorChecker.hpp"
 #include <sweet/build_tool/BuildTool.hpp>
 #include <sweet/build_tool/BuildToolEventSink.hpp>
-#include <sweet/lua/Lua.hpp>
 #include <unit/UnitTest.h>
 
 using namespace sweet::build_tool;

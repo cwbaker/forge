@@ -8,7 +8,8 @@
 #include "BuildTool.hpp"
 #include "Graph.hpp"
 #include "path_functions.hpp"
-#include <sweet/lua/Lua.hpp>
+#include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
+#include <sweet/luaxx/luaxx.hpp>
 #include <lua/lua.hpp>
 
 using namespace sweet;
@@ -35,14 +36,14 @@ Context::Context( const boost::filesystem::path& directory, BuildTool* build_too
   buildfile_calling_context_( nullptr )
 {
     reset_directory( directory );
-    lua_State* lua_state = build_tool->lua()->get_lua_state();
+    lua_State* lua_state = build_tool->lua_state();
     lua_state_ = lua_newthread( lua_state );
     lua_state_reference_ = luaL_ref( lua_state, LUA_REGISTRYINDEX );
 }
 
 Context::~Context()
 {
-    lua_State* lua_state = build_tool_->lua()->get_lua_state();
+    lua_State* lua_state = build_tool_->lua_state();
     if ( lua_state )
     {
         luaL_unref( lua_state, LUA_REGISTRYINDEX, lua_state_reference_ );
@@ -52,19 +53,13 @@ Context::~Context()
 }
 
 /**
-// Get the LuaThread that this Context uses to make script calls.
+// Get the lua_State that this Context uses to make calls.
 //
 // @return
-//  The LuaThread that this Context uses to make script calls.
+//  The lua_State
 */
-// lua::LuaThread& Context::context_thread()
-// {
-//     return context_thread_;
-// }
-
 lua_State* Context::lua_state() const
 {
-    // return context_thread_.get_lua_state();
     return lua_state_;
 }
 

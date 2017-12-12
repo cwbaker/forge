@@ -54,7 +54,6 @@ buildfile "sweet/assert/assert.build";
 buildfile "sweet/build_tool/build_tool.build";
 buildfile "sweet/cmdline/cmdline.build";
 buildfile "sweet/error/error.build";
-buildfile "sweet/lua/lua.build";
 buildfile "sweet/luaxx/luaxx.build";
 buildfile "sweet/persist/persist.build";
 buildfile "sweet/process/process.build";

@@ -101,10 +101,9 @@ Target* LuaGraph::add_target( lua_State* lua_state )
     {
         if ( !lua_isnoneornil(lua_state, TABLE) )
         {        
-            luaL_argcheck( lua_state, lua_istable(lua_state, TABLE), TABLE, "Table or nothing expected as third parameter when creating a target" );
-            
+            luaL_argcheck( lua_state, lua_istable(lua_state, TABLE), TABLE, "Table or nothing expected as third parameter when creating a target" );            
             lua_pushvalue( lua_state, TABLE );
-            lua_create_object_with_existing_table( lua_state, target );
+            luaxx_attach( lua_state, target, TARGET_TYPE );
             target->set_referenced_by_script( true );
             target->set_prototype( target_prototype );
             target->set_working_directory( working_directory );
@@ -146,14 +145,14 @@ int LuaGraph::file( lua_State* lua_state )
 {
     Target* target = LuaGraph::add_target( lua_state );
     target->set_filename( target->path() );
-    lua_push_object( lua_state, target );
+    luaxx_push( lua_state, target );
     return 1;
 }
 
 int LuaGraph::target( lua_State* lua_state )
 {
     Target* target = LuaGraph::add_target( lua_state ); 
-    lua_push_object( lua_state, target );
+    luaxx_push( lua_state, target );
     return 1;
 }
 
@@ -169,7 +168,7 @@ int LuaGraph::find_target( lua_State* lua_state )
     {
         build_tool->create_target_lua_binding( target );
     }
-    lua_push_object( lua_state, target );
+    luaxx_push( lua_state, target );
     return 1;
 }
 
@@ -196,7 +195,7 @@ int LuaGraph::working_directory( lua_State* lua_state )
     {
         build_tool->create_target_lua_binding( target );
     }
-    lua_push_object( lua_state, target );
+    luaxx_push( lua_state, target );
     return 1;
 }
 
@@ -218,8 +217,8 @@ int LuaGraph::buildfile( lua_State* lua_state )
 int LuaGraph::postorder( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
-    const int FUNCTION_PARAMETER = 2;
-    const int TARGET_PARAMETER = 3;
+    const int FUNCTION = 2;
+    const int TARGET = 3;
 
     BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
     Graph* graph = build_tool->graph();
@@ -229,9 +228,9 @@ int LuaGraph::postorder( lua_State* lua_state )
     }
      
     Target* target = NULL;
-    if ( !lua_isnoneornil(lua_state, TARGET_PARAMETER) )
+    if ( !lua_isnoneornil(lua_state, TARGET) )
     {
-        target = (Target*) lua_to_object( lua_state, TARGET_PARAMETER, SWEET_STATIC_TYPEID(Target) );
+        target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     }
 
     int bind_failures = graph->bind( target );
@@ -241,7 +240,7 @@ int LuaGraph::postorder( lua_State* lua_state )
         return 1;
     }
 
-    lua_pushvalue( lua_state, FUNCTION_PARAMETER );
+    lua_pushvalue( lua_state, FUNCTION );
     int function = luaL_ref( lua_state, LUA_REGISTRYINDEX );
     int failures = build_tool->scheduler()->postorder( function, target );
     lua_pushinteger( lua_state, failures );
@@ -254,7 +253,7 @@ int LuaGraph::print_dependencies( lua_State* lua_state )
     const int BUILD_TOOL = 1;
     const int TARGET = 2;
     BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     build_tool->graph()->print_dependencies( target, build_tool->context()->directory().string() );
     return 0;
 }
@@ -264,7 +263,7 @@ int LuaGraph::print_namespace( lua_State* lua_state )
     const int BUILD_TOOL = 1;
     const int TARGET = 2;
     BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     build_tool->graph()->print_namespace( target );
     return 0;
 }
@@ -302,7 +301,7 @@ int LuaGraph::load_xml( lua_State* lua_state )
     {
         build_tool->create_target_lua_binding( cache_target );
     }
-    lua_push_object( lua_state, cache_target );
+    luaxx_push( lua_state, cache_target );
     return 1;
 }
 
@@ -328,7 +327,7 @@ int LuaGraph::load_binary( lua_State* lua_state )
     {
         build_tool->create_target_lua_binding( cache_target );
     }
-    lua_push_object( lua_state, cache_target );
+    luaxx_push( lua_state, cache_target );
     return 1;
 }
 

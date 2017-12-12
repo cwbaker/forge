@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+struct lua_State;
+
 namespace sweet
 {
 
@@ -12,13 +14,6 @@ namespace error
 {
 
 class ErrorPolicy;
-
-}
-
-namespace lua
-{
-
-class Lua;
 
 }
 
@@ -43,7 +38,6 @@ class BuildTool
 {
     error::ErrorPolicy& error_policy_;
     BuildToolEventSink* event_sink_; ///< The EventSink for this BuildTool or null if this BuildTool has no EventSink.
-    lua::Lua* lua_; ///< The Lua virtual machine.
     LuaBuildTool* lua_build_tool_; ///< The Lua bindings to the build tool library.
     System* system_; ///< The System that provides access to the operating system.
     Reader* reader_; ///< The reader that filters executable output and dependencies.
@@ -66,8 +60,7 @@ class BuildTool
         Scheduler* scheduler() const;
         Executor* executor() const;
         Context* context() const;
-        lua::Lua* lua() const;
-        LuaBuildTool* lua_build_tool() const;
+        lua_State* lua_state() const;
 
         const boost::filesystem::path& root() const;
         boost::filesystem::path root( const boost::filesystem::path& path ) const;
@@ -88,7 +81,7 @@ class BuildTool
         const std::string& build_hooks_library() const;
 
         void search_up_for_root_directory( const std::string& directory );
-        void assign( const std::vector<std::string>& assignments_and_commands );
+        void assign_global_variables( const std::vector<std::string>& assignments_and_commands );
         void execute( const std::string& filename, const std::string& command );
 
         void create_target_lua_binding( Target* target );

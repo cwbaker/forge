@@ -9,7 +9,6 @@
 #include <sweet/build_tool/path_functions.hpp>
 #include <sweet/build_tool/BuildTool.hpp>
 #include <sweet/build_tool/Context.hpp>
-#include <sweet/lua/lua_functions.hpp>
 #include <sweet/luaxx/luaxx.hpp>
 #include <boost/filesystem/path.hpp>
 #include <stdlib.h>

@@ -53,7 +53,6 @@ public:
     static int add_implicit_dependency( lua_State* lua_state );
     static int clear_implicit_dependencies( lua_State* lua_state );
     static int add_ordering_dependency( lua_State* lua_state );
-    static int targets( lua_State* lua_state );
     static int any_dependency( lua_State* lua_state );
     static int any_dependencies_iterator( lua_State* lua_state );
     static int any_dependencies( lua_State* lua_state );
@@ -66,15 +65,8 @@ public:
     static int ordering_dependency( lua_State* lua_state );
     static int ordering_dependencies_iterator( lua_State* lua_state );
     static int ordering_dependencies( lua_State* lua_state );
+    static int vector_string_const_iterator_gc( lua_State* lua_state );
 };
-
-}
-
-namespace lua
-{
-
-void lua_push( lua_State* lua, std::time_t timestamp );
-std::time_t lua_to( lua_State* lua, int position, const std::time_t* null_pointer_for_overloading );
 
 }
 
