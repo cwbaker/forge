@@ -570,6 +570,7 @@ std::string ScriptInterface::upper( const std::string& value )
 std::string ScriptInterface::native( const std::string& path )
 {
     boost::filesystem::path native_path( path );
+	native_path.make_preferred();
     return native_path.string();
 }
 

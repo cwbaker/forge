@@ -82,8 +82,8 @@ local function configurations( vcproj, target, include_directories )
             vcproj:write( [[
             <Configuration
                 Name="]]..platform..[[_]]..variant..[[|Win32"
-                OutputDirectory="../../../../obj/]]..platform..[[_]]..variant..[[/]]..relative(target:directory(), root())..[["
-                IntermediateDirectory="../../../../obj/]]..platform..[[_]]..variant..[[/]]..relative(target:directory(), root())..[["
+                OutputDirectory="../../../../]]..platform..[[_]]..variant..[[/obj/]]..relative(target:directory(), root())..[["
+                IntermediateDirectory="../../../../]]..platform..[[_]]..variant..[[/obj/]]..relative(target:directory(), root())..[["
                 ConfigurationType="0"
                 >
                 <Tool
