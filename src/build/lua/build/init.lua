@@ -62,18 +62,33 @@ function build.variant_matches( ... )
 end
 
 function build.default_create_function( target_prototype, ... )
+    local settings = build.current_settings();
     local create_function = target_prototype.create;
     if create_function then 
-        local settings = build.current_settings();
         return create_function( settings, ... );
     else
-        local settings = build.current_settings();
-        local id = build.interpolate( select(1, ...), settings );
-        local definition = select( 2, ... );
-        local target = build.File( id, target_prototype, definition );
-        target:add_ordering_dependency( build.Directory(build.branch(target)) );
-        target.settings = settings;
-        return target;
+        local identifier_or_sources = select( 1, ... );
+        if type(identifier_or_sources) ~= "table" then   
+            local create_function = target_prototype.create;
+            if create_function then 
+                return create_function( settings, ... );
+            else
+                local identifier = build.interpolate( identifier_or_sources, settings );
+                local target = build.File( identifier, target_prototype, select(2, ...) );
+                target:add_ordering_dependency( build.Directory(build.branch(target)) );
+                target.settings = settings;
+                return target;
+            end
+        elseif type(identifier_or_sources) == "table" then
+            local targets = {};
+            local sources = identifier_or_sources;
+            for _, source in ipairs(sources) do 
+                local target = build.default_create_function( target_prototype, build.object(source), select(2, ...) );
+                target( source );
+                table.insert( targets, target );
+            end
+            return table.unpack( targets );
+        end
     end
 end
 
