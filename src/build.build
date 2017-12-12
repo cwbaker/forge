@@ -1,4 +1,10 @@
 
+-- Targets built when building from the root directory and as targets when
+-- generating XCode projects and Visual Studio solutions.
+build.default_targets {
+	"sweet/build_tool/build"	
+};
+
 buildfile "boost/boost.build";
 buildfile "lua/lua.build";
 buildfile "sweet/assert/assert.build";

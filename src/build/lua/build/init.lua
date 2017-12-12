@@ -203,7 +203,6 @@ end
 -- Add targets to the current directory's target so that they will be built 
 -- when a build is invoked from that directory.
 function build.default_targets( default_targets )
-
     local directory = working_directory();
     for _, default_target in ipairs(default_targets) do
         directory:add_dependency( target(root(default_target)) );

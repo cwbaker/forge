@@ -26,7 +26,7 @@ function Xib.build( xib )
         local sdk = ios.sdkroot_by_target_and_platform( xib, platform );
         local xcrun = xib.settings.ios.xcrun;
         for dependency in xib:dependencies() do 
-            if dependency:is_outdated() and dependency:prototype() == nil then                
+            if dependency:outdated() and dependency:prototype() == nil then                
                 build.system( xcrun, ([[xcrun --sdk %s ibtool --output-format binary1 --compile "%s" "%s"]]):format(
                     sdk, 
                     dependency:filename(),
