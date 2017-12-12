@@ -24,7 +24,7 @@ function Executable( id )
             if build.built_for_platform_and_variant(settings) then
                 for _, architecture in ipairs(settings.architectures) do 
                     local executable = target( module_name(id, architecture), ExecutablePrototype, build.copy(dependencies) );
-                    build.add_module_dependencies( executable, "%s/%s" % {settings.bin, exe_name(id, architecture)}, architecture );
+                    build.add_module_dependencies( executable, "%s/%s" % {settings.bin, exe_name(id, architecture)}, architecture, settings );
                     table.insert( executables, executable );
                 end
             end

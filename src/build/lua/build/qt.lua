@@ -5,11 +5,19 @@ function qt.configure( settings )
     local local_settings = build.local_settings;
     if not local_settings.qt then
         local_settings.updated = true;
-        local_settings.qt = {
-            qt_directory = "C:/Qt/4.7.2";
-            version = "4.7.2";
-        };
-        local_settings.qt.moc = "%s/bin/moc.exe" % { local_settings.qt.qt_directory };
+        if operating_system() == "windows" then
+            local_settings.qt = {
+                qt_directory = "C:/Qt/4.7.2";
+                version = "4.7.2";
+            };
+            local_settings.qt.moc = "%s/bin/moc.exe" % { local_settings.qt.qt_directory };
+        else
+            local_settings.qt = {
+                qt_directory = "/usr/local/Qt4.8";
+                version = "4.8.4";
+            };
+            local_settings.qt.moc = "/Developer/Tools/Qt/moc";
+        end
     end
 end
 
@@ -26,7 +34,6 @@ end
 function QtMocPrototype.build( qtmoc )
     if not exists(qtmoc:get_filename()) or qtmoc:is_outdated() then
         local moc = build.settings.qt.moc;
-        print( qtmoc[1] );
         build.system( moc, [[moc %s -o %s]] % {qtmoc[1], relative(qtmoc:get_filename())} );
     end
 end

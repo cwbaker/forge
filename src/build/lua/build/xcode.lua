@@ -9,7 +9,10 @@ local files = {};
 local groups = {};
 local targets = {};
 local project_root = "";
+local project_id = "";
 local project_uuid = "";
+local project_configuration_list_uuid = "";
+local project_configurations = {};
 
 local function add_group( target )
     assert( target );
@@ -24,7 +27,7 @@ local function add_group( target )
         };
         groups[path] = group;
 
-        if target:parent() and target:path() ~= root() then
+        if target:parent() and not string.find(relative(target:path(), root()), "..", 1, true) then
             local parent = add_group( target:parent() );
             table.insert( parent.children, group );
         end
@@ -35,7 +38,7 @@ end
 local function add_file( target )
     assert( target );
 
-    if target:parent() then
+    if target:parent() and not string.find(relative(target:get_filename(), root()), "..", 1, true) then
         local path = target:path();
         local file = files[path];
         if not file then
@@ -52,6 +55,19 @@ local function add_file( target )
     return file;
 end
 
+local function add_configurations( target, variants )
+    local configurations = {};
+    for _, variant in pairs(variants) do
+        local configuration = {
+            uuid = uuid();
+            target = target;
+            variant = variant;
+        };
+        table.insert( configurations, configuration );
+    end
+    return configurations;
+end
+
 local function add_target( module )
     assert( module );
 
@@ -61,7 +77,7 @@ local function add_target( module )
         target = {
             uuid = uuid();
             target = module;
-            configurations = {};
+            configurations = add_configurations( module, module.settings.variants );
             configuration_list_uuid = uuid();
         };
         targets[path] = target;
@@ -69,15 +85,6 @@ local function add_target( module )
         local buildfile = absolute("%s.build" % module:id(), module:get_working_directory():path());
         if exists(buildfile) then
             add_file( file(buildfile) );
-        end
-
-        for _, variant in pairs(module.settings.variants) do
-            local configuration = {
-                uuid = uuid();
-                target = module;
-                variant = variant;
-            };
-            table.insert( target.configurations, configuration );
         end
     end
     return target;
@@ -107,7 +114,6 @@ local function generate_files( xcodeproj, files )
 end
 
 local function generate_groups( xcodeproj, groups )
-
     local sorted_groups = {};
     for path, group in pairs(groups) do
         table.insert( sorted_groups, group );
@@ -162,7 +168,6 @@ local function generate_groups( xcodeproj, groups )
 end
 
 local function generate_targets( xcodeproj, targets )
-
     local sorted_targets = {};
     for path, target in pairs(targets) do
         table.insert( sorted_targets, target );
@@ -187,7 +192,7 @@ local function generate_targets( xcodeproj, targets )
             productName = %s;
         };
 ]]
-        % { target.uuid, name, target.configuration_list_uuid, name, home("bin/build"), target.target:get_working_directory():path(), name, name }
+        % { target.uuid, name, target.configuration_list_uuid, name, root("build/build"), target.target:get_working_directory():path(), name, name }
         );  
     end
 end
@@ -204,6 +209,7 @@ local function generate_project( xcodeproj, groups )
         attributes = {
             LastUpgradeCheck = 0430;
         };
+        buildConfigurationList = %s /* Build configuration list for PBXProject "%s" */;
         compatibilityVersion = "Xcode 3.2";
         developmentRegion = English;
         hasScannedForEncodings = 0;
@@ -215,7 +221,7 @@ local function generate_project( xcodeproj, groups )
         projectRoot = "";
         targets = (
 ]]
-    % { project_uuid, main_group.uuid }
+    % { project_uuid, project_configuration_list_uuid, project_id, main_group.uuid }
     );
 
     local sorted_targets = {};
@@ -238,18 +244,9 @@ local function generate_project( xcodeproj, groups )
     );
 end
 
-local function generate_configurations( xcodeproj, targets )
-    local sorted_targets = {};
-    for path, target in pairs(targets) do
-        table.insert( sorted_targets, target );
-    end
-    table.sort( sorted_targets, function(lhs, rhs) return lhs.target:id() < rhs.target:id() end );
-
-    for _, target in pairs(sorted_targets) do 
-        table.sort( target.configurations, function(lhs, rhs) return lhs.variant < rhs.variant end );
-        for _, configuration in ipairs(target.configurations) do
-            local archs = table.concat( target.target.settings.architectures or {}, " " );
-            xcodeproj:write([[
+local function generate_configuration( xcodeproj, configuration, id, settings )
+    local archs = table.concat( settings.architectures or {}, " " );
+    xcodeproj:write([[
     %s /* %s */ = {
         isa = XCBuildConfiguration;
         buildSettings = {
@@ -259,28 +256,39 @@ local function generate_configurations( xcodeproj, targets )
         name = %s;
     };
 ]]
-            % { configuration.uuid, target.target:id(), archs, archs, configuration.variant }
-            );
-        end
-    end
+    % { configuration.uuid, id, archs, archs, configuration.variant }
+    );
 end
 
-local function generate_configuration_lists( xcodeproj, targets )
+local function generate_configurations( xcodeproj, targets )
+    table.sort( project_configurations, function(lhs, rhs) return lhs.variant < rhs.variant end );
+    for _, configuration in ipairs(project_configurations) do
+        generate_configuration( xcodeproj, configuration, project_id, build.settings );
+    end
+
     local sorted_targets = {};
     for path, target in pairs(targets) do
         table.insert( sorted_targets, target );
     end
     table.sort( sorted_targets, function(lhs, rhs) return lhs.target:id() < rhs.target:id() end );
 
-    for _, target in pairs(sorted_targets) do
+    for _, target in pairs(sorted_targets) do 
+        table.sort( target.configurations, function(lhs, rhs) return lhs.variant < rhs.variant end );
+        for _, configuration in ipairs(target.configurations) do
+            generate_configuration( xcodeproj, configuration, target.target:id(), target.target.settings );
+        end
+    end
+end
+
+local function generate_configuration_list( xcodeproj, uuid, id, configurations )
         xcodeproj:write([[
     %s /* Build configuration list for PBXLegacyTarget "%s" */ = {
         isa = XCConfigurationList;
         buildConfigurations = (
 ]]
-        % { target.configuration_list_uuid, target.target:id() }
+        % { uuid, id }
         );
-        for _, configuration in ipairs(target.configurations) do
+        for _, configuration in ipairs(configurations) do
             xcodeproj:write([[
             %s /* %s */,
 ]]
@@ -293,6 +301,18 @@ local function generate_configuration_lists( xcodeproj, targets )
     };
 ]]
         );
+end
+
+local function generate_configuration_lists( xcodeproj, targets )
+    local sorted_targets = {};
+    for path, target in pairs(targets) do
+        table.insert( sorted_targets, target );
+    end
+    table.sort( sorted_targets, function(lhs, rhs) return lhs.target:id() < rhs.target:id() end );
+
+    generate_configuration_list( xcodeproj, project_configuration_list_uuid, project_id, project_configurations );
+    for _, target in pairs(sorted_targets) do
+        generate_configuration_list( xcodeproj, target.configuration_list_uuid, target.target:id(), target.configurations );
     end
 end
 
@@ -328,6 +348,10 @@ end
 
 function xcode.generate_project( name, project )
     project_root = branch( name );
+    project_id = leaf( basename(name) );
+    project_configuration_list_uuid = uuid();
+    project_configurations = add_configurations( nil, build.settings.variants );
+
     preorder( populate, project );
     if exists(root("build.lua")) then
         add_file( find_target(root("build.lua")) );
@@ -354,10 +378,12 @@ end
 
 -- The "xcodeproj" command entry point (global).
 function xcodeproj()
+    platform = "llvmgcc";
+    variant = "";
     build.load();
     local all = all or find_target( root() );
     assert( all, "No target found at '%s'" % root() );
-    assert( settings.xcodeproj, "The project filename is not specified by settings.xcodeproj" );
+    assert( settings.xcodeproj, "The name of the Xcode project to generate is not specified by 'settings.xcodeproj'" );
     xcode.generate_project( settings.xcodeproj, all );
 end
 

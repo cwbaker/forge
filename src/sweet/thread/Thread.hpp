@@ -10,7 +10,7 @@
 
 #if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_ANDROID)
 #include <pthread.h>
 #endif
 
@@ -31,7 +31,7 @@ public:
 private:
 #if defined(BUILD_OS_WINDOWS)
     void* m_thread; ///< The Windows HANDLE to the thread.
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_ANDROID)
     pthread_t thread_;
     int exit_code_;
 #endif

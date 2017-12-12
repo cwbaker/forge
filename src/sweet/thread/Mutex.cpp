@@ -20,7 +20,11 @@ Mutex::Mutex()
 #if defined(BUILD_OS_WINDOWS)
     ::InitializeCriticalSection( &m_critical_section );
 #elif defined(BUILD_OS_MACOSX)
-    pthread_mutex_init( &mutex_, NULL );
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init( &attr );
+    pthread_mutexattr_settype( &attr, PTHREAD_MUTEX_RECURSIVE );
+    pthread_mutex_init( &mutex_, &attr );
+    pthread_mutexattr_destroy( &attr );
 #endif
 }
 

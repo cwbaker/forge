@@ -23,7 +23,7 @@ using namespace sweet::thread;
 Thread::Thread( int (*function)(void*), void* context )
 #if defined(BUILD_OS_WINDOWS)
 : m_thread( NULL ),
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_ANDROID)
 : //thread_(),
   exit_code_( 0 ),
 #endif

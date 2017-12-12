@@ -32,13 +32,15 @@ function msvc.configure( settings )
         return windows_sdk.CurrentInstallFolder;
     end
 
-    local local_settings = build.local_settings;
-    if not local_settings.msvc then
-        local_settings.updated = true;
-        local_settings.msvc = {
-            visual_studio_directory = autodetect_visual_studio_directory() or "C:/Program Files/Microsoft Visual Studio 9.0";
-            windows_sdk_directory = autodetect_windows_sdk_directory() or "C:/Program Files/Microsoft SDKs/Windows/v6.0A";
-        };
+    if operating_system() == "windows" then
+        local local_settings = build.local_settings;
+        if not local_settings.msvc then
+            local_settings.updated = true;
+            local_settings.msvc = {
+                visual_studio_directory = autodetect_visual_studio_directory() or "C:/Program Files/Microsoft Visual Studio 9.0";
+                windows_sdk_directory = autodetect_windows_sdk_directory() or "C:/Program Files/Microsoft SDKs/Windows/v6.0A";
+            };
+        end
     end
 end;
 

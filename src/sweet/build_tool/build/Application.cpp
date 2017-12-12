@@ -14,8 +14,10 @@
 #include <vector>
 #include <iostream>
 #include <stdio.h>
+#ifdef BUILD_OS_WINDOWS
 #include <io.h>
 #include <fcntl.h>
+#endif
 
 using std::string;
 using std::vector;
@@ -25,7 +27,7 @@ Application::Application( int argc, char** argv )
 : BuildToolEventSink(),
   result_( EXIT_SUCCESS )
 {
-#if defined BUILD_OS_WINDOWS
+#ifdef BUILD_OS_WINDOWS
     _setmode( _fileno(stdout), _O_BINARY );
     _setmode( _fileno(stderr), _O_BINARY );
 #endif

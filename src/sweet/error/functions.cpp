@@ -1,6 +1,6 @@
 //
-// error_functions.cpp
-// Copyright (c) 2001 - 2012 Charles Baker.  All rights reserved.
+// functions.cpp
+// Copyright (c) 2001 - 2013 Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -11,6 +11,7 @@
 #include <exception>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 using namespace sweet::error;
 

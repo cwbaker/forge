@@ -325,7 +325,7 @@ std::string OsInterface::whoami()
 void OsInterface::putenv( const std::string& attribute, const std::string& value )
 {
     std::string assignment = attribute + "=" + value;
-    ::putenv( const_cast<char*>(assignment.c_str()) );
+    ::putenv( strdup(const_cast<char*>(assignment.c_str())) );
 }
 
 /**

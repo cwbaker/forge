@@ -194,7 +194,7 @@ end
 -- Serialize values to to a Lua file (typically the local settings table).
 function build.serialize( file, value, level )
     local function indent( level )
-        for i = 0, level - 1 do
+        for i = 1, level do
             file:write( "  " );
         end
     end
@@ -208,8 +208,9 @@ function build.serialize( file, value, level )
     elseif type(value) == "table" then
         file:write( "{\n" );
         for _, v in ipairs(value) do
+            indent( level + 1 );
             build.serialize( file, v, level + 1 );
-            file:write( ", " );
+            file:write( ",\n" );
         end
         for k, v in pairs(value) do
             if type(k) == "string" then
@@ -419,15 +420,17 @@ function build.add_library_dependencies( target )
         for _, value in ipairs(target.libraries) do
             local library = find_target( root(module_name(value, target.architecture)) );
             assert( library, "Failed to find library '%s' for '%s'" % {value, relative(target:path(), root())} );
-            table.insert( libraries, library );
-            target:add_dependency( library );
+            if build.built_for_platform_and_variant(library.settings) then
+                table.insert( libraries, library );
+                target:add_dependency( library );
+            end
         end
     end
     target.libraries = libraries;
 end
 
-function build.add_module_dependencies( target, filename, architecture )
-    if build.built_for_platform_and_variant(target) then
+function build.add_module_dependencies( target, filename, architecture, settings )
+    if build.built_for_platform_and_variant(settings) then
         local working_directory = working_directory();
         working_directory:add_dependency( target );
 
@@ -435,7 +438,7 @@ function build.add_module_dependencies( target, filename, architecture )
         assert( root_target , "No root target found at '%s'" % tostring(root()) );
         root_target:add_dependency( target );
 
-        target.settings = build.current_settings();
+        target.settings = settings;
         target.architecture = architecture;
         target:set_filename( filename );
         target:add_dependency( Directory(branch(filename)) );        

@@ -32,8 +32,6 @@ function Cxx( definition )
             cxx.settings = settings;
             cxx.architecture = architecture;
 
-            local directory = Directory( "%s/%s" % {obj_directory(cxx), architecture} );
-
             for _, value in ipairs(cxx) do
                 local source_file = file( value );
                 source_file:set_required_to_exist( true );
@@ -43,7 +41,7 @@ function Cxx( definition )
                 local object = file( "%s/%s/%s" % {obj_directory(source_file), architecture, obj_name(value)} );
                 object.source = value;
                 object:add_dependency( source_file );
-                object:add_dependency( directory );
+                object:add_dependency( Directory("%s/%s" % {obj_directory(source_file), architecture}) );
                 cxx:add_dependency( object );
             end
         end

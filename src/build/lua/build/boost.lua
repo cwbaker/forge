@@ -71,7 +71,7 @@ end;
 
 function boost.llvmgcc_boost_library( name )
     local toolset = "xgcc42";
-    local runtime;
+    local runtime = "";
     local version = string.gsub( settings.boost.version, "%.", "_" );
 
     if settings.runtime_library == "static" then
