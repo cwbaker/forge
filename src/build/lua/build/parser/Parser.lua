@@ -8,7 +8,7 @@ function Parser:build()
         local command_line = {
             'parser',
             '-r parser/cxx',
-            ('"%s"'):format( self:dependency() )
+            ('"%s"'):format( build.relative(self:dependency()) )
         };
         local environment = {
             LUA_PATH = settings.parser.lua_path;
