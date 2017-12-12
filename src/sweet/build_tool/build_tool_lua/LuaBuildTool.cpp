@@ -10,14 +10,16 @@
 #include "LuaGraph.hpp"
 #include "LuaTargetPrototype.hpp"
 #include "LuaTarget.hpp"
+#include "types.hpp"
 #include <sweet/build_tool/BuildTool.hpp>
 #include <sweet/build_tool/Arguments.hpp>
 #include <sweet/build_tool/Scheduler.hpp>
 #include <sweet/process/Process.hpp>
 #include <sweet/process/Environment.hpp>
 #include <sweet/lua/Lua.hpp>
-#include <sweet/lua/LuaObject.hpp>
 #include <sweet/lua/LuaValue.hpp>
+#include <sweet/lua/lua_types.hpp>
+#include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
 #include <lua/lua.hpp>
 #include <string>
@@ -26,16 +28,17 @@ using std::string;
 using std::unique_ptr;
 using namespace sweet;
 using namespace sweet::lua;
+using namespace sweet::luaxx;
 using namespace sweet::build_tool;
 
 LuaBuildTool::LuaBuildTool( BuildTool* build_tool, lua::Lua* lua )
-: build_( NULL ),
-  lua_file_system_( NULL ),
-  lua_context_( NULL ),
-  lua_graph_( NULL ),
-  lua_system_( NULL ),
-  lua_target_( NULL ),
-  lua_target_prototype_( NULL )
+: lua_( nullptr ),
+  lua_file_system_( nullptr ),
+  lua_context_( nullptr ),
+  lua_graph_( nullptr ),
+  lua_system_( nullptr ),
+  lua_target_( nullptr ),
+  lua_target_prototype_( nullptr )
 {
     create( build_tool, lua );
 }
@@ -43,12 +46,6 @@ LuaBuildTool::LuaBuildTool( BuildTool* build_tool, lua::Lua* lua )
 LuaBuildTool::~LuaBuildTool()
 {
     destroy();
-}
-
-lua::LuaObject* LuaBuildTool::build() const
-{
-    SWEET_ASSERT( build_ );
-    return build_;
 }
 
 LuaTarget* LuaBuildTool::lua_target() const
@@ -70,6 +67,7 @@ void LuaBuildTool::create( BuildTool* build_tool, lua::Lua* lua )
 
     destroy();
 
+    lua_ = lua;
     lua_file_system_ = new LuaFileSystem;
     lua_context_ = new LuaContext;
     lua_graph_ = new LuaGraph;
@@ -77,57 +75,118 @@ void LuaBuildTool::create( BuildTool* build_tool, lua::Lua* lua )
     lua_target_ = new LuaTarget;
     lua_target_prototype_ = new LuaTargetPrototype;
 
-    build_ = new LuaObject( *lua );
-    build_->members()
-        .type( SWEET_STATIC_TYPEID(BuildTool) )
-        .this_pointer( build_tool )
-        ( "set_maximum_parallel_jobs", &BuildTool::set_maximum_parallel_jobs )
-        ( "maximum_parallel_jobs", &BuildTool::maximum_parallel_jobs )
-        ( "set_stack_trace_enabled", &BuildTool::set_stack_trace_enabled )
-        ( "stack_trace_enabled", &BuildTool::stack_trace_enabled )
-        ( "set_build_hooks_library", &BuildTool::set_build_hooks_library )
-        ( "build_hooks_library", &BuildTool::build_hooks_library )
-        ( "execute", raw(&LuaBuildTool::execute) )
-        ( "print", raw(&LuaBuildTool::print) )
-    ;
+    static const luaL_Reg functions[] = 
+    {
+        { "set_maximum_parallel_jobs", &LuaBuildTool::set_maximum_parallel_jobs },
+        { "maximum_parallel_jobs", &LuaBuildTool::maximum_parallel_jobs },
+        { "set_stack_trace_enabled", &LuaBuildTool::set_stack_trace_enabled },
+        { "stack_trace_enabled", &LuaBuildTool::stack_trace_enabled },
+        { "set_build_hooks_library", &LuaBuildTool::set_build_hooks_library },
+        { "build_hooks_library", &LuaBuildTool::build_hooks_library },
+        { "execute", &LuaBuildTool::execute },
+        { "print", &LuaBuildTool::print },
+        { nullptr, nullptr }
+    };
 
     lua_State* lua_state = lua->get_lua_state();
-    LuaConverter<LuaObject>::push( lua_state, *build_ );
+    luaxx_create( lua_state, build_tool, BUILD_TOOL_TYPE );
+    luaxx_push( lua_state, build_tool );
+    luaL_setfuncs( lua_state, functions, 0 );
     lua_context_->create( build_tool, lua_state );
     lua_file_system_->create( build_tool, lua_state );
     lua_graph_->create( build_tool, lua_state );
     lua_system_->create( build_tool, lua_state );
     lua_target_->create( lua );
     lua_target_prototype_->create( lua, lua_target_ );
-    lua_pop( lua_state, 1 );
-
-    lua->globals()
-        ( "build", *build_ )
-    ;
+    lua_setglobal( lua_state, "build" );
 }
 
 void LuaBuildTool::destroy()
 {
     delete lua_target_prototype_;
-    lua_target_prototype_ = NULL;
+    lua_target_prototype_ = nullptr;
 
     delete lua_target_;
-    lua_target_ = NULL;
+    lua_target_ = nullptr;
 
     delete lua_system_;
-    lua_system_ = NULL;
+    lua_system_ = nullptr;
 
     delete lua_graph_;
-    lua_graph_ = NULL;
+    lua_graph_ = nullptr;
 
     delete lua_context_;
-    lua_context_ = NULL;
+    lua_context_ = nullptr;
 
     delete lua_file_system_;
-    lua_file_system_ = NULL;
+    lua_file_system_ = nullptr;
 
-    delete build_;
-    build_ = NULL;
+    if ( lua_ )
+    {
+        lua_State* lua_state = lua_->get_lua_state();
+        if ( lua_state )
+        {
+            lua_destroy_object( lua_state, this );
+        }
+        lua_ = nullptr;
+    }
+}
+
+int LuaBuildTool::set_maximum_parallel_jobs( lua_State* lua_state )
+{
+    const int BUILD_TOOL = 1;
+    const int MAXIMUM_PARALLEL_JOBS = 2;
+    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    int maximum_parallel_jobs = luaL_checkinteger( lua_state, MAXIMUM_PARALLEL_JOBS );
+    build_tool->set_maximum_parallel_jobs( maximum_parallel_jobs );
+    return 0;
+}
+
+int LuaBuildTool::maximum_parallel_jobs( lua_State* lua_state )
+{
+    const int BUILD_TOOL = 1;
+    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    int maximum_parallel_jobs = build_tool->maximum_parallel_jobs();
+    lua_pushinteger( lua_state, maximum_parallel_jobs );
+    return 1;
+}
+
+int LuaBuildTool::set_stack_trace_enabled( lua_State* lua_state )
+{
+    const int BUILD_TOOL = 1;
+    const int STACK_TRACE_ENABLED = 2;
+    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    bool stack_trace_enabled = lua_toboolean( lua_state, STACK_TRACE_ENABLED ) != 0;
+    build_tool->set_stack_trace_enabled( stack_trace_enabled );
+    return 0;
+}
+
+int LuaBuildTool::stack_trace_enabled( lua_State* lua_state )
+{
+    const int BUILD_TOOL = 1;
+    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    bool stack_trace_enabled = build_tool->stack_trace_enabled();
+    lua_pushboolean( lua_state, stack_trace_enabled ? 1 : 0 );
+    return 1;
+}
+
+int LuaBuildTool::set_build_hooks_library( lua_State* lua_state )
+{
+    const int BUILD_TOOL = 1;
+    const int BUILD_HOOKS_LIBRARY = 2;
+    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    const char* build_hooks_library = luaL_checkstring( lua_state, BUILD_HOOKS_LIBRARY );
+    build_tool->set_build_hooks_library( string(build_hooks_library) );
+    return 0;
+}
+
+int LuaBuildTool::build_hooks_library( lua_State* lua_state )
+{
+    const int BUILD_TOOL = 1;
+    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    const string& build_hooks_library = build_tool->build_hooks_library();
+    lua_pushlstring( lua_state, build_hooks_library.c_str(), build_hooks_library.size() );
+    return 1;
 }
 
 int LuaBuildTool::execute( lua_State* lua_state )
@@ -143,8 +202,8 @@ int LuaBuildTool::execute( lua_State* lua_state )
         const int STDERR_FILTER = 7;
         const int ARGUMENTS = 8;
 
-        BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
-        luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
+        BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+
         const char* command = luaL_checkstring( lua_state, COMMAND );
         const char* command_line = luaL_checkstring( lua_state, COMMAND_LINE );
         unique_ptr<process::Environment> environment;
@@ -234,8 +293,7 @@ int LuaBuildTool::print( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
     const int TEXT = 2;
-    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
-    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
+    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
     build_tool->output( luaL_checkstring(lua_state, TEXT) );
     return 0;
 }

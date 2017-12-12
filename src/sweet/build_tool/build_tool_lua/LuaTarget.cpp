@@ -18,9 +18,10 @@ using namespace sweet;
 using namespace sweet::lua;
 using namespace sweet::build_tool;
 
+static const char* TARGET_METATABLE = "build.Target";
+
 LuaTarget::LuaTarget()
 : lua_( NULL ),
-  target_metatable_( NULL ),
   target_prototype_( NULL )
 {
 }
@@ -42,22 +43,73 @@ void LuaTarget::create( lua::Lua* lua )
     destroy();
 
     lua_ = lua;
-    target_metatable_ = new lua::LuaObject( *lua_ );
     target_prototype_ = new lua::LuaObject( *lua_ );
 
-    target_prototype_->members()
-        .type( SWEET_STATIC_TYPEID(Target) )
-    ;
-    AddMember add_member = target_prototype_->members();
-    register_functions( add_member );
+    lua_State* lua_state = lua_->get_lua_state();
+    SWEET_ASSERT( lua_state );
 
-    target_metatable_->members()
-        ( "__index", *target_prototype_ )
-        ( "__tostring", raw(&LuaTarget::filename) )
-    ;
+    lua_push_object( lua_state, target_prototype_ );
+    lua_push_value<rtti::Type>( lua_state, SWEET_STATIC_TYPEID(Target) );
+    lua_setfield( lua_state, -2, lua::TYPE_KEYWORD );
+    lua_pop( lua_state, 1 );
+
+    static const luaL_Reg functions[] = 
+    {
+        { "id", &LuaTarget::id },
+        { "path", &LuaTarget::path },
+        { "branch", &LuaTarget::branch },
+        { "prototype", &LuaTarget::prototype },
+        { "set_cleanable", &LuaTarget::set_cleanable },
+        { "cleanable", &LuaTarget::cleanable },
+        { "set_built", &LuaTarget::set_built },
+        { "built", &LuaTarget::built },
+        { "timestamp", &LuaTarget::timestamp },
+        { "last_write_time", &LuaTarget::last_write_time },
+        { "outdated", &LuaTarget::outdated },
+        { "set_filename", &LuaTarget::set_filename },
+        { "filename", &LuaTarget::filename },
+        { "filenames", &LuaTarget::filenames },
+        { "directory", &LuaTarget::directory },
+        { "set_working_directory", &LuaTarget::set_working_directory },
+        { "add_dependency", &LuaTarget::add_explicit_dependency },
+        { "remove_dependency", &LuaTarget::remove_dependency },
+        { "add_implicit_dependency", &LuaTarget::add_implicit_dependency },
+        { "clear_implicit_dependencies", &LuaTarget::clear_implicit_dependencies },
+        { "add_ordering_dependency", &LuaTarget::add_ordering_dependency },
+        { nullptr, nullptr }
+    };
+    lua_push_object( lua_state, target_prototype_ );
+    luaL_setfuncs( lua_state, functions, 0 );
+    lua_pop( lua_state, 1 );
+
+    static const luaL_Reg implicit_creation_functions [] = 
+    {
+        { "parent", &LuaTarget::parent },
+        { "working_directory", &LuaTarget::working_directory },
+        { "targets", &LuaTarget::targets },
+        { "dependency", &LuaTarget::explicit_dependency },
+        { "dependencies", &LuaTarget::explicit_dependencies },
+        { "implicit_dependency", &LuaTarget::implicit_dependency },
+        { "implicit_dependencies", &LuaTarget::implicit_dependencies },
+        { "ordering_dependency", &LuaTarget::ordering_dependency },
+        { "ordering_dependencies", &LuaTarget::ordering_dependencies },
+        { "any_dependency", &LuaTarget::any_dependency },
+        { "any_dependencies", &LuaTarget::any_dependencies },
+        { nullptr, nullptr }
+    };
+    lua_push_object( lua_state, target_prototype_ );
+    lua_pushlightuserdata( lua_state, this );
+    luaL_setfuncs( lua_state, implicit_creation_functions, 1 );    
+    lua_pop( lua_state, 1 );
+
+    luaL_newmetatable( lua_state, TARGET_METATABLE );
+    lua_push_object( lua_state, target_prototype_ );
+    lua_setfield( lua_state, -2, "__index" );
+    lua_pushcfunction( lua_state, &LuaTarget::filename );
+    lua_setfield( lua_state, -2, "__tostring" );
+    lua_pop( lua_state, 1 );
 
     const int BUILD = 1;
-    lua_State* lua_state = lua->get_lua_state();
     lua_push_object( lua_state, target_prototype_ );
     lua_setfield( lua_state, BUILD, "Target" );
 }
@@ -66,9 +118,6 @@ void LuaTarget::destroy()
 {
     delete target_prototype_;
     target_prototype_ = NULL;
-
-    delete target_metatable_;
-    target_metatable_ = NULL;
 
     lua_ = NULL;
 }
@@ -79,7 +128,8 @@ void LuaTarget::create_target( Target* target )
 
     if ( !target->referenced_by_script() )
     {
-        lua_->create( target );
+        lua_State* lua_state = lua_->get_lua_state();
+        lua_create_object( lua_state, target );
         target->set_referenced_by_script( true );
         recover_target( target );
         update_target( target );
@@ -89,11 +139,14 @@ void LuaTarget::create_target( Target* target )
 void LuaTarget::recover_target( Target* target )
 {
     SWEET_ASSERT( target );
-    lua_->members( target )
-        .type( SWEET_STATIC_TYPEID(Target) )
-        .metatable( *target_metatable_ )
-        .this_pointer( target )
-    ;
+    lua_State* lua_state = lua_->get_lua_state();
+    lua_push_object( lua_state, target );
+    lua_push_value<rtti::Type>( lua_state, SWEET_STATIC_TYPEID(Target) );
+    lua_setfield( lua_state, -2, lua::TYPE_KEYWORD );
+    lua_pushlightuserdata( lua_state, target );
+    lua_setfield( lua_state, -2, lua::THIS_KEYWORD );
+    luaL_setmetatable( lua_state, TARGET_METATABLE );
+    lua_pop( lua_state, 1 );
 }
 
 void LuaTarget::update_target( Target* target )
@@ -103,93 +156,196 @@ void LuaTarget::update_target( Target* target )
     TargetPrototype* target_prototype = target->prototype();
     if ( target_prototype )
     {
-        lua_->members( target )
-            .metatable( target_prototype )
-        ;        
+        lua_State* lua_state = lua_->get_lua_state();
+        lua_push_object( lua_state, target );
+        lua_push_object( lua_state, target_prototype );
+        lua_setmetatable( lua_state, -2 );
+        lua_pop( lua_state, 1 );
     }
     else
     {
-        lua_->members( target )
-            .metatable( *target_metatable_ )
-        ;
+        lua_State* lua_state = lua_->get_lua_state();
+        lua_push_object( lua_state, target );
+        luaL_setmetatable( lua_state, TARGET_METATABLE );
+        lua_pop( lua_state, 1 );
     }
 }
 
 void LuaTarget::destroy_target( Target* target )
 {
     SWEET_ASSERT( target );
-    lua_->destroy( target );
+    lua_State* lua_state = lua_->get_lua_state();
+    lua_destroy_object( lua_state, target );
     target->set_referenced_by_script( false );
 }
 
-void LuaTarget::register_functions( lua::AddMember& add_member )
+int LuaTarget::id( lua_State* lua_state )
 {
-    add_member
-        ( "id", &Target::id )
-        ( "path", &Target::path )
-        ( "branch", &Target::branch )
-        ( "parent", &LuaTarget::parent, this, _1 )
-        ( "prototype", &Target::prototype )
-        ( "set_cleanable", &Target::set_cleanable )
-        ( "cleanable", &Target::cleanable )
-        ( "set_built", &Target::set_built )
-        ( "built", &Target::built )
-        ( "timestamp", &Target::timestamp )
-        ( "last_write_time", &Target::last_write_time )
-        ( "outdated", &Target::outdated )
-        ( "set_filename", raw(&LuaTarget::set_filename) )
-        ( "filename", raw(&LuaTarget::filename) )
-        ( "filenames", &Target::filenames )
-        ( "directory", raw(&LuaTarget::directory) )
-        ( "set_working_directory", &Target::set_working_directory )
-        ( "working_directory", &LuaTarget::target_working_directory, this, _1 )
-        ( "targets", raw(&LuaTarget::targets), this )
-        ( "add_dependency", &Target::add_explicit_dependency )
-        ( "remove_dependency", &Target::remove_dependency )
-        ( "add_implicit_dependency", &Target::add_implicit_dependency )
-        ( "clear_implicit_dependencies", &Target::clear_implicit_dependencies )
-        ( "add_ordering_dependency", &Target::add_ordering_dependency )
-        ( "dependency", raw(&LuaTarget::explicit_dependency), this )
-        ( "dependencies", raw(&LuaTarget::explicit_dependencies), this )
-        ( "implicit_dependency", raw(&LuaTarget::implicit_dependency), this )
-        ( "implicit_dependencies", raw(&LuaTarget::implicit_dependencies), this )
-        ( "ordering_dependency", raw(&LuaTarget::ordering_dependency), this )
-        ( "ordering_dependencies", raw(&LuaTarget::ordering_dependencies), this )
-        ( "any_dependency", raw(&LuaTarget::any_dependency), this )
-        ( "any_dependencies", raw(&LuaTarget::any_dependencies), this )
-    ;
-}
-
-Target* LuaTarget::parent( Target* target )
-{
-    SWEET_ASSERT( target );
-    
-    Target* parent = NULL;
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
     if ( target )
     {
-        parent = target->parent();
+        const string& id = target->id();
+        lua_pushlstring( lua_state, id.c_str(), id.size() );
+        return 1; 
+    }
+    return 0;
+}
+
+int LuaTarget::path( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        const string& path = target->path();
+        lua_pushlstring( lua_state, path.c_str(), path.size() );
+        return 1; 
+    }
+    return 0;
+}
+
+int LuaTarget::branch( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        const string& branch = target->branch();
+        lua_pushlstring( lua_state, branch.c_str(), branch.size() );
+        return 1; 
+    }
+    return 0;
+}
+
+int LuaTarget::parent( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        Target* parent = target->parent();
         if ( parent && !parent->referenced_by_script() )
         {
-            create_target( parent );
+            LuaTarget* lua_target = (LuaTarget*) lua_touserdata( lua_state, lua_upvalueindex(1) );
+            SWEET_ASSERT( lua_target );
+            lua_target->create_target( parent );
+            lua_push_object( lua_state, parent );
+            return 1;
         }
     }
-    return parent;
+    return 0;
 }
 
-Target* LuaTarget::target_working_directory( Target* target )
+int LuaTarget::prototype( lua_State* lua_state )
 {
-    SWEET_ASSERT( target );
-    
-    Target* working_directory = NULL;
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
     if ( target )
     {
-        working_directory = target->working_directory();
-        if ( !working_directory->referenced_by_script() )
-        {
-            create_target( working_directory );
-        }
+        TargetPrototype* target_prototype = target->prototype();
+        lua_push_object( lua_state, target_prototype );
+        return 1;
     }
-    return working_directory;
+    return 0;
+}
+
+int LuaTarget::set_cleanable( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int CLEANABLE = 2;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        bool cleanable = lua_toboolean( lua_state, CLEANABLE );
+        target->set_cleanable( cleanable );
+    }
+    return 0;
+}
+
+int LuaTarget::cleanable( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        lua_pushboolean( lua_state, target->cleanable() ? 1 : 0 );
+        return 1;
+    }
+    return 0;
+}
+
+int LuaTarget::set_built( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int BUILT = 2;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        bool built = lua_toboolean( lua_state, BUILT );
+        target->set_built( built );
+    }
+    return 0;
+}
+
+int LuaTarget::built( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        lua_pushboolean( lua_state, target->built() ? 1 : 0 );
+        return 1;
+    }
+    return 0;
+}
+
+int LuaTarget::timestamp( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        lua_pushinteger( lua_state, target->timestamp() ? 1 : 0 );
+        return 1;
+    }
+    return 0;
+}
+
+int LuaTarget::last_write_time( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        lua_pushinteger( lua_state, target->last_write_time() ? 1 : 0 );
+        return 1;
+    }
+    return 0;
+}
+
+int LuaTarget::outdated( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        lua_pushboolean( lua_state, target->outdated() ? 1 : 0 );
+        return 1;
+    }
+    return 0;
 }
 
 int LuaTarget::set_filename( lua_State* lua_state )
@@ -197,14 +353,16 @@ int LuaTarget::set_filename( lua_State* lua_state )
     const int TARGET = 1;
     const int FILENAME = 2;
     const int INDEX = 3;
-
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
-    const char* filename = lua_tostring( lua_state, FILENAME );
-    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
-    luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
-    --index;
-    target->set_filename( string(filename), index );
-
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        size_t length = 0;
+        const char* filename = luaL_checklstring( lua_state, FILENAME, &length );
+        int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
+        luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
+        target->set_filename( string(filename, length), index - 1 );
+    }
     return 0;
 }
 
@@ -212,48 +370,168 @@ int LuaTarget::filename( lua_State* lua_state )
 {
     const int TARGET = 1;
     const int INDEX = 2;
-
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
-    luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
-
-    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
-    luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
-    --index;
-
-    if ( index < int(target->filenames().size()) )
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
     {
-        const string& filename = target->filename( index );
-        lua_pushlstring( lua_state, filename.c_str(), filename.length() );
+        int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
+        luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
+        --index;
+        if ( index < int(target->filenames().size()) )
+        {
+            const string& filename = target->filename( index );
+            lua_pushlstring( lua_state, filename.c_str(), filename.length() );
+        }
+        else
+        {
+            lua_pushlstring( lua_state, "", 0 );
+        }
+        return 1;
     }
-    else
+    return 0;
+}
+
+int LuaTarget::filenames( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
     {
-        lua_pushlstring( lua_state, "", 0 );
+        const vector<string>& filenames = target->filenames();
+        lua_push_value<vector<string>::const_iterator>( lua_state, filenames.begin() );
+        lua_push_value<vector<string>::const_iterator>( lua_state, filenames.end() );
+        lua_pushcclosure( lua_state, &lua_iterator<vector<string>::const_iterator>, 2 );
+        return 1;
     }
-    return 1;
+    return 0;
 }
 
 int LuaTarget::directory( lua_State* lua_state )
 {
     const int TARGET = 1;
     const int INDEX = 2;
-
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
-    luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
-
-    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
-    luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
-    --index;
-
-    if ( index < int(target->filenames().size()) )
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
     {
-        string directory = target->directory( index );
-        lua_pushlstring( lua_state, directory.c_str(), directory.length() );
+        int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
+        luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
+        --index;
+        if ( index < int(target->filenames().size()) )
+        {
+            const string& directory = target->directory( index );
+            lua_pushlstring( lua_state, directory.c_str(), directory.size() );
+        }
+        else
+        {
+            lua_pushlstring( lua_state, "", 0 );
+        }
+        return 1;
     }
-    else
+    return 0;
+}
+
+int LuaTarget::set_working_directory( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int WORKING_DIRECTORY = 2;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
     {
-        lua_pushlstring( lua_state, "", 0 );
+        Target* working_directory = (Target*) lua_to_object( lua_state, WORKING_DIRECTORY, SWEET_STATIC_TYPEID(Target) );
+        target->set_working_directory( working_directory );
     }
-    return 1;
+    return 0;
+}
+
+int LuaTarget::working_directory( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {    
+        Target* working_directory = target->working_directory();
+        if ( !working_directory->referenced_by_script() )
+        {
+            LuaTarget* lua_target = (LuaTarget*) lua_touserdata( lua_state, lua_upvalueindex(1) );
+            SWEET_ASSERT( lua_target );
+            lua_target->create_target( working_directory );
+        }
+        lua_push_object( lua_state, working_directory );
+        return 1;
+    }
+    return 0;
+}
+
+int LuaTarget::add_explicit_dependency( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int DEPENDENCY = 2;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        Target* dependency = (Target*) lua_to_object( lua_state, DEPENDENCY, SWEET_STATIC_TYPEID(Target) );
+        target->add_explicit_dependency( dependency );
+    }
+    return 0;
+}
+
+int LuaTarget::remove_dependency( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int DEPENDENCY = 2;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        Target* dependency = (Target*) lua_to_object( lua_state, DEPENDENCY, SWEET_STATIC_TYPEID(Target) );
+        target->remove_dependency( dependency );
+    }
+    return 0;
+}
+
+int LuaTarget::add_implicit_dependency( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int DEPENDENCY = 2;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        Target* dependency = (Target*) lua_to_object( lua_state, DEPENDENCY, SWEET_STATIC_TYPEID(Target) );
+        target->add_implicit_dependency( dependency );
+    }
+    return 0;
+}
+
+int LuaTarget::clear_implicit_dependencies( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        target->clear_implicit_dependencies();
+    }
+    return 0;
+}
+
+int LuaTarget::add_ordering_dependency( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int DEPENDENCY = 2;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        Target* dependency = (Target*) lua_to_object( lua_state, DEPENDENCY, SWEET_STATIC_TYPEID(Target) );
+        target->add_ordering_dependency( dependency );
+    }
+    return 0;
 }
 
 struct GetTargetsTargetReferencedByScript
@@ -279,27 +557,18 @@ struct GetTargetsTargetReferencedByScript
 
 int LuaTarget::targets( lua_State* lua_state )
 {
-    SWEET_ASSERT( lua_state );
-
-    try
+    const int TARGET = 1;
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "expected target table" );
+    if ( target )
     {
         LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
         SWEET_ASSERT( lua_target );
-
-        const int TARGET = 1;
-        Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
-        luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
-
         const vector<Target*>& dependencies = target->targets();
         lua_push_iterator( lua_state, dependencies.begin(), dependencies.end(), GetTargetsTargetReferencedByScript(lua_target) );
         return 1;
     }
-
-    catch ( const std::exception& exception )
-    {
-        lua_pushstring( lua_state, exception.what() );
-        return lua_error( lua_state );        
-    }
+    return 0;
 }
 
 int LuaTarget::any_dependency( lua_State* lua_state )
@@ -308,7 +577,7 @@ int LuaTarget::any_dependency( lua_State* lua_state )
 
     const int TARGET = 1;
     const int INDEX = 2;
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
     luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
 
     int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
@@ -324,7 +593,7 @@ int LuaTarget::any_dependency( lua_State* lua_state )
             SWEET_ASSERT( lua_target );
             lua_target->create_target( dependency );
         }
-        LuaConverter<Target*>::push( lua_state, dependency );
+        lua_push_object( lua_state, dependency );
     }
     else
     {
@@ -341,7 +610,7 @@ int LuaTarget::any_dependencies_iterator( lua_State* lua_state )
     const int LUA_TARGET = lua_upvalueindex( 2 );
 
     int finish = lua_tointeger( lua_state, FINISH );
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
     int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
 
     if ( target && index <= finish )
@@ -356,7 +625,7 @@ int LuaTarget::any_dependencies_iterator( lua_State* lua_state )
                 lua_target->create_target( dependency );
             }
             lua_pushinteger( lua_state, index );
-            LuaConverter<Target*>::push( lua_state, dependency );
+            lua_push_object( lua_state, dependency );
             return 2;
         }
     }
@@ -369,7 +638,7 @@ int LuaTarget::any_dependencies( lua_State* lua_state )
     const int START = 2;
     const int FINISH = 3;
 
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
     luaL_argcheck( lua_state, target, TARGET, "expected target table" );
 
     int start = luaL_optinteger( lua_state, START, 1 );
@@ -383,7 +652,7 @@ int LuaTarget::any_dependencies( lua_State* lua_state )
     lua_pushinteger( lua_state, finish );
     lua_pushlightuserdata( lua_state, lua_target );
     lua_pushcclosure( lua_state, &LuaTarget::any_dependencies_iterator, 2 );
-    LuaConverter<Target*>::push( lua_state, target );
+    lua_push_object( lua_state, target );
     lua_pushinteger( lua_state, start - 1 );
     return 3;
 }
@@ -394,7 +663,7 @@ int LuaTarget::explicit_dependency( lua_State* lua_state )
 
     const int TARGET = 1;
     const int INDEX = 2;
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
     luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
 
     int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
@@ -410,7 +679,7 @@ int LuaTarget::explicit_dependency( lua_State* lua_state )
             SWEET_ASSERT( lua_target );
             lua_target->create_target( dependency );
         }
-        LuaConverter<Target*>::push( lua_state, dependency );
+        lua_push_object( lua_state, dependency );
     }
     else
     {
@@ -427,7 +696,7 @@ int LuaTarget::explicit_dependencies_iterator( lua_State* lua_state )
     const int LUA_TARGET = lua_upvalueindex( 2 );
 
     int finish = lua_tointeger( lua_state, FINISH );
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
     int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
 
     if ( target && index <= finish )
@@ -442,7 +711,7 @@ int LuaTarget::explicit_dependencies_iterator( lua_State* lua_state )
                 lua_target->create_target( dependency );
             }
             lua_pushinteger( lua_state, index );
-            LuaConverter<Target*>::push( lua_state, dependency );
+            lua_push_object( lua_state, dependency );
             return 2;
         }
     }
@@ -455,7 +724,7 @@ int LuaTarget::explicit_dependencies( lua_State* lua_state )
     const int START = 2;
     const int FINISH = 3;
 
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
     luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
 
     int start = luaL_optinteger( lua_state, START, 1 );
@@ -469,7 +738,7 @@ int LuaTarget::explicit_dependencies( lua_State* lua_state )
     lua_pushinteger( lua_state, finish );
     lua_pushlightuserdata( lua_state, lua_target );
     lua_pushcclosure( lua_state, &LuaTarget::explicit_dependencies_iterator, 2 );
-    LuaConverter<Target*>::push( lua_state, target );
+    lua_push_object( lua_state, target );
     lua_pushinteger( lua_state, start - 1 );
     return 3;
 }
@@ -480,7 +749,7 @@ int LuaTarget::implicit_dependency( lua_State* lua_state )
 
     const int TARGET = 1;
     const int INDEX = 2;
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
     luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
 
     int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
@@ -496,7 +765,7 @@ int LuaTarget::implicit_dependency( lua_State* lua_state )
             SWEET_ASSERT( lua_target );
             lua_target->create_target( dependency );
         }
-        LuaConverter<Target*>::push( lua_state, dependency );
+        lua_push_object( lua_state, dependency );
     }
     else
     {
@@ -513,7 +782,7 @@ int LuaTarget::implicit_dependencies_iterator( lua_State* lua_state )
     const int LUA_TARGET = lua_upvalueindex( 2 );
 
     int finish = lua_tointeger( lua_state, FINISH );
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
     int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
 
     if ( target && index <= finish )
@@ -528,7 +797,7 @@ int LuaTarget::implicit_dependencies_iterator( lua_State* lua_state )
                 lua_target->create_target( dependency );
             }
             lua_pushinteger( lua_state, index );
-            LuaConverter<Target*>::push( lua_state, dependency );
+            lua_push_object( lua_state, dependency );
             return 2;
         }
     }
@@ -541,7 +810,7 @@ int LuaTarget::implicit_dependencies( lua_State* lua_state )
     const int START = 2;
     const int FINISH = 3;
 
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
     luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
 
     int start = luaL_optinteger( lua_state, START, 1 );
@@ -555,7 +824,7 @@ int LuaTarget::implicit_dependencies( lua_State* lua_state )
     lua_pushinteger( lua_state, finish );
     lua_pushlightuserdata( lua_state, lua_target );
     lua_pushcclosure( lua_state, &LuaTarget::implicit_dependencies_iterator, 2 );
-    LuaConverter<Target*>::push( lua_state, target );
+    lua_push_object( lua_state, target );
     lua_pushinteger( lua_state, start - 1 );
     return 3;
 }
@@ -566,7 +835,7 @@ int LuaTarget::ordering_dependency( lua_State* lua_state )
 
     const int TARGET = 1;
     const int INDEX = 2;
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
     luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
 
     int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
@@ -582,7 +851,7 @@ int LuaTarget::ordering_dependency( lua_State* lua_state )
             SWEET_ASSERT( lua_target );
             lua_target->create_target( dependency );
         }
-        LuaConverter<Target*>::push( lua_state, dependency );
+        lua_push_object( lua_state, dependency );
     }
     else
     {
@@ -599,7 +868,7 @@ int LuaTarget::ordering_dependencies_iterator( lua_State* lua_state )
     const int LUA_TARGET = lua_upvalueindex( 2 );
 
     int finish = lua_tointeger( lua_state, FINISH );
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
     int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
     if ( target && index <= finish )
     {
@@ -613,7 +882,7 @@ int LuaTarget::ordering_dependencies_iterator( lua_State* lua_state )
                 lua_target->create_target( dependency );
             }
             lua_pushinteger( lua_state, index );
-            LuaConverter<Target*>::push( lua_state, dependency );
+            lua_push_object( lua_state, dependency );
             return 2;
         }
     }
@@ -625,7 +894,7 @@ int LuaTarget::ordering_dependencies( lua_State* lua_state )
     const int TARGET = 1;
     const int START = 2;
     const int FINISH = 3;
-    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    Target* target = (Target*) lua_to_object( lua_state, TARGET, SWEET_STATIC_TYPEID(Target) );
     luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
     int start = luaL_optinteger( lua_state, START, 1 );
     luaL_argcheck( lua_state, start >= 1, START, "expected start >= 1" );
@@ -637,7 +906,7 @@ int LuaTarget::ordering_dependencies( lua_State* lua_state )
     lua_pushinteger( lua_state, finish );
     lua_pushlightuserdata( lua_state, lua_target );
     lua_pushcclosure( lua_state, &LuaTarget::ordering_dependencies_iterator, 2 );
-    LuaConverter<Target*>::push( lua_state, target );
+    lua_push_object( lua_state, target );
     lua_pushinteger( lua_state, start - 1 );
     return 3;
 }

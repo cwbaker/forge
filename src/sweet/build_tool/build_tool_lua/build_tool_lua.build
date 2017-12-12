@@ -26,7 +26,8 @@ for _, build in build:default_builds("cc_.*") do
             "LuaGraph.cpp",
             "LuaSystem.cpp",
             "LuaTarget.cpp",
-            "LuaTargetPrototype.cpp"
+            "LuaTargetPrototype.cpp",
+            "types.cpp"
         };
     }
 end

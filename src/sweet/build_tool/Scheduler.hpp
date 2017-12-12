@@ -31,7 +31,6 @@ namespace build_tool
 class Job;
 class Context;
 class Arguments;
-class Pattern;
 class Target;
 class BuildTool;
 class BuildfileEventSink;

@@ -5,15 +5,18 @@
 
 #include "LuaSystem.hpp"
 #include "LuaBuildTool.hpp"
+#include "types.hpp"
 #include <sweet/build_tool/BuildTool.hpp>
 #include <sweet/build_tool/System.hpp>
-#include <sweet/lua/LuaConverter.ipp>
+#include <sweet/lua/lua_functions.hpp>
+#include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
 #include <lua/lua.hpp>
 
 using std::string;
 using namespace sweet;
 using namespace sweet::lua;
+using namespace sweet::luaxx;
 using namespace sweet::build_tool;
 
 LuaSystem::LuaSystem()
@@ -52,8 +55,7 @@ int LuaSystem::getenv( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
     const int KEY = 2;
-    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
-    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
+    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
     const char* key = luaL_checkstring( lua_state, KEY ); 
     const char* value = build_tool->system()->getenv( key );
     if ( value )
@@ -68,8 +70,7 @@ int LuaSystem::sleep( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
     const int MILLISECONDS = 2;
-    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
-    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
+    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
     float milliseconds = static_cast<float>( luaL_checknumber(lua_state, MILLISECONDS) );
     build_tool->system()->sleep( milliseconds );
     return 0;
@@ -78,8 +79,7 @@ int LuaSystem::sleep( lua_State* lua_state )
 int LuaSystem::ticks( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
-    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
-    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
+    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
     float ticks = build_tool->system()->ticks();
     lua_pushnumber( lua_state, ticks );
     return 1;
@@ -88,8 +88,7 @@ int LuaSystem::ticks( lua_State* lua_state )
 int LuaSystem::operating_system( lua_State* lua_state )
 {
     const int BUILD_TOOL = 1;
-    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
-    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
+    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
     const char* operating_system = build_tool->system()->operating_system();
     lua_pushstring( lua_state, operating_system );
     return 1;

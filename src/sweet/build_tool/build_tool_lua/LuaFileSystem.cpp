@@ -5,8 +5,9 @@
 
 #include "LuaFileSystem.hpp"
 #include "LuaBuildTool.hpp"
+#include "types.hpp"
 #include <sweet/build_tool/BuildTool.hpp>
-#include <sweet/lua/LuaConverter.ipp>
+#include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
 #include <lua/lua.hpp>
 
@@ -15,6 +16,7 @@ using boost::filesystem::directory_iterator;
 using boost::filesystem::recursive_directory_iterator;
 using namespace sweet;
 using namespace sweet::lua;
+using namespace sweet::luaxx;
 using namespace sweet::build_tool;
 
 static const char* DIRECTORY_ITERATOR_METATABLE = "boost::filesystem::directory_iterator";
@@ -238,8 +240,7 @@ int LuaFileSystem::recursive_directory_iterator_gc( lua_State* lua_state )
 boost::filesystem::path LuaFileSystem::absolute( lua_State* lua_state, int index )
 {
     const int BUILD_TOOL = 1;
-    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
-    luaL_argcheck( lua_state, build_tool != nullptr, BUILD_TOOL, "nil build tool" );
+    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, index, &length );
     return build_tool->absolute( string(path, length) );

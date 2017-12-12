@@ -21,8 +21,6 @@ class TargetPrototype;
 class LuaTargetPrototype
 {
     lua::Lua* lua_; ///< The main Lua virtual machine to create the target API in.
-    LuaTarget* lua_target_;
-    lua::LuaObject* target_prototype_metatable_; ///< The LuaObject that acts as a metatable for TargetPrototypes.
     lua::LuaObject* target_prototype_prototype_; ///< The LuaObject that acts as a prototype for TargetPrototypes.
 
 public:

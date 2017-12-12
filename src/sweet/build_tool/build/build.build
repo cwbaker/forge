@@ -21,6 +21,7 @@ build:all {
             "sweet/build_tool/build_tool_lua/build_tool_lua",
             "sweet/process/process",
             "sweet/persist/persist",
+            "sweet/luaxx/luaxx",
             "sweet/lua/lua",
             "sweet/cmdline/cmdline",
             "sweet/rtti/rtti",
