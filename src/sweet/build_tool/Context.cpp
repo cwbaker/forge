@@ -237,5 +237,9 @@ boost::filesystem::path Context::absolute( const boost::filesystem::path& path )
 */
 boost::filesystem::path Context::relative( const boost::filesystem::path& path ) const
 {
-    return sweet::build_tool::relative( path, directory() );
+    if ( path.is_relative() )
+    {
+        return path;
+    }
+    return sweet::build_tool::relative( path, directory() );        
 }

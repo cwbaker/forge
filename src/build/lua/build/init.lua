@@ -74,7 +74,12 @@ function build.default_create_function( target_prototype, ... )
                 return create_function( settings, ... );
             else
                 local identifier = build.interpolate( identifier_or_sources, settings );
-                local target = build.File( identifier, target_prototype, select(2, ...) );
+                local target = build.Target( identifier, target_prototype, select(2, ...) );
+                if build.is_relative(identifier) then 
+                    target:set_filename( build.object(identifier) );
+                else
+                    target:set_filename( identifier );
+                end
                 target:add_ordering_dependency( build.Directory(build.branch(target)) );
                 target.settings = settings;
                 return target;
