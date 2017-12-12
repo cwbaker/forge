@@ -44,34 +44,38 @@ for _, architecture in ipairs(settings.architectures) do
             "linit.c", 
         };
     };
+end
 
+if build.platform_matches("macosx") or build.platform_matches("windows") then
     if variant == "debug" or variant == "release" or variant == "shipping" then
-        build.Executable ("luac", architecture) {
-            libraries = {
-                "sweet/assert/assert",
-                "lua/liblua"
-            };
-            build.Cc (architecture) {
-                defines = { 
-                    "_CRT_SECURE_NO_DEPRECATE" 
+        for _, architecture in ipairs(settings.architectures) do
+            build.Executable ("luac", architecture) {
+                libraries = {
+                    "sweet/assert/assert",
+                    "lua/liblua"
                 };
-                "luac.c",
-                "print.c"
-            };
-        };
-    
-        build.Executable ("lua", architecture) {
-            project_name = "lua_";
-            libraries = {
-                "sweet/assert/assert",
-                "lua/liblua"
-            };        
-            build.Cc (architecture) {
-                defines = { 
-                    "_CRT_SECURE_NO_DEPRECATE" 
+                build.Cc (architecture) {
+                    defines = { 
+                        "_CRT_SECURE_NO_DEPRECATE" 
+                    };
+                    "luac.c",
+                    "print.c"
                 };
-                "lua.c",
             };
-        };
+        
+            build.Executable ("lua", architecture) {
+                project_name = "lua_";
+                libraries = {
+                    "sweet/assert/assert",
+                    "lua/liblua"
+                };        
+                build.Cc (architecture) {
+                    defines = { 
+                        "_CRT_SECURE_NO_DEPRECATE" 
+                    };
+                    "lua.c",
+                };
+            };
+        end
     end
 end
