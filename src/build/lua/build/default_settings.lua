@@ -10,25 +10,25 @@ local path_separator_by_operating_system = {
 };
 
 return {
-    bin = build.root( ("../%s_%s/bin"):format(platform, variant) );
-    lib = build.root( ("../%s_%s/lib"):format(platform, variant) );
-    obj = build.root( ("../%s_%s/obj"):format(platform, variant) );
-    gen = build.root( ("../%s_%s/gen"):format(platform, variant) );
-    classes = build.root( ("../%s_%s/classes"):format(platform, variant) );
-    data = build.root( ("../%s_%s/data"):format(platform, variant) );
-    root = build.root();
+    bin = build:root( ("../%s_%s/bin"):format(platform, variant) );
+    lib = build:root( ("../%s_%s/lib"):format(platform, variant) );
+    obj = build:root( ("../%s_%s/obj"):format(platform, variant) );
+    gen = build:root( ("../%s_%s/gen"):format(platform, variant) );
+    classes = build:root( ("../%s_%s/classes"):format(platform, variant) );
+    data = build:root( ("../%s_%s/data"):format(platform, variant) );
+    root = build:root();
 
-    path_separator = path_separator_by_operating_system [build.operating_system()];
+    path_separator = path_separator_by_operating_system [build:operating_system()];
 
-    user_settings_filename = build.home( "user_settings.lua" );
+    user_settings_filename = build:home( "user_settings.lua" );
 
-    local_settings_filename = build.root( "local_settings.lua" );
+    local_settings_filename = build:root( "local_settings.lua" );
 
     include_directories = {};
     
     library_directories = {};
 
-    platforms = platforms_by_operating_system [build.operating_system()];
+    platforms = platforms_by_operating_system [build:operating_system()];
 
     variants = {};
 
@@ -79,7 +79,7 @@ return {
             sdkroot = "iphoneos";
             iphoneos_deployment_target = "8.0";
             targeted_device_family = "1,2";
-            provisioning_profile = build.home( "sweet/sweet_software/dev.mobileprovision" );
+            provisioning_profile = build:home( "sweet/sweet_software/dev.mobileprovision" );
         };
 
         ["ios_simulator"] = {
@@ -97,7 +97,7 @@ return {
             sdkroot = "iphoneos"; 
             iphoneos_deployment_target = "7.0";
             targeted_device_family = "1,2";
-            provisioning_profile = build.home( "sweet/sweet_software/dev.mobileprovision" );
+            provisioning_profile = build:home( "sweet/sweet_software/dev.mobileprovision" );
         };
 
         ["windows"] = {

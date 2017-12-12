@@ -1,15 +1,15 @@
 
-local StaticLibrary = build.TargetPrototype( "StaticLibrary" );
+local StaticLibrary = build:TargetPrototype( "StaticLibrary" );
 
 -- Convert /filename/ into a library directory path be prepending the library
 -- directory to the leaf of /filename/.
 local function default_identifier_filename( identifier, architecture, settings )
-    local settings = settings or build.current_settings();
-    local identifier = ("%s_%s"):format( build.interpolate(identifier, settings), architecture );
-    local basename = build.basename( identifier );
+    local settings = settings or build:current_settings();
+    local identifier = ("%s_%s"):format( build:interpolate(identifier, settings), architecture );
+    local basename = build:basename( identifier );
     local branch = settings.lib;
-    if build.is_absolute(identifier) then 
-        branch = build.branch( identifier );
+    if build:is_absolute(identifier) then 
+        branch = build:branch( identifier );
     end
     -- The use of the global `lib_name()` here is temporary while the platform
     -- modules (e.g. macosx/init.lua etc) install their `lib_name()` functions
@@ -22,9 +22,9 @@ end
 function StaticLibrary.create( settings, identifier, architecture )
     local architecture = architecture or settings.default_architecture;
     local identifier, filename = default_identifier_filename( identifier, architecture, settings );
-    local static_library = build.Target( identifier, StaticLibrary );
+    local static_library = build:Target( identifier, StaticLibrary );
     static_library:set_filename( filename );
-    static_library:add_ordering_dependency( build.Directory(build.branch(static_library)) );
+    static_library:add_ordering_dependency( build:Directory(build:branch(static_library)) );
     static_library.settings = settings;
     static_library.architecture = architecture or settings.default_architecture
     return static_library;

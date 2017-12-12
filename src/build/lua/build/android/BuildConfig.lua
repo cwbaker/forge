@@ -1,16 +1,16 @@
 
-local BuildConfig = build.TargetPrototype( "android.BuildConfig" );
+local BuildConfig = build:TargetPrototype( "android.BuildConfig" );
 
 function BuildConfig.create( settings, packages )
-    local build_config = build.Target( build.anonymous(), BuildConfig );
+    local build_config = build:Target( build:anonymous(), BuildConfig );
     build_config.settings = settings;
     build_config.packages = packages;
     for index, package in ipairs(packages) do 
-        local filename = build.generated( ("%s/BuildConfig.java"):format(package:gsub("%.", "/")) );
+        local filename = build:generated( ("%s/BuildConfig.java"):format(package:gsub("%.", "/")) );
         build_config:set_filename( filename, index );
-        build_config:add_ordering_dependency( build.Directory(build.branch(filename)) );
+        build_config:add_ordering_dependency( build:Directory(build:branch(filename)) );
     end
-    build_config:add_implicit_dependency( build.current_buildfile() );
+    build_config:add_implicit_dependency( build:current_buildfile() );
     return build_config;
 end
 

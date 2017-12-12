@@ -1,5 +1,5 @@
 
-local settings = build.push_settings {
+local settings = build:push_settings {
     warning_level = 0;
     defines = { 
         -- Disable automatic linking to Boost libraries.
@@ -8,8 +8,8 @@ local settings = build.push_settings {
 };
 
 for _, architecture in ipairs(settings.architectures) do 
-    local boost_filesystem = build.Library ("boost_filesystem", architecture) {
-        build.Cxx (architecture) {
+    local boost_filesystem = build:Library ("boost_filesystem", architecture) {
+        build:Cxx (architecture) {
             "codecvt_error_category.cpp",
             "operations.cpp",
             "path.cpp",
@@ -22,11 +22,11 @@ for _, architecture in ipairs(settings.architectures) do
 
     if platform == "windows" then
         boost_filesystem {
-            build.Cxx (architecture) {
+            build:Cxx (architecture) {
                 "windows_file_codecvt.cpp"
             };
         };
     end
 end
 
-build.pop_settings();
+build:pop_settings();

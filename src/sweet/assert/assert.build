@@ -1,8 +1,8 @@
 
-local settings = build.current_settings();
+local settings = build:current_settings();
 for _, architecture in ipairs(settings.architectures) do    
-    build.Library ("assert", architecture) {
-        build.Cc (architecture) {
+    build:Library ("assert", architecture) {
+        build:Cc (architecture) {
             "assert.cpp"
         };
     };

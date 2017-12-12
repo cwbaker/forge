@@ -1,13 +1,13 @@
 
 buildfile "unit_test/unit_test.build";
 
-local settings = build.push_settings {
+local settings = build:push_settings {
     warning_level = 0;
 };
 
 for _, architecture in ipairs(settings.architectures) do 
-    local libUnitTest = build.Library ("libUnitTest", architecture) {
-        build.Cxx (architecture) {
+    local libUnitTest = build:Library ("libUnitTest", architecture) {
+        build:Cxx (architecture) {
             "AssertException.cpp",
             "Checks.cpp",
             "CurrentTest.cpp",
@@ -29,7 +29,7 @@ for _, architecture in ipairs(settings.architectures) do
 
     if platform == "windows" then
         libUnitTest {
-            build.Cxx (architecture) {
+            build:Cxx (architecture) {
                 "Win32/TimeHelpers.cpp"
             };
         };
@@ -37,7 +37,7 @@ for _, architecture in ipairs(settings.architectures) do
 
     if platform == "macosx" then
         libUnitTest {
-            build.Cxx (architecture) {
+            build:Cxx (architecture) {
                 "Posix/SignalTranslator.cpp",
                 "Posix/TimeHelpers.cpp"
             };
@@ -45,4 +45,4 @@ for _, architecture in ipairs(settings.architectures) do
     end
 end
 
-build.pop_settings();
+build:pop_settings();

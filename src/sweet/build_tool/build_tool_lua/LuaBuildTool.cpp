@@ -79,14 +79,16 @@ void LuaBuildTool::create( BuildTool* build_tool, lua::Lua* lua )
 
     build_ = new LuaObject( *lua );
     build_->members()
-        ( "set_maximum_parallel_jobs", &BuildTool::set_maximum_parallel_jobs, build_tool )
-        ( "maximum_parallel_jobs", &BuildTool::maximum_parallel_jobs, build_tool )
-        ( "set_stack_trace_enabled", &BuildTool::set_stack_trace_enabled, build_tool )
-        ( "stack_trace_enabled", &BuildTool::stack_trace_enabled, build_tool )
-        ( "set_build_hooks_library", &BuildTool::set_build_hooks_library, build_tool )
-        ( "build_hooks_library", &BuildTool::build_hooks_library, build_tool )
-        ( "execute", raw(&LuaBuildTool::execute), build_tool )
-        ( "print", raw(&LuaBuildTool::print), build_tool )
+        .type( SWEET_STATIC_TYPEID(BuildTool) )
+        .this_pointer( build_tool )
+        ( "set_maximum_parallel_jobs", &BuildTool::set_maximum_parallel_jobs )
+        ( "maximum_parallel_jobs", &BuildTool::maximum_parallel_jobs )
+        ( "set_stack_trace_enabled", &BuildTool::set_stack_trace_enabled )
+        ( "stack_trace_enabled", &BuildTool::stack_trace_enabled )
+        ( "set_build_hooks_library", &BuildTool::set_build_hooks_library )
+        ( "build_hooks_library", &BuildTool::build_hooks_library )
+        ( "execute", raw(&LuaBuildTool::execute) )
+        ( "print", raw(&LuaBuildTool::print) )
     ;
 
     lua_State* lua_state = lua->get_lua_state();
@@ -132,16 +134,18 @@ int LuaBuildTool::execute( lua_State* lua_state )
 {
     try
     {
-        BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-        SWEET_ASSERT( build_tool );
+        const int BUILD_TOOL = 1;
+        const int COMMAND = 2;
+        const int COMMAND_LINE = 3;
+        const int ENVIRONMENT = 4;
+        const int DEPENDENCIES_FILTER = 5;
+        const int STDOUT_FILTER = 6;
+        const int STDERR_FILTER = 7;
+        const int ARGUMENTS = 8;
 
-        const int COMMAND = 1;
+        BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
         const char* command = luaL_checkstring( lua_state, COMMAND );
-
-        const int COMMAND_LINE = 2;
         const char* command_line = luaL_checkstring( lua_state, COMMAND_LINE );
-        
-        const int ENVIRONMENT = 3;
         unique_ptr<process::Environment> environment;
         if ( !lua_isnoneornil(lua_state, ENVIRONMENT) )
         {
@@ -165,7 +169,6 @@ int LuaBuildTool::execute( lua_State* lua_state )
             }
         }
 
-        const int DEPENDENCIES_FILTER = 4;
         unique_ptr<lua::LuaValue> dependencies_filter;
         if ( !lua_isnoneornil(lua_state, DEPENDENCIES_FILTER) )
         {
@@ -177,7 +180,6 @@ int LuaBuildTool::execute( lua_State* lua_state )
             dependencies_filter.reset( new lua::LuaValue(*build_tool->lua(), lua_state, DEPENDENCIES_FILTER) );
         }
 
-        const int STDOUT_FILTER = 5;
         unique_ptr<lua::LuaValue> stdout_filter;
         if ( !lua_isnoneornil(lua_state, STDOUT_FILTER) )
         {
@@ -189,7 +191,6 @@ int LuaBuildTool::execute( lua_State* lua_state )
             stdout_filter.reset( new lua::LuaValue(*build_tool->lua(), lua_state, STDOUT_FILTER) );
         }
 
-        const int STDERR_FILTER = 6;
         unique_ptr<lua::LuaValue> stderr_filter;
         if ( !lua_isnoneornil(lua_state, STDERR_FILTER) )
         {
@@ -201,7 +202,6 @@ int LuaBuildTool::execute( lua_State* lua_state )
             stderr_filter.reset( new lua::LuaValue(*build_tool->lua(), lua_state, STDERR_FILTER) );
         }
 
-        const int ARGUMENTS = 7;
         unique_ptr<Arguments> arguments;
         if ( lua_gettop(lua_state) >= ARGUMENTS )
         {
@@ -231,9 +231,9 @@ int LuaBuildTool::execute( lua_State* lua_state )
 
 int LuaBuildTool::print( lua_State* lua_state )
 {
-    BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( build_tool );
-    const int TEXT = 1;
+    const int BUILD_TOOL = 1;
+    const int TEXT = 2;
+    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
     build_tool->output( luaL_checkstring(lua_state, TEXT) );
     return 0;
 }

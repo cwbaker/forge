@@ -62,5 +62,6 @@ private:
 
 SWEET_LUA_TYPE_CONVERSION( sweet::build_tool::TargetPrototype, LuaByReference );
 SWEET_LUA_TYPE_CONVERSION( sweet::build_tool::Target, LuaByReference );
+SWEET_LUA_TYPE_CONVERSION( sweet::build_tool::BuildTool, LuaByReference );
 
 #endif

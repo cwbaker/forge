@@ -1,15 +1,15 @@
 
-build.push_settings {
+build:push_settings {
     warning_level = 0;
 }
 
-build.all {
-    build.Executable "${bin}/unit_test" {
+build:all {
+    build:Executable "${bin}/unit_test" {
         libraries = {
             "unit/libUnitTest"
         };
 
-        build.Cxx () {
+        build:Cxx () {
             "Main.cpp",
             "TestAssertHandler.cpp",
             "TestCheckMacros.cpp",
@@ -31,4 +31,4 @@ build.all {
     };
 };
 
-build.pop_settings();
+build:pop_settings();

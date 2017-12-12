@@ -8,7 +8,7 @@ function macosx.configure( settings )
 
         local xcodebuild = "/usr/bin/xcodebuild";
         local arguments = "xcodebuild -sdk macosx -version";
-        local result = build.execute( xcodebuild, arguments, nil, nil, function(line)
+        local result = build:execute( xcodebuild, arguments, nil, nil, function(line)
             local key, value = line:match( "(%w+): ([^\n]+)" );
             if key and value then 
                 if key == "ProductBuildVersion" then 
@@ -29,7 +29,7 @@ function macosx.configure( settings )
 
         local xcodebuild = "/usr/bin/xcodebuild";
         local arguments = "xcodebuild -version";
-        local result = build.execute( xcodebuild, arguments, nil, nil, function(line)
+        local result = build:execute( xcodebuild, arguments, nil, nil, function(line)
             local major, minor = line:match( "Xcode (%d+)%.(%d+)" );
             if major and minor then 
                 xcode_version = ("%02d%02d"):format( tonumber(major), tonumber(minor) );
@@ -50,7 +50,7 @@ function macosx.configure( settings )
 
         local sw_vers = "/usr/bin/sw_vers";
         local arguments = "sw_vers -buildVersion";
-        local result = build.execute( sw_vers, arguments, nil, nil, function(line)
+        local result = build:execute( sw_vers, arguments, nil, nil, function(line)
             local version = line:match( "%w+" );
             if version then 
                 os_version = version;
@@ -61,7 +61,7 @@ function macosx.configure( settings )
         return os_version;
     end
 
-    if build.operating_system() == "macosx" then
+    if build:operating_system() == "macosx" then
         local local_settings = build.local_settings;
         if not local_settings.macosx then
             local_settings.updated = true;
@@ -78,7 +78,7 @@ function macosx.configure( settings )
 end
 
 function macosx.initialize( settings )
-    if build.platform_matches("macosx") then
+    if build:platform_matches("macosx") then
         cc = macosx.cc;
         objc = macosx.objc;
         build_library = macosx.build_library;
@@ -116,11 +116,11 @@ function macosx.cc( target )
         if object:outdated() then
             object:set_built( false );
             local source = object:dependency();
-            print( build.leaf(source:id()) );
+            print( build:leaf(source:id()) );
             local dependencies = ("%s.d"):format( object:filename() );
             local output = object:filename();
-            local input = build.absolute( source:filename() );
-            build.system( 
+            local input = build:absolute( source:filename() );
+            build:system( 
                 xcrun, 
                 ('xcrun --sdk macosx clang %s -MMD -MF "%s" -o "%s" "%s"'):format(ccflags, dependencies, output, input)
             );
@@ -135,13 +135,13 @@ function macosx.build_library( target )
         "-static"
     };
 
-    build.pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
+    build:pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     local objects =  {};
     for _, compile in target:dependencies() do
         local prototype = compile:prototype();
         if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
             for _, object in compile:dependencies() do
-                table.insert( objects, build.relative(object:filename()) );
+                table.insert( objects, build:relative(object:filename()) );
             end
         end
     end
@@ -150,13 +150,13 @@ function macosx.build_library( target )
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
         local xcrun = target.settings.macosx.xcrun;
-        build.system( xcrun, ('xcrun --sdk macosx libtool %s -o "%s" "%s"'):format(arflags, build.native(target:filename()), arobjects) );
+        build:system( xcrun, ('xcrun --sdk macosx libtool %s -o "%s" "%s"'):format(arflags, build:native(target:filename()), arobjects) );
     end
-    build.popd();
+    build:popd();
 end
 
 function macosx.clean_library( target )
-    build.rm( target:filename() );
+    build:rm( target:filename() );
 end
 
 function macosx.build_executable( target )
@@ -180,14 +180,14 @@ function macosx.build_executable( target )
     local objects = {};
     local libraries = {};
 
-    build.pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
+    build:pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
             assertf( target.architecture == dependency.architecture, "Architectures for '%s' (%s) and '%s' (%s) don't match", target:path(), tostring(target.architecture), dependency:path(), tostring(dependency.architecture) );
             for _, object in dependency:dependencies() do
                 if object:prototype() == nil then
-                    table.insert( objects, build.relative(object:filename()) );
+                    table.insert( objects, build:relative(object:filename()) );
                 end
             end
         elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
@@ -202,13 +202,13 @@ function macosx.build_executable( target )
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, " " );
         local xcrun = target.settings.macosx.xcrun;
-        build.system( xcrun, ('xcrun --sdk macosx clang++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
+        build:system( xcrun, ('xcrun --sdk macosx clang++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
     end
-    build.popd();
+    build:popd();
 end
 
 function macosx.clean_executable( target )
-    build.rm( target:filename() );
+    build:rm( target:filename() );
 end
 
 function macosx.lipo_executable( target )
@@ -218,23 +218,23 @@ function macosx.lipo_executable( target )
     end
     executables = table.concat( executables, [[" "]] );
     local xcrun = target.settings.macosx.xcrun;
-    build.system( xcrun, ('xcrun --sdk macosx lipo -create -output "%s" "%s"'):format(target:filename(), executables) );
+    build:system( xcrun, ('xcrun --sdk macosx lipo -create -output "%s" "%s"'):format(target:filename(), executables) );
 end
 
 function macosx.obj_directory( target )
-    return ("%s/%s"):format( target.settings.obj, build.relative(target:working_directory():path(), build.root()) );
+    return ("%s/%s"):format( target.settings.obj, build:relative(target:working_directory():path(), build:root()) );
 end
 
 function macosx.cc_name( name )
-    return ("%s.c"):format( build.basename(name) );
+    return ("%s.c"):format( build:basename(name) );
 end
 
 function macosx.cxx_name( name )
-    return ("%s.cpp"):format( build.basename(name) );
+    return ("%s.cpp"):format( build:basename(name) );
 end
 
 function macosx.obj_name( name, architecture )
-    return ("%s.o"):format( build.basename(name) );
+    return ("%s.o"):format( build:basename(name) );
 end
 
 function macosx.lib_name( name )
@@ -249,4 +249,4 @@ function macosx.exe_name( name, architecture )
     return name;
 end
 
-build.register_module( macosx );
+build:register_module( macosx );

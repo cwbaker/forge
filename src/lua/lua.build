@@ -1,18 +1,18 @@
 
-local settings = build.push_settings {
+local settings = build:push_settings {
     warning_level = 0;
 };
 
 for _, architecture in ipairs(settings.architectures) do
-    build.Library ("liblua", architecture) {
+    build:Library ("liblua", architecture) {
         libraries = {
             "sweet/assert/assert";
             "sweet/error/error";
         };
 
-        build.Cc (architecture) {
-            defines = build.switch { 
-                build.operating_system();
+        build:Cc (architecture) {
+            defines = build:switch { 
+                build:operating_system();
                 windows = { "_CRT_SECURE_NO_DEPRECATE" };
                 macosx = { "LUA_USE_POSIX", "LUA_USE_DLOPEN" };
             };
@@ -53,16 +53,16 @@ for _, architecture in ipairs(settings.architectures) do
     };
 end
 
-if build.platform_matches("macosx") or build.platform_matches("windows") then
+if build:platform_matches("macosx") or build:platform_matches("windows") then
     if variant == "debug" or variant == "release" or variant == "shipping" then
         for _, architecture in ipairs(settings.architectures) do
-            build.all {
-                build.Executable (("${bin}/luac_%s"):format(architecture), architecture) {
+            build:all {
+                build:Executable (("${bin}/luac_%s"):format(architecture), architecture) {
                     libraries = {
                         "sweet/assert/assert",
                         "lua/liblua"
                     };
-                    build.Cc (architecture) {
+                    build:Cc (architecture) {
                         defines = { 
                             "_CRT_SECURE_NO_DEPRECATE" 
                         };
@@ -72,14 +72,14 @@ if build.platform_matches("macosx") or build.platform_matches("windows") then
             };
         end
 
-        build.all {
-            build.Executable "${bin}/lua" {
+        build:all {
+            build:Executable "${bin}/lua" {
                 project_name = "lua_";
                 libraries = {
                     "sweet/assert/assert",
                     "lua/liblua"
                 };        
-                build.Cc () {
+                build:Cc () {
                     defines = { 
                         "_CRT_SECURE_NO_DEPRECATE" 
                     };
@@ -90,4 +90,4 @@ if build.platform_matches("macosx") or build.platform_matches("windows") then
     end
 end
 
-build.pop_settings();
+build:pop_settings();

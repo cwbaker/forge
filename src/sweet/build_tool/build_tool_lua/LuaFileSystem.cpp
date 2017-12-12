@@ -4,7 +4,9 @@
 //
 
 #include "LuaFileSystem.hpp"
+#include "LuaBuildTool.hpp"
 #include <sweet/build_tool/BuildTool.hpp>
+#include <sweet/lua/LuaConverter.ipp>
 #include <sweet/assert/assert.hpp>
 #include <lua/lua.hpp>
 
@@ -12,6 +14,7 @@ using std::string;
 using boost::filesystem::directory_iterator;
 using boost::filesystem::recursive_directory_iterator;
 using namespace sweet;
+using namespace sweet::lua;
 using namespace sweet::build_tool;
 
 static const char* DIRECTORY_ITERATOR_METATABLE = "boost::filesystem::directory_iterator";
@@ -84,7 +87,7 @@ void LuaFileSystem::destroy()
 
 int LuaFileSystem::exists( lua_State* lua_state )
 {
-    const int PATH = 1;
+    const int PATH = 2;
     boost::filesystem::path path = absolute( lua_state, PATH );
     lua_pushboolean( lua_state, boost::filesystem::exists(path) ? 1 : 0 );
     return 1;
@@ -92,7 +95,7 @@ int LuaFileSystem::exists( lua_State* lua_state )
 
 int LuaFileSystem::is_file( lua_State* lua_state )
 {
-    const int PATH = 1;
+    const int PATH = 2;
     boost::filesystem::path path = absolute( lua_state, PATH );
     lua_pushboolean( lua_state, boost::filesystem::is_regular_file(path) ? 1 : 0 );
     return 1;
@@ -100,7 +103,7 @@ int LuaFileSystem::is_file( lua_State* lua_state )
 
 int LuaFileSystem::is_directory( lua_State* lua_state )
 {
-    const int PATH = 1;
+    const int PATH = 2;
     boost::filesystem::path path = absolute( lua_state, PATH );
     lua_pushboolean( lua_state, boost::filesystem::is_directory(path) ? 1 : 0 );
     return 1;
@@ -108,7 +111,7 @@ int LuaFileSystem::is_directory( lua_State* lua_state )
 
 int LuaFileSystem::ls( lua_State* lua_state )
 {
-    const int PATH = 1;
+    const int PATH = 2;
     boost::filesystem::path path = absolute( lua_state, PATH );
     LuaFileSystem::push_directory_iterator( lua_state, directory_iterator(path) );
     lua_pushcclosure( lua_state, &LuaFileSystem::ls_iterator, 1 );
@@ -117,7 +120,7 @@ int LuaFileSystem::ls( lua_State* lua_state )
 
 int LuaFileSystem::find( lua_State* lua_state )
 {
-    const int PATH = 1;
+    const int PATH = 2;
     boost::filesystem::path path = absolute( lua_state, PATH );
     LuaFileSystem::push_recursive_directory_iterator( lua_state, recursive_directory_iterator(path) );
     lua_pushcclosure( lua_state, &LuaFileSystem::find_iterator, 1 );
@@ -126,7 +129,7 @@ int LuaFileSystem::find( lua_State* lua_state )
 
 int LuaFileSystem::mkdir( lua_State* lua_state )
 {
-    const int PATH = 1;
+    const int PATH = 2;
     boost::filesystem::path path = absolute( lua_state, PATH );
     boost::filesystem::create_directories( path );
     return 0;
@@ -134,7 +137,7 @@ int LuaFileSystem::mkdir( lua_State* lua_state )
 
 int LuaFileSystem::rmdir( lua_State* lua_state )
 {
-    const int PATH = 1;
+    const int PATH = 2;
     boost::filesystem::path path = absolute( lua_state, PATH );
     boost::filesystem::remove_all( path );
     return 0;
@@ -142,8 +145,8 @@ int LuaFileSystem::rmdir( lua_State* lua_state )
 
 int LuaFileSystem::cp( lua_State* lua_state )
 {
-    const int TO = 1;
-    const int FROM = 2;
+    const int TO = 2;
+    const int FROM = 3;
     boost::filesystem::path to = absolute( lua_state, TO );
     boost::filesystem::path from = absolute( lua_state, FROM );
     boost::filesystem::copy_file( from, to );
@@ -152,7 +155,7 @@ int LuaFileSystem::cp( lua_State* lua_state )
 
 int LuaFileSystem::rm( lua_State* lua_state )
 {
-    const int PATH = 1;
+    const int PATH = 2;
     boost::filesystem::path path = absolute( lua_state, PATH );
     boost::filesystem::remove( path );
     return 0;
@@ -235,8 +238,7 @@ int LuaFileSystem::recursive_directory_iterator_gc( lua_State* lua_state )
 boost::filesystem::path LuaFileSystem::absolute( lua_State* lua_state, int index )
 {
     const int BUILD_TOOL = 1;
-    BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(BUILD_TOOL)) );
-    SWEET_ASSERT( build_tool );
+    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, index, &length );
     return build_tool->absolute( string(path, length) );

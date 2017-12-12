@@ -1,13 +1,13 @@
 
-local DynamicLibrary = build.TargetPrototype( "DynamicLibrary" );
+local DynamicLibrary = build:TargetPrototype( "DynamicLibrary" );
 
 local function default_identifier_filename( identifier, architecture, settings )
-    local settings = settings or build.current_settings();
-    local identifier = build.interpolate( identifier, settings );
-    local basename = build.basename( identifier );
+    local settings = settings or build:current_settings();
+    local identifier = build:interpolate( identifier, settings );
+    local basename = build:basename( identifier );
     local branch = settings.bin;
-    if build.is_absolute(identifier) then 
-        branch = build.branch( identifier );
+    if build:is_absolute(identifier) then 
+        branch = build:branch( identifier );
     end
 
     -- The use of the global `dll_name()` here is temporary while the platform
@@ -22,10 +22,10 @@ end
 function DynamicLibrary.create( settings, identifier, architecture )
     local architecture = architecture or settings.default_architecture;
     local identifier, filename = default_identifier_filename( identifier, architecture, settings );
-    local dynamic_library = build.Target( identifier, DynamicLibrary );
+    local dynamic_library = build:Target( identifier, DynamicLibrary );
     dynamic_library:set_filename( filename );
     dynamic_library:set_cleanable( true );
-    dynamic_library:add_ordering_dependency( build.Directory(build.branch(dynamic_library)) );
+    dynamic_library:add_ordering_dependency( build:Directory(build:branch(dynamic_library)) );
     dynamic_library.settings = settings;
     dynamic_library.architecture = architecture or settings.default_architecture;
     return dynamic_library;
@@ -37,7 +37,7 @@ function DynamicLibrary:depend( dependencies )
         local architecture = self.architecture;
         for _, value in ipairs(libraries) do
             local library = ("%s_%s"):format( value, architecture );
-            self:add_dependency( build.target(build.root(library)) );
+            self:add_dependency( build:target(build:root(library)) );
         end
     end
     return build.Target.depend( self, dependencies );

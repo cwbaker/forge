@@ -4,13 +4,16 @@
 //
 
 #include "LuaSystem.hpp"
+#include "LuaBuildTool.hpp"
 #include <sweet/build_tool/BuildTool.hpp>
 #include <sweet/build_tool/System.hpp>
+#include <sweet/lua/LuaConverter.ipp>
 #include <sweet/assert/assert.hpp>
 #include <lua/lua.hpp>
 
 using std::string;
 using namespace sweet;
+using namespace sweet::lua;
 using namespace sweet::build_tool;
 
 LuaSystem::LuaSystem()
@@ -47,9 +50,9 @@ void LuaSystem::destroy()
 
 int LuaSystem::getenv( lua_State* lua_state )
 {
-    BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( build_tool );
-    const int KEY = 1;
+    const int BUILD_TOOL = 1;
+    const int KEY = 2;
+    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
     const char* key = luaL_checkstring( lua_state, KEY );
     const char* value = build_tool->system()->getenv( key );
     if ( value )
@@ -62,9 +65,9 @@ int LuaSystem::getenv( lua_State* lua_state )
 
 int LuaSystem::sleep( lua_State* lua_state )
 {
-    BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( build_tool );
-    const int MILLISECONDS = 1;
+    const int BUILD_TOOL = 1;
+    const int MILLISECONDS = 2;
+    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
     float milliseconds = static_cast<float>( luaL_checknumber(lua_state, MILLISECONDS) );
     build_tool->system()->sleep( milliseconds );
     return 0;
@@ -72,8 +75,8 @@ int LuaSystem::sleep( lua_State* lua_state )
 
 int LuaSystem::ticks( lua_State* lua_state )
 {
-    BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( build_tool );
+    const int BUILD_TOOL = 1;
+    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
     float ticks = build_tool->system()->ticks();
     lua_pushnumber( lua_state, ticks );
     return 1;
@@ -81,8 +84,8 @@ int LuaSystem::ticks( lua_State* lua_state )
 
 int LuaSystem::operating_system( lua_State* lua_state )
 {
-    BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( build_tool );
+    const int BUILD_TOOL = 1;
+    BuildTool* build_tool = LuaConverter<BuildTool*>::to( lua_state, BUILD_TOOL );
     const char* operating_system = build_tool->system()->operating_system();
     lua_pushstring( lua_state, operating_system );
     return 1;

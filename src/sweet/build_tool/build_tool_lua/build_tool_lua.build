@@ -1,5 +1,5 @@
 
-local settings = build.push_settings {
+local settings = build:push_settings {
     defines = {
         "_CRT_SECURE_NO_DEPRECATE",
         "_SCL_SECURE_NO_DEPRECATE",
@@ -9,8 +9,8 @@ local settings = build.push_settings {
 };
 
 for _, architecture in ipairs(settings.architectures) do
-    build.Library ("build_tool_lua", architecture) {
-        build.Cxx (architecture) {
+    build:Library ("build_tool_lua", architecture) {
+        build:Cxx (architecture) {
             -- Disable automatic linking to Boost libraries.
             defines = { "BOOST_ALL_NO_LIB" };
             "LuaBuildTool.cpp",
@@ -24,4 +24,4 @@ for _, architecture in ipairs(settings.architectures) do
     }
 end
 
-build.pop_settings();
+build:pop_settings();

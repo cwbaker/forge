@@ -24,8 +24,8 @@ local function add_group( path )
         };
         groups[path] = group;
 
-        local directory = build.branch( path );
-        if directory ~= "" and not string.find(build.relative(directory, build.root()), "..", 1, true) then
+        local directory = build:branch( path );
+        if directory ~= "" and not string.find(build:relative(directory, build:root()), "..", 1, true) then
             local parent = add_group( directory );
             table.insert( parent.children, group );
             group.parent = parent;
@@ -35,8 +35,8 @@ local function add_group( path )
 end
 
 local function add_file( filename )
-    local directory = build.branch( filename );
-    if directory ~= "" and not string.find(build.relative(filename, build.root()), "..", 1, true) then
+    local directory = build:branch( filename );
+    if directory ~= "" and not string.find(build:relative(filename, build:root()), "..", 1, true) then
         local file = files[path];
         if not file then
             file = { 
@@ -75,11 +75,11 @@ local function add_legacy_target( target, platform )
     if not legacy_target then
         legacy_target = {
             uuid = uuid();
-            name = build.leaf( filename );
+            name = build:leaf( filename );
             working_directory = working_directory;
             configuration_list = uuid();
             platform = platform;
-            build = build.executable( "build" );
+            build = build:executable( "build" );
             path = filename;
             settings = settings;
             configurations = add_configurations( target.architecture, settings.variants );
@@ -104,7 +104,7 @@ end;
 
 local function generate_files( xcodeproj, files )
     for path, file in pairs(files) do
-        local filename = build.leaf( file.path );
+        local filename = build:leaf( file.path );
         xcodeproj:write(([[
         %s /* %s */ = { isa = PBXFileReference; lastKnownFileType = text; path = "%s"; sourceTree = "<group>"; };
 ]]):format(file.uuid, filename, filename)
@@ -129,11 +129,11 @@ local function generate_groups( xcodeproj, groups )
 
         table.sort( group.children, function(lhs, rhs) 
             local lhs_file = 0;
-            if build.is_file(lhs.path) then
+            if build:is_file(lhs.path) then
                 lhs_file = 1;
             end
             local rhs_file = 0;
-            if build.is_file(rhs.path) then
+            if build:is_file(rhs.path) then
                 rhs_file = 1;
             end
             return 
@@ -159,7 +159,7 @@ local function generate_groups( xcodeproj, groups )
             path = "%s";
             sourceTree = "<group>";
         };
-]]):format(build.leaf(group.path), build.relative(group.path, base))
+]]):format(build:leaf(group.path), build:relative(group.path, base))
         );
     end
 end
@@ -172,7 +172,7 @@ local function generate_legacy_targets( xcodeproj, legacy_targets )
     table.sort( sorted_targets, function(lhs, rhs) return lhs.path < rhs.path end );
 
     for _, legacy_target in ipairs(sorted_targets) do 
-        local name = build.leaf( legacy_target.path );
+        local name = build:leaf( legacy_target.path );
         local template = [[
         ${uuid} /* ${name} */ = {
             isa = PBXLegacyTarget;
@@ -189,12 +189,12 @@ local function generate_legacy_targets( xcodeproj, legacy_targets )
             productName = "${name}";
         };
 ]];
-        xcodeproj:write( build.interpolate(template, legacy_target) );
+        xcodeproj:write( build:interpolate(template, legacy_target) );
     end
 end
 
 local function generate_project( xcodeproj, groups )
-    local main_group = groups[build.root()];
+    local main_group = groups[build:root()];
     assert( main_group, "The main group for the Xcode project wasn't found" );
 
     project_uuid = uuid();
@@ -228,7 +228,7 @@ local function generate_project( xcodeproj, groups )
     for _, target in ipairs(sorted_targets) do
         xcodeproj:write(([[
             %s /* %s */,
-]]):format(target.uuid, build.leaf(target.path))
+]]):format(target.uuid, build:leaf(target.path))
         );
     end
     xcodeproj:write([[
@@ -334,7 +334,7 @@ local function generate_configuration_lists( xcodeproj, legacy_targets )
 
     generate_configuration_list( xcodeproj, project_configuration_list_uuid, project_id, project_configurations );
     for _, target in pairs(sorted_targets) do
-        generate_configuration_list( xcodeproj, target.configuration_list, build.leaf(target.path), target.configurations );
+        generate_configuration_list( xcodeproj, target.configuration_list, build:leaf(target.path), target.configurations );
     end
 end
 
@@ -355,7 +355,7 @@ local function generate_build_phases( xcodeproj, build_phases )
         shellScript = "${command_line}";
     };
 ]];
-    xcodeproj:write( build.interpolate(template, build_phase) );
+    xcodeproj:write( build:interpolate(template, build_phase) );
     end
 end
 
@@ -383,7 +383,7 @@ local function find_targets_by_prototype( target, prototype )
 end
 
 local function included( filename, includes, excludes )
-    if build.is_directory(filename) then 
+    if build:is_directory(filename) then 
         return false;
     end
 
@@ -408,7 +408,7 @@ local function included( filename, includes, excludes )
 end
 
 local function populate_source( source, includes, excludes )
-    for filename in build.find( source ) do 
+    for filename in build:find( source ) do 
         if included(filename, includes, excludes) then 
             add_file( filename );
         end
@@ -425,12 +425,12 @@ function xcode.initialize( settings )
 end
 
 function xcode.generate_project( name, project )
-    project_root = build.branch( name );
-    project_id = build.leaf( build.basename(name) );
+    project_root = build:branch( name );
+    project_id = build:leaf( build:basename(name) );
     project_configuration_list_uuid = uuid();
     project_configurations = add_configurations( nil, build.settings.variants );
 
-    populate_source( build.root(), {"^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java"}, {"^.*%.framework"} );
+    populate_source( build:root(), {"^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java"}, {"^.*%.framework"} );
 
     for _, platform in ipairs(build.settings.platforms) do 
         for _, target in project:dependencies() do 
@@ -470,12 +470,12 @@ function xcode.generate_project( name, project )
     end
 
     local xcodeproj_directory = name;
-    if build.exists( xcodeproj_directory ) then
-        build.rmdir( xcodeproj_directory );
+    if build:exists( xcodeproj_directory ) then
+        build:rmdir( xcodeproj_directory );
     end
-    build.mkdir( xcodeproj_directory );
+    build:mkdir( xcodeproj_directory );
 
-    local filename = build.absolute( "project.pbxproj", xcodeproj_directory );
+    local filename = build:absolute( "project.pbxproj", xcodeproj_directory );
     local xcodeproj = io.open( filename, "wb" );
     assertf( xcodeproj, "Opening '%s' to write Xcode project file failed", filename );
     header( xcodeproj, project );
@@ -493,8 +493,8 @@ end
 function xcodeproj()
     platform = "";
     variant = "";
-    local all = all or build.find_target( build.root("all") );
-    assertf( all, "Missing target at '%s' to generate Xcode project from", build.root() );
+    local all = all or build:find_target( build:root("all") );
+    assertf( all, "Missing target at '%s' to generate Xcode project from", build:root() );
     assertf( build.settings.xcode, "Missing Xcode settings in 'settings.xcode'" );
     assertf( build.settings.xcode.xcodeproj, "Missing Xcode project filename in 'settings.xcode.xcodeproj'" );
     xcode.generate_project( settings.xcode.xcodeproj, all );
@@ -510,9 +510,9 @@ function xcode_build()
         assertf( failures == 0, "%d failures", failures );
         if failures == 0 then 
             if platform == "ios" then
-                ios.deploy( build.find_target(build.initial("all")) );
+                ios.deploy( build:find_target(build:initial("all")) );
             elseif platform == "android" then
-                android.deploy( build.find_target(build.initial("all")) );
+                android.deploy( build:find_target(build:initial("all")) );
             end
         end
     elseif action == "clean" then
@@ -526,4 +526,4 @@ require "build.xcode.Plist";
 require "build.xcode.Lipo";
 require "build.xcode.Xib";
 
-build.register_module( xcode );
+build:register_module( xcode );
