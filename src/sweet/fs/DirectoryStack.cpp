@@ -8,7 +8,7 @@
 #include <sweet/assert/assert.hpp>
 
 using namespace sweet;
-using namespace sweet::fsys;
+using namespace sweet::fs;
 
 /**
 // Reset the working directory stack to contain only \e directory.
@@ -17,7 +17,7 @@ using namespace sweet::fsys;
 //  The directory to set the working directory stack to contain (assumed
 //  to be absolute or empty).
 */
-void DirectoryStack::reset_directory( const fsys::Path& directory )
+void DirectoryStack::reset_directory( const fs::Path& directory )
 {
     SWEET_ASSERT( directory.empty() || directory.is_absolute() );
     directories_.clear();
@@ -34,7 +34,7 @@ void DirectoryStack::reset_directory( const fsys::Path& directory )
 // @param directory
 //  The directory to change the current working directory to.
 */
-void DirectoryStack::change_directory( const fsys::Path& directory )
+void DirectoryStack::change_directory( const fs::Path& directory )
 {
     SWEET_ASSERT( !directories_.empty() );
 
@@ -62,7 +62,7 @@ void DirectoryStack::change_directory( const fsys::Path& directory )
 // @param directory
 //  The directory to change the current working directory to.
 */
-void DirectoryStack::push_directory( const fsys::Path& directory )
+void DirectoryStack::push_directory( const fs::Path& directory )
 {
     SWEET_ASSERT( !directories_.empty() );
 
@@ -98,7 +98,7 @@ void DirectoryStack::pop_directory()
 // @return
 //  The current working directory.
 */
-const fsys::Path& DirectoryStack::directory() const
+const fs::Path& DirectoryStack::directory() const
 {
     SWEET_ASSERT( !directories_.empty() );
     return directories_.back();

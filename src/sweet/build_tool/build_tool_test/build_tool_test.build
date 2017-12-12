@@ -12,7 +12,7 @@ for _, architecture in ipairs(settings.architectures) do
             "boost/libs/system/src/boost_system",
             "sweet/build_tool/build_tool",
             "sweet/cmdline/cmdline",
-            "sweet/fsys/fsys",
+            "sweet/fs/fs",
             "sweet/lua/lua",
             "sweet/persist/persist",
             "sweet/process/process",

@@ -1,0 +1,24 @@
+
+local settings = build.push_settings {
+    architectures = { "x86_64" };
+};
+
+for _, architecture in ipairs(settings.architectures) do
+    build.Executable ("fs_test", architecture) {
+        libraries = {
+            "sweet/assert/assert", 
+            "sweet/error/error",
+            "sweet/fs/fs",
+            "unit/libUnitTest"
+        };
+
+        build.Cxx (architecture) {
+            precompiled_header = "stdafx.hpp";
+            "main.cpp",
+            "TestPath.cpp",
+            "TestWidePath.cpp"
+        };
+    };
+end
+
+build.pop_settings();

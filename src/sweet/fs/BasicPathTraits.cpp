@@ -4,9 +4,9 @@
 //
 
 #include "stdafx.hpp"
-#include <sweet/fsys/fsys.hpp>
+#include <sweet/fs/fs.hpp>
 
-using namespace sweet::fsys;
+using namespace sweet::fs;
 
 #if defined(BUILD_OS_WINDOWS)
 const char* BasicPathTraits<char>::EMPTY = "";

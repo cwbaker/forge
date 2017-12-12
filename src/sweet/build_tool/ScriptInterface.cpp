@@ -209,34 +209,34 @@ Context* ScriptInterface::context() const
     return build_tool_->scheduler()->context();
 }
 
-void ScriptInterface::set_root_directory( const fsys::Path& root_directory )
+void ScriptInterface::set_root_directory( const fs::Path& root_directory )
 {
     SWEET_ASSERT( root_directory.is_absolute() );
     root_directory_ = root_directory;
 }
 
-const fsys::Path& ScriptInterface::root_directory() const
+const fs::Path& ScriptInterface::root_directory() const
 {
     return root_directory_;
 }
 
-void ScriptInterface::set_initial_directory( const fsys::Path& initial_directory )
+void ScriptInterface::set_initial_directory( const fs::Path& initial_directory )
 {
     SWEET_ASSERT( initial_directory.is_absolute() );
     initial_directory_ = initial_directory;
 }
 
-const fsys::Path& ScriptInterface::initial_directory() const
+const fs::Path& ScriptInterface::initial_directory() const
 {
     return initial_directory_;
 }
 
-void ScriptInterface::set_executable_directory( const fsys::Path& executable_directory )
+void ScriptInterface::set_executable_directory( const fs::Path& executable_directory )
 {
     executable_directory_ = executable_directory;
 }
 
-const fsys::Path& ScriptInterface::executable_directory() const
+const fs::Path& ScriptInterface::executable_directory() const
 {
     return executable_directory_;
 }
@@ -373,9 +373,9 @@ Target* ScriptInterface::find_target( const std::string& id )
     return target;
 }
 
-std::string ScriptInterface::absolute( const std::string& path, const fsys::Path& working_directory )
+std::string ScriptInterface::absolute( const std::string& path, const fs::Path& working_directory )
 {
-    if ( fsys::Path(path).is_absolute() )
+    if ( fs::Path(path).is_absolute() )
     {
         return path;
     }
@@ -383,42 +383,42 @@ std::string ScriptInterface::absolute( const std::string& path, const fsys::Path
     {
         Context* context = ScriptInterface::context();
         SWEET_ASSERT( context );
-        fsys::Path absolute_path( context->directory() );
+        fs::Path absolute_path( context->directory() );
         absolute_path /= path;
         absolute_path.normalize();
         return absolute_path.string();
     }
     else
     {
-        fsys::Path absolute_path( working_directory );
+        fs::Path absolute_path( working_directory );
         absolute_path /= path;
         absolute_path.normalize();
         return absolute_path.string();
     }
 }
 
-std::string ScriptInterface::relative( const std::string& path, const fsys::Path& working_directory )
+std::string ScriptInterface::relative( const std::string& path, const fs::Path& working_directory )
 {
     if ( working_directory.empty() )
     {
         Context* context = ScriptInterface::context();
         SWEET_ASSERT( context );
-        return context->directory().relative( fsys::Path(path) ).string();
+        return context->directory().relative( fs::Path(path) ).string();
     }
     else
     {
-        return working_directory.relative( fsys::Path(path) ).string();
+        return working_directory.relative( fs::Path(path) ).string();
     }
 }
 
 std::string ScriptInterface::root( const std::string& path ) const
 {
-    if ( fsys::Path(path).is_absolute() )
+    if ( fs::Path(path).is_absolute() )
     {
         return path;
     }
 
-    fsys::Path absolute_path( root_directory_ );
+    fs::Path absolute_path( root_directory_ );
     absolute_path /= path;
     absolute_path.normalize();
     return absolute_path.string();
@@ -426,12 +426,12 @@ std::string ScriptInterface::root( const std::string& path ) const
 
 std::string ScriptInterface::initial( const std::string& path ) const
 {
-    if ( fsys::Path(path).is_absolute() )
+    if ( fs::Path(path).is_absolute() )
     {
         return path;
     }
 
-    fsys::Path absolute_path( initial_directory_ );
+    fs::Path absolute_path( initial_directory_ );
     absolute_path /= path;
     absolute_path.normalize();
     return absolute_path.string();
@@ -453,12 +453,12 @@ std::string ScriptInterface::home( const std::string& path ) const
         SWEET_ERROR( EnvironmentVariableNotFoundError("The environment variable '%s' could not be found", HOME) );
     }        
     
-    if ( fsys::Path(path).is_absolute() )
+    if ( fs::Path(path).is_absolute() )
     {
         return path;
     }
 
-    fsys::Path absolute_path( home );
+    fs::Path absolute_path( home );
     absolute_path /= path;
     absolute_path.normalize();
     return absolute_path.string();
@@ -466,12 +466,12 @@ std::string ScriptInterface::home( const std::string& path ) const
 
 std::string ScriptInterface::executable( const std::string& path ) const
 {
-    if ( fsys::Path(path).is_absolute() )
+    if ( fs::Path(path).is_absolute() )
     {
         return path;
     }
     
-    fsys::Path absolute_path( executable_directory_ );
+    fs::Path absolute_path( executable_directory_ );
     absolute_path /= path;
     absolute_path.normalize();
     return absolute_path.string();
@@ -490,12 +490,12 @@ std::string ScriptInterface::anonymous() const
 
 bool ScriptInterface::is_absolute( const std::string& path )
 {
-    return fsys::Path(path).is_absolute();
+    return fs::Path(path).is_absolute();
 }
 
 bool ScriptInterface::is_relative( const std::string& path )
 {
-    return fsys::Path(path).is_relative();
+    return fs::Path(path).is_relative();
 }
 
 void ScriptInterface::cd( const std::string& path )
@@ -575,7 +575,7 @@ std::string ScriptInterface::branch( const std::string& path )
 
 std::string ScriptInterface::leaf( const std::string& path )
 {
-    return fsys::Path( path ).leaf();
+    return fs::Path( path ).leaf();
 }
 
 std::string ScriptInterface::basename( const std::string& path )
@@ -1064,14 +1064,14 @@ int ScriptInterface::absolute_( lua_State* lua_state )
         std::string path = lua_tostring( lua_state, PATH );
         
         const int WORKING_DIRECTORY = 2;
-        fsys::Path working_directory;    
+        fs::Path working_directory;    
         if ( !lua_isnoneornil(lua_state, WORKING_DIRECTORY) )
         {
             if ( lua_type(lua_state, WORKING_DIRECTORY) != LUA_TSTRING )
             {
                 SWEET_ERROR( RuntimeError("The second parameter of 'absolute()' is not a string as expected") );
             }
-            working_directory = fsys::Path( lua_tostring(lua_state, WORKING_DIRECTORY) );
+            working_directory = fs::Path( lua_tostring(lua_state, WORKING_DIRECTORY) );
         }
         
         ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
@@ -1103,14 +1103,14 @@ int ScriptInterface::relative_( lua_State* lua_state )
         }
         std::string path = lua_tostring( lua_state, PATH );
         
-        fsys::Path working_directory;    
+        fs::Path working_directory;    
         if ( !lua_isnoneornil(lua_state, WORKING_DIRECTORY) )
         {
             if ( lua_type(lua_state, WORKING_DIRECTORY) != LUA_TSTRING )
             {
                 SWEET_ERROR( RuntimeError("The second parameter of 'relative()' is not a string as expected") );
             }
-            working_directory = fsys::Path( lua_tostring(lua_state, WORKING_DIRECTORY) );
+            working_directory = fs::Path( lua_tostring(lua_state, WORKING_DIRECTORY) );
         }
         
         ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );

@@ -4,7 +4,7 @@
 //
 
 #include "stdafx.hpp"
-#include <sweet/fsys/fsys.hpp>
+#include <sweet/fs/fs.hpp>
 #include <sweet/assert/assert.hpp>
 #include <string>
 #include <stdexcept>
@@ -15,7 +15,7 @@
 #endif
 
 using std::wstring;
-using namespace sweet::fsys;
+using namespace sweet::fs;
 
 /**
 // Get the current working directory.
@@ -23,7 +23,7 @@ using namespace sweet::fsys;
 // @return
 //  The current working directory.
 */
-WidePath sweet::fsys::current_working_directory()
+WidePath sweet::fs::current_working_directory()
 {
 #if defined(BUILD_OS_WINDOWS)
 //

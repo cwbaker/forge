@@ -1,12 +1,12 @@
-#ifndef SWEET_FSYS_BASICPATHTRAITS_HPP_INCLUDED
-#define SWEET_FSYS_BASICPATHTRAITS_HPP_INCLUDED
+#ifndef SWEET_FS_BASICPATHTRAITS_HPP_INCLUDED
+#define SWEET_FS_BASICPATHTRAITS_HPP_INCLUDED
 
 #include "declspec.hpp"
 
 namespace sweet
 {
 
-namespace fsys
+namespace fs
 {
 
 /**
@@ -20,7 +20,7 @@ struct BasicPathTraits
 /**
 // Provide BasicPaths with trait information for strings based on chars.
 */
-template <> struct SWEET_FSYS_DECLSPEC BasicPathTraits<char>
+template <> struct SWEET_FS_DECLSPEC BasicPathTraits<char>
 {
     typedef char char_type;
 
@@ -38,7 +38,7 @@ template <> struct SWEET_FSYS_DECLSPEC BasicPathTraits<char>
 /**
 // Provide BasicPaths with trait information for strings based on wchar_ts.
 */
-template <> struct SWEET_FSYS_DECLSPEC BasicPathTraits<wchar_t>
+template <> struct SWEET_FS_DECLSPEC BasicPathTraits<wchar_t>
 {
     typedef wchar_t char_type;
 

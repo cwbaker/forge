@@ -3,7 +3,7 @@
 
 #include "declspec.hpp"
 #include <sweet/lua/LuaThread.hpp>
-#include <sweet/fsys/fsys.hpp>
+#include <sweet/fs/fs.hpp>
 #include <vector>
 
 namespace sweet
@@ -25,21 +25,21 @@ class Context
     BuildTool* build_tool_; ///< The BuildTool that this context is part of.
     lua::LuaThread context_thread_; ///< The LuaThread that this context uses to execute scripts in.
     Target* working_directory_; ///< The current working directory for this context.
-    std::vector<fsys::Path> directories_; ///< The stack of working directories for this context (the element at the top is the current working directory).
+    std::vector<fs::Path> directories_; ///< The stack of working directories for this context (the element at the top is the current working directory).
     Job* job_; ///< The current Job for this context.
     int exit_code_; ///< The exit code from the Command that was most recently executed by this context.
 
     public:
-        Context( int index, const fsys::Path& directory, BuildTool* build_tool );
+        Context( int index, const fs::Path& directory, BuildTool* build_tool );
 
         lua::LuaThread& context_thread();
 
         void reset_directory_to_target( Target* directory );
-        void reset_directory( const fsys::Path& directory );
-        void change_directory( const fsys::Path& directory );
-        void push_directory( const fsys::Path& directory );
+        void reset_directory( const fs::Path& directory );
+        void change_directory( const fs::Path& directory );
+        void push_directory( const fs::Path& directory );
         void pop_directory();
-        const fsys::Path& directory() const;
+        const fs::Path& directory() const;
         Target* working_directory() const;
 
         void set_job( Job* job );

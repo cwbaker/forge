@@ -14,7 +14,7 @@
 #endif
 
 using namespace sweet;
-using namespace sweet::fsys;
+using namespace sweet::fs;
 
 FileSystem::FileSystem()
 : root_(),
@@ -27,84 +27,84 @@ FileSystem::FileSystem()
     refresh_home();
 }
 
-const fsys::Path& FileSystem::root() const
+const fs::Path& FileSystem::root() const
 {
     return root_;
 }
 
-const fsys::Path& FileSystem::initial() const
+const fs::Path& FileSystem::initial() const
 {
     return initial_;
 }
 
-const fsys::Path& FileSystem::executable() const
+const fs::Path& FileSystem::executable() const
 {
     return executable_;
 }
 
-const fsys::Path& FileSystem::home() const
+const fs::Path& FileSystem::home() const
 {
     return home_;
 }
 
-fsys::Path FileSystem::root( const fsys::Path& path ) const
+fs::Path FileSystem::root( const fs::Path& path ) const
 {
-    if ( fsys::Path(path).is_absolute() )
+    if ( fs::Path(path).is_absolute() )
     {
         return path;
     }
 
-    fsys::Path absolute_path( root_ );
+    fs::Path absolute_path( root_ );
     absolute_path /= path;
     absolute_path.normalize();
     return absolute_path;
 }
 
-fsys::Path FileSystem::initial( const fsys::Path& path ) const
+fs::Path FileSystem::initial( const fs::Path& path ) const
 {
-    if ( fsys::Path(path).is_absolute() )
+    if ( fs::Path(path).is_absolute() )
     {
         return path;
     }
 
-    fsys::Path absolute_path( initial_ );
+    fs::Path absolute_path( initial_ );
     absolute_path /= path;
     absolute_path.normalize();
     return absolute_path;
 }
 
-fsys::Path FileSystem::executable( const fsys::Path& path ) const
+fs::Path FileSystem::executable( const fs::Path& path ) const
 {
-    if ( fsys::Path(path).is_absolute() )
+    if ( fs::Path(path).is_absolute() )
     {
         return path;
     }
 
-    fsys::Path absolute_path( executable_ );
+    fs::Path absolute_path( executable_ );
     absolute_path /= path;
     absolute_path.normalize();
     return absolute_path;
 }
 
-fsys::Path FileSystem::home( const fsys::Path& path ) const
+fs::Path FileSystem::home( const fs::Path& path ) const
 {
-    if ( fsys::Path(path).is_absolute() )
+    if ( fs::Path(path).is_absolute() )
     {
         return path;
     }
 
-    fsys::Path absolute_path( home_ );
+    fs::Path absolute_path( home_ );
     absolute_path /= path;
     absolute_path.normalize();
     return absolute_path;
 }
 
-void FileSystem::set_root( const fsys::Path& root )
+void FileSystem::set_root( const fs::Path& root )
 {
     root_ = root;
 }
 
-void FileSystem::set_initial( const fsys::Path& initial )
+void FileSystem::set_initial( const fs::Path& initial )
 {
     initial_ = initial;
 }
@@ -115,13 +115,13 @@ void FileSystem::refresh_executable()
     char path [MAX_PATH + 1];
     int size = ::GetModuleFileNameA( NULL, path, sizeof(path) );
     path [sizeof(path) - 1] = 0;
-    executable_ = fsys::Path( path );
+    executable_ = fs::Path( path );
 #elif defined(BUILD_OS_MACOSX)
     uint32_t size = 0;
     _NSGetExecutablePath( NULL, &size );
     char path [size];
     _NSGetExecutablePath( path, &size );
-    executable_ = fsys::Path( path );
+    executable_ = fs::Path( path );
 #endif
 }
 
@@ -131,13 +131,13 @@ void FileSystem::refresh_home()
     char path [MAX_PATH + 1];
     int size = ::GetModuleFileNameA( NULL, path, sizeof(path) );
     path [sizeof(path) - 1] = 0;
-    home_ = fsys::Path( path );
+    home_ = fs::Path( path );
 #elif defined(BUILD_OS_MACOSX)
     uint32_t size = 0;
     _NSGetExecutablePath( NULL, &size );
     char path [size];
     _NSGetExecutablePath( path, &size );
-    home_ = fsys::Path( path );
+    home_ = fs::Path( path );
 #endif
 }
 

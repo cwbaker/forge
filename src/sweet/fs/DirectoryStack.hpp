@@ -1,5 +1,5 @@
-#ifndef SWEET_FSYS_DIRECTORYSTACK_HPP_INCLUDED
-#define SWEET_FSYS_DIRECTORYSTACK_HPP_INCLUDED
+#ifndef SWEET_FS_DIRECTORYSTACK_HPP_INCLUDED
+#define SWEET_FS_DIRECTORYSTACK_HPP_INCLUDED
 
 #include "BasicPath.hpp"
 #include <vector>
@@ -7,7 +7,7 @@
 namespace sweet
 {
 
-namespace fsys
+namespace fs
 {
 
 /**
@@ -19,10 +19,10 @@ class DirectoryStack
 
 public:
     DirectoryStack();
-    const fsys::Path& directory() const;
-    void reset_directory( const fsys::Path& directory );
-    void change_directory( const fsys::Path& directory );
-    void push_directory( const fsys::Path& directory );
+    const fs::Path& directory() const;
+    void reset_directory( const fs::Path& directory );
+    void change_directory( const fs::Path& directory );
+    void push_directory( const fs::Path& directory );
     void pop_directory();
 };
 

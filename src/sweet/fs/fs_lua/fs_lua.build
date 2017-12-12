@@ -1,0 +1,14 @@
+
+local settings = build.current_settings();
+for _, architecture in ipairs(settings.architectures) do
+    build.Library ("fs_lua", architecture) {
+        libraries = {
+            "sweet/assert/assert",
+            "sweet/error/error"
+        };
+
+        build.Cxx (architecture) {
+            "LuaFs.cpp"
+        };
+    };
+end

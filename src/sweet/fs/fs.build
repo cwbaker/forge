@@ -1,0 +1,22 @@
+
+buildfile "fs_lua/fs_lua.build";
+buildfile "fs_test/fs_test.build";
+
+local settings = build.current_settings();
+for _, architecture in ipairs(settings.architectures) do
+    build.Library ("fs", architecture) {
+        libraries = {
+            "sweet/assert/assert",
+            "sweet/error/error"
+        };
+
+        build.Cxx (architecture) {
+            precompiled_header = "stdafx.hpp";
+            "BasicPath.cpp",
+            "BasicPathTraits.cpp",
+            "DirectoryStack.cpp",
+            "FileSystem.cpp",
+            "fs.cpp"
+        };
+    };
+end

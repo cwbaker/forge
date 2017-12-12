@@ -3,7 +3,7 @@
 
 #include <sweet/lua/Lua.hpp>
 #include <sweet/lua/LuaObject.hpp>
-#include <sweet/fsys/fsys.hpp>
+#include <sweet/fs/fs.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include <vector>
@@ -36,9 +36,9 @@ class ScriptInterface
     lua::LuaObject target_metatable_; ///< The LuaObject that acts as a metatable for Targets.
     lua::LuaObject target_prototype_; ///< The LuaObject that acts as a prototype for Targets.
     std::vector<TargetPrototype*> target_prototypes_; ///< The TargetPrototypes that have been loaded in.
-    fsys::Path root_directory_; ///< The full path to the root directory.
-    fsys::Path initial_directory_; ///< The full path to the initial directory.
-    fsys::Path executable_directory_; ///< The full path to the build executable directory.
+    fs::Path root_directory_; ///< The full path to the root directory.
+    fs::Path initial_directory_; ///< The full path to the initial directory.
+    fs::Path executable_directory_; ///< The full path to the build executable directory.
 
     public:
         ScriptInterface( OsInterface* os_interface, BuildTool* build_tool );
@@ -47,14 +47,14 @@ class ScriptInterface
         lua::Lua& lua();
         Context* context() const;
 
-        void set_root_directory( const fsys::Path& root_directory );
-        const fsys::Path& root_directory() const;
+        void set_root_directory( const fs::Path& root_directory );
+        const fs::Path& root_directory() const;
 
-        void set_initial_directory( const fsys::Path& initial_directory );
-        const fsys::Path& initial_directory() const;
+        void set_initial_directory( const fs::Path& initial_directory );
+        const fs::Path& initial_directory() const;
 
-        void set_executable_directory( const fsys::Path& executable_directory );
-        const fsys::Path& executable_directory() const;
+        void set_executable_directory( const fs::Path& executable_directory );
+        const fs::Path& executable_directory() const;
 
         void create_prototype( TargetPrototype* target_prototype );
         void destroy_prototype( TargetPrototype* target_prototype );
@@ -65,8 +65,8 @@ class ScriptInterface
         
         TargetPrototype* target_prototype( const std::string& id );
         Target* find_target( const std::string& path );
-        std::string absolute( const std::string& path, const fsys::Path& working_directory = fsys::Path() );
-        std::string relative( const std::string& path, const fsys::Path& working_directory = fsys::Path() );
+        std::string absolute( const std::string& path, const fs::Path& working_directory = fs::Path() );
+        std::string relative( const std::string& path, const fs::Path& working_directory = fs::Path() );
         std::string root( const std::string& path ) const;
         std::string initial( const std::string& path ) const;
         std::string home( const std::string& path ) const;

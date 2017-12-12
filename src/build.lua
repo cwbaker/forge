@@ -48,7 +48,7 @@ build.default_buildfiles {
     "sweet/cmdline/cmdline.build",
     "sweet/error/error.build",
     "sweet/lua/lua.build",
-    "sweet/fsys/fsys.build",
+    "sweet/fs/fs.build",
     "sweet/persist/persist.build",
     "sweet/process/process.build",
     "sweet/rtti/rtti.build",

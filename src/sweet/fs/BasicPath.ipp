@@ -1,5 +1,5 @@
-#ifndef SWEET_FSYS_BASICPATH_IPP_INCLUDED
-#define SWEET_FSYS_BASICPATH_IPP_INCLUDED
+#ifndef SWEET_FS_BASICPATH_IPP_INCLUDED
+#define SWEET_FS_BASICPATH_IPP_INCLUDED
 
 #include "BasicPath.hpp"
 #include <sweet/assert/assert.hpp>
@@ -8,7 +8,7 @@
 namespace sweet
 {
 
-namespace fsys
+namespace fs
 {
 
 /**

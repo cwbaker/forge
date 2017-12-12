@@ -13,7 +13,7 @@
 #include "Reader.hpp"
 #include "ScriptInterface.hpp"
 #include "Graph.hpp"
-#include <sweet/fsys/fsys.hpp>
+#include <sweet/fs/fs.hpp>
 
 using std::string;
 using std::vector;
@@ -45,7 +45,7 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
   scheduler_( NULL ),
   graph_( NULL )
 {
-    SWEET_ASSERT( fsys::Path(initial_directory).is_absolute() );
+    SWEET_ASSERT( fs::Path(initial_directory).is_absolute() );
 
     os_interface_ = new OsInterface;
     script_interface_ = new ScriptInterface( os_interface_, this );
@@ -56,7 +56,7 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
 
     script_interface_->set_root_directory( initial_directory );
     script_interface_->set_initial_directory( initial_directory );
-    script_interface_->set_executable_directory( fsys::Path(os_interface_->executable()).branch().string() );
+    script_interface_->set_executable_directory( fs::Path(os_interface_->executable()).branch().string() );
 }
 
 /**
@@ -319,7 +319,7 @@ void BuildTool::assign( const std::vector<std::string>& assignments )
 */
 void BuildTool::execute( const std::string& filename, const std::vector<std::string>& commands )
 {
-    fsys::Path path( filename );
+    fs::Path path( filename );
     if ( path.empty() )
     {
         path = script_interface_->root_directory() / string( ROOT_FILENAME );

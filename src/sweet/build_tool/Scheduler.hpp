@@ -2,7 +2,7 @@
 #define SWEET_BUILD_TOOL_SCHEDULER_HPP_INCLUDED
 
 #include "declspec.hpp"
-#include <sweet/fsys/fsys.hpp>
+#include <sweet/fs/fs.hpp>
 #include <deque>
 #include <vector>
 #include <functional>
@@ -57,12 +57,12 @@ class Scheduler
         Scheduler( BuildTool* build_tool );
         ~Scheduler();
 
-        void load( const fsys::Path& path );
-        void command( const fsys::Path& path, const std::string& command );
-        void execute( const fsys::Path& path, const std::string& function );
+        void load( const fs::Path& path );
+        void command( const fs::Path& path, const std::string& command );
+        void execute( const fs::Path& path, const std::string& function );
         void execute( const char* start, const char* finish );        
-        void buildfile( const fsys::Path& path );
-        void call( const fsys::Path& path, const std::string& function );
+        void buildfile( const fs::Path& path );
+        void call( const fs::Path& path, const std::string& function );
         void postorder_visit( const lua::LuaValue& function, Job* job );
         void execute_finished( int exit_code, Context* context, process::Environment* environment );
         void filter_finished( lua::LuaValue* filter, Arguments* arguments );

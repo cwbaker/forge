@@ -53,7 +53,7 @@ Scheduler::~Scheduler()
     }
 }
 
-void Scheduler::load( const fsys::Path& path )
+void Scheduler::load( const fs::Path& path )
 {
     buildfile( path );
     while ( dispatch_results() )
@@ -61,7 +61,7 @@ void Scheduler::load( const fsys::Path& path )
     }
 }
 
-void Scheduler::command( const fsys::Path& path, const std::string& function )
+void Scheduler::command( const fs::Path& path, const std::string& function )
 {
     call( path, function );
     while ( dispatch_results() )
@@ -88,7 +88,7 @@ void Scheduler::execute( const char* start, const char* finish )
     }
 }
 
-void Scheduler::buildfile( const fsys::Path& path )
+void Scheduler::buildfile( const fs::Path& path )
 {
     SWEET_ASSERT( path.is_absolute() );
 
@@ -99,7 +99,7 @@ void Scheduler::buildfile( const fsys::Path& path )
     process_end( context );
 }
 
-void Scheduler::call( const fsys::Path& path, const std::string& function )
+void Scheduler::call( const fs::Path& path, const std::string& function )
 {
     if ( !function.empty() )
     {
@@ -417,7 +417,7 @@ Context* Scheduler::allocate_context( Target* working_directory, Job* job )
         free_contexts_.reserve( free_contexts_.size() + DEFAULT_ENVIRONMENTS_GROW_BY );
         for ( int i = 0; i < DEFAULT_ENVIRONMENTS_GROW_BY; ++i )
         {
-            unique_ptr<Context> context( new Context(i, fsys::Path(""), build_tool_) );
+            unique_ptr<Context> context( new Context(i, fs::Path(""), build_tool_) );
             free_contexts_.push_back( context.get() );
             contexts_.push_back( context.release() );
         }
