@@ -51,6 +51,10 @@ function initialize()
 
     boost.initialize( settings );
     parser.initialize( settings );
+
+    exe_name = function( name, architecture )
+        return "%s_%s" % { name, variant };
+    end
 end
 
 function buildfiles()
