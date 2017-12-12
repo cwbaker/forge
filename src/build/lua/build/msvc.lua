@@ -19,7 +19,7 @@ function msvc.configure( settings )
     end
 
     local function autodetect_visual_studio_directory()
-        local visual_studio_directory = os.getenv( "VS90COMNTOOLS" ) or os.getenv( "VS100COMNTOOLS" );
+        local visual_studio_directory = os.getenv( "VS100COMNTOOLS" ) or os.getenv( "VS120COMNTOOLS" );
         if visual_studio_directory then
             visual_studio_directory = string.gsub( visual_studio_directory, "\\Common7\\Tools\\", "" );
         end    
@@ -27,8 +27,7 @@ function msvc.configure( settings )
     end
 
     local function autodetect_windows_sdk_directory()
-        local windows_sdk = registry( [[HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows]] );
-        assert( windows_sdk.CurrentInstallFolder, "Windows SDK not found!" );
+        local windows_sdk = registry( [[HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows]] ) or "C:\\Program Files (x86)\\Windows Kits\\8.1";
         return windows_sdk.CurrentInstallFolder;
     end
 
@@ -37,8 +36,8 @@ function msvc.configure( settings )
         if not local_settings.msvc then
             local_settings.updated = true;
             local_settings.msvc = {
-                visual_studio_directory = autodetect_visual_studio_directory() or "C:/Program Files/Microsoft Visual Studio 9.0";
-                windows_sdk_directory = autodetect_windows_sdk_directory() or "C:/Program Files/Microsoft SDKs/Windows/v6.0A";
+                visual_studio_directory = autodetect_visual_studio_directory() or "C:/Program Files/Microsoft Visual Studio 12.0";
+                windows_sdk_directory = autodetect_windows_sdk_directory();
             };
         end
     end
@@ -56,39 +55,42 @@ function msvc.initialize( settings )
         putenv( "VS_UNICODE_OUTPUT", "" );
 
         local visual_studio_directory = settings.msvc.visual_studio_directory;
-        local windows_sdk_directory = settings.msvc.windows_sdk_directory;
         
         local path = {
-            visual_studio_directory..[[\Common7\IDE]],
-            visual_studio_directory..[[\VC\BIN]],
-            visual_studio_directory..[[\Common7\Tools]],
-            visual_studio_directory..[[\VC\VCPackages]],
-            windows_sdk_directory..[[\bin]],
-            getenv("PATH")
+            getenv( "PATH" ),
+            [[%s\Common7\IDE]] % visual_studio_directory,
+            [[%s\VC\BIN]] % visual_studio_directory,
+            [[%s\Common7\Tools]] % visual_studio_directory,
+            [[%s\VC\VCPackages]] % visual_studio_directory
         };
-        putenv( "PATH", table.concat(path, ";") );
         
         local include = {
-            visual_studio_directory..[[\VC\ATLMFC\INCLUDE]],
-            visual_studio_directory..[[\VC\INCLUDE]],
-            windows_sdk_directory..[[\include]],
-            getenv("INCLUDE")
+            [[%s\VC\ATLMFC\INCLUDE]] % visual_studio_directory,
+            [[%s\VC\INCLUDE]] % visual_studio_directory
         };
-        putenv( "INCLUDE", table.concat(include, ";") );
         
         local lib = {
-            visual_studio_directory..[[\VC\ATLMFC\LIB]],
-            visual_studio_directory..[[\VC\LIB]],
-            windows_sdk_directory..[[\lib]],
-            getenv("LIB")
+            [[%s\VC\ATLMFC\LIB]] % visual_studio_directory,
+            [[%s\VC\LIB]] % visual_studio_directory
         };
-        putenv( "LIB", table.concat(lib, ";") );
 
         local libpath = {
-            visual_studio_directory..[[\VC\ATLMFC\LIB]],
-            visual_studio_directory..[[\VC\LIB]],
-            getenv("LIBPATH")
+            [[%s\VC\ATLMFC\LIB]] % visual_studio_directory,
+            [[%s\VC\LIB]] % visual_studio_directory
         };
+
+        local windows_sdk_directory = settings.msvc.windows_sdk_directory;
+        if windows_sdk_directory then 
+            table.insert( path, [[%s\bin]] % windows_sdk_directory );
+            table.insert( include, [[%s\Include\um]] % windows_sdk_directory );
+            table.insert( include, [[%s\Include\shared]] % windows_sdk_directory );
+            table.insert( include, [[%s\Include\winrt]] % windows_sdk_directory );
+            table.insert( lib, [[%s\Lib\winv6.3\um\x86]] % windows_sdk_directory );
+        end
+
+        putenv( "PATH", table.concat(path, ";") );
+        putenv( "INCLUDE", table.concat(include, ";") );
+        putenv( "LIB", table.concat(lib, ";") );
         putenv( "LIBPATH", table.concat(libpath, ";") );
 
         cc = msvc.cc;
@@ -113,117 +115,142 @@ function msvc.initialize( settings )
 end;
 
 function msvc.cc( target )
-    local cppdefines = "";
-    cppdefines = cppdefines.." /DBUILD_OS_"..upper(operating_system());
-    cppdefines = cppdefines.." /DBUILD_PLATFORM_"..upper(platform);
-    cppdefines = cppdefines.." /DBUILD_VARIANT_"..upper(variant);
-    cppdefines = cppdefines.." /DBUILD_LIBRARY_SUFFIX=\"\\\"_"..platform.."_"..variant..".lib\\\"\"";
-    cppdefines = cppdefines.." /DBUILD_MODULE_"..upper(string.gsub(target.module:id(), "-", "_"))
-    cppdefines = cppdefines.." /DBUILD_LIBRARY_TYPE_"..upper(target.settings.library_type);
-
+    local defines = {
+        [[/DBUILD_OS_WINDOWS]],
+        [[/DBUILD_PLATFORM_%s]] % upper( platform ),
+        [[/DBUILD_VARIANT_%s]] % upper( variant ),
+        [[/DBUILD_LIBRARY_SUFFIX="\"_%s_%s.lib\""]] % { platform, variant },
+        [[/DBUILD_MODULE_%s]] % upper( string.gsub(target.module:id(), "-", "_") ),
+        [[/DBUILD_LIBRARY_TYPE_%s]] % upper( target.settings.library_type )
+    };
+    if target.settings.debug then 
+        table.insert( defines, "/D_DEBUG" );
+        table.insert( defines, "/DDEBUG" );
+    else 
+        table.insert( defines, "/DNDEBUG" );
+    end
     if target.settings.defines then
         for _, define in ipairs(target.settings.defines) do
-            cppdefines = cppdefines.." /D"..define;
+            table.insert( defines, "/D%s" % define );
         end
-    end
-    
+    end    
     if target.defines then
         for _, define in ipairs(target.defines) do
-            cppdefines = cppdefines.." /D"..define;
+            table.insert( defines, "/D%s" % define );
         end
     end
 
-    local cppdirs = "";
+    local include_directories = {};
     if target.include_directories then
         for _, directory in ipairs(target.include_directories) do
-            cppdirs = cppdirs.." /I\""..relative(directory).."\"";
+            table.insert( include_directories, [[-I "%s"]] % relative(directory) );
         end
     end
-
     if target.settings.include_directories then
         for _, directory in ipairs(target.settings.include_directories) do
-            cppdirs = cppdirs.." /I\""..directory.."\"";
+            table.insert( include_directories, [[-I "%s"]] % directory );
         end
     end
 
-    local ccflags = " /nologo /c";
+    local flags = {
+        "/nologo",
+        "/FS",
+        "/FC",
+        "/c"
+    };
 
-    if target.settings.compile_as_c then
-        ccflags = ccflags.." /TC";
-    else
-        ccflags = ccflags.." /TP";
+    local language = target.language or "c++";
+    assert( language == "c" or language == "c++", "Only 'c' and 'c++' languages are supported by Microsoft Visual C++" );
+
+    if language == "c" then 
+        table.insert( flags, "/TC" );
+    elseif language == "c++" then
+        table.insert( flags, "/TP" );
+        if target.settings.exceptions then
+            table.insert( flags, "/EHsc" );
+        end
+        if target.settings.run_time_type_info then
+            table.insert( flags, "/GR" );
+        end
     end
-    
+
     if target.settings.runtime_library == "static" then
-        ccflags = ccflags.." /MT";
+        table.insert( flags, "/MT" );
     elseif target.settings.runtime_library == "static_debug" then
-        ccflags = ccflags.." /MTd";
+        table.insert( flags, "/MTd" );
     elseif target.settings.runtime_library == "dynamic" then
-        ccflags = ccflags.." /MD";
+        table.insert( flags, "/MD" );
     elseif target.settings.runtime_library == "dynamic_debug" then
-        ccflags = ccflags.." /MDd";
+        table.insert( flags, "/MDd" );
     end
     
     if target.settings.debug then
-        local pdb = obj_directory(target)..pdb_name( "msvc.pdb" );
-        ccflags = ccflags.." /Zi /Fd"..pdb;
-    end
-
-    if target.settings.exceptions then
-        ccflags = ccflags.." /EHsc";
+        local pdb = obj_directory(target)..pdb_name( target.module:id() );
+        table.insert( flags, "/Zi /Fd%s" % native(pdb) );
     end
 
     if target.settings.link_time_code_generation then
-        ccflags = ccflags.." /GL";
+        table.insert( flags, "/GL" );
     end
 
     if target.settings.minimal_rebuild then
-        ccflags = ccflags.." /Gm";
+        table.insert( flags, "/Gm" );
     end
 
     if target.settings.optimization then
-        ccflags = ccflags.." /GF /O2 /Ot /Oi /GS-";
+        table.insert( flags, "/GF /O2 /Ot /Oi /GS-" );
     end
 
     if target.settings.preprocess then
-        ccflags = ccflags.." /P /C";
-    end
-
-    if target.settings.run_time_type_info then
-        ccflags = ccflags.." /GR";
+        table.insert( flags, "/P /C" );
     end
 
     if target.settings.run_time_checks then
-        ccflags = ccflags.." /RTC1";
+        table.insert( flags, "/RTC1" );
     end
 
     local mscc = "%s/VC/bin/cl.exe" % target.settings.msvc.visual_studio_directory;
+    local cppdirs = table.concat( include_directories, " " );
+
     if target.precompiled_header ~= nil then            
+        local cppdefines = table.concat( defines, " " );
+        local ccflags = table.concat( flags, " " );
+
         if target.precompiled_header:is_outdated() then
-            build.system( mscc, "cl"..cppdirs..cppdefines..ccflags.." /Fp"..obj_directory(target)..pch_name( target.precompiled_header:id() ).." /Yc"..target.precompiled_header.header.." /Fo"..obj_directory(target).." ".." "..target.precompiled_header.source );
-        end        
-        ccflags = ccflags.." /Fp"..obj_directory(target)..pch_name( target.precompiled_header:id() );
-        ccflags = ccflags.." /Yu"..target.precompiled_header.header;
+            local pch = native( "%s%s" % {obj_directory(target), pch_name(target.precompiled_header:id())} );
+            local header = native( target.precompiled_header.header );
+            local obj = native( "%s%s" % {obj_directory(target), target.precompiled_header.source} );
+            print( leaf(target.precompiled_header.source) );
+            build.system( mscc, "cl %s %s %s /Fp%s /Yc%s /Fo%s" % {cppdefines, cppdirs, ccflags, pch, header, obj} );
+        end
+
+        table.insert( flags, "/Fp%s" % native("%s%s" % obj_directory(target), pch_name(target.precompiled_header:id())) );
+        table.insert( flags, "/Yu%s" % target.precompiled_header.header );
     end
     
-    ccsource = "";
+    table.insert( defines, [[-DBUILD_VERSION="\"%s\""]] % version );
+    local cppdefines = table.concat( defines, " " );
+    local ccflags = table.concat( flags, " " );
+
+    local sources = {};
     for dependency in target:get_dependencies() do
         if dependency:is_outdated() and dependency ~= target.precompiled_header then            
             if dependency:prototype() == nil then
-                ccsource = ccsource.." "..dependency.source;
+                table.insert( sources, dependency.source );
             elseif dependency.results then
                 for _, result in ipairs(dependency.results) do
                     if result:is_outdated() then
-                        ccsource = ccsource.." "..result.source;
+                        table.insert( sources, result.source );
                     end
                 end
             end
         end    
     end
 
-    if ccsource ~= "" then
-        cppdefines = cppdefines.." /DBUILD_VERSION=\"\\\""..version.."\\\"\"";
-        build.system( mscc, "cl"..cppdirs..cppdefines..ccflags.." /Fo"..obj_directory(target)..target.architecture.."/ "..ccsource );
+    if #sources > 0 then
+        local output_directory = native( "%s%s/" % {obj_directory(target), target.architecture} );
+        local ccsource = table.concat( sources, " " );
+        build.system( mscc, "cl %s %s %s /Fo%s %s" % {cppdirs, cppdefines, ccflags, output_directory, ccsource} );
     end
 end;
 
@@ -238,7 +265,7 @@ function msvc.build_library( target )
     
     local objects = "";
     for dependency in target:get_dependencies() do
-        if dependency:prototype() == CxxPrototype then
+        if dependency:prototype() == CcPrototype then
             if dependency.precompiled_header ~= nil then
                 objects = objects.." "..obj_name( dependency.precompiled_header:id() );
             end
@@ -253,7 +280,7 @@ function msvc.build_library( target )
     
     if objects ~= "" then
         print( leaf(target:get_filename()) );
-        pushd( "%s/%s" % {obj_directory(target), target.architecture} );
+        pushd( "%s%s" % {obj_directory(target), target.architecture} );
         build.system( msar, "lib"..arflags.." /out:"..native(target:get_filename())..objects );
         popd();
     end
@@ -266,13 +293,12 @@ end;
 
 function msvc.build_executable( target )
     local msld = target.settings.msvc.visual_studio_directory.."/VC/bin/link.exe";
-    local msmt = target.settings.msvc.windows_sdk_directory.."/bin/mt.exe";
-    local msrc = target.settings.msvc.windows_sdk_directory.."/bin/rc.exe";
+    local msmt = target.settings.msvc.windows_sdk_directory.."/bin/x86/mt.exe";
+    local msrc = target.settings.msvc.windows_sdk_directory.."/bin/x86/rc.exe";
 
-    local ldlibs = " advapi32.lib gdi32.lib kernel32.lib user32.lib msimg32.lib ws2_32.lib version.lib odbc32.lib odbccp32.lib";
+    local ldlibs = "";
 
-    local lddirs = " /libpath:\""..target.settings.lib.."\"";
-
+    local lddirs = "";
     if target.settings.library_directories then
         for _, directory in ipairs(target.settings.library_directories) do
             lddirs = lddirs.." /libpath:\""..directory.."\"";
@@ -298,7 +324,7 @@ function msvc.build_executable( target )
     end
     
     if target.settings.debug then
-        ldflags = ldflags.." /debug /pdb:"..obj_directory(target)..pdb_name( target:id() );
+        ldflags = ldflags.." /debug /pdb:"..native( obj_directory(target)..pdb_name(target:id()) );
     end
 
     if target.settings.link_time_code_generation then
@@ -325,13 +351,18 @@ function msvc.build_executable( target )
     end
     if target.third_party_libraries then
         for _, library in ipairs(target.third_party_libraries) do
-            libraries = "%s %s" % { libraries, library };
+            libraries = "%s %s.lib" % { libraries, basename(library) };
         end
-    end    
+    end
+    if target.system_libraries then
+        for _, library in ipairs(target.system_libraries) do
+            libraries = "%s %s.lib" % { libraries, basename(library) };
+        end
+    end
 
     local objects = "";
     for dependency in target:get_dependencies() do
-        if dependency:prototype() == CxxPrototype then
+        if dependency:prototype() == CcPrototype then
             if dependency.precompiled_header ~= nil then
                 objects = objects.." "..obj_name( dependency.precompiled_header:id() );
             end
@@ -346,8 +377,7 @@ function msvc.build_executable( target )
 
     if objects ~= "" then
         print( leaf(target:get_filename()) );
-
-        pushd( "%s/%s" % {obj_directory(target), target.architecture} );
+        pushd( "%s%s" % {obj_directory(target), target.architecture} );
         if target.settings.incremental_linking then
             local embedded_manifest = target:id().."_embedded.manifest";
             local embedded_manifest_rc = target:id().."_embedded_manifest.rc";
@@ -403,7 +433,7 @@ function msvc.lipo_executable( target )
 end
 
 function msvc.obj_directory( target )
-    return "%s/%s_%s/%s/" % { target.settings.obj, platform, variant, relative(target:get_working_directory():path(), root()) };
+    return "%s/%s/" % { target.settings.obj, relative(target:get_working_directory():path(), root()) };
 end
 
 function msvc.cc_name( name )

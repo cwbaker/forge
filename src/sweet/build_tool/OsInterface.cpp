@@ -138,70 +138,6 @@ void OsInterface::mkdir( const std::string& path )
 }
 
 /**
-// Recursively copy a directory and its contents to another directory only
-// copying newer files.
-//
-// Directories and files that start with a '.' aren't recursed into or 
-// copied so that directory hierarchies beneath .svn can be ignored.
-//
-// @param from
-//  The directory to copy from.
-//
-// @param to
-//  The directory to copy to.
-*/
-void OsInterface::cpdir( const std::string& from, const std::string& to, const path::Path& base_path )
-{
-    using namespace boost::filesystem;
-
-    path::Path from_path( from );
-    path::Path to_path( to );
-
-    if ( exists(from_path.string()) )
-    {
-        recursive_directory_iterator source = recursive_directory_iterator( from_path.string() );
-        recursive_directory_iterator end;
-
-        while ( source != end )
-        {
-            SWEET_ASSERT( source != end );
-            if ( !source->string().empty() && source->path().leaf().at(0) != '.' )
-            {
-                path::Path destination = to_path / from_path.relative( source->string() );
-                if ( is_directory(source->string()) )
-                {
-                    if ( !exists(destination.string()) )
-                    {
-                        create_directories( destination.string() );
-                    }
-                }
-                else if ( !exists(destination.string()) || last_write_time(source->string()) > last_write_time(destination.string()) )
-                {
-                    boost::filesystem::path destination_directory = destination.branch().string();
-                    if ( !exists(destination_directory.string()) )
-                    {
-                        create_directories( destination_directory );
-                    }
-
-                    if ( exists(destination.string()) )
-                    {
-                        remove( destination.string() );
-                    }
-
-                    copy_file( *source, destination.string() );
-                }
-            }
-            else
-            {
-                source.no_push();
-            }
-
-            ++source;
-        }
-    }
-}
-
-/**
 // Recursively remove a directory and its contents.
 //
 // @param path
@@ -251,64 +187,6 @@ std::string OsInterface::operating_system()
     return "macosx";
 #else
 #error "OsInterface::operating_system() is not implemented for this platform"
-#endif
-}
-
-/**
-// Get the hostname of this computer.
-//
-// @return
-//  The hostname of this computer.
-*/
-std::string OsInterface::hostname()
-{
-#if defined(BUILD_OS_WINDOWS)
-    char hostname [1024];
-    DWORD length = sizeof(hostname);
-
-    BOOL result = ::GetComputerNameEx( ComputerNameDnsHostname, hostname, &length );
-    if ( !result )
-    {
-        char message [1024];
-        SWEET_ERROR( OperatingSystemCallFailedError("Calling GetComputerNameEx() failed - %s", error::Error::format(::GetLastError(), message, sizeof(message))) );
-    }
-    
-    hostname[sizeof(hostname) - 1] = 0;
-    return std::string( hostname );
-#elif defined(BUILD_OS_MACOSX)
-    SWEET_ASSERT( false );
-    return std::string("localhost");
-#else
-#error "OsInterface::hostname() is not implemented for this platform"
-#endif
-}
-
-/**
-// Get the name of the current user.
-//
-// @return
-//  The name of the current user.
-*/
-std::string OsInterface::whoami()
-{
-#if defined(BUILD_OS_WINDOWS)
-    char username [1024];
-    DWORD length = sizeof(username);
-
-    BOOL result = ::GetUserName( username, &length );
-    if ( !result )
-    {
-        char message [1024];
-        SWEET_ERROR( OperatingSystemCallFailedError("Calling GetUserName() failed - %s", error::Error::format(::GetLastError(), message, sizeof(message))) );
-    }
-    
-    username[sizeof(username) - 1] = 0;
-    return std::string( username );
-#elif defined(BUILD_OS_MACOSX)
-    SWEET_ASSERT( false );
-    return std::string("guest");
-#else
-#error "OsInterface::whoami() is not implemented for this platform"
 #endif
 }
 

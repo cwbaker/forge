@@ -22,6 +22,8 @@
 #include <sys/wait.h>
 #endif
 
+extern char** environ;
+
 using namespace sweet::process;
 
 /**
@@ -194,24 +196,26 @@ Process::Process( const char* command, const char* arguments, const char* direct
     }
 
     int files [2] = { 0, 0 };
-    result = pipe( files );
-    if ( result != 0 )
-    {
-        close( original_working_directory );
-        char message [256];
-        SWEET_ERROR( CreatingPipeFailedError("Creating stdout for '%s' failed - %s", command, Error::format(errno, message, sizeof(message))) );
-    }
-
     posix_spawn_file_actions_t file_actions;
     posix_spawn_file_actions_init( &file_actions );
-    posix_spawn_file_actions_addclose( &file_actions, files[0] );
-    posix_spawn_file_actions_addclose( &file_actions, STDOUT_FILENO );
-    posix_spawn_file_actions_addclose( &file_actions, STDERR_FILENO );
-    posix_spawn_file_actions_adddup2( &file_actions, files[1], STDOUT_FILENO );
-    posix_spawn_file_actions_adddup2( &file_actions, files[1], STDERR_FILENO );
-    posix_spawn_file_actions_addclose( &file_actions, files[1] );
+    if ( flags & PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR )
+    {
+        result = pipe( files );
+        if ( result != 0 )
+        {
+            close( original_working_directory );
+            char message [256];
+            SWEET_ERROR( CreatingPipeFailedError("Creating stdout for '%s' failed - %s", command, Error::format(errno, message, sizeof(message))) );
+        }
 
-    extern char** environ;
+        posix_spawn_file_actions_addclose( &file_actions, files[0] );
+        posix_spawn_file_actions_addclose( &file_actions, STDOUT_FILENO );
+        posix_spawn_file_actions_addclose( &file_actions, STDERR_FILENO );
+        posix_spawn_file_actions_adddup2( &file_actions, files[1], STDOUT_FILENO );
+        posix_spawn_file_actions_adddup2( &file_actions, files[1], STDERR_FILENO );
+        posix_spawn_file_actions_addclose( &file_actions, files[1] );
+    }
+
     pid_t pid = 0;
     result = posix_spawn( &pid, command, &file_actions, NULL, &splitter.arguments()[0], environ );
     fchdir( original_working_directory );

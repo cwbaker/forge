@@ -1,39 +1,39 @@
 
-llvmgcc = {};
+clang = {};
 
-function llvmgcc.configure( settings )
+function clang.configure( settings )
     local local_settings = build.local_settings;
-    if not local_settings.llvmgcc then
+    if not local_settings.clang then
         local_settings.updated = true;
-        local_settings.llvmgcc = {
+        local_settings.clang = {
             xcrun = "/usr/bin/xcrun";
         };
     end
 end;
 
-function llvmgcc.initialize( settings )
-    llvmgcc.configure( settings );
+function clang.initialize( settings )
+    clang.configure( settings );
 
-    if platform == "llvmgcc" then
-        cc = llvmgcc.cc;
-        objc = llvmgcc.objc;
-        build_library = llvmgcc.build_library;
-        clean_library = llvmgcc.clean_library;
-        build_executable = llvmgcc.build_executable;
-        clean_executable = llvmgcc.clean_executable;
-        lipo_executable = llvmgcc.lipo_executable;
-        obj_directory = llvmgcc.obj_directory;
-        cc_name = llvmgcc.cc_name;
-        cxx_name = llvmgcc.cxx_name;
-        obj_name = llvmgcc.obj_name;
-        lib_name = llvmgcc.lib_name;
-        dll_name = llvmgcc.dll_name;
-        exe_name = llvmgcc.exe_name;
-        module_name = llvmgcc.module_name;
+    if platform == "clang" then
+        cc = clang.cc;
+        objc = clang.objc;
+        build_library = clang.build_library;
+        clean_library = clang.clean_library;
+        build_executable = clang.build_executable;
+        clean_executable = clang.clean_executable;
+        lipo_executable = clang.lipo_executable;
+        obj_directory = clang.obj_directory;
+        cc_name = clang.cc_name;
+        cxx_name = clang.cxx_name;
+        obj_name = clang.obj_name;
+        lib_name = clang.lib_name;
+        dll_name = clang.dll_name;
+        exe_name = clang.exe_name;
+        module_name = clang.module_name;
     end
 end;
 
-function llvmgcc.cc( target )
+function clang.cc( target )
     local defines = {
         " ",
         [[-DBUILD_OS_MACOSX]],
@@ -65,17 +65,25 @@ function llvmgcc.cc( target )
         end
     end
 
-    local include_directories = {
-        " "
-    };
+    local include_directories = {};
     if target.include_directories then
         for _, directory in ipairs(target.include_directories) do
-            table.insert( include_directories, [[-I"%s"]] % relative(directory) );
+            table.insert( include_directories, [[-I "%s"]] % relative(directory) );
         end
     end
     if target.settings.include_directories then
         for _, directory in ipairs(target.settings.include_directories) do
-            table.insert( include_directories, [[-I"%s"]] % directory );
+            table.insert( include_directories, [[-I "%s"]] % directory );
+        end
+    end
+    if target.framework_directories then 
+        for _, directory in ipairs(target.framework_directories) do
+            table.insert( include_directories, [[-F "%s"]] % directory );
+        end
+    end
+    if target.settings.framework_directories then 
+        for _, directory in ipairs(target.settings.framework_directories) do
+            table.insert( include_directories, [[-F "%s"]] % directory );
         end
     end
 
@@ -83,7 +91,8 @@ function llvmgcc.cc( target )
         " ",
         "-c",
         "-arch %s" % target.architecture,
-        "-fasm-blocks"
+        "-fasm-blocks",
+        "-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk";
     };
     
     local language = target.language or "c++";
@@ -91,6 +100,8 @@ function llvmgcc.cc( target )
         table.insert( flags, "-x %s" % language );
 
         if string.find(language, "c++", 1, true) then
+            table.insert( flags, "-std=c++11" );
+            table.insert( flags, "-stdlib=libc++" );
             table.insert( flags, "-Wno-deprecated" );
             if target.settings.exceptions then
                 table.insert( flags, "-fexceptions" );
@@ -127,10 +138,7 @@ function llvmgcc.cc( target )
         table.insert( flags, "-fno-stack-protector" );
     end
 
-    local compiler = "g++";
-    if target.language == "objective-c" or target.language == "objective-c++" then
-        compiler = "clang";
-    end
+    local compiler = "clang";
     local cppdefines = table.concat( defines, " " );
     local cppdirs = table.concat( include_directories, " " );
     local ccflags = table.concat( flags, " " );
@@ -138,7 +146,7 @@ function llvmgcc.cc( target )
     if target.precompiled_header ~= nil then            
         if target.precompiled_header:is_outdated() then
             print( leaf(target.precompiled_header.source) );
-            local xcrun = target.settings.llvmgcc.xcrun;
+            local xcrun = target.settings.clang.xcrun;
             build.system( xcrun, "xcrun %s %s %s %s -o %s %s" % {compiler, cppdirs, cppdefines, ccflags, target.precompiled_header:get_filename(), target.precompiled_header.source} );
         end        
     end
@@ -148,13 +156,13 @@ function llvmgcc.cc( target )
         if dependency:is_outdated() and dependency ~= target.precompiled_header then
             if dependency:prototype() == nil then
                 print( leaf(dependency.source) );
-                local xcrun = target.settings.llvmgcc.xcrun;
+                local xcrun = target.settings.clang.xcrun;
                 build.system( xcrun, "xcrun %s %s %s %s -o %s %s" % {compiler, cppdirs, cppdefines, ccflags, dependency:get_filename(), absolute(dependency.source)} );
             elseif dependency.results then
                 for _, result in ipairs(dependency.results) do
                     if result:is_outdated() then
                         print( leaf(result.source) );
-                        local xcrun = target.settings.llvmgcc.xcrun;
+                        local xcrun = target.settings.clang.xcrun;
                         build.system( xcrun, "xcrun %s %s %s %s -o %s %s" % {compiler, cppdirs, cppdefines, ccflags, result:get_filename(), absolute(result.source)} );
                     end
                 end
@@ -163,7 +171,7 @@ function llvmgcc.cc( target )
     end
 end;
 
-function llvmgcc.build_library( target )
+function clang.build_library( target )
     local arflags = "";
     arflags = [[%s -static]] % arflags;
 
@@ -193,28 +201,45 @@ function llvmgcc.build_library( target )
 
         print( leaf(target:get_filename()) );
         pushd( "%s/%s" % {obj_directory(target), target.architecture} );
-        local xcrun = target.settings.llvmgcc.xcrun;
+        local xcrun = target.settings.clang.xcrun;
         build.system( xcrun, [[xcrun libtool %s -o %s %s]] % {arflags, native(target:get_filename()), arobjects} );
         popd();
     end
 end;
 
-function llvmgcc.clean_library( target )
+function clang.clean_library( target )
     rm( target:get_filename() );
     rmdir( obj_directory(target) );
 end;
 
-function llvmgcc.build_executable( target )
+function clang.build_executable( target )
     local library_directories = {};
+    if target.library_directories then
+        for _, directory in ipairs(target.library_directories) do
+            table.insert( library_directories, [[-L "%s"]] % directory );
+        end
+    end
     if target.settings.library_directories then
         for _, directory in ipairs(target.settings.library_directories) do
             table.insert( library_directories, [[-L "%s"]] % directory );
+        end
+    end
+    if target.framework_directories then 
+        for _, directory in ipairs(target.framework_directories) do
+            table.insert( library_directories, [[-F "%s"]] % directory );
+        end
+    end
+    if target.settings.framework_directories then 
+        for _, directory in ipairs(target.settings.framework_directories) do
+            table.insert( library_directories, [[-F "%s"]] % directory );
         end
     end
     
     local flags = {
         "-arch %s" % target.architecture,
         "-o %s" % native( target:get_filename() ),
+        "-stdlib=libc++",
+        "-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk";
     };
 
     if target:prototype() == ArchivePrototype then
@@ -226,14 +251,6 @@ function llvmgcc.build_executable( target )
         table.insert( flags, "-Wl,--verbose=31" );
     end
     
-    if target.settings.runtime_library == "static" or target.settings.runtime_library == "static_debug" then
-        table.insert( flags, "-static-libstdc++" );
-    end
-    
-    if target.settings.debug then
-        table.insert( flags, "-debug" );
-    end
-
     if target.settings.strip then
         table.insert( flags, "-Wl,-dead_strip" );
     end
@@ -261,7 +278,12 @@ function llvmgcc.build_executable( target )
     end
     if target.frameworks then
         for _, framework in ipairs(target.frameworks) do
-            table.insert( libraries, "-framework %s" % framework );
+            table.insert( libraries, [[-framework "%s"]] % framework );
+        end
+    end
+    if target.settings.frameworks then 
+        for _, framework in ipairs(target.settings.frameworks) do
+            table.insert( libraries, [[-framework "%s"]] % framework );
         end
     end
 
@@ -289,18 +311,18 @@ function llvmgcc.build_executable( target )
 
         print( leaf(target:get_filename()) );
         pushd( "%s/%s" % {obj_directory(target), target.architecture} );
-        local xcrun = target.settings.llvmgcc.xcrun;
-        build.system( xcrun, "xcrun g++ %s %s %s %s" % {ldflags, lddirs, ldobjects, ldlibs} );
+        local xcrun = target.settings.clang.xcrun;
+        build.system( xcrun, "xcrun clang++ %s %s %s %s" % {ldflags, lddirs, ldobjects, ldlibs} );
         popd();
     end
 end;
 
-function llvmgcc.clean_executable( target )
+function clang.clean_executable( target )
     rm( target:get_filename() );
     rmdir( obj_directory(target) );
 end;
 
-function llvmgcc.lipo_executable( target )
+function clang.lipo_executable( target )
     local executables = { 
         " "
     };
@@ -311,38 +333,38 @@ function llvmgcc.lipo_executable( target )
     end
     executables = table.concat( executables, " " );
     print( leaf(target:get_filename()) );
-    local xcrun = target.settings.llvmgcc.xcrun;
+    local xcrun = target.settings.clang.xcrun;
     build.system( xcrun, [[xcrun lipo -create %s -output %s]] % {executables, target:get_filename()} );
 end
 
-function llvmgcc.obj_directory( target )
+function clang.obj_directory( target )
     return "%s/%s_%s/%s" % { target.settings.obj, platform, variant, relative(target:get_working_directory():path(), root()) };
 end;
 
-function llvmgcc.cc_name( name )
+function clang.cc_name( name )
     return "%s.c" % basename( name );
 end;
 
-function llvmgcc.cxx_name( name )
+function clang.cxx_name( name )
     return "%s.cpp" % basename( name );
 end;
 
-function llvmgcc.obj_name( name, architecture )
+function clang.obj_name( name, architecture )
     return "%s.o" % basename( name );
 end;
 
-function llvmgcc.lib_name( name, architecture )
+function clang.lib_name( name, architecture )
     return "lib%s_%s_%s.a" % { name, architecture, variant };
 end;
 
-function llvmgcc.dll_name( name )
+function clang.dll_name( name )
     return "%s.dylib" % { name };
 end;
 
-function llvmgcc.exe_name( name, architecture )
+function clang.exe_name( name, architecture )
     return "%s_%s" % { name, architecture };
 end;
 
-function llvmgcc.module_name( name, architecture )
+function clang.module_name( name, architecture )
     return "%s_%s" % { name, architecture };
 end

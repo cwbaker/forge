@@ -9,7 +9,7 @@ local function uuid()
             table.insert( uuids, uuid );
         end;
     };
-    local uuidgen = "%s/Common7/Tools/uuidgen.exe" % settings.msvc.visual_studio_directory;
+    local uuidgen = "%s/bin/x64/uuidgen.exe" % settings.msvc.windows_sdk_directory;
     local arguments = "uuidgen";
     build.system( uuidgen, arguments, UuidScanner );
     assert( uuids[1], "UUID generation failed!" );
@@ -61,6 +61,7 @@ local function configurations( vcproj, target, include_directories )
             end
             
             local defines = "";
+            defines = defines.."BUILD_OS_"..upper(operating_system())..";";
             defines = defines.."BUILD_PLATFORM_"..upper(platform)..";";
             defines = defines.."BUILD_VARIANT_"..upper(variant)..";";
             defines = defines.."BUILD_MODULE_"..upper(string.gsub(module, "-", "_"))..";"
@@ -75,6 +76,7 @@ local function configurations( vcproj, target, include_directories )
                     defines = defines..define..";";
                 end
             end
+            defines = string.gsub( defines, '"', '&quot;' );
 
             local build_tool = native( relative(root("build/build.exe")) );
             vcproj:write( [[

@@ -8,6 +8,7 @@ Library "thread" {
     Cxx {
         pch = "stdafx.hpp";
         "Condition.cpp",
+        "JobQueue.cpp",
         "Mutex.cpp",
         "ScopedLock.cpp",
         "Error.cpp",

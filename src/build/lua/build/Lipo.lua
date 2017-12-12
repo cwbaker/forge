@@ -1,42 +1,38 @@
 
 LipoPrototype = TargetPrototype { "Lipo" };
 
-function LipoPrototype.load( lipo )
-    local definition = lipo.definition;
-    if build.built_for_platform_and_variant(definition) then
-        lipo:set_filename( lipo:path() );
-        local architectures = definition.architectures or definition.settings.architectures;
-        for _, architecture in ipairs(architectures) do 
-            local link = Link( "%s/%s_%s" % {definition.settings.obj, lipo:id(), architecture}, definition );
-            link.architecture = architecture;
-            link.module = lipo.module;
-            lipo:add_dependency( link );
-        end
-    end
-end;
+function LipoPrototype.static_depend( self )
+    build.add_library_dependencies( self );
+end
 
-function LipoPrototype.static_depend( lipo )
-    local definition = lipo.definition;
-    if build.built_for_platform_and_variant(definition) then
-        lipo:add_dependency( Directory(branch(lipo:get_filename())) );
+function LipoPrototype.build( self )
+    if self:is_outdated() then
+        lipo_executable( self );
     end
-end;
+end
 
-function LipoPrototype.build( lipo )
-    local definition = lipo.definition;
-    if lipo:is_outdated() and build.built_for_platform_and_variant(definition) then
-        lipo_executable( lipo, definition );
+function LipoPrototype.clean( self )
+    clean_executable( self );
+end
+
+function Lipo( id )
+    build.begin_target();
+    return function( dependencies )
+        return build.end_target( function()
+            local lipos = {};
+            local settings = build.push_settings( dependencies.settings or {} );
+            if build.built_for_platform_and_variant(settings) then
+                local lipo = target( id, LipoPrototype, {settings = settings} );
+                local filename = "%s/%s" % { settings.bin, id };
+                settings = build.push_settings {
+                    bin = "%s" % obj_directory( lipo );
+                };
+                build.add_package_dependencies( lipo, filename, dependencies );
+                build.pop_settings();
+                table.insert( lipos, lipo );
+            end
+            build.pop_settings();
+            return lipos;
+        end);
     end
-end;
-
-function LipoPrototype.clean( lipo )
-    local definition = lipo.definition;
-    if build.built_for_platform_and_variant(definition) then
-        clean_executable( lipo );
-    end
-end;
-
-function Lipo( id, definition )
-    assert( type(definition) == "table" );
-    return target( id, LipoPrototype, {definition = definition} );
 end

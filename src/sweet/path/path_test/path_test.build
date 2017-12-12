@@ -4,7 +4,7 @@ Executable "path_test" {
         "sweet/assert/assert", 
         "sweet/error/error",
         "sweet/path/path",
-        "sweet/unit/libUnitTest"
+        "unit/libUnitTest"
     };
 
     Cxx {

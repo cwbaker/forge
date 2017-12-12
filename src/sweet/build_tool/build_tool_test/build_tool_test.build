@@ -14,10 +14,10 @@ Executable "build_tool_test" {
         "sweet/process/process",
         "sweet/rtti/rtti",
         "sweet/pointer/pointer",
-        "sweet/lua/lua_/liblua",
+        "lua/liblua",
         "sweet/error/error",
         "sweet/assert/assert",
-        "sweet/unit/libUnitTest"
+        "unit/libUnitTest"
     };
 
     third_party_libraries = {

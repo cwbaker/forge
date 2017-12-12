@@ -168,15 +168,12 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "scan", raw(&ScriptInterface::scan), this )
         ( "print", &ScriptInterface::print, this )
         ( "operating_system", &ScriptInterface::operating_system, this )
-        ( "hostname", &ScriptInterface::hostname, this )
-        ( "whoami", &ScriptInterface::whoami, this )
         ( "exists", &ScriptInterface::exists, this )
         ( "is_file", &ScriptInterface::is_file, this )
         ( "is_directory", &ScriptInterface::is_directory, this )
         ( "ls", &ScriptInterface::ls, this )
         ( "find", &ScriptInterface::find, this )
         ( "mkdir", &ScriptInterface::mkdir, this )
-        ( "cpdir", &ScriptInterface::cpdir, this )
         ( "rmdir", &ScriptInterface::rmdir, this )
         ( "cp", &ScriptInterface::cp, this )
         ( "rm", &ScriptInterface::rm, this )
@@ -573,7 +570,7 @@ std::string ScriptInterface::upper( const std::string& value )
 std::string ScriptInterface::native( const std::string& path )
 {
     boost::filesystem::path native_path( path );
-    return native_path.file_string();
+    return native_path.string();
 }
 
 std::string ScriptInterface::branch( const std::string& path ) 
@@ -632,13 +629,6 @@ void ScriptInterface::mkdir( const std::string& path )
     return os_interface_->mkdir( absolute(path) );
 }
 
-void ScriptInterface::cpdir( const std::string& from, const std::string& to )
-{
-    Environment* environment = get_environment().get();
-    SWEET_ASSERT( environment );
-    return os_interface_->cpdir( absolute(from), absolute(to), environment->directory().branch() );
-}
-
 void ScriptInterface::rmdir( const std::string& path )
 {
     return os_interface_->rmdir( absolute(path) );
@@ -657,16 +647,6 @@ void ScriptInterface::rm( const std::string& path )
 std::string ScriptInterface::operating_system()
 {
     return os_interface_->operating_system();
-}
-
-std::string ScriptInterface::hostname()
-{
-    return os_interface_->hostname();
-}
-
-std::string ScriptInterface::whoami()
-{
-    return os_interface_->whoami();
 }
 
 void ScriptInterface::putenv( const std::string& attribute, const std::string& value )

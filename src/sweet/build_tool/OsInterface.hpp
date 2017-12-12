@@ -37,13 +37,10 @@ class OsInterface
         boost::filesystem::directory_iterator ls( const std::string& path );
         boost::filesystem::recursive_directory_iterator find( const std::string& path );
         void mkdir( const std::string& path );
-        void cpdir( const std::string& from, const std::string& to, const path::Path& base_path );
         void rmdir( const std::string& path );
         void cp( const std::string& from, const std::string& to );
         void rm( const std::string& path );
         std::string operating_system();
-        std::string hostname();
-        std::string whoami();
         void putenv( const std::string& attribute, const std::string& value );
         const char* getenv( const char* name );
         void sleep( float milliseconds );

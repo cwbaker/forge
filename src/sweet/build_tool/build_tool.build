@@ -7,7 +7,7 @@ Library "build_tool" {
         "sweet/assert/assert",
         "sweet/error/error",
         "sweet/lua/lua",
-        "sweet/lua/lua_/liblua",
+        "lua/liblua",
         "sweet/path/path",
         "sweet/persist/persist",
         "sweet/pointer/pointer",

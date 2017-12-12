@@ -28,7 +28,7 @@ const wchar_t* BasicPathTraits<wchar_t>::PARENT = L"..";
 const wchar_t  BasicPathTraits<wchar_t>::DELIMITER = L'.';    
 #endif
 
-#if defined(BUILD_OS_MACOSX) || defined(BUILD_OS_ANDROID)
+#if defined(BUILD_OS_MACOSX) || defined(BUILD_OS_ANDROID) || defined(BUILD_OS_IOS)
 const char* BasicPathTraits<char>::EMPTY = "";
 const char* BasicPathTraits<char>::SEPARATORS = "/";
 const char* BasicPathTraits<char>::SEPARATOR = "/";

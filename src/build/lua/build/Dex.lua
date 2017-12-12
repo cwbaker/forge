@@ -4,11 +4,25 @@ DexPrototype = TargetPrototype { "Dex" };
 function DexPrototype.build( jar )
     if jar:is_outdated() then
         print( leaf(jar:get_filename()) );
-        local dx = native( "%s/platform-tools/dx" % jar.settings.android.sdk_directory );
+
+        local jars = {};
+        if jar.settings.android.proguard_enabled then 
+            local proguard = "%s/tools/proguard/bin/proguard.sh" % jar.settings.android.sdk_directory;
+            build.system( proguard, [[proguard.sh -printmapping \"%s/%s.map\" @proguard.cfg]] % {obj_directory(jar), leaf(jar:get_filename())} );
+            table.insert( jars, [[\"%s/classes.jar\"]] % obj_directory(jar) );
+        else
+            table.insert( jars, [[\"%s/classes\"]] % obj_directory(jar) );
+        end
+        for _, library in ipairs(jar.settings.libraries) do 
+            table.insert( jars, library );
+        end
+
+        local dx = native( "%s/dx" % jar.settings.android.build_tools_directory );
         if operating_system() == "windows" then
             dx = "%s.bat" % dx;
         end
-        build.shell( [[\"%s\" --dex --verbose --output=\"%s\" \"%s/classes\"]] % {dx, jar:get_filename(), obj_directory(jar)} );
+        local source = table.concat( jars, " " );
+        build.shell( [[\"%s\" --dex --verbose --output=\"%s\" %s]] % {dx, jar:get_filename(), table.concat(jars, " ")} );
     end    
 end
 

@@ -77,6 +77,7 @@ function mingw.cc( target )
     cppdefines = cppdefines.." -DBUILD_LIBRARY_SUFFIX=\"\\\"_"..platform.."_"..variant..".lib\\\"\"";
     cppdefines = cppdefines.." -DBUILD_MODULE_"..upper(string.gsub(target.module:id(), "-", "_"))
     cppdefines = cppdefines.." -DBUILD_LIBRARY_TYPE_"..upper(target.settings.library_type);
+    cppdefines = cppdefines.." -D_WIN32";
 
     if target.settings.defines then
         for _, define in ipairs(target.settings.defines) do
@@ -103,37 +104,56 @@ function mingw.cc( target )
         end
     end
 
-    local ccflags = " -c";
-
-    if target.settings.compile_as_c then
-        ccflags = ccflags.." -x c";
-    else
-        ccflags = ccflags.." -fpermissive -Wno-deprecated -x c++";
-    end
+    local flags = {
+        " ",
+        "-c",
+        -- "-arch %s" % target.architecture,
+    };
     
-    if target.settings.runtime_library == "static" or target.settings.runtime_library == "static_debug" then
-        ccflags = ccflags.." -static-libstdc++";
+    local language = target.language or "c++";
+    if language then
+        table.insert( flags, "-x %s" % language );
+
+        if string.find(language, "c++", 1, true) then
+            table.insert( flags, "-std=c++11" );
+            -- table.insert( flags, "-stdlib=libc++" );
+            table.insert( flags, "-fpermissive" );
+            table.insert( flags, "-Wno-deprecated" );
+            if target.settings.runtime_library == "static" or target.settings.runtime_library == "static_debug" then
+                table.insert( flags, " -static" );
+            end
+            if target.settings.exceptions then
+                table.insert( flags, "-fexceptions" );
+            end
+            if target.settings.run_time_type_info then
+                table.insert( flags, "-frtti" );
+            end
+        end
+
+        if string.find(language, "objective", 1, true) then
+            table.insert( flags, "-fobjc-abi-version=2" );
+            table.insert( flags, "-fobjc-legacy-dispatch" );
+            table.insert( flags, [["-DIBOutlet=__attribute__((iboutlet))"]] );
+            table.insert( flags, [["-DIBOutletCollection(ClassName)=__attribute__((iboutletcollection(ClassName)))"]] );
+            table.insert( flags, [["-DIBAction=void)__attribute__((ibaction)"]] );
+        end
     end
     
     if target.settings.debug then
-        ccflags = ccflags.." -g";
+        table.insert( flags, "-g" );
     end
 
     if target.settings.optimization then
-        ccflags = ccflags.." -O2";
+        table.insert( flags, "-O2" );
     end
     
     if target.settings.preprocess then
-        ccflags = ccflags.." -E";
+        table.insert( flags, "-E" );
     end
 
-    if target.settings.exceptions and not target.settings.compile_as_c then
-        ccflags = ccflags.." -fexceptions";
-    end
-
-    if target.settings.run_time_type_info and not target.settings.compile_as_c then
-        ccflags = ccflags.." -frtti";
-    end
+    -- local cppdefines = table.concat( defines, " " );
+    -- local cppdirs = table.concat( include_directories, " " );
+    local ccflags = table.concat( flags, " " );
 
     if target.precompiled_header ~= nil then            
         if target.precompiled_header:is_outdated() then
@@ -173,7 +193,7 @@ function mingw.build_library( target )
     
     local objects = "";
     for dependency in target:get_dependencies() do
-        if dependency:prototype() == CxxPrototype then
+        if dependency:prototype() == CcPrototype then
             if dependency.precompiled_header ~= nil then
                 objects = objects.." "..obj_name( dependency.precompiled_header:id() );
             end
@@ -200,80 +220,89 @@ function mingw.clean_library( target )
 end
 
 function mingw.build_executable( target )
-    local gxx = "%s/bin/g++.exe" % target.settings.mingw.mingw_directory;
-
-    local ldlibs = " ";
-    
-    local lddirs = " -L \""..target.settings.lib.."\"";
-
-    if target.settings.library_directories then
+    local library_directories = {};
+    if target.library_directories then
         for _, directory in ipairs(target.settings.library_directories) do
-            lddirs = lddirs.." -L \""..directory.."\"";
+            table.insert( library_directories, [[-L "%s"]] % directory );
         end
     end
-    
-    local ldflags = " ";
+    if target.settings.library_directories then
+        for _, directory in ipairs(target.settings.library_directories) do
+            table.insert( library_directories, [[-L "%s"]] % directory );
+        end
+    end    
 
-    ldflags = ldflags.." -o "..native( target:get_filename() );
+    local flags = {
+        "-o %s" % native( target:get_filename() ),
+        -- "-stdlib=libc++",
+    };
+
     if target:prototype() == DynamicLibraryPrototype then
-        ldflags = ldflags.." -shared -Wl,--out-implib,"..native( "%s/%s.lib" % {target.settings.lib, basename(target:id())} );
+        table.insert( flags, "-shared" );
+        table.insert( flags, [[-Wl,--out-implib,"%s"]] % native("%s/%s" % {target.settings.lib, lib_name(target:id())}) );
     end
     
     if target.settings.verbose_linking then
-        ldflags = ldflags.." -Wl,--verbose=31";
+        table.insert( flags, "-Wl,--verbose=31" );
     end
     
     if target.settings.runtime_library == "static" or target.settings.runtime_library == "static_debug" then
-        ldflags = ldflags.." -static-libstdc++";
+        table.insert( flags, "-static" );
     end
     
     if target.settings.debug then
-        ldflags = ldflags.." -debug";
+        table.insert( flags, "-debug" );
     end
 
     if target.settings.generate_map_file then
-        ldflags = ldflags.." -Wl,-Map,"..native(obj_directory(target)..target:id()..".map");
+        table.insert( flags, [[-Wl,-Map,"%s"]] % native( "%s/%s.map" % {obj_directory(target), target:id()}) );
     end
 
     if target.settings.stack_size then
-        ldflags = ldflags.." -Wl,--stack,"..tostring(target.settings.stack_size);
+        table.insert( flags, "-Wl,--stack,%d" % target.settings.stack_size );
     end
     
     if target.settings.strip then
-        ldflags = ldflags.." -Wl,--strip-all";
+        table.insert( flags, "-Wl,--strip-all" );
     end
 
-    local libraries = "";
+    local libraries = {};
     if target.libraries then
         for _, library in ipairs(target.libraries) do
-            libraries = "%s -l%s" % { libraries, basename(library:get_filename()) };
+            table.insert( libraries, "-l%s_%s_%s" % {library:id(), platform, variant} );
         end
     end
     if target.third_party_libraries then
         for _, library in ipairs(target.third_party_libraries) do
-            libraries = "%s -l%s" % { libraries, library };
+            table.insert( libraries, "-l%s" % library );
         end
     end
 
-    local objects = "";
+    local objects = {};
     for dependency in target:get_dependencies() do
-        if dependency:prototype() == CxxPrototype then
+        if dependency:prototype() == CcPrototype then
             if dependency.precompiled_header ~= nil then
-                objects = objects.." "..obj_name( dependency.precompiled_header:id() );
+                table.insert( objects, leaf(dependency.precompiled_header:get_filename()) );
             end
             
             for object in dependency:get_dependencies() do
                 if object:prototype() == nil and object ~= dependency.precompiled_header then
-                    objects = objects.." "..obj_name( object:id() );
+                    table.insert( objects, leaf(object:get_filename()) );
                 end
             end
         end
     end
 
-    if objects ~= "" then
+    if #objects > 0 then
+        local ldflags = table.concat( flags, " " );
+        local lddirs = table.concat( library_directories, " " );        
+        local ldobjects = table.concat( objects, " " );
+        local ldlibs = table.concat( libraries, " " );
+
         print( leaf(target:get_filename()) );
         pushd( "%s/%s" % {obj_directory(target), target.architecture} );
-        build.system( gxx, "g++"..ldflags..lddirs..objects..libraries..ldlibs );
+        local gxx = "%s/bin/g++.exe" % target.settings.mingw.mingw_directory;
+        build.system( gxx, "g++ %s %s %s %s" % {ldflags, lddirs, ldobjects, ldlibs} );
         popd();
     end
 end 

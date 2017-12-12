@@ -106,7 +106,7 @@ end;
 local function generate_files( xcodeproj, files )
     for path, file in pairs(files) do
         xcodeproj:write([[
-        %s /* %s */ = { isa = PBXFileReference; lastKnownFileType = text; path = %s; sourceTree = "<group>"; };
+        %s /* %s */ = { isa = PBXFileReference; lastKnownFileType = text; path = "%s"; sourceTree = "<group>"; };
 ]]
         % { file.uuid, file.target:id(), file.target:id() }
         );
@@ -158,8 +158,8 @@ local function generate_groups( xcodeproj, groups )
         end
         xcodeproj:write([[
             );
-            name = %s;
-            path = %s;
+            name = "%s";
+            path = "%s";
             sourceTree = "<group>";
         };
 ]] % { group.target:id(), relative(group.target:path(), base) }
@@ -328,12 +328,20 @@ local function footer( xcodeproj, project )
 end;
 
 local function populate( target )
-    if target:prototype() == nil then
-        add_file( target );
-    elseif target:prototype() == Directory then
-        add_group( target );
-    elseif target:prototype() == ExecutablePrototype then
-        add_target( target );
+    if string.find(target:id(), "%$%$") == nil then 
+        if target:prototype() == nil then
+            add_file( target );
+        elseif target:prototype() == Directory then
+            add_group( target );
+        end
+    end
+end
+
+local function populate_targets( target )
+    if string.find(target:id(), "%$%$") == nil then 
+        if target:prototype() == ExecutablePrototype or target:prototype() == DynamicLibraryPrototype then
+            add_target( target );
+        end
     end
 end
 
@@ -357,6 +365,12 @@ function xcode.generate_project( name, project )
         add_file( find_target(root("build.lua")) );
     end
 
+    for _, path in ipairs(build.settings.xcodeproj.targets) do 
+        local target = find_target( root(path) );
+        assert( target, "Target '%s' not found when generating Xcode project targets" % tostring(path) );
+        preorder( populate_targets, target );
+    end
+
     local xcodeproj_directory = "%s" % name;
     if not exists(xcodeproj_directory) then
         mkdir( xcodeproj_directory );
@@ -378,18 +392,23 @@ end
 
 -- The "xcodeproj" command entry point (global).
 function xcodeproj()
-    platform = "llvmgcc";
+    platform = "";
     variant = "";
     build.load();
     local all = all or find_target( root() );
     assert( all, "No target found at '%s'" % root() );
-    assert( settings.xcodeproj, "The name of the Xcode project to generate is not specified by 'settings.xcodeproj'" );
-    xcode.generate_project( settings.xcodeproj, all );
+    assert( settings.xcodeproj, "The Xcode project settings are not specified by 'settings.xcodeproj'" );
+    assert( settings.xcodeproj.filename, "The Xcode project filename is not specified by 'settings.xcodeproj.filename'" );
+    assert( settings.xcodeproj.targets, "The Xcode project targets are not specified by 'settings.xcodeproj.targets'" );
+    xcode.generate_project( settings.xcodeproj.filename, all );
 end
 
 -- The "xcode_build" command entry point (global) this is used by generated
 -- Xcode projects to trigger a build or clean.
 function xcode_build()
+    if platform == "ios" and architectures and string.find(architectures, "i386") then 
+        platform = "ios_simulator";
+    end
     action = action or "build";
     if action == "" or action == "build" then
         default();

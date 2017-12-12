@@ -7,16 +7,16 @@ function qt.configure( settings )
         local_settings.updated = true;
         if operating_system() == "windows" then
             local_settings.qt = {
+                moc = "C:/Qt/4.7.2/bin/moc.exe";
                 qt_directory = "C:/Qt/4.7.2";
                 version = "4.7.2";
             };
-            local_settings.qt.moc = "%s/bin/moc.exe" % { local_settings.qt.qt_directory };
         else
             local_settings.qt = {
-                qt_directory = "/usr/local/Qt4.8";
-                version = "4.8.4";
+                moc = home( "Qt/5.2.1/clang_64/bin/moc" );
+                qt_directory = home( "Qt" );
+                version = "5.2.1";
             };
-            local_settings.qt.moc = "/Developer/Tools/Qt/moc";
         end
     end
 end

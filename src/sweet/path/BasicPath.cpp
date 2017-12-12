@@ -8,6 +8,7 @@
 #include <sweet/assert/assert.hpp>
 #include <string>
 #include <stdexcept>
+#include <locale>
 
 #if defined(BUILD_OS_MACOSX)
 #include <unistd.h>
@@ -34,7 +35,7 @@ WidePath sweet::path::current_working_directory()
     std::wstring directory( length - 1, L'\0' );
     ::GetCurrentDirectoryW( length, &directory[0] );
     return WidePath( directory );
-#else    
+#elif defined(BUILD_OS_MACOSX)
     char directory [4096];
     const char *result = getcwd( directory, sizeof(directory) );
     if ( !result )
@@ -47,5 +48,7 @@ WidePath sweet::path::current_working_directory()
     const std::ctype<wchar_t>* ctype = &std::use_facet<std::ctype<wchar_t> >( std::locale() );
     ctype->widen( directory, directory + length, &buffer[0] );
     return WidePath( wstring(&buffer[0], length) );
+#else
+    return WidePath();
 #endif
 }

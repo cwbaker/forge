@@ -3,7 +3,7 @@ Executable "error_test" {
     libraries = {
         "sweet/error/error",
         "sweet/assert/assert",
-        "sweet/unit/libUnitTest"
+        "unit/libUnitTest"
     };
         
     Cxx {

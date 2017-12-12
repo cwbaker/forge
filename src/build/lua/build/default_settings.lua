@@ -1,7 +1,12 @@
 
 local platforms_by_operating_system = {
-    windows = { "android", "msvc", "mingw" };
-    maxosx = { "llvmgcc" };
+    windows = { "android", "mingw", "msvc" };
+    macosx = { "android", "clang", "ios", "ios_simulator", "llvmgcc" };
+};
+
+local path_separator_by_operating_system = {
+    windows = ";";
+    macosx = ":";
 };
 
 build.default_settings = {
@@ -10,6 +15,8 @@ build.default_settings = {
     obj = root();
     data = root();
     root = root();
+
+    path_separator = path_separator_by_operating_system [operating_system()];
 
     user_settings_filename = home( "user_settings.lua" );
 
@@ -29,7 +36,7 @@ build.default_settings = {
                 ""
             };
             variants = {
-                "debug", "debug_dll", "release", "release_dll", "shipping", "shipping_dll"
+                "debug", "release", "shipping"
             };
         };
 
@@ -39,6 +46,39 @@ build.default_settings = {
             };
             variants = {
                 "debug", "release", "shipping"
+            };
+        };
+
+        ["clang"] = {
+            architectures = {
+                "i386", "x86_64"
+            };
+            variants = {
+                "debug", "release", "shipping"
+            };
+            framework_directories = {
+            };
+        };
+
+        ["ios"] = {
+            architectures = {
+                "armv7", "armv7s"
+            };
+            variants = {
+                "debug", "release", "shipping"
+            };
+            framework_directories = {
+            };
+        };
+
+        ["ios_simulator"] = {
+            architectures = {
+                "i386"
+            };
+            variants = {
+                "debug", "release", "shipping"
+            };
+            framework_directories = {
             };
         };
 
@@ -78,8 +118,10 @@ build.default_settings = {
         ["debug"] = {
             compile_as_c = false;
             debug = true;
+            debuggable = true;
             exceptions = true;
             fast_floating_point = false;
+            generate_dsym_bundle = false;
             generate_map_file = true;
             incremental_linking = true;
             library_type = "static";
@@ -103,8 +145,10 @@ build.default_settings = {
         ["debug_dll"] = {
             compile_as_c = false;
             debug = true;
+            debuggable = true;
             exceptions = true;
             fast_floating_point = false;
+            generate_dsym_bundle = false;
             generate_map_file = true;
             incremental_linking = true;
             library_type = "dynamic";
@@ -128,8 +172,10 @@ build.default_settings = {
         ["release"] = {
             compile_as_c = false;
             debug = true;
+            debuggable = true;
             exceptions = true;
             fast_floating_point = true;
+            generate_dsym_bundle = false;
             generate_map_file = true;
             incremental_linking = false;
             library_type = "static";
@@ -153,8 +199,10 @@ build.default_settings = {
         ["release_dll"] = {
             compile_as_c = false;
             debug = true;
+            debuggable = true;
             exceptions = true;
             fast_floating_point = true;
+            generate_dsym_bundle = false;
             generate_map_file = true;
             incremental_linking = false;
             library_type = "dynamic";
@@ -177,9 +225,11 @@ build.default_settings = {
         
         ["shipping"] = {
             compile_as_c = false;
-            debug = true;
+            debug = false;
+            debuggable = false;
             exceptions = true;
             fast_floating_point = true;
+            generate_dsym_bundle = true;
             generate_map_file = true;
             incremental_linking = false;
             library_type = "static";
@@ -202,9 +252,11 @@ build.default_settings = {
         
         ["shipping_dll"] = {
             compile_as_c = false;
-            debug = true;
+            debug = false;
+            debuggable = false;
             exceptions = true;
             fast_floating_point = true;
+            generate_dsym_bundle = true;
             generate_map_file = true;
             incremental_linking = false;
             library_type = "dynamic";

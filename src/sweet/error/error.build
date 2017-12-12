@@ -12,7 +12,6 @@ Library "error" {
         "dinkumware_integration.cpp",
         "Error.cpp",
         "ErrorPolicy.cpp",
-        "ErrorPolicyEventSink.cpp",
         "functions.cpp"
     }
 }

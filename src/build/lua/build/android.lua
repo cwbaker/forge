@@ -13,7 +13,7 @@ function android.configure( settings )
         if operating_system() == "windows" then
             return "C:/Program Files/Java/jdk1.6.0_39";
         else
-            return "/Library/Java/Home";
+            return "/Library/Java/JavaVirtualMachines/1.7.0.jdk/Contents/Home";
         end
     end
 
@@ -40,9 +40,10 @@ function android.configure( settings )
             jdk_directory = autodetect_jdk_directory();
             ndk_directory = autodetect_ndk_directory();
             sdk_directory = autodetect_sdk_directory();
+            build_tools_directory = string.format( "%s/build-tools/19.0.0", autodetect_sdk_directory() );
             toolchain_version = "4.6";
             ndk_platform = "android-14";
-            sdk_platform = "android-15";
+            sdk_platform = "android-16";
             architectures = { "armv5", "armv7" };
         };
     end
@@ -118,6 +119,8 @@ function android.initialize( settings )
             };
             putenv( "PATH", table.concat(path, ":") );
         end
+
+        settings.android.proguard_enabled = settings.android.proguard_enabled or variant == "shipping";
         
         cc = android.cc;
         build_library = android.build_library;
@@ -166,12 +169,12 @@ function android.cc( target )
 
     if target.settings.defines then
         for _, define in ipairs(target.settings.defines) do
-            table.insert( defines, " -D%s" % define );
+            table.insert( defines, "-D%s" % define );
         end
     end    
     if target.defines then
         for _, define in ipairs(target.defines) do
-            table.insert( defines, " -D%s" % define );
+            table.insert( defines, "-D%s" % define );
         end
     end
 
@@ -180,16 +183,16 @@ function android.cc( target )
     };
     for _, directory in ipairs(android.include_directories(target.settings, target.architecture)) do
         assert( exists(directory), "The include directory '%s' does not exist" % directory );
-        table.insert( include_directories, [[ -I"%s"]] % directory );
+        table.insert( include_directories, [[-I"%s"]] % directory );
     end
     if target.include_directories then
         for _, directory in ipairs(target.include_directories) do
-            table.insert( include_directories, [[ -I"%s"]] % relative(directory) );
+            table.insert( include_directories, [[-I"%s"]] % relative(directory) );
         end
     end
     if target.settings.include_directories then
         for _, directory in ipairs(target.settings.include_directories) do
-            table.insert( include_directories, [[ -I"%s"]] % directory );
+            table.insert( include_directories, [[-I"%s"]] % directory );
         end
     end
 
@@ -209,7 +212,7 @@ function android.cc( target )
         "-mtune=xscale",
         "-msoft-float",
         "-mthumb";
-        "-Wa,--noexecstack"
+        "-Wa,--noexecstack";
     };
 
     if target.architecture == "armv5" then
@@ -218,33 +221,34 @@ function android.cc( target )
         table.insert( flags, "-march=armv7" );
     end
 
-    if target.settings.compile_as_c then
-        table.insert( flags, "-x c" );
-    else
-        table.insert( flags, "-fpermissive" );
-        table.insert( flags, "-Wno-deprecated" );
-        table.insert( flags, "-x c++" );
+    local language = target.language or "c++";
+    if language then
+        table.insert( flags, "-x %s" % language );
+
+        if string.find(language, "c++", 1, true) then
+            table.insert( flags, "--std=c++0x" );
+            table.insert( flags, "-Wno-deprecated" );
+            table.insert( flags, "-fpermissive" );
+            if target.settings.exceptions then
+                table.insert( flags, "-fexceptions" );
+            end
+            if target.settings.run_time_type_info then
+                table.insert( flags, "-frtti" );
+            end
+        end
     end
-    
+
     if target.settings.debug then
         table.insert( flags, "-g" );
     end
 
     if target.settings.optimization then
-        table.insert( flags, "-O2" );
-        table.insert( flags, "-Os" );
+        table.insert( flags, "-O3" );
+        table.insert( flags, "-Ofast" );
     end
     
     if target.settings.preprocess then
         table.insert( flags, "-E" );
-    end
-
-    if target.settings.exceptions and not target.settings.compile_as_c then
-        table.insert( flags, "-fexceptions" );
-    end
-
-    if target.settings.run_time_type_info and not target.settings.compile_as_c then
-        table.insert( flags, "-frtti" );
     end
 
     local cppdefines = table.concat( defines, " " );
@@ -289,7 +293,7 @@ function android.build_library( target )
     
     local objects = "";
     for dependency in target:get_dependencies() do
-        if dependency:prototype() == CxxPrototype then
+        if dependency:prototype() == CcPrototype then
             if dependency.precompiled_header ~= nil then
                 objects = objects.." "..obj_name( dependency.precompiled_header:id() );
             end
@@ -319,7 +323,6 @@ function android.build_executable( target )
     local gxx = "%s/bin/arm-linux-androideabi-g++" % android.toolchain_directory( target.settings, target.architecture );
 
     local flags = { 
-        " ",
         "--sysroot=%s" % android.platform_directory( target.settings, target.architecture ),
         "-Wl,-soname,%s" % leaf(target:get_filename()),
         "-shared",
@@ -347,10 +350,7 @@ function android.build_executable( target )
         table.insert( flags, "-Wl,--strip-all" );
     end
 
-    local library_directories = {
-        " ",
-        [[-L"%s"]] % target.settings.lib;
-    };
+    local library_directories = {};
     for _, directory in ipairs(android.library_directories(target.settings, target.architecture)) do
         table.insert( library_directories, [[-L"%s"]] % directory );
     end
@@ -360,9 +360,7 @@ function android.build_executable( target )
         end
     end
     
-    local libraries = {
-        " "
-    };
+    local libraries = {};
     if target.libraries then
         for _, library in ipairs(target.libraries) do
             table.insert( libraries, "-l%s_%s_%s" % {library:id(), platform, variant} );
@@ -390,11 +388,9 @@ function android.build_executable( target )
         end
     end
 
-    local objects = {
-        " "
-    };
+    local objects = {};
     for dependency in target:get_dependencies() do
-        if dependency:prototype() == CxxPrototype then
+        if dependency:prototype() == CcPrototype then
             if dependency.precompiled_header ~= nil then
                 table.insert( objects, obj_name(dependency.precompiled_header:id()) );
             end            
@@ -414,7 +410,7 @@ function android.build_executable( target )
 
         print( leaf(target:get_filename()) );
         pushd( "%s/%s" % {obj_directory(target), target.architecture} );
-        build.system( gxx, "arm-linux-androideabi-g++"..ldflags..lddirs..ldobjects..ldlibs );
+        build.system( gxx, "arm-linux-androideabi-g++ %s %s %s %s" % {ldflags, lddirs, ldobjects, ldlibs} );
         popd();
     end
 end 

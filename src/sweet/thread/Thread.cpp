@@ -23,7 +23,7 @@ using namespace sweet::thread;
 Thread::Thread( int (*function)(void*), void* context )
 #if defined(BUILD_OS_WINDOWS)
 : m_thread( NULL ),
-#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_ANDROID)
+#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_ANDROID) || defined(BUILD_OS_IOS)
 : //thread_(),
   exit_code_( 0 ),
 #endif
@@ -107,6 +107,8 @@ int Thread::exit_code() const
 
 #elif defined(BUILD_OS_MACOSX)
     return exit_code_;
+#else
+    return 0;
 #endif
 }
 
@@ -135,14 +137,14 @@ bool Thread::join( int timeout )
     return result == WAIT_OBJECT_0;
 
 #elif defined(BUILD_OS_MACOSX)
-    SWEET_ASSERT( timeout == 0 );
-
     void* value = NULL;
     int result = pthread_join( thread_, &value );
     if ( result != 0 )
     {
         SWEET_ERROR( JoiningThreadFailedError("Joining thread %d failed - result=%d", result) );
     }
+    return true;
+#else 
     return true;
 #endif
 }

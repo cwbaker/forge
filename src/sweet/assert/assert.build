@@ -1,6 +1,6 @@
 
 Library "assert" {
-    Cxx {
+    Cc {
         pch = "stdafx.hpp";
         "assert.cpp"
     }

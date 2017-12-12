@@ -7,10 +7,10 @@ function boost.configure( settings )
         local_settings.updated = true;
         local_settings.boost = {
             boost_directory = "";
-            version = "1.43";
+            version = "1.56";
         };
         if operating_system() == "windows" then
-            local_settings.boost.boost_directory = "C:/boost";
+            local_settings.boost.boost_directory = "C:/local";
         else
             local_settings.boost.boost_directory = home( "boost" );
         end
@@ -34,7 +34,7 @@ function boost.default_boost_library( name )
 end
 
 function boost.msvc_boost_library( name )
-    local toolset = "vc90";
+    local toolset = "vc120";
     local runtime;
     local version = string.gsub( settings.boost.version, "%.", "_" );
 

@@ -4,7 +4,7 @@ Executable "pointer_test" {
         "sweet/pointer/pointer",
         "sweet/error/error",
         "sweet/assert/assert",
-        "sweet/unit/libUnitTest"
+        "unit/libUnitTest"
     };
 
     Cxx {

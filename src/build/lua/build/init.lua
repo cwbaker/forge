@@ -15,10 +15,11 @@ end
 build = {};
 
 require "build/default_settings";
-require "build/Lua";
+require "build/Generate";
 require "build/PrecompiledHeader";
 require "build/Directory";
-require "build/Cxx";
+require "build/Copy";
+require "build/Cc";
 require "build/StaticLibrary";
 require "build/DynamicLibrary";
 require "build/Executable";
@@ -30,6 +31,7 @@ function build.initialize( project_settings )
     platform = platform or build.switch { operating_system(); windows = "msvc"; macosx = "llvmgcc" };
     variant = variant or "debug";
     version = version or "%s %s %s" % { os.date("%Y.%m.%d.%H%M"), platform, variant };
+    environment = environment or "dev";
     goal = goal or "";
     jobs = jobs or 4;
 
@@ -100,7 +102,7 @@ function build.version_time( version )
     return os.time( build.version_date(version) );
 end
 
--- Convert a version string into the number of hours passed since the 
+-- Convert a version string into the number of half days passed since the 
 -- reference time of 2013/01/01 00:00 (assuming that the version string is of
 -- the form '%Y.%m.%d.%H%M').
 function build.version_code( version )
@@ -186,7 +188,7 @@ function build.switch( values )
 end
 
 -- Provide shell like string interpolation.
-function build.interpolate(template, variables)
+function build.interpolate( template, variables )
     return (template:gsub('($%b{})', function(word) return variables[word:sub(3, -2)] or word end));
 end
 
@@ -318,13 +320,11 @@ function build.load()
         cache_target:add_dependency( file(root("build.lua")) );
         cache_target:add_dependency( file(root("local_settings.lua")) );
         cache_target:add_dependency( file(script("build")) );
+        cache_target:add_dependency( file(script("build/default_settings")) );
+        cache_target:add_dependency( file(script("build/Generate")) );
         cache_target:add_dependency( file(script("build/PrecompiledHeader")) );
         cache_target:add_dependency( file(script("build/Directory")) );
-        cache_target:add_dependency( file(script("build/Compile")) );
-        cache_target:add_dependency( file(script("build/Archive")) );
-        cache_target:add_dependency( file(script("build/Link")) );
-        cache_target:add_dependency( file(script("build/Lipo")) );
-        cache_target:add_dependency( file(script("build/Source")) );
+        cache_target:add_dependency( file(script("build/Copy")) );
         cache_target:add_dependency( file(script("build/StaticLibrary")) );
         cache_target:add_dependency( file(script("build/DynamicLibrary")) );
         cache_target:add_dependency( file(script("build/Executable")) );
@@ -362,6 +362,17 @@ function build.script( name )
         end
     end
     return nil;
+end
+
+-- Strip the extension from a path (e.g. "foo.txt" -> "foo" and "bar/foo.txt"
+-- -> "bar/foo".
+function build.strip( path )
+    local branch = branch( path );
+    if branch ~= "" then 
+        return string.format( "%s/%s", branch, basename(path) );
+    else
+        return basename( path );
+    end
 end
 
 -- Return a string for a specific indentation level.
@@ -413,22 +424,47 @@ function build.end_target( create )
     local level = build.level - 1;
     build.level = level;    
 
-    local result;
     if level == 0 then
-        result = build.expand_target( create );
+        return build.expand_target( create );
     else
-        result = create;
+        return create;
     end
-    return result;
 end
 
 function build.expand_target( create, ... )
     return create( ... );
 end
 
+function build.add_unit_dependencies( definition, prototype )
+    return function( architecture )
+        local unit;
+        local settings = build.push_settings( definition.settings );
+        if build.built_for_platform_and_variant(settings) then
+            unit = target( "", prototype, build.copy(definition) );
+            unit.settings = settings;
+            unit.architecture = architecture;
+
+            for _, value in ipairs(unit) do
+                local source_file = file( value );
+                source_file:set_required_to_exist( true );
+                source_file.unit = unit;
+                source_file.settings = settings;
+
+                local object = file( "%s/%s/%s" % {obj_directory(source_file), architecture, obj_name(value)} );
+                object.source = value;
+                object:add_dependency( source_file );
+                object:add_dependency( Directory("%s/%s" % {obj_directory(source_file), architecture}) );
+                unit:add_dependency( object );
+            end
+        end
+        build.pop_settings();        
+        return unit;
+    end
+end
+
 function build.add_library_dependencies( target )
     local libraries = {};
-    if target.libraries then
+    if platform ~= "" and target.libraries then
         for _, value in ipairs(target.libraries) do
             local library = find_target( root(module_name(value, target.architecture)) );
             assert( library, "Failed to find library '%s' for '%s'" % {value, relative(target:path(), root())} );
@@ -453,7 +489,10 @@ function build.add_module_dependencies( target, filename, architecture, settings
         target.settings = settings;
         target.architecture = architecture;
         target:set_filename( filename );
-        target:add_dependency( Directory(branch(filename)) );        
+        target:add_dependency( Directory(branch(filename)) );
+        if target:prototype() == DynamicLibraryPrototype and operating_system() == "windows" then 
+            target:add_dependency( Directory(target.settings.lib) );
+        end
 
         for _, dependency in ipairs(target) do 
             if type(dependency) == "function" then
@@ -498,7 +537,7 @@ end
 function build.expand( values )
     if type(values) == "string" then
         local result = {};
-        for value in string.gmatch(values, "%w+") do 
+        for value in string.gmatch(values, "[_/%.%w]+") do 
             table.insert( result, value );
         end
         return result;
@@ -524,3 +563,60 @@ function build.copy( value )
     end
     return copied_table;
 end
+
+function build.Pushd( directory )
+    pushd( directory );
+    return function()
+        pushd( directory );
+        return nil;
+    end
+end
+
+function build.Popd()
+    popd();
+    return function()
+        popd();
+        return nil;
+    end
+end
+
+function build.obj_directory( target )
+    return "%s/%s_%s/%s" % { target.settings.obj, platform, variant, relative(target:get_working_directory():path(), root()) };
+end;
+
+function build.cc_name( name )
+    return "%s.c" % basename( name );
+end;
+
+function build.cxx_name( name )
+    return "%s.cpp" % basename( name );
+end;
+
+function build.obj_name( name, architecture )
+    return "%s.o" % basename( name );
+end;
+
+function build.lib_name( name, architecture )
+    return "lib%s_%s_%s.a" % { name, architecture, variant };
+end;
+
+function build.dll_name( name )
+    return "%s.dylib" % { name };
+end;
+
+function build.exe_name( name, architecture )
+    return "%s_%s" % { name, architecture };
+end;
+
+function build.module_name( name, architecture )
+    return "%s_%s" % { name, architecture };
+end
+
+obj_directory = build.obj_directory;
+cc_name = build.cc_name;
+cxx_name = build.cxx_name;
+obj_name = build.obj_name;
+lib_name = build.lib_name;
+dll_name = build.dll_name;
+exe_name = build.exe_name;
+module_name = build.module_name;

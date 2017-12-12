@@ -4,7 +4,7 @@ Executable "cmdline_test" {
         "sweet/cmdline/cmdline",
         "sweet/error/error",
         "sweet/assert/assert",
-        "sweet/unit/libUnitTest"
+        "unit/libUnitTest"
     };
 
     Cxx {
