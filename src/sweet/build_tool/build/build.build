@@ -1,5 +1,5 @@
 
-local build = build:configure {
+local settings =  {
     subsystem = "CONSOLE"; 
     stack_size = 32768; 
     architectures = { "x86_64" };
@@ -7,21 +7,33 @@ local build = build:configure {
     defines = { "BOOST_ALL_NO_LIB" };
 };
 
+-- Disable warnings on Linux to avoid unused variable warnings in Boost
+-- System library headers.
+if build:operating_system() == "linux" then
+    settings.warning_level = 0;
+end
+
+local build = build:configure( settings );
 build:all {
     build:Executable "build" {
         libraries = {    
-            "boost/libs/filesystem/src/boost_filesystem",
-            "boost/libs/system/src/boost_system",
             "sweet/build_tool/build_tool",
             "sweet/build_tool/build_tool_lua/build_tool_lua",
-            "sweet/cmdline/cmdline",
-            "sweet/lua/lua",
-            "lua/liblua",
             "sweet/process/process",
-            "sweet/rtti/rtti",
             "sweet/persist/persist",
+            "sweet/lua/lua",
+            "sweet/cmdline/cmdline",
+            "sweet/rtti/rtti",
             "sweet/error/error",
-            "sweet/assert/assert"
+            "sweet/assert/assert",
+            "lua/liblua",
+            "boost/libs/filesystem/src/boost_filesystem",
+            "boost/libs/system/src/boost_system",
+        };
+
+        system_libraries = build:switch {
+            platform;
+            linux = { "pthread", "dl" };
         };
         
         build:Cxx () {

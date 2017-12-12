@@ -11,6 +11,8 @@
 
 #if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
+#elif defined(BUILD_OS_LINUX)
+#include <signal.h>
 #elif defined(BUILD_OS_ANDROID)
 #include <android/log.h>
 #include <signal.h>
@@ -25,6 +27,8 @@ void sweet_break()
     DebugBreak();
 #elif defined(BUILD_OS_MACOSX)
     asm( "int $3" );
+#elif defined(BUILD_OS_LINUX)
+    raise( SIGABRT );
 #elif defined(BUILD_OS_ANDROID)
     raise( SIGABRT );
 #endif

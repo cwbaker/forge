@@ -147,7 +147,7 @@ function android.initialize( settings )
     
     for _, architecture in ipairs(settings.android.architectures) do 
         build:default_build( ("cc_android_%s"):format(architecture), build:configure {
-            obj = ("%s/obj/cc_android_%s"):format( settings.obj, architecture );
+            obj = ("%s/cc_android_%s"):format( settings.obj, architecture );
             platform = "android";
             architecture = architecture;
             default_architecture = architecture;
@@ -191,6 +191,7 @@ function android.cc( target )
         "-D__ARM_ARCH_5TE__",
         "-DANDROID"
     };
+
     gcc.append_defines( target, flags );
     gcc.append_version_defines( target, flags );
 
@@ -200,6 +201,23 @@ function android.cc( target )
     for _, directory in ipairs(android.include_directories(target.settings, target.architecture)) do
         assert( build:exists(directory), ("The include directory '%s' does not exist"):format(directory) );
         table.insert( flags, ([[-I"%s"]]):format(directory) );
+    end
+
+    table.insert( flags, "-ffunction-sections" );
+    table.insert( flags, "-funwind-tables" );
+    table.insert( flags, "-no-canonical-prefixes" );
+    table.insert( flags, "-fomit-frame-pointer" );
+    table.insert( flags, "-fno-strict-aliasing" );
+    table.insert( flags, "-finline" );
+    table.insert( flags, "-finline-limit=64" );
+    table.insert( flags, "-Wa,--noexecstack" );
+
+    local language = target.language or "c++";
+    if language then
+        if string.find(language, "c++", 1, true) then
+            table.insert( flags, "-Wno-deprecated" );
+            table.insert( flags, "-fpermissive" );
+        end
     end
 
     gcc.append_compile_flags( target, flags );
@@ -321,30 +339,33 @@ function android.clean_executable( target )
     build:rmdir( settings.obj_directory(target) );
 end
 
+-- Find the first Android .apk package found in the dependencies of the
+-- passed in directory.
+function android.find_apk( directory )
+    local directory = directory or build:find_target( build:initial("all") );
+    for _, dependency in directory:dependencies() do
+        if dependency:prototype() == android.Apk then 
+            return dependency;
+        end
+    end
+end
+
 -- Deploy the fist Android .apk package found in the dependencies of the 
 -- current working directory.
-function android.deploy( directory )
+function android.deploy( apk )
     local sdk_directory = build.settings.android.sdk_directory;
     if sdk_directory then 
-        local directory = directory or build:find_target( build:initial() );
-        local apk = nil;
-        for _, dependency in directory:dependencies() do
-            if dependency:prototype() == android.Apk then 
-                apk = dependency;
-                break;
-            end
-        end
-        assertf( apk, "No android.Apk target found as a dependency of '%s'", directory:path() );
+        assertf( apk, "No android.Apk target to deploy" );
         local adb = ("%s/platform-tools/adb"):format( sdk_directory );
         assertf( build:is_file(adb), "No 'adb' executable found at '%s'", adb );
 
         local device_connected = false;
         local function adb_get_state_filter( state )
+            printf( "adb_get_state_filter(), state=%s", state );
             device_connected = string.find( state, "device" ) ~= nil;
         end
         build:system( adb, ('adb get-state'), android.environment, nil, adb_get_state_filter );
         if device_connected then
-            printf( "Deploying '%s'...", apk:filename() );
             build:system( adb, ('adb install -r "%s"'):format(apk:filename()), android.environment );
         end
     end

@@ -61,23 +61,21 @@ function App.build( build, target )
         build:cp( embedded_provisioning_profile, provisioning_profile );
     end
 
-    if platform == "ios" then
-        local command_line = {
-            "codesign";
-            ('-s "%s"'):format( _G.signing_identity or target.settings.ios.signing_identity );
-            "--force";
-            "--no-strict";
-            "-vv";
-            ('"%s"'):format( target );
-        };
-        local entitlements = target.entitlements;
-        if entitlements then 
-            table.insert( command_line, ('--entitlements "%s"'):format(entitlements) );
-        end
-
-        local codesign = target.settings.ios.codesign;
-        build:system( codesign, table.concat(command_line, " "), environment );
+    local command_line = {
+        "codesign";
+        ('-s "%s"'):format( _G.signing_identity or target.settings.ios.signing_identity );
+        "--force";
+        "--no-strict";
+        "-vv";
+        ('"%s"'):format( target );
+    };
+    local entitlements = target.entitlements;
+    if entitlements then 
+        table.insert( command_line, ('--entitlements "%s"'):format(entitlements) );
     end
+
+    local codesign = target.settings.ios.codesign;
+    build:system( codesign, table.concat(command_line, " "), environment );
 end
 
 function App.clean( build, target )

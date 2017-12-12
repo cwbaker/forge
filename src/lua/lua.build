@@ -13,8 +13,9 @@ for _, build in build:default_builds("cc_.*") do
         build:Cc () {
             defines = build:switch { 
                 build:operating_system();
-                windows = { "_CRT_SECURE_NO_DEPRECATE" };
+                linux = { "LUA_USE_POSIX", "LUA_USE_DLOPEN" };
                 macosx = { "LUA_USE_POSIX", "LUA_USE_DLOPEN" };
+                windows = { "_CRT_SECURE_NO_DEPRECATE" };
             };
             "lapi.c",
             "lauxlib.c",
@@ -66,9 +67,7 @@ if build:platform_matches("macosx") or build:platform_matches("windows") then
                     "lua/liblua"
                 };
                 build:Cc () {
-                    defines = { 
-                        "_CRT_SECURE_NO_DEPRECATE" 
-                    };
+                    defines = { "_CRT_SECURE_NO_DEPRECATE" };
                     "luac.c"
                 };
             };        
@@ -86,9 +85,7 @@ if build:platform_matches("macosx") or build:platform_matches("windows") then
                 "lua/liblua"
             };        
             build:Cc () {
-                defines = { 
-                    "_CRT_SECURE_NO_DEPRECATE" 
-                };
+                defines = { "_CRT_SECURE_NO_DEPRECATE" };
                 "lua.c"
             };
         };

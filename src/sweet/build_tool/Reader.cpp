@@ -220,7 +220,7 @@ size_t Reader::read( intptr_t fd_or_handle, void* buffer, size_t length ) const
     }
     return read;
 
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
     int fd = (int) fd_or_handle;
     SWEET_ASSERT( fd >= 0 );
 
@@ -243,7 +243,7 @@ void Reader::close( intptr_t fd_or_handle ) const
 #if defined(BUILD_OS_WINDOWS)
     HANDLE handle = (HANDLE) fd_or_handle;
     ::CloseHandle( handle );
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
     int fd = (int) fd_or_handle;
     ::close( fd );
 #endif

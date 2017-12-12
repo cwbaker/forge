@@ -1,13 +1,21 @@
 
 for _, build in build:default_builds("cc_.*") do
-    local build = build:configure {
+    local settings =  {
         defines = {
             "_CRT_SECURE_NO_DEPRECATE",
             "_SCL_SECURE_NO_DEPRECATE",
             "_WIN32_WINNT=0x0500",
             "WIN32_LEAN_AND_MEAN"
-        }
+        };
     };
+
+    -- Disable warnings on Linux to avoid unused variable warnings in Boost
+    -- System library headers.
+    if build:operating_system() == "linux" then
+        settings.warning_level = 0;
+    end
+
+    local build = build:configure( settings );
     build:Library "build_tool_lua" {
         build:Cxx () {
             -- Disable automatic linking to Boost libraries.

@@ -150,12 +150,18 @@ const char* Error::format( int oserror, char* buffer, unsigned int length )
         buffer[actual_length] = 0;
         --actual_length;
     }
+    return buffer;
 #elif defined(BUILD_OS_MACOSX)
-    strerror_r( oserror, buffer, length );
+    int result = strerror_r( oserror, buffer, length );
+    (void) result;
+    return buffer;
+#elif defined(BUILD_OS_LINUX)
+    return strerror_r( oserror, buffer, length );
 #else
     (void) oserror;
     (void) buffer;
     (void) length;
-#endif
+    memset( buffer, 0, length );
     return buffer;
+#endif
 }

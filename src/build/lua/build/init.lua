@@ -166,10 +166,12 @@ function build:initialize( project_settings )
     jobs = jobs or 4;
 
     self:set_maximum_parallel_jobs( jobs );
-    if self:operating_system() == "windows" then 
-        self:set_build_hooks_library( self:executable("build_hooks.dll") );
+    if self:operating_system() == "linux" then
+        self:set_build_hooks_library( self:executable("libbuild_hooks.so") );
     elseif self:operating_system() == "macosx" then
         self:set_build_hooks_library( self:executable("build_hooks.dylib") );
+    elseif self:operating_system() == "windows" then 
+        self:set_build_hooks_library( self:executable("build_hooks.dll") );
     end    
 
     -- Set default settings (all other settings inherit from this table).

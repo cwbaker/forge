@@ -3,6 +3,7 @@
 // Copyright (c) Charles Baker.  All rights reserved
 //
 
+#include <stdio.h>
 #include "stdafx.hpp"
 #include "Process.hpp"
 #include "Environment.hpp"
@@ -13,7 +14,7 @@
 #include <windows.h>
 #endif
 
-#if defined(BUILD_OS_MACOSX)
+#if defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
 #include <sweet/cmdline/Splitter.hpp>
 #include <spawn.h>
 #include <unistd.h>
@@ -43,12 +44,14 @@ Process::Process()
   inherit_environment_( false ),
 #if defined(BUILD_OS_WINDOWS)
   process_( INVALID_HANDLE_VALUE ),
-  stdout_( INVALID_HANDLE_VALUE ),
   suspended_thread_( INVALID_HANDLE_VALUE )
 #elif defined(BUILD_OS_MACOSX)
   process_( 0 ),
   exit_code_( 0 ),
   suspended_( false )
+#elif defined(BUILD_OS_LINUX)
+  process_( 0 ),
+  exit_code_( 0 )
 #endif
 {
 }
@@ -76,12 +79,15 @@ Process::~Process()
         }
     }
 
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
     if ( process_ != 0 )
     {
-        int status = 0;
-        waitpid( process_, &status, 0 );
         process_ = 0;
+        pid_t result = waitpid( process_, &exit_code_, 0 );
+        while ( result < 0 && errno == EINTR )
+        {
+            result = waitpid( process_, &exit_code_, 0 );
+        }
     }
 
     for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
@@ -155,7 +161,7 @@ intptr_t Process::pipe( int child_fd )
     {
         char error [1024];
         error::Error::format( ::GetLastError(), error, sizeof(error) );
-        SWEET_ERROR( CreatingPipeFailedError("Creating stdout for '%s' failed - %s", executable_, error) );
+        SWEET_ERROR( CreatingPipeFailedError("Creating pipe for '%s' failed - %s", executable_, error) );
     }
     ::SetHandleInformation( read_fd, HANDLE_FLAG_INHERIT, 0 );
 
@@ -163,14 +169,14 @@ intptr_t Process::pipe( int child_fd )
     pipe.write_fd = (intptr_t) write_fd;
     return pipe.read_fd;
 
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
     int fds [2] = { -1, -1 };
     int result = ::pipe( fds );
     if ( result != 0 )
     {
         char error [1024];
         error::Error::format( errno, error, sizeof(error) );
-        SWEET_ERROR( CreatingPipeFailedError("Creating stdout for '%s' failed - %s", executable_, error) );
+        SWEET_ERROR( CreatingPipeFailedError("Creating pipe for '%s' failed - %s", executable_, error) );
     }
     pipes_.push_back( Pipe() );
     Pipe& pipe = pipes_.back();
@@ -300,6 +306,7 @@ void Process::run( const char* arguments )
 
     posix_spawnattr_t attributes;
     posix_spawnattr_init( &attributes );
+
     if ( start_suspended_ )
     {
         posix_spawnattr_setflags( &attributes, POSIX_SPAWN_START_SUSPENDED );
@@ -339,6 +346,69 @@ void Process::run( const char* arguments )
     }
 
     process_ = pid;
+#elif defined(BUILD_OS_LINUX)
+    process_ = fork();
+    if ( process_ == -1 )
+    {
+        for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
+        {
+            close( pipe->read_fd );
+            pipe->read_fd = -1;
+        }
+
+        char message [256];
+        SWEET_ERROR( ExecutingProcessFailedError("Fork failed - %s", Error::format(errno, message, sizeof(message))) );
+    }
+    else if ( process_ == 0 )
+    {
+        if ( directory_ )
+        {
+            int result = chdir( directory_ );
+            if ( result != 0 )
+            {
+                char message [256];
+                fprintf( stderr, "Changing directory to '%s' failed - %s\n", directory_, Error::format(errno, message, sizeof(message)) );
+                _exit( errno );
+            }
+        }
+
+        for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
+        {
+            close( pipe->read_fd );
+            dup2( pipe->write_fd, pipe->child_fd );
+            close( pipe->write_fd );
+        }
+
+        cmdline::Splitter splitter( arguments );
+
+        char* const* envp = NULL;
+        if ( inherit_environment_ )
+        {
+            envp = environ;
+        }
+        else if ( environment_ )
+        {
+            envp = environment_->values();
+        }
+
+        int result = execve( executable_, &splitter.arguments()[0], envp );
+
+        // Ignore any returned result as any call to `execve()` that returns 
+        // is a failure.
+        (void) result;
+        char message [256];
+        fprintf( stderr, "Executing '%s' failed - %s\n", executable_, Error::format(errno, message, sizeof(message)) );
+        _exit( errno );
+    }
+    else
+    {
+        // Close write ends of pipes in the parent process.
+        for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
+        {
+            close( pipe->write_fd );
+            pipe->write_fd = -1;
+        }
+    }
 #endif    
 }
 
@@ -418,7 +488,7 @@ void Process::wait()
         SWEET_ERROR( WaitForProcessFailedError("Waiting for a process failed - %s", error) );
     }
 
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
     SWEET_ASSERT( process_ != 0 );
 
     pid_t result = waitpid( process_, &exit_code_, 0 );
@@ -456,7 +526,7 @@ int Process::exit_code()
     }
 
     return exit_code;
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
     SWEET_ASSERT( process_ == 0 );
     return exit_code_;
 #endif

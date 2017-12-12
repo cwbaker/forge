@@ -13,6 +13,9 @@
 #include <unistd.h>
 #include <time.h>
 #include <mach-o/dyld.h>
+#elif defined(BUILD_OS_LINUX)
+#include <unistd.h>
+#include <linux/limits.h>
 #endif
 
 using std::string;
@@ -153,6 +156,16 @@ std::string System::executable()
     char path [size];
     _NSGetExecutablePath( path, &size );
     return boost::filesystem::path( string(path, size) ).generic_string();
+#elif defined(BUILD_OS_LINUX)
+    char path [PATH_MAX];
+    ssize_t length = readlink( "/proc/self/exe", path, sizeof(path) );
+    if ( length >= 0 )
+    {
+        return boost::filesystem::path( string(path, length) ).generic_string();
+    }
+    return string();
+#else
+    return string();
 #endif
 }
 
@@ -164,6 +177,8 @@ std::string System::home()
 #if defined (BUILD_OS_WINDOWS)
     const char* HOME = "USERPROFILE";
 #elif defined (BUILD_OS_MACOSX)
+    const char* HOME = "HOME";
+#elif defined (BUILD_OS_LINUX)
     const char* HOME = "HOME";
 #else
 #error "ScriptInterface::home() is not implemented for this platform"
@@ -232,6 +247,9 @@ const char* System::operating_system()
     return "windows";
 #elif defined(BUILD_OS_MACOSX)
     return "macosx";
+
+#elif defined(BUILD_OS_LINUX)
+    return "linux";
 #else
 #error "System::operating_system() is not implemented for this platform"
 #endif
@@ -268,6 +286,8 @@ void System::sleep( float milliseconds )
     SWEET_ASSERT( false );
     const float MICROSECONDS_PER_MILLISECOND = 1000.0f;
     usleep( milliseconds * MICROSECONDS_PER_MILLISECOND );
+#elif defined(BUILD_OS_LINUX)
+    usleep( milliseconds * 1000.0f );
 #else
 #error "System::sleep() is not implemented for this platform"
 #endif
@@ -284,6 +304,8 @@ float System::ticks()
 #if defined(BUILD_OS_WINDOWS)
     return static_cast<float>( ::GetTickCount() ) - initial_tick_count_;
 #elif defined(BUILD_OS_MACOSX)
+    return static_cast<float>( (clock() - initial_tick_count_) * 1000 / CLOCKS_PER_SEC );
+#elif defined(BUILD_OS_LINUX)
     return static_cast<float>( (clock() - initial_tick_count_) * 1000 / CLOCKS_PER_SEC );
 #else
 #error "System::ticks() is not implemented for this platform"

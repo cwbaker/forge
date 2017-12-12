@@ -118,6 +118,7 @@ void Executor::thread_execute( const std::string& command, const std::string& co
     
     try
     {
+        environment = inject_build_hooks_linux( environment, dependencies_filter != NULL );
         environment = inject_build_hooks_macosx( environment, dependencies_filter != NULL );
         if ( environment )
         {
@@ -216,6 +217,24 @@ void Executor::stop()
     }
 }
 
+process::Environment* Executor::inject_build_hooks_linux( process::Environment* environment, bool dependencies_filter_exists ) const
+{
+#if defined(BUILD_OS_LINUX)
+    if ( !build_hooks_library_.empty() && dependencies_filter_exists )
+    {
+        if ( !environment )
+        {
+            environment = new process::Environment;
+        }
+        environment->append( "LD_PRELOAD", build_hooks_library_.c_str() );
+    }
+#else
+    (void) environment;
+    (void) dependencies_filter_exists;
+#endif
+    return environment;
+}
+
 process::Environment* Executor::inject_build_hooks_macosx( process::Environment* environment, bool dependencies_filter_exists ) const
 {
 #if defined(BUILD_OS_MACOSX)
@@ -228,6 +247,9 @@ process::Environment* Executor::inject_build_hooks_macosx( process::Environment*
         environment->append( "DYLD_FORCE_FLAT_NAMESPACE", "1" );
         environment->append( "DYLD_INSERT_LIBRARIES", build_hooks_library_.c_str() );
     }
+#else
+    (void) environment;
+    (void) dependencies_filter_exists;
 #endif
     return environment;
 }

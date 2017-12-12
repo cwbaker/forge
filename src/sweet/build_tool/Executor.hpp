@@ -66,6 +66,7 @@ class Executor
         void thread_execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* dependencies_filter, lua::LuaValue* stdout_filter, lua::LuaValue* stderr_filter, Arguments* arguments, Target* working_directory, Context* context );
         void start();
         void stop();
+        process::Environment* inject_build_hooks_linux( process::Environment* environment, bool dependencies_filter_exists ) const;
         process::Environment* inject_build_hooks_macosx( process::Environment* environment, bool dependencies_filter_exists ) const;
         void inject_build_hooks_windows( process::Process* process, intptr_t write_dependencies_pipe ) const;
         void initialize_build_hooks_windows() const;

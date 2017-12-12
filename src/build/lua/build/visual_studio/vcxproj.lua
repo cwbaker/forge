@@ -90,7 +90,7 @@ local function generate_property_groups( target, write )
     <NMakeIncludeSearchPath>%s</NMakeIncludeSearchPath>
   </PropertyGroup>
 ]];
-    local build_tool = native( relative(root("build/build.exe")) );
+    local build_tool = native( relative(build:executable("build.exe")) );
     for _, platform in ipairs(target.settings.platforms) do
         for _, variant in ipairs(target.settings.variants) do
             local variant_settings = target.settings.settings_by_variant[variant];

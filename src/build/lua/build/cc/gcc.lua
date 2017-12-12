@@ -1,9 +1,11 @@
 
 gcc = {};
 
-gcc.arch_by_architecture = {
-    armv5 = "armv5te";
-    armv7 = "armv7";
+gcc.flags_by_architecture = {
+    armv5 = "-march=armv5te -mtune=xscale -mthumb";
+    armv7 = "-march=armv7 -mtune=xscale -mthumb";
+    armv8 = "-march=armv8-a -mtune=xscale -mthumb";
+    x86_64 = "";
 };
 
 function gcc.append_defines( target, flags )
@@ -56,19 +58,8 @@ end
 
 function gcc.append_compile_flags( target, flags )
     table.insert( flags, "-c" );
-    table.insert( flags, ("-march=%s"):format(gcc.arch_by_architecture[target.architecture]) );
+    table.insert( flags, gcc.flags_by_architecture[target.architecture] );
     table.insert( flags, "-fpic" );
-    table.insert( flags, "-ffunction-sections" );
-    table.insert( flags, "-funwind-tables" );
-    table.insert( flags, "-no-canonical-prefixes" );
-    table.insert( flags, "-fomit-frame-pointer" );
-    table.insert( flags, "-fno-strict-aliasing" );
-    table.insert( flags, "-finline" );
-    table.insert( flags, "-finline-limit=64" );
-    table.insert( flags, "-mtune=xscale" );
-    table.insert( flags, "-msoft-float" );
-    table.insert( flags, "-mthumb" );
-    table.insert( flags, "-Wa,--noexecstack" );
     table.insert( flags, "-MMD" );
     
     local language = target.language or "c++";
@@ -76,9 +67,6 @@ function gcc.append_compile_flags( target, flags )
         table.insert( flags, ("-x %s"):format(language) );
         if string.find(language, "c++", 1, true) then
             table.insert( flags, "-std=c++11" );
-            -- table.insert( flags, "-stdlib=libc++" );
-            table.insert( flags, "-Wno-deprecated" );
-            table.insert( flags, "-fpermissive" );
             if target.settings.exceptions then
                 table.insert( flags, "-fexceptions" );
             end
@@ -136,19 +124,19 @@ function gcc.append_library_directories( target, library_directories )
 end
 
 function gcc.append_link_flags( target, flags )
-    table.insert( flags, ("-march=%s"):format(gcc.arch_by_architecture[target.architecture]) );
+    table.insert( flags, gcc.flags_by_architecture[target.architecture] );
     table.insert( flags, "-std=c++11" );
 
-    if target:prototype() == DynamicLibrary then
+    if target:prototype() == build.DynamicLibrary then
         table.insert( flags, "-shared" );
     end
     
     if target.settings.verbose_linking then
-        table.insert( flags, "--verbose" );
+        table.insert( flags, "-verbose" );
     end
     
     if target.settings.debug then
-        table.insert( flags, "-debug" );
+        table.insert( flags, "-g" );
     end
 
     -- The latest GCC with Android (or clang with iOS) doesn't recognize 

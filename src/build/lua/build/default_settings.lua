@@ -2,11 +2,13 @@
 local platforms_by_operating_system = {
     windows = { "android", "windows" };
     macosx = { "android", "ios", "ios_simulator", "macosx" };
+    linux = { "linux" };
 };
 
 local path_separator_by_operating_system = {
     windows = ";";
     macosx = ":";
+    linux = ":";
 };
 
 return {
@@ -101,6 +103,16 @@ return {
             iphoneos_deployment_target = "7.0";
             targeted_device_family = "1,2";
             provisioning_profile = build:home( "sweet/sweet_software/dev.mobileprovision" );
+        };
+
+        ["linux"] = {
+            default_architecture = "x86_64";
+            architectures = { 
+                "x86_64" 
+            };
+            variants = {
+                "debug", "release", "shipping"
+            };
         };
 
         ["windows"] = {

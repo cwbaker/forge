@@ -5,7 +5,7 @@ function windows.initialize( settings )
     if build:operating_system() == "windows" then
         for _, architecture in ipairs(settings.architectures) do 
             build:default_build( ("windows-%s"):format(architecture), build:configure {
-                obj = ("%s/obj/cc_windows_%s"):format( settings.obj, architecture );
+                obj = ("%s/cc_windows_%s"):format( settings.obj, architecture );
                 architecture = architecture;
                 default_architecture = architecture;
                 cc = windows.cc;

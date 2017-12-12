@@ -2,3 +2,5 @@
 *.vcxproj
 *.user
 *.filters
+
+*.o

@@ -3,6 +3,10 @@
 // Copyright (c) Charles Baker.  All rights reserved.
 //
 
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+
 #include "Environment.hpp"
 #include <sweet/assert/assert.hpp>
 

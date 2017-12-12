@@ -103,7 +103,7 @@ end;
 function ios.initialize( settings )
     for _, architecture in ipairs(settings.ios.architectures) do 
         build:default_build( ("cc_ios_%s"):format(architecture), build:configure {
-            obj = ("%s/obj/cc_ios_%s"):format( settings.obj, architecture );
+            obj = ("%s/cc_ios_%s"):format( settings.obj, architecture );
             platform = "ios";
             architecture = architecture;
             default_architecture = architecture;
@@ -256,20 +256,23 @@ function ios.lipo_executable( target )
     build:system( xcrun, ('xcrun --sdk %s lipo -create -output "%s" "%s"'):format(sdk, target:filename(), executables) );
 end
 
+-- Find the first iOS .app bundle found in the dependencies of the
+-- passed in directory.
+function ios.find_app( directory )
+    local directory = directory or build:find_target( build:initial("all") );
+    for _, dependency in directory:dependencies() do
+        if dependency:prototype() == ios.App then 
+            return dependency;
+        end
+    end
+end
+
 -- Deploy the fist iOS .app bundle found in the dependencies of the current
 -- working directory.
-function ios.deploy( directory )
+function ios.deploy( app )
     local ios_deploy = build.settings.ios.ios_deploy;
     if ios_deploy then 
-        local directory = directory or find_target( initial("all") );
-        local app = nil;
-        for _, dependency in directory:dependencies() do
-            if dependency:prototype() == ios.App then 
-                app = dependency;
-                break;
-            end
-        end
-        assertf( app, "No ios.App target found as a dependency of '%s'", directory:path() );
+        assertf( app, "No ios.App target to deploy" );
         assertf( build:is_file(ios_deploy), "No 'ios-deploy' executable found at '%s'", ios_deploy );
         build:system( ios_deploy, ('ios-deploy --timeout 1 --bundle "%s"'):format(app:filename()) );
     else

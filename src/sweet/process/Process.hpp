@@ -3,8 +3,9 @@
 
 #include "declspec.hpp"
 #include <vector>
+#include <stdint.h>
 
-#if defined(BUILD_OS_MACOSX)
+#if defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
 #include <sys/types.h>
 #endif
 
@@ -46,7 +47,6 @@ class SWEET_PROCESS_DECLSPEC Process
 
 #if defined(BUILD_OS_WINDOWS)
     void* process_; ///< The handle to this Process.
-    void* stdout_; ///< The handle to the pipe used to read from stdout and stderr for this Process.
     void* suspended_thread_; ///< The handle to the suspended main thread of this Process.
 #endif
 
@@ -54,6 +54,11 @@ class SWEET_PROCESS_DECLSPEC Process
     pid_t process_;
     int exit_code_;
     bool suspended_;
+#endif
+
+#if defined(BUILD_OS_LINUX)
+    pid_t process_;
+    int exit_code_;
 #endif
 
     public:

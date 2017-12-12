@@ -514,10 +514,17 @@ function xcode_build()
         local failures = default();
         assertf( failures == 0, "%d failures", failures );
         if failures == 0 then 
-            if platform == "ios" then
-                ios.deploy( build:find_target(build:initial("all")) );
-            elseif platform == "android" then
-                android.deploy( build:find_target(build:initial("all")) );
+            if build.ios then 
+                local app = ios.find_app();
+                if app then 
+                    ios.deploy( app );
+                end
+            end
+            if build.android then 
+                local apk = android.find_apk();
+                if apk then 
+                    android.deploy( apk );
+                end
             end
         end
     elseif action == "clean" then
