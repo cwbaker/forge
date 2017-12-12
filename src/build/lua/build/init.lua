@@ -605,32 +605,22 @@ end
 -- Load the dependency graph from the file specified by /settings.cache/ and
 -- running depend and bind passes over the target specified by /goal/ and its
 -- dependencies.
-function build.load( force )
-    local cache_target = build.load_binary( settings.cache );
-    if cache_target == nil or cache_target:outdated() or build.local_settings.updated or force then
-        build.clear();
-        build.push_settings( build.settings );
-        for _, filename in ipairs(build.default_buildfiles_) do
-            buildfile( filename );
-        end
-        build.pop_settings();
+function build.load()
+    build.load_binary( settings.cache );
 
-        cache_target = build.find_target( settings.cache );
-        assertf( cache_target, "No cache target found at '%s' after loading buildfiles", settings.cache );
-        cache_target:add_dependency( build.file(build.root("build.lua")) );
-        cache_target:add_dependency( build.file(build.script("build/default_settings")) );
-        cache_target:add_dependency( build.file(build.script("build/commands")) );
-        cache_target:add_dependency( build.file(build.script("build/Generate")) );
-        cache_target:add_dependency( build.file(build.script("build/Directory")) );
-        cache_target:add_dependency( build.file(build.script("build/Copy")) );
+    build.clear();
+    build.push_settings( build.settings );
+    for _, filename in ipairs(build.default_buildfiles_) do
+        buildfile( filename );
+    end
+    build.pop_settings();
 
-        -- Add default targets as dependencies of the working directory that
-        -- was in effect when `build.default_target(s)` was called.
-        for _, default_target in ipairs(build.default_targets_) do
-            local all = build.target( default_target[1] );
-            local target = build.target( default_target[2] );
-            all:add_dependency( target );
-        end
+    -- Add default targets as dependencies of the working directory that
+    -- was in effect when `build.default_target(s)` was called.
+    for _, default_target in ipairs(build.default_targets_) do
+        local all = build.target( default_target[1] );
+        local target = build.target( default_target[2] );
+        all:add_dependency( target );
     end
     
     local all = build.find_initial_target( goal );
