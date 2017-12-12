@@ -74,6 +74,7 @@ void LuaTargetPrototype::create_target_prototype( TargetPrototype* target_protot
         .metatable( *target_prototype_metatable_ )
         .this_pointer( target_prototype )
         ( "__index", target_prototype )
+        ( "__tostring", raw(LuaTarget::filename) )
     ;
     AddMember add_member = lua_->members( target_prototype );
     lua_target_->register_functions( add_member );

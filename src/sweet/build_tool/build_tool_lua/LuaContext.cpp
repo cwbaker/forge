@@ -70,7 +70,7 @@ int LuaContext::cd( lua_State* lua_state )
 {
     const int PATH = 1;
     size_t length = 0;
-    const char* path = luaL_checklstring( lua_state, PATH, &length );
+    const char* path = luaL_tolstring( lua_state, PATH, &length );
     BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
     SWEET_ASSERT( build_tool );
     build_tool->context()->change_directory( boost::filesystem::path(string(path, length)) );
@@ -81,7 +81,7 @@ int LuaContext::pushd( lua_State* lua_state )
 {
     const int PATH = 1;
     size_t length = 0;
-    const char* path = luaL_checklstring( lua_state, PATH, &length );
+    const char* path = luaL_tolstring( lua_state, PATH, &length );
     BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
     SWEET_ASSERT( build_tool );
     build_tool->context()->push_directory( boost::filesystem::path(string(path, length)) );
@@ -229,7 +229,7 @@ int LuaContext::lower( lua_State* lua_state )
 {
     const int STRING = 1;
     size_t length = 0;
-    const char* value = luaL_checklstring( lua_state, STRING, &length );
+    const char* value = luaL_tolstring( lua_state, STRING, &length );
     string lowercase_value;
     lowercase_value.reserve( length );
     while ( *value ) 
@@ -245,7 +245,7 @@ int LuaContext::upper( lua_State* lua_state )
 {
     const int STRING = 1;
     size_t length = 0;
-    const char* value = luaL_checklstring( lua_state, STRING, &length );
+    const char* value = luaL_tolstring( lua_state, STRING, &length );
     string uppercase_value;
     uppercase_value.reserve( length );
     while ( *value ) 
@@ -261,7 +261,7 @@ int LuaContext::native( lua_State* lua_state )
 {
     const int PATH = 1;
     size_t length = 0;
-    const char* path = luaL_checklstring( lua_state, PATH, &length );
+    const char* path = luaL_tolstring( lua_state, PATH, &length );
     string native_path = boost::filesystem::path( string(path, length) ).make_preferred().string();
     lua_pushlstring( lua_state, native_path.c_str(), native_path.length() );
     return 1;
@@ -271,7 +271,7 @@ int LuaContext::branch( lua_State* lua_state )
 {
     const int PATH = 1;
     size_t length = 0;
-    const char* path = luaL_checklstring( lua_state, PATH, &length ); 
+    const char* path = luaL_tolstring( lua_state, PATH, &length ); 
     string branch = boost::filesystem::path( string(path, length) ).parent_path().generic_string();
     lua_pushlstring( lua_state, branch.c_str(), branch.length() );
     return 1;
@@ -281,7 +281,7 @@ int LuaContext::leaf( lua_State* lua_state )
 {
     const int PATH = 1;
     size_t length = 0;
-    const char* path = luaL_checklstring( lua_state, PATH, &length );
+    const char* path = luaL_tolstring( lua_state, PATH, &length );
     string leaf = boost::filesystem::path( string(path, length) ).filename().generic_string();
     lua_pushlstring( lua_state, leaf.c_str(), leaf.length() );
     return 1;
@@ -307,7 +307,7 @@ int LuaContext::is_absolute( lua_State* lua_state )
 {
     const int PATH = 1;
     size_t length = 0;
-    const char* path = luaL_checklstring( lua_state, PATH, &length );
+    const char* path = luaL_tolstring( lua_state, PATH, &length );
     bool absolute = boost::filesystem::path( string(path, length) ).is_absolute();
     lua_pushboolean( lua_state, absolute ? 1 : 0 );
     return 1;
@@ -317,7 +317,7 @@ int LuaContext::is_relative( lua_State* lua_state )
 {
     const int PATH = 1;
     size_t length = 0;
-    const char* path = luaL_checklstring( lua_state, PATH, &length );
+    const char* path = luaL_tolstring( lua_state, PATH, &length );
     bool relative = boost::filesystem::path( string(path, length) ).is_relative();
     lua_pushboolean( lua_state, relative ? 1 : 0 );
     return 1;

@@ -42,7 +42,6 @@ public:
     void destroy_target( Target* target );
     void register_functions( lua::AddMember& add_member );
 
-private:
     Target* parent( Target* target );
     Target* target_working_directory( Target* target );
     Target* add_target( lua_State* lua_state );

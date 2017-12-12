@@ -142,10 +142,10 @@ int LuaFileSystem::rmdir( lua_State* lua_state )
 
 int LuaFileSystem::cp( lua_State* lua_state )
 {
-    const int FROM = 1;
-    const int TO = 2;
-    boost::filesystem::path from = absolute( lua_state, FROM );
+    const int TO = 1;
+    const int FROM = 2;
     boost::filesystem::path to = absolute( lua_state, TO );
+    boost::filesystem::path from = absolute( lua_state, FROM );
     boost::filesystem::copy_file( from, to );
     return 0;
 }
@@ -238,6 +238,6 @@ boost::filesystem::path LuaFileSystem::absolute( lua_State* lua_state, int index
     BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(BUILD_TOOL)) );
     SWEET_ASSERT( build_tool );
     size_t length = 0;
-    const char* path = luaL_checklstring( lua_state, index, &length );
+    const char* path = luaL_tolstring( lua_state, index, &length );
     return build_tool->absolute( string(path, length) );
 }

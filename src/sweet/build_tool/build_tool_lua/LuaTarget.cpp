@@ -48,6 +48,7 @@ void LuaTarget::create( lua::Lua* lua )
 
     target_metatable_->members()
         ( "__index", *target_prototype_ )
+        ( "__tostring", raw(&LuaTarget::filename) )
     ;
 }
 
