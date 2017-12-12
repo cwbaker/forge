@@ -21,7 +21,6 @@ function Apk.call( package, definition )
 
     for _, dependency in ipairs(definition) do 
         package:add_dependency( dependency );
-        dependency.module = package;
     end
 end
 

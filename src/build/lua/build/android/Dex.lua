@@ -15,7 +15,6 @@ function Dex.call( dex, definition )
     build.add_jar_dependencies( dex, definition.jars );
     for _, dependency in ipairs(definition) do 
         dex:add_dependency( dependency );
-        dependency.module = dex;
     end
     local proguard = definition.proguard;
     if proguard then 

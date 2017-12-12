@@ -104,7 +104,6 @@ local function generate_property_groups( target, write )
                 ('/DBUILD_PLATFORM_%s'):format( upper(platform) );
                 ('/DBUILD_VARIANT_%s'):format( upper(variant) );
                 ('/DBUILD_LIBRARY_SUFFIX="\\"_%s.lib\\""'):format( target.architecture );
-                ('/DBUILD_MODULE_%s'):format( upper(string.gsub(target:id(), "-", "_")) );
                 ('/DBUILD_LIBRARY_TYPE_%s'):format( upper(variant_settings.library_type) );
             };
             if variant_settings.defines then

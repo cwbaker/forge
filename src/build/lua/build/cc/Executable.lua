@@ -14,7 +14,6 @@ function Executable.call( executable, definition )
     build.merge( executable, definition );
     build.add_library_dependencies( executable, definition.libraries );
     for _, dependency in ipairs(definition) do 
-        dependency.module = executable;
         executable:add_dependency( dependency );
     end
 end

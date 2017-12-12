@@ -14,7 +14,6 @@ end
 function StaticLibrary.call( static_library, definition )
     build.merge( static_library, definition );
     for _, dependency in ipairs(definition) do 
-        dependency.module = static_library;
         static_library:add_dependency( dependency );
     end
 end

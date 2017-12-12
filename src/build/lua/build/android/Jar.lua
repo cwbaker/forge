@@ -13,7 +13,6 @@ function Jar.call( jar, definition )
     build.add_jar_dependencies( java, definition.jars );
     for _, dependency in ipairs(definition) do 
         jar:add_dependency( dependency );
-        dependency.module = jar;
     end
 end
 

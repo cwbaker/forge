@@ -15,7 +15,6 @@ function DynamicLibrary.call( dynamic_library, definition )
     build.merge( dynamic_library, definition );
     build.add_library_dependencies( dynamic_library, definition.libraries );
     for _, dependency in ipairs(definition) do 
-        dependency.module = dynamic_library;
         dynamic_library:add_dependency( dependency );
     end
 end

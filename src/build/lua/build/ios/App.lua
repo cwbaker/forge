@@ -21,7 +21,6 @@ function App.call( app, definition )
 
     for _, dependency in ipairs(definition) do 
         app:add_dependency( dependency );
-        dependency.module = app;
     end
 end
 

@@ -136,7 +136,6 @@ function msvc.append_defines( target, flags )
     table.insert( flags, ('/DBUILD_PLATFORM_%s'):format(build.upper(platform)) );
     table.insert( flags, ('/DBUILD_VARIANT_%s'):format(build.upper(variant)) );
     table.insert( flags, ('/DBUILD_LIBRARY_SUFFIX="\\"_%s.lib\\""'):format(target.architecture) );
-    table.insert( flags, ('/DBUILD_MODULE_%s'):format(build.upper(string.gsub(target.module:id(), "-", "_"))) );
     table.insert( flags, ('/DBUILD_LIBRARY_TYPE_%s'):format(build.upper(target.settings.library_type)) );
     table.insert( flags, '/D_CRT_SECURE_NO_WARNINGS' );
 
@@ -211,7 +210,7 @@ function msvc.append_compile_flags( target, flags )
     end
     
     if target.settings.debug then
-        local pdb = ("%s%s"):format(obj_directory(target), pdb_name(target.module:id()) );
+        local pdb = ("%s%s"):format(obj_directory(target), pdb_name(target:working_directory():id()) );
         table.insert( flags, ("/Zi /Fd%s"):format(build.native(pdb)) );
     end
 
