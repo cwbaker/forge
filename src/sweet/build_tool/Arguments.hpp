@@ -1,8 +1,9 @@
 #ifndef SWEET_BUILD_TOOL_ARGUMENTS_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_ARGUMENTS_HPP_INCLUDED
 
-#include <sweet/lua/LuaValue.hpp>
 #include <vector>
+
+struct lua_State;
 
 namespace sweet
 {
@@ -11,7 +12,6 @@ namespace lua
 {
 
 class AddParameter;
-class Lua;
 
 }
 
@@ -24,10 +24,12 @@ namespace build_tool
 */
 class Arguments
 {
-    std::vector<lua::LuaValue> arguments_; ///< The variable arguments to pass to match functions.
+    lua_State* lua_state_;
+    std::vector<int> arguments_; ///< The variable arguments passed through `execute()` and `postorder()` 
 
     public:
-        Arguments( lua::Lua& lua, lua_State* lua_state, int begin, int end );
+        Arguments( lua_State* lua_state, int begin, int end );
+        ~Arguments();
         void push_arguments( lua::AddParameter& add_parameter );
 };
 

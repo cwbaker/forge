@@ -45,7 +45,7 @@ Reader::~Reader()
     stop();
 }
 
-void Reader::read( intptr_t fd_or_handle, lua::LuaValue* filter, Arguments* arguments, Target* working_directory )
+void Reader::read( intptr_t fd_or_handle, Filter* filter, Arguments* arguments, Target* working_directory )
 {
     std::unique_lock<std::mutex> lock( jobs_mutex_ );
     jobs_.push_back( std::bind(&Reader::thread_read, this, fd_or_handle, filter, arguments, working_directory) );
@@ -89,7 +89,7 @@ void Reader::thread_process()
     }
 }
 
-void Reader::thread_read( intptr_t fd_or_handle, lua::LuaValue* filter, Arguments* arguments, Target* working_directory )
+void Reader::thread_read( intptr_t fd_or_handle, Filter* filter, Arguments* arguments, Target* working_directory )
 {
     SWEET_ASSERT( build_tool_ );
     

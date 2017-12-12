@@ -11,17 +11,11 @@
 namespace sweet
 {
 
-namespace lua
-{
-
-class LuaValue;
-
-}
-
 namespace build_tool
 {
 
 class Target;
+class Filter;
 class Arguments;
 class BuildTool;
 
@@ -39,12 +33,12 @@ class Reader
 public:
     Reader( BuildTool* build_tool );
     ~Reader();
-    void read( intptr_t fd_or_handle, lua::LuaValue* filter, Arguments* arguments, Target* working_directory );
+    void read( intptr_t fd_or_handle, Filter* filter, Arguments* arguments, Target* working_directory );
 
 private:
     static int thread_main( void* context );
     void thread_process();
-    void thread_read( intptr_t fd_or_handle, lua::LuaValue* filter, Arguments* arguments, Target* working_directory );
+    void thread_read( intptr_t fd_or_handle, Filter* filter, Arguments* arguments, Target* working_directory );
     void stop();
     size_t read( intptr_t fd_or_handle, void* buffer, size_t length ) const;
     void close( intptr_t fd_or_handle ) const;

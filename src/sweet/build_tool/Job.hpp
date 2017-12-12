@@ -19,7 +19,6 @@ enum JobState
     JOB_COMPLETE ///< The Job has been processed.
 };
 
-class Environment;
 class Target;
 
 /**

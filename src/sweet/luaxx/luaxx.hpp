@@ -14,9 +14,9 @@ extern const char* TYPE_KEYWORD;
 extern const char* WEAK_OBJECTS_KEYWORD;
 
 void luaxx_create( lua_State* lua, void* object, const char* tname );
-void luaxx_attach( lua_State* lua, void* object, const char* tname );
 void luaxx_destroy( lua_State* lua, void* object );
-void luaxx_remove( lua_State* lua, void* object, bool* weak = nullptr );
+void luaxx_attach( lua_State* lua, void* object, const char* tname );
+void luaxx_detach( lua_State* lua, void* object, bool* weak = nullptr );
 void luaxx_swap( lua_State* lua, void* object, void* other_object );
 void luaxx_weaken( lua_State* lua, void* object );
 void luaxx_strengthen( lua_State* lua, void* object );

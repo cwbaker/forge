@@ -60,8 +60,43 @@ void luaxx_create( lua_State* lua, void* object, const char* tname )
 }
 
 /**
-// Inject a C++ object to Lua table relationship into the Lua table at the top
-// of the stack.
+// Destroy the Lua object in \e lua identified by \e object.
+//
+// Sets the value of the field stored under the THIS_POINTER key to nil.
+// This stops the object being able to be used to refer back to an object
+// in C++ after that C++ object has been destroyed even though the Lua 
+// table will exist until it is garbage collected.
+//
+// Also removes references to the Lua table for the object from the Lua 
+// registry and the weak references table so that the Lua table can't be
+// reached via the C++ object address anymore.
+//
+// @param lua
+//  The lua_State to destroy the object in.
+//
+// @param object
+//  The address to use to identify the object.
+*/
+void luaxx_destroy( lua_State* lua, void* object )
+{
+    SWEET_ASSERT( lua );
+    luaxx_push( lua, object );
+    if ( lua_istable(lua, -1) )
+    {
+        lua_pushstring( lua, THIS_KEYWORD );
+        lua_pushnil( lua );
+        lua_rawset( lua, -3 );
+
+        lua_pushstring( lua, TYPE_KEYWORD );
+        lua_pushnil( lua );
+        lua_rawset( lua, -3 );
+    }   
+    lua_pop( lua, 1 );
+    luaxx_detach( lua, object );
+}
+
+/**
+// Attach a C++ object to the Lua at the top of the stack.
 //
 // @param lua
 //  The lua_State to create the object in.
@@ -96,43 +131,7 @@ void luaxx_attach( lua_State* lua, void* object, const char* tname )
 }
 
 /**
-// Destroy the Lua object in \e lua identified by \e object.
-//
-// Sets the value of the field stored under the THIS_POINTER key to nil.
-// This stops the object being able to be used to refer back to an object
-// in C++ after that C++ object has been destroyed even though the Lua 
-// table will exist until it is garbage collected.
-//
-// Also removes references to the Lua table for the object from the Lua 
-// registry and the weak references table so that the Lua table can't be
-// reached via the C++ object address anymore.
-//
-// @param lua
-//  The lua_State to destroy the object in.
-//
-// @param object
-//  The address to use to identify the object.
-*/
-void luaxx_destroy( lua_State* lua, void* object )
-{
-    SWEET_ASSERT( lua );
-    luaxx_push( lua, object );
-    if ( lua_istable(lua, -1) )
-    {
-        lua_pushstring( lua, THIS_KEYWORD );
-        lua_pushnil( lua );
-        lua_rawset( lua, -3 );
-
-        lua_pushstring( lua, TYPE_KEYWORD );
-        lua_pushnil( lua );
-        lua_rawset( lua, -3 );
-    }   
-    lua_pop( lua, 1 );
-    luaxx_remove( lua, object );
-}
-
-/**
-// Remove references to Lua tables from \e object.
+// Detach a C++ object from its associated Lua table.
 //
 // @param lua
 //  The lua_State to remove references to Lua tables from \e object in 
@@ -145,7 +144,7 @@ void luaxx_destroy( lua_State* lua, void* object )
 //  A pointer to a boolean that is set to true if the object was removed from
 //  the weak objects table (null to ignore)
 */
-void luaxx_remove( lua_State* lua, void* object, bool* weak )
+void luaxx_detach( lua_State* lua, void* object, bool* weak )
 {
     // Remove any reference to the object from the Lua registry.
     lua_pushlightuserdata( lua, object );
@@ -199,14 +198,14 @@ void luaxx_swap( lua_State* lua, void* object, void* other_object )
     lua_pushlightuserdata( lua, other_object );
     luaxx_push( lua, object );
     bool object_weak = false;
-    luaxx_remove( lua, object, &object_weak );
+    luaxx_detach( lua, object, &object_weak );
 
     // Push the Lua table associated with the second object onto the stack and
     // remove it from the Lua registry or weak objects table.
     lua_pushlightuserdata( lua, object );
     luaxx_push( lua, other_object );
     bool other_object_weak = false;
-    luaxx_remove( lua, other_object, &other_object_weak );
+    luaxx_detach( lua, other_object, &other_object_weak );
 
     // Swap associations between `object` and `other_object` and their entries
     // in the Lua registry.

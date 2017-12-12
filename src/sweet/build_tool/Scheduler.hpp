@@ -18,19 +18,13 @@ class Environment;
 
 }
 
-namespace lua
-{
-
-class LuaValue;
-
-}
-
 namespace build_tool
 {
 
 class Job;
 class Context;
 class Arguments;
+class Filter;
 class Target;
 class BuildTool;
 class BuildfileEventSink;
@@ -63,22 +57,22 @@ class Scheduler
         void execute( const char* start, const char* finish );        
         int buildfile( const boost::filesystem::path& path );
         void call( const boost::filesystem::path& path, const std::string& function );
-        void postorder_visit( const lua::LuaValue& function, Job* job );
+        void postorder_visit( int function, Job* job );
         void execute_finished( int exit_code, Context* context, process::Environment* environment );
-        void filter_finished( lua::LuaValue* filter, Arguments* arguments );
+        void filter_finished( Filter* filter, Arguments* arguments );
         void buildfile_finished( Context* context, bool success );
-        void output( const std::string& output, lua::LuaValue* filter, Arguments* arguments, Target* working_directory );
+        void output( const std::string& output, Filter* filter, Arguments* arguments, Target* working_directory );
         void error( const std::string& what, Context* context );
 
-        void push_output( const std::string& output, lua::LuaValue* filter, Arguments* arguments, Target* working_directory );
+        void push_output( const std::string& output, Filter* filter, Arguments* arguments, Target* working_directory );
         void push_error( const std::exception& exception, Context* context );
         void push_execute_finished( int exit_code, Context* context, process::Environment* environment );
-        void push_filter_finished( lua::LuaValue* filter, Arguments* arguments );
+        void push_filter_finished( Filter* filter, Arguments* arguments );
 
-        void execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* dependencies_filter, lua::LuaValue* stdout_filter, lua::LuaValue* stderr_filter, Arguments* arguments, Context* context );
+        void execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Context* context );
         void wait();
         
-        int postorder( const lua::LuaValue& function, Target* target );        
+        int postorder( int function, Target* target );        
 
         Context* context() const;
 

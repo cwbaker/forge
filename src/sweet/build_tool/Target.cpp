@@ -19,7 +19,6 @@ using std::vector;
 using std::string;
 using std::time_t;
 using namespace sweet;
-using namespace sweet::lua;
 using namespace sweet::build_tool;
 
 /**

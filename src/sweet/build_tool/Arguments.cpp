@@ -1,21 +1,22 @@
 //
 // Arguments.cpp
-// Copyright (c) 2011 - 2015 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
 #include "Arguments.hpp"
 #include <sweet/lua/AddParameter.hpp>
-#include <sweet/lua/LuaValue.hpp>
 #include <sweet/assert/assert.hpp>
+#include <lua/lua.hpp>
 
 using std::vector;
 using namespace sweet;
 using namespace sweet::build_tool;
 
-Arguments::Arguments( lua::Lua& lua, lua_State* lua_state, int begin, int end )
-: arguments_()
+Arguments::Arguments( lua_State* lua_state, int begin, int end )
+: lua_state_( lua_state ),
+  arguments_()
 {
-    SWEET_ASSERT( lua_state );
+    SWEET_ASSERT( lua_state_ );
     SWEET_ASSERT( begin >= 0 && end >= 0 && end >= begin );
 
     if ( end - begin > 0 )
@@ -23,18 +24,26 @@ Arguments::Arguments( lua::Lua& lua, lua_State* lua_state, int begin, int end )
         arguments_.reserve( end - begin );
         for ( int i = begin; i < end; ++i )
         {
-            arguments_.push_back( lua::LuaValue(lua, lua_state, i) );
+            lua_pushvalue( lua_state_, i );
+            arguments_.push_back( luaL_ref(lua_state_, LUA_REGISTRYINDEX) );
         }
+    }
+}
+
+Arguments::~Arguments()
+{
+    while ( lua_state_ && !arguments_.empty() )
+    {
+        luaL_unref( lua_state_, LUA_REGISTRYINDEX, arguments_.back() );
+        arguments_.pop_back();
     }
 }
 
 void Arguments::push_arguments( lua::AddParameter& add_parameter )
 {
-    vector<lua::LuaValue>::const_iterator argument = arguments_.begin(); 
-    vector<lua::LuaValue>::const_iterator arguments_end = arguments_.end(); 
-    while ( argument != arguments_end )
+    SWEET_ASSERT( lua_state_ );
+    for ( vector<int>::const_iterator i = arguments_.begin(); i != arguments_.end(); ++i )
     {
-        add_parameter( *argument );
-        ++argument;
+        add_parameter.reference( LUA_REGISTRYINDEX, *i );
     }
 }

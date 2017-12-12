@@ -12,12 +12,12 @@
 #include "LuaTarget.hpp"
 #include "types.hpp"
 #include <sweet/build_tool/BuildTool.hpp>
+#include <sweet/build_tool/Filter.hpp>
 #include <sweet/build_tool/Arguments.hpp>
 #include <sweet/build_tool/Scheduler.hpp>
 #include <sweet/process/Process.hpp>
 #include <sweet/process/Environment.hpp>
 #include <sweet/lua/Lua.hpp>
-#include <sweet/lua/LuaValue.hpp>
 #include <sweet/lua/lua_types.hpp>
 #include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
@@ -97,7 +97,7 @@ void LuaBuildTool::create( BuildTool* build_tool, lua::Lua* lua )
     lua_graph_->create( build_tool, lua_state );
     lua_system_->create( build_tool, lua_state );
     lua_target_->create( lua );
-    lua_target_prototype_->create( lua, lua_target_ );
+    lua_target_prototype_->create( lua->get_lua_state(), lua_target_ );
     lua_setglobal( lua_state, "build" );
 }
 
@@ -229,7 +229,7 @@ int LuaBuildTool::execute( lua_State* lua_state )
             }
         }
 
-        unique_ptr<lua::LuaValue> dependencies_filter;
+        unique_ptr<Filter> dependencies_filter;
         if ( !lua_isnoneornil(lua_state, DEPENDENCIES_FILTER) )
         {
             if ( !lua_isfunction(lua_state, DEPENDENCIES_FILTER) && !lua_istable(lua_state, DEPENDENCIES_FILTER) )
@@ -237,10 +237,10 @@ int LuaBuildTool::execute( lua_State* lua_state )
                 lua_pushstring( lua_state, "Expected a function or callable table as 4th parameter (dependencies filter)" );
                 return lua_error( lua_state );
             }
-            dependencies_filter.reset( new lua::LuaValue(*build_tool->lua(), lua_state, DEPENDENCIES_FILTER) );
+            dependencies_filter.reset( new Filter(lua_state, DEPENDENCIES_FILTER) );
         }
 
-        unique_ptr<lua::LuaValue> stdout_filter;
+        unique_ptr<Filter> stdout_filter;
         if ( !lua_isnoneornil(lua_state, STDOUT_FILTER) )
         {
             if ( !lua_isfunction(lua_state, STDOUT_FILTER) && !lua_istable(lua_state, STDOUT_FILTER) )
@@ -248,10 +248,10 @@ int LuaBuildTool::execute( lua_State* lua_state )
                 lua_pushstring( lua_state, "Expected a function or callable table as 5th parameter (stdout filter)" );
                 return lua_error( lua_state );
             }
-            stdout_filter.reset( new lua::LuaValue(*build_tool->lua(), lua_state, STDOUT_FILTER) );
+            stdout_filter.reset( new Filter(lua_state, STDOUT_FILTER) );
         }
 
-        unique_ptr<lua::LuaValue> stderr_filter;
+        unique_ptr<Filter> stderr_filter;
         if ( !lua_isnoneornil(lua_state, STDERR_FILTER) )
         {
             if ( !lua_isfunction(lua_state, STDERR_FILTER) && !lua_istable(lua_state, STDERR_FILTER) )
@@ -259,13 +259,13 @@ int LuaBuildTool::execute( lua_State* lua_state )
                 lua_pushstring( lua_state, "Expected a function or callable table as 6th parameter (stderr filter)" );
                 return lua_error( lua_state );
             }
-            stderr_filter.reset( new lua::LuaValue(*build_tool->lua(), lua_state, STDERR_FILTER) );
+            stderr_filter.reset( new Filter(lua_state, STDERR_FILTER) );
         }
 
         unique_ptr<Arguments> arguments;
         if ( lua_gettop(lua_state) >= ARGUMENTS )
         {
-            arguments.reset( new Arguments(*build_tool->lua(), lua_state, ARGUMENTS, lua_gettop(lua_state) + 1) );
+            arguments.reset( new Arguments(lua_state, ARGUMENTS, lua_gettop(lua_state) + 1) );
         }
 
         build_tool->scheduler()->execute( 

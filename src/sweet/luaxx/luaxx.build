@@ -7,8 +7,7 @@ for _, build in build:default_builds("cc_.*") do
         };
 
         build:Cxx () {
-            "luaxx.cpp",
-            "LuaValue.cpp"
+            "luaxx.cpp"
         };
     };
 end

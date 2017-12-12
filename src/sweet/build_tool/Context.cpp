@@ -10,7 +10,6 @@
 #include "path_functions.hpp"
 
 using namespace sweet;
-using namespace sweet::lua;
 using namespace sweet::build_tool;
 
 /**

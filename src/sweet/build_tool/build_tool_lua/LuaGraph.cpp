@@ -12,7 +12,6 @@
 #include <sweet/build_tool/Graph.hpp>
 #include <sweet/build_tool/Target.hpp>
 #include <sweet/build_tool/TargetPrototype.hpp>
-#include <sweet/lua/LuaValue.hpp>
 #include <sweet/lua/lua_functions.hpp>
 #include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
@@ -230,7 +229,6 @@ int LuaGraph::postorder( lua_State* lua_state )
         return luaL_error( lua_state, "Postorder called from within another bind or postorder traversal" );
     }
      
-    LuaValue function( *build_tool->lua(), lua_state, FUNCTION_PARAMETER );
     Target* target = NULL;
     if ( !lua_isnoneornil(lua_state, TARGET_PARAMETER) )
     {
@@ -244,8 +242,11 @@ int LuaGraph::postorder( lua_State* lua_state )
         return 1;
     }
 
+    lua_pushvalue( lua_state, FUNCTION_PARAMETER );
+    int function = luaL_ref( lua_state, LUA_REGISTRYINDEX );
     int failures = build_tool->scheduler()->postorder( function, target );
     lua_pushinteger( lua_state, failures );
+    luaL_unref( lua_state, LUA_REGISTRYINDEX, function );
     return 1;
 }
 

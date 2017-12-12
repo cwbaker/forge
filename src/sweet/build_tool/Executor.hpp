@@ -20,19 +20,13 @@ class Process;
 
 }
 
-namespace lua
-{
-
-class LuaValue;
-
-}
-
 namespace build_tool
 {
 
 class Arguments;
 class Context;
 class Target;
+class Filter;
 class BuildTool;
 
 /**
@@ -58,12 +52,12 @@ class Executor
         const std::string& build_hooks_library() const;
         void set_maximum_parallel_jobs( int maximum_parallel_jobs );
         int maximum_parallel_jobs() const;
-        void execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* dependencies_filter, lua::LuaValue* stdout_filter, lua::LuaValue* stderr_filter, Arguments* arguments, Context* context );
+        void execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Context* context );
 
     private:
         static int thread_main( void* context );
         void thread_process();
-        void thread_execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* dependencies_filter, lua::LuaValue* stdout_filter, lua::LuaValue* stderr_filter, Arguments* arguments, Target* working_directory, Context* context );
+        void thread_execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Target* working_directory, Context* context );
         void start();
         void stop();
         process::Environment* inject_build_hooks_linux( process::Environment* environment, bool dependencies_filter_exists ) const;

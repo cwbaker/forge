@@ -10,6 +10,7 @@
 #include "Job.hpp"
 #include "Context.hpp"
 #include "Executor.hpp"
+#include "Filter.hpp"
 #include "Arguments.hpp"
 #include "Error.hpp"
 #include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
@@ -159,7 +160,7 @@ void Scheduler::call( const boost::filesystem::path& path, const std::string& fu
     }
 }
 
-void Scheduler::postorder_visit( const lua::LuaValue& function, Job* job )
+void Scheduler::postorder_visit( int function, Job* job )
 {
     SWEET_ASSERT( job );
 
@@ -167,7 +168,7 @@ void Scheduler::postorder_visit( const lua::LuaValue& function, Job* job )
     {
         Context* context = allocate_context( job->working_directory(), job );
         process_begin( context );
-        context->context_thread().resume( function )
+        context->context_thread().resume( LUA_REGISTRYINDEX, function )
             ( job->target() )
         .end();
         
@@ -203,7 +204,7 @@ void Scheduler::execute_finished( int exit_code, Context* context, process::Envi
     delete environment;
 }
 
-void Scheduler::filter_finished( lua::LuaValue* filter, Arguments* arguments )
+void Scheduler::filter_finished( Filter* filter, Arguments* arguments )
 {
     // Delete filters and arguments on the main thread to avoid accessing the
     // Lua virtual machine from multiple threads as happens if the filter or 
@@ -225,14 +226,14 @@ void Scheduler::buildfile_finished( Context* context, bool success )
     }
 }
 
-void Scheduler::output( const std::string& output, lua::LuaValue* filter, Arguments* arguments, Target* working_directory )
+void Scheduler::output( const std::string& output, Filter* filter, Arguments* arguments, Target* working_directory )
 {
     SWEET_ASSERT( build_tool_ );
     if ( filter )
     {
         Context* context = allocate_context( working_directory );
         process_begin( context );
-        lua::AddParameter add_parameter = context->context_thread().call( *filter );
+        lua::AddParameter add_parameter = context->context_thread().call( LUA_REGISTRYINDEX, filter->reference() );
         add_parameter( output );
         if ( arguments )
         {
@@ -264,7 +265,7 @@ void Scheduler::error( const std::string& what, Context* context )
     }
 }
 
-void Scheduler::push_output( const std::string& output, lua::LuaValue* filter, Arguments* arguments, Target* working_directory )
+void Scheduler::push_output( const std::string& output, Filter* filter, Arguments* arguments, Target* working_directory )
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
     results_.push_back( std::bind(&Scheduler::output, this, output, filter, arguments, working_directory) );
@@ -286,14 +287,14 @@ void Scheduler::push_execute_finished( int exit_code, Context* context, process:
     results_condition_.notify_all();
 }
 
-void Scheduler::push_filter_finished( lua::LuaValue* filter, Arguments* arguments )
+void Scheduler::push_filter_finished( Filter* filter, Arguments* arguments )
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
     results_.push_back( std::bind(&Scheduler::filter_finished, this, filter, arguments) );
     results_condition_.notify_all();
 }
 
-void Scheduler::execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* dependencies_filter, lua::LuaValue* stdout_filter, lua::LuaValue* stderr_filter, Arguments* arguments, Context* context )
+void Scheduler::execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Context* context )
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
     build_tool_->executor()->execute( command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context );
@@ -307,7 +308,7 @@ void Scheduler::wait()
     }
 }
 
-int Scheduler::postorder( const lua::LuaValue& function, Target* target )
+int Scheduler::postorder( int function, Target* target )
 {
     struct ScopedVisit
     {
@@ -331,14 +332,12 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
 
     struct Postorder
     {
-        const lua::LuaValue& function_;
         BuildTool* build_tool_;
         list<Job> jobs_;
         int failures_;
         
-        Postorder( const lua::LuaValue& function, BuildTool* build_tool )
-        : function_( function ),
-          build_tool_( build_tool ),
+        Postorder( BuildTool* build_tool )
+        : build_tool_( build_tool ),
           jobs_(),
           failures_( 0 )
         {
@@ -447,7 +446,7 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
         return 0;
     }
     
-    Postorder postorder( function, build_tool_ );
+    Postorder postorder( build_tool_ );
     postorder.visit( target ? target : graph->root_target() );
     failures_ = postorder.failures();
     if ( failures_ == 0 )

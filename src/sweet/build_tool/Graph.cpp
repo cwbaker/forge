@@ -21,7 +21,6 @@ using std::string;
 using std::unique_ptr;
 using std::transform;
 using namespace sweet;
-using namespace sweet::lua;
 using namespace sweet::build_tool;
 
 /**

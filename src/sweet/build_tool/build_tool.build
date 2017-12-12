@@ -45,6 +45,7 @@ for _, build in build:default_builds("cc_.*") do
             "Context.cpp",
             "Error.cpp", 
             "Executor.cpp",
+            "Filter.cpp",
             "Graph.cpp",
             "Job.cpp",
             "Reader.cpp", 

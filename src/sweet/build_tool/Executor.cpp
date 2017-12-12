@@ -68,7 +68,7 @@ int Executor::maximum_parallel_jobs() const
     return maximum_parallel_jobs_;
 }
 
-void Executor::execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* dependencies_filter, lua::LuaValue* stdout_filter, lua::LuaValue* stderr_filter, Arguments* arguments, Context* context )
+void Executor::execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Context* context )
 {
     SWEET_ASSERT( !command.empty() );
     SWEET_ASSERT( context );
@@ -112,7 +112,7 @@ void Executor::thread_process()
     }
 }
 
-void Executor::thread_execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* dependencies_filter, lua::LuaValue* stdout_filter, lua::LuaValue* stderr_filter, Arguments* arguments, Target* working_directory, Context* context )
+void Executor::thread_execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Target* working_directory, Context* context )
 {
     SWEET_ASSERT( build_tool_ );
     
