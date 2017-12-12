@@ -115,10 +115,11 @@ function macosx.cc( target )
 
     for _, object in target:dependencies() do
         if object:outdated() then
-            print( build.leaf(object.source) );
+            local source = object:dependency();
+            print( build.leaf(source:id()) );
             local dependencies = ("%s.d"):format( object:filename() );
             local output = object:filename();
-            local input = build.absolute( object.source );
+            local input = build.absolute( source:filename() );
             build.system( 
                 xcrun, 
                 ('xcrun --sdk macosx clang %s -MMD -MF "%s" -o "%s" "%s"'):format(ccflags, dependencies, output, input)
@@ -167,6 +168,13 @@ function macosx.build_executable( target )
         table.insert( flags, ("-mmacosx-version-min=%s"):format(macosx_deployment_target) );
     end
 
+    local rpaths = target.rpaths;
+    if rpaths then 
+        for _, rpath in ipairs(rpaths) do 
+            table.insert( flags, ('-rpath "%s"'):format(rpath) );
+        end
+    end
+
     clang.append_library_directories( target, flags );
 
     local objects = {};
@@ -176,7 +184,7 @@ function macosx.build_executable( target )
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
-            assertf( target.architecture == dependency.architecture, "Architectures for '%s' and '%s' don't match", target:path(), dependency:path() );
+            assertf( target.architecture == dependency.architecture, "Architectures for '%s' (%s) and '%s' (%s) don't match", target:path(), tostring(target.architecture), dependency:path(), tostring(dependency.architecture) );
             for _, object in dependency:dependencies() do
                 if object:prototype() == nil then
                     table.insert( objects, build.relative(object:filename()) );

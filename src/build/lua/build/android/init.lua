@@ -21,7 +21,7 @@ function android.configure( settings )
         if build.operating_system() == "windows" then
             return "C:/android/android-ndk";
         else
-            return home( "Library/Android/ndk" );
+            return build.home( "Library/Android/ndk" );
         end
     end
 
@@ -29,7 +29,7 @@ function android.configure( settings )
         if build.operating_system() == "windows" then
             return "C:/Program Files (x86)/Android/android-sdk";
         else
-            return home( "Library/Android/sdk" );
+            return build.home( "Library/Android/sdk" );
         end
     end
 
@@ -42,7 +42,7 @@ function android.configure( settings )
             sdk_directory = autodetect_sdk_directory();
             build_tools_directory = ("%s/build-tools/22.0.1"):format( autodetect_sdk_directory() );
             toolchain_version = "4.9";
-            ndk_platform = "android-14";
+            ndk_platform = "android-21";
             sdk_platform = "android-22";
             architectures = { "armv5", "armv7" };
         };
@@ -198,14 +198,17 @@ function android.cc( target )
 
     local ccflags = table.concat( flags, " " );
     local gcc_ = ("%s/bin/arm-linux-androideabi-gcc"):format( android.toolchain_directory(target.settings, target.architecture) );
-    for _, dependency in target:dependencies() do
-        if dependency:outdated() then
-            print( build.leaf(dependency.source) );
+    for _, object in target:dependencies() do
+        if object:outdated() then
+            local source = object:dependency();
+            print( build.leaf(source:id()) );
+            local output = object:filename();
+            local input = build.relative( source:filename() );
             build.system( 
                 gcc_, 
-                ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, dependency:filename(), dependency.source), 
+                ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, output, input), 
                 android.environment,
-                build.dependencies_filter(dependency)
+                build.dependencies_filter(object)
             );
         end
     end
@@ -274,7 +277,13 @@ function android.build_executable( target )
                 end
             end
         elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
+            if dependency.whole_archive then
+                table.insert( libraries, ("-Wl,--whole-archive") );
+            end
             table.insert( libraries, ("-l%s"):format(dependency:id()) );
+            if dependency.whole_archive then
+                table.insert( libraries, ("-Wl,--no-whole-archive") );
+            end
         end
     end
 

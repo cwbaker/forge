@@ -451,11 +451,21 @@ function build.merge( destination, source )
     return destination;
 end
 
+-- Find and return the initial target but searching up from the path specified
+-- by *goal* until a target is found.
+function build.find_initial_target( goal )
+    local all = build.find_target( goal );
+    while not all and goal ~= "" do 
+        goal = build.branch( goal );
+        all = build.find_target( goal );
+    end
+    return all;
+end
+
 -- Load the dependency graph from the file specified by /settings.cache/ and
 -- running depend and bind passes over the target specified by /goal/ and its
 -- dependencies.
 function build.load( force )
-    local load_start = build.ticks();
     local cache_target = build.load_binary( settings.cache );
     if cache_target == nil or cache_target:outdated() or build.local_settings.updated or force then
         build.clear();
@@ -482,8 +492,10 @@ function build.load( force )
             directory:add_dependency( target );
         end
     end
-    local load_finish = build.ticks();
-    return load_finish - load_start;
+    
+    local all = build.find_initial_target( build.initial(goal) );
+    assert( all, ("No target found at '%s'"):format(tostring(build.initial(goal))) );
+    return all;
 end
 
 -- Save the dependency graph to the file specified by /settings.cache/.

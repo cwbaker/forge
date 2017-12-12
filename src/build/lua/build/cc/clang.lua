@@ -225,7 +225,7 @@ function clang.parse_dependencies_file( filename, object )
     if start and finish then 
         local start, finish, path = dependencies:find( DEPENDENCY_PATTERN, finish + 1 );
         while start and finish do 
-            local dependency = build.SourceFile( path );
+            local dependency = build.ImplicitSourceFile( path );
             object:add_implicit_dependency( dependency );
             start, finish, path = dependencies:find( DEPENDENCY_PATTERN, finish + 1 );
         end

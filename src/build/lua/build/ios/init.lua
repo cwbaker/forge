@@ -140,10 +140,11 @@ function ios.cc( target )
 
     for _, object in target:dependencies() do
         if object:outdated() then
-            print( build.leaf(object.source) );
+            local source = object:dependency();
+            print( build.leaf(source:id()) );
             local dependencies = ("%s.d"):format( object:filename() );
             local output = object:filename();
-            local input = build.absolute( object.source );
+            local input = build.absolute( source:filename() );
             build.system( 
                 xcrun, 
                 ('xcrun --sdk %s clang %s -MMD -MF "%s" -o "%s" "%s"'):format(sdkroot, ccflags, dependencies, output, input)

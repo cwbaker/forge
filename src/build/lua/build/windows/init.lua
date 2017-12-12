@@ -35,17 +35,18 @@ function windows.cc( target )
     
     local objects_by_source = {};
     local sources_by_directory = {};
-    for _, dependency in target:dependencies() do
-        if dependency:outdated() then
-            local directory = build.branch( dependency.source );
+    for _, object in target:dependencies() do
+        if object:outdated() then
+            local directory = build.branch( object.source );
             local sources = sources_by_directory[directory];
             if not sources then 
                 sources = {};
                 sources_by_directory[directory] = sources;
             end
-            table.insert( sources, dependency.source );
-            objects_by_source[build.leaf(dependency.source)] = dependency;
-            dependency:clear_implicit_dependencies();
+            local source = object:dependency();
+            table.insert( sources, source:id() );
+            objects_by_source[build.leaf(source:id())] = object;
+            object:clear_implicit_dependencies();
         end    
     end
 
