@@ -9,6 +9,7 @@
 #include <sweet/build_tool/TargetPrototype.hpp>
 #include <sweet/lua/Lua.hpp>
 #include <sweet/lua/LuaObject.hpp>
+#include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
 #include <lua/lua.hpp>
 
@@ -16,6 +17,7 @@ using std::string;
 using std::vector;
 using namespace sweet;
 using namespace sweet::lua;
+using namespace sweet::luaxx;
 using namespace sweet::build_tool;
 
 static const char* TARGET_METATABLE = "build.Target";
@@ -158,7 +160,7 @@ void LuaTarget::update_target( Target* target )
     {
         lua_State* lua_state = lua_->get_lua_state();
         lua_push_object( lua_state, target );
-        lua_push_object( lua_state, target_prototype );
+        luaxx_push( lua_state, target_prototype );
         lua_setmetatable( lua_state, -2 );
         lua_pop( lua_state, 1 );
     }
@@ -249,7 +251,7 @@ int LuaTarget::prototype( lua_State* lua_state )
     if ( target )
     {
         TargetPrototype* target_prototype = target->prototype();
-        lua_push_object( lua_state, target_prototype );
+        luaxx_push( lua_state, target_prototype );
         return 1;
     }
     return 0;

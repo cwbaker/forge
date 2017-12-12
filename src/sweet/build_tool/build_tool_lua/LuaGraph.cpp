@@ -97,7 +97,7 @@ Target* LuaGraph::add_target( lua_State* lua_state )
         anonymous = true;
     }
 
-    TargetPrototype* target_prototype = (TargetPrototype*) lua_to_object( lua_state, PROTOTYPE, SWEET_STATIC_TYPEID(TargetPrototype) );
+    TargetPrototype* target_prototype = (TargetPrototype*) luaxx_to( lua_state, PROTOTYPE, TARGET_PROTOTYPE_TYPE );
     Target* target = graph->target( id, target_prototype, working_directory );
     if ( !target->referenced_by_script() )
     {
@@ -132,9 +132,8 @@ int LuaGraph::target_prototype( lua_State* lua_state )
         string id = luaL_checkstring( lua_state, ID );        
         BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
         TargetPrototype* target_prototype = build_tool->graph()->target_prototype( id );
-        lua_create_object( lua_state, target_prototype );
         build_tool->create_target_prototype_lua_binding( target_prototype );
-        lua_push_object( lua_state, target_prototype );
+        luaxx_push( lua_state, target_prototype );
         return 1;
     }
     

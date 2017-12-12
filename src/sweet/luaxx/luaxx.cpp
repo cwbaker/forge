@@ -393,20 +393,23 @@ void* luaxx_to( lua_State* lua, int position, const char* tname )
     SWEET_ASSERT( position > 0 || position < LUA_REGISTRYINDEX );
 
     void* object = nullptr;
-    lua_pushstring( lua, tname );
-    lua_pushstring( lua, TYPE_KEYWORD );
-    lua_gettable( lua, position );
-    if ( lua_rawequal(lua, -1, -2) )
+    if ( !lua_isnoneornil(lua, position) )
     {
-        lua_pushstring( lua, THIS_KEYWORD );
+        lua_pushstring( lua, tname );
+        lua_pushstring( lua, TYPE_KEYWORD );
         lua_gettable( lua, position );
-        if ( lua_islightuserdata(lua, -1) )
+        if ( lua_rawequal(lua, -1, -2) )
         {
-            object = lua_touserdata( lua, -1 );
+            lua_pushstring( lua, THIS_KEYWORD );
+            lua_gettable( lua, position );
+            if ( lua_islightuserdata(lua, -1) )
+            {
+                object = lua_touserdata( lua, -1 );
+            }
+            lua_pop( lua, 1 );
         }
-        lua_pop( lua, 1 );
+        lua_pop( lua, 2 );
     }
-    lua_pop( lua, 2 );
     return object;
 }
 
