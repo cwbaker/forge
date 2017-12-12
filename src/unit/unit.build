@@ -1,0 +1,38 @@
+
+buildfile "unit_test/unit_test.build";
+
+Library "libUnitTest" {
+    Cxx {
+        "AssertException.cpp",
+        "Checks.cpp",
+        "CurrentTest.cpp",
+        "DeferredTestReporter.cpp",
+        "DeferredTestResult.cpp",
+        "MemoryOutStream.cpp",
+        "ReportAssert.cpp",
+        "Test.cpp",
+        "TestDetails.cpp",
+        "TestList.cpp",
+        "TestReporter.cpp",
+        "TestReporterStdout.cpp",
+        "TestResults.cpp",
+        "TestRunner.cpp",
+        "TimeConstraint.cpp",
+        "XmlTestReporter.cpp"
+    };    
+
+    Cxx {
+        settings = {
+            platforms = { "msvc", "mingw" };
+        };
+        "Win32/TimeHelpers.cpp"
+    };
+
+    Cxx {
+        settings = {
+            platforms = { "android", "clang" };
+        };
+        "Posix/SignalTranslator.cpp",
+        "Posix/TimeHelpers.cpp"
+    };
+}

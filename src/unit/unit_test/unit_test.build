@@ -1,0 +1,26 @@
+
+Executable "unit_test" {
+    libraries = {
+        "unit/libUnitTest"
+    };
+
+    Cxx {
+        "Main.cpp",
+        "TestAssertHandler.cpp",
+        "TestCheckMacros.cpp",
+        "TestChecks.cpp",
+        "TestCurrentTest.cpp",
+        "TestDeferredTestReporter.cpp",
+        "TestMemoryOutStream.cpp",
+        "TestTest.cpp",
+        "TestTestList.cpp",
+        "TestTestMacros.cpp",
+        "TestTestResults.cpp",
+        "TestTestRunner.cpp",
+        "TestTestSuite.cpp",
+        "TestTimeConstraint.cpp",
+        "TestTimeConstraintMacro.cpp",
+        "TestUnitTest.cpp",
+        "TestXmlTestReporter.cpp"
+    }
+}
