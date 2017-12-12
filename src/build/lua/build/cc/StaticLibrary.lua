@@ -28,5 +28,3 @@ end
 function StaticLibrary.clean( static_library )
     clean_library( static_library );
 end
-
-_G.StaticLibrary = StaticLibrary;

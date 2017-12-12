@@ -1,6 +1,6 @@
 //
 // Executor.cpp
-// Copyright (c) 2008 - 2015 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -8,12 +8,12 @@
 #include "Error.hpp"
 #include "BuildTool.hpp"
 #include "Target.hpp"
-#include "Scanner.hpp"
-#include "Environment.hpp"
+#include "Context.hpp"
 #include "Scheduler.hpp"
 #include <sweet/thread/Thread.hpp>
 #include <sweet/thread/ScopedLock.hpp>
 #include <sweet/process/Process.hpp>
+#include <sweet/process/Environment.hpp>
 #include <stdlib.h>
 
 using std::max;
@@ -53,33 +53,17 @@ int Executor::maximum_parallel_jobs() const
     return maximum_parallel_jobs_;
 }
 
-void Executor::execute( const std::string& command, const std::string& command_line, Scanner* scanner, Arguments* arguments, Environment* environment )
+void Executor::execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* filter, Arguments* arguments, Context* context )
 {
     SWEET_ASSERT( !command.empty() );
-    SWEET_ASSERT( environment );
+    SWEET_ASSERT( context );
 
     if ( !command.empty() )
     {
         start();
         thread::ScopedLock lock( jobs_mutex_ );
-        Process* process = new Process( command.c_str(), command_line.c_str(), environment->directory().string().c_str(), PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR );
-        jobs_.push_back( std::bind(&Executor::thread_execute, this, process, scanner, arguments, environment->working_directory(), environment) );
+        jobs_.push_back( std::bind(&Executor::thread_execute, this, command, command_line, environment, filter, arguments, context->working_directory(), context) );
         jobs_ready_condition_.notify_all();
-    }
-}
-
-void Executor::scan( Target* target, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment )
-{
-    SWEET_ASSERT( target );
-    SWEET_ASSERT( working_directory );
-    SWEET_ASSERT( environment );
-    
-    if ( target && working_directory )
-    {
-        start();
-        thread::ScopedLock lock( jobs_mutex_ );
-        jobs_.push_back( std::bind(&Executor::thread_scan, this, target, scanner, arguments, working_directory, environment) );
-        jobs_ready_condition_.notify_all();        
     }
 }
 
@@ -113,10 +97,9 @@ void Executor::thread_process()
     }
 }
 
-void Executor::thread_execute( Process* process, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment )
+void Executor::thread_execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* filter, Arguments* arguments, Target* working_directory, Context* context )
 {
     SWEET_ASSERT( build_tool_ );
-    SWEET_ASSERT( process );
     
     try
     {
@@ -124,7 +107,8 @@ void Executor::thread_execute( Process* process, Scanner* scanner, Arguments* ar
         char* pos = buffer;
         char* end = buffer + sizeof(buffer) - 1;
 
-        size_t read = process->read( pos, end - pos );
+        Process process( command.c_str(), command_line.c_str(), context->directory().string().c_str(), environment, PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR );
+        size_t read = process.read( pos, end - pos );
         while ( read > 0 )
         {
             char* start = buffer;
@@ -134,7 +118,7 @@ void Executor::thread_execute( Process* process, Scanner* scanner, Arguments* ar
             while ( pos != finish )
             {
                 *pos = 0;
-                build_tool_->scheduler()->push_output( string(start, pos), scanner, arguments, working_directory );
+                build_tool_->scheduler()->push_output( string(start, pos), filter, arguments, working_directory );
                 start = pos + 1;
                 pos = std::find( start, finish, '\n' );
             }
@@ -146,107 +130,31 @@ void Executor::thread_execute( Process* process, Scanner* scanner, Arguments* ar
             else if ( finish >= end )
             {
                 *finish = 0;
-                build_tool_->scheduler()->push_output( string(start, finish), scanner, arguments, working_directory );
+                build_tool_->scheduler()->push_output( string(start, finish), filter, arguments, working_directory );
                 start = buffer;
                 finish = buffer;
             }
             
             pos = buffer + (finish - start);
-            read = process->read( pos, end - pos );
+            read = process.read( pos, end - pos );
         }
 
         if ( pos > buffer )
         {
             *pos = 0;
-            build_tool_->scheduler()->push_output( string(buffer, pos), scanner, arguments, working_directory );
+            build_tool_->scheduler()->push_output( string(buffer, pos), filter, arguments, working_directory );
         }
 
-        process->wait();
-        build_tool_->scheduler()->push_execute_finished( process->exit_code(), environment, arguments );
-        delete process;
+        process.wait();
+        build_tool_->scheduler()->push_execute_finished( process.exit_code(), context, environment, filter, arguments );
     }
 
     catch ( const std::exception& exception )
     {
         Scheduler* scheduler = build_tool_->scheduler();
-        scheduler->push_error( exception, environment );
-        scheduler->push_execute_finished( EXIT_FAILURE, environment, arguments );
-        delete process;
+        scheduler->push_error( exception, context );
+        scheduler->push_execute_finished( EXIT_FAILURE, context, environment, filter, arguments );
     }
-}
-
-void Executor::thread_scan( Target* target, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment )
-{
-    SWEET_ASSERT( target );
-    SWEET_ASSERT( scanner );
-    SWEET_ASSERT( working_directory );
-    SWEET_ASSERT( environment );
-    
-    Scheduler* scheduler = build_tool_->scheduler();
-    SWEET_ASSERT( scheduler );
-    
-    FILE* file = ::fopen( target->path().c_str(), "rb" );
-    if ( file )
-    {
-        try
-        {
-            static const int SCANNER_MAXIMUM_LINE_LENGTH = 1024;
-            char buffer [SCANNER_MAXIMUM_LINE_LENGTH + 1];
-
-            int unmatched_lines = 0;
-            int maximum_unmatched_lines = scanner->initial_lines();
-
-            int matches = 0;
-            int maximum_matches = scanner->maximum_matches();
-
-            while ( ::fgets(buffer, sizeof(buffer) - 1, file) != 0 && unmatched_lines <= maximum_unmatched_lines && matches <= maximum_matches )
-            {
-                buffer [sizeof(buffer) - 1] = '\0';
-
-                bool matched = false;
-                const vector<Pattern>& patterns = scanner->patterns();
-                for ( vector<Pattern>::const_iterator pattern = patterns.begin(); pattern != patterns.end(); ++pattern )
-                {
-                    std::match_results<const char*> match;
-                    if ( regex_search(buffer, match, pattern->regex()) ) 
-                    {
-                        matched = true;
-                        build_tool_->scheduler()->push_match( &(*pattern), string(match[1].first, match[1].second), arguments, working_directory, target );
-                    }
-                }
-
-                if ( matched )
-                {
-                    unmatched_lines = 0;
-                    maximum_unmatched_lines = scanner->later_lines();
-                    if ( maximum_matches > 0 )
-                    {
-                        ++matches;
-                    }
-                }
-                else if ( maximum_unmatched_lines > 0 )
-                {
-                    ++unmatched_lines;
-                }
-            }
-
-            if ( ::ferror(file) != 0 )
-            {
-                SWEET_ERROR( ScanningFileFailedError("Scanning '%s' failed", target->filename(0).c_str()) );
-            }
-        }
-        
-        catch ( const std::exception& exception )
-        {
-            scheduler->push_error( exception, environment );
-            scheduler->push_scan_finished( arguments );
-        }
-        
-        ::fclose( file );
-        file = NULL;
-    }
-
-    scheduler->push_scan_finished( arguments );
 }
 
 void Executor::start()

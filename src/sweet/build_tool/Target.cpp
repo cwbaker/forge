@@ -272,8 +272,6 @@ void Target::bind()
 // of the Targets that depend on this Target to be outdated (as they simply 
 // require that the directory exists).
 //
-// If the file exists and is a directory with dependencies then the time
-//
 // If the file exists and is a file or a directory with dependencies then the
 // timestamp of this Target is set to the last write time of the file so that
 // Targets that depend on this Target will be outdated if they are older than

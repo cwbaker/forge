@@ -96,8 +96,7 @@ function android.library_directories( settings, architecture )
 end
 
 function android.initialize( settings )
-    android.configure( settings );
-    if platform == "android" then
+    if build.platform_matches("android") then
         -- Make sure that the environment variable VS_UNICODE_OUTPUT is not set.  
         -- Visual Studio sets this to signal its tools to communicate back to 
         -- Visual Studio using named pipes rather than stdout so that unicode output 
@@ -164,19 +163,14 @@ function android.cc( target )
 
     gcc.append_compile_flags( target, flags );
 
-    local GccScanner = Scanner {
-        [ [[((?:[A-Z]\:)?[^\:]+)\:([0-9]+)\:[0-9]+\: ([^\:]+)\:(.*)]] ] = function( filename, line, class, message )
-            print( ("%s(%s): %s: %s"):format(filename, line, class, message) );
-        end;
-    };
-
     local ccflags = table.concat( flags, " " );
-    local gcc = ("%s/bin/arm-linux-androideabi-gcc"):format( android.toolchain_directory(target.settings, target.architecture) );
+    local gcc_ = ("%s/bin/arm-linux-androideabi-gcc"):format( android.toolchain_directory(target.settings, target.architecture) );
     for dependency in target:dependencies() do
         if dependency:outdated() then
             print( leaf(dependency.source) );
-            build.system( gcc, ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, dependency:filename(), dependency.source), GccScanner );
-        end    
+            build.system( gcc_, ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, dependency:filename(), dependency.source) );
+            gcc.process_dependencies( dependency );
+        end
     end
 end
 
@@ -189,7 +183,7 @@ function android.build_library( target )
     local objects = {};
     for compile in target:dependencies() do
         local prototype = compile:prototype();
-        if prototype == Cc or prototype == Cxx then
+        if prototype == build.Cc or prototype == build.Cxx then
             for object in compile:dependencies() do
                 table.insert( objects, relative(object:filename()) )
             end
@@ -236,13 +230,13 @@ function android.build_executable( target )
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     for dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
+        if prototype == build.Cc or prototype == build.Cxx then
             for object in dependency:dependencies() do
                 if object:prototype() == nil then
                     table.insert( objects, relative(object:filename()) );
                 end
             end
-        elseif prototype == StaticLibrary or prototype == DynamicLibrary then
+        elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
             table.insert( libraries, ("-l%s"):format(dependency:id()) );
         end
     end
@@ -300,18 +294,14 @@ function android.deploy( directory )
         assertf( is_file(adb), "No 'adb' executable found at '%s'", adb );
 
         local device_connected = false;
-        local AdbGetStateScanner = Scanner {
-            [ [[(.*)]] ] = function( state )
-                device_connected = state == "device";
-            end
-        };
-        build.system( adb, ('adb get-state'), AdbGetStateScanner );
+        local function adb_get_state_filter( state )
+            device_connected = state == "device";
+        end
+        build.system( adb, ('adb get-state'), adb_get_state_filter );
         if device_connected then
             printf( "Deploying '%s'...", apk:filename() );
             build.system( adb, ('adb install -r "%s"'):format(apk:filename()) );
         end
-    else
-        printf( ios_deploy, "No 'ios-deploy' executable specified in settings" );
     end
 end
 
@@ -354,3 +344,5 @@ require "build.android.Dex";
 require "build.android.Jar";
 require "build.android.Java";
 require "build.android.R";
+
+build.register_module( android );

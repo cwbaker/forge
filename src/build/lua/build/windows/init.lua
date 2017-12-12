@@ -1,32 +1,27 @@
 
 windows = {};
 
-function windows.configure( settings )
-    return msvc.configure( settings );
-end
-
 function windows.initialize( settings )
-    windows.configure( settings );
-    msvc.initialize( settings );
-
-    cc = windows.cc;
-    build_library = windows.build_library;
-    clean_library = windows.clean_library;
-    build_executable = windows.build_executable;
-    clean_executable = windows.clean_executable;
-    lipo_executable = windows.lipo_executable;
-    obj_directory = windows.obj_directory;
-    cc_name = windows.cc_name;
-    cxx_name = windows.cxx_name;
-    pch_name = windows.pch_name;
-    pdb_name = windows.pdb_name;
-    obj_name = windows.obj_name;
-    lib_name = windows.lib_name;
-    exp_name = windows.exp_name;
-    dll_name = windows.dll_name;
-    exe_name = windows.exe_name;
-    ilk_name = windows.ilk_name;
-    module_name = windows.module_name;
+    if build.platform_matches("windows") then
+        cc = windows.cc;
+        build_library = windows.build_library;
+        clean_library = windows.clean_library;
+        build_executable = windows.build_executable;
+        clean_executable = windows.clean_executable;
+        lipo_executable = windows.lipo_executable;
+        obj_directory = windows.obj_directory;
+        cc_name = windows.cc_name;
+        cxx_name = windows.cxx_name;
+        pch_name = windows.pch_name;
+        pdb_name = windows.pdb_name;
+        obj_name = windows.obj_name;
+        lib_name = windows.lib_name;
+        exp_name = windows.exp_name;
+        dll_name = windows.dll_name;
+        exe_name = windows.exe_name;
+        ilk_name = windows.ilk_name;
+        module_name = windows.module_name;
+    end
 end
 
 function windows.cc( target )
@@ -48,6 +43,7 @@ function windows.cc( target )
                 sources_by_directory[directory] = sources;
             end
             table.insert( sources, dependency.source );
+            dependency:clear_implicit_dependencies();
         end    
     end
 
@@ -55,9 +51,10 @@ function windows.cc( target )
         if #sources > 0 then
             local output_directory = native( ("%s%s/%s/"):format(obj_directory(target), target.architecture, directory) );
             local ccflags = table.concat( flags, " " );
-            local ccsource = table.concat( sources, '" "' );
+            local source = table.concat( sources, '" "' );
             local cl = ("%s/VC/bin/cl.exe"):format( target.settings.msvc.visual_studio_directory );
-            build.system( cl, ('cl %s /Fo%s "%s"'):format(ccflags, output_directory, ccsource) );
+            local environment = msvc.environment;
+            build.system( cl, ('cl %s /Fo%s "%s"'):format(ccflags, output_directory, source), environment, msvc.process_dependencies_filter(output_directory, absolute(directory)) );
         end
     end
 end;
@@ -75,7 +72,7 @@ function windows.build_library( target )
     local objects = {};
     for dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == Cc or prototype == Cxx then
+        if prototype == build.Cc or prototype == build.Cxx then
             for object in dependency:dependencies() do
                 table.insert( objects, relative(object:filename()) );
             end
@@ -86,8 +83,9 @@ function windows.build_library( target )
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
         local msar = ("%s/VC/bin/lib.exe"):format( target.settings.msvc.visual_studio_directory );
+        local environment = msvc.environment;
         print( leaf(target:filename()) );
-        build.system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:filename()), arobjects) );
+        build.system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:filename()), arobjects), environment );
     end
     popd();
 end;
@@ -107,11 +105,11 @@ function windows.build_executable( target )
 
     for dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == Cc or prototype == Cxx then
+        if prototype == build.Cc or prototype == build.Cxx then
             for object in dependency:dependencies() do
                 table.insert( objects, obj_name(object:id()) );
             end
-        elseif prototype == StaticLibrary or prototype == DynamicLibrary then
+        elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
             table.insert( libraries, ('%s.lib'):format(basename(dependency:filename())) );
         end
     end
@@ -142,19 +140,16 @@ function windows.build_executable( target )
                 rc:close();
             end
 
-            IgnoreOutputScanner = Scanner {
-                [ [[.*]] ] = function()
-                end;
-            };
-
+            local ignore_filter = function() end;
             local ldflags = table.concat( flags, ' ' );
             local ldlibs = table.concat( libraries, ' ' );
             local ldobjects = table.concat( objects, '" "' );
+            local environment = msvc.environment;
 
             if exists(embedded_manifest) ~= true then
-                build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
-                build.system( msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest) );
-                build.system( msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), IgnoreOutputScanner );
+                build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+                build.system( msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest), environment );
+                build.system( msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, ignore_filter );
             end
 
             table.insert( objects, embedded_manifest_res );
@@ -162,20 +157,21 @@ function windows.build_executable( target )
             local ldflags = table.concat( flags, ' ' );
             local ldobjects = table.concat( objects, '" "' );
 
-            build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
-            build.system( msmt, ('mt /nologo /out:"%s" /manifest %s'):format(embedded_manifest, intermediate_manifest) );
-            build.system( msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), IgnoreOutputScanner );
-            build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
+            build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+            build.system( msmt, ('mt /nologo /out:"%s" /manifest %s'):format(embedded_manifest, intermediate_manifest), environment );
+            build.system( msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), environment, ignore_filter );
+            build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
         else
             table.insert( flags, "/incremental:no" );
 
             local ldflags = table.concat( flags, ' ' );
             local ldlibs = table.concat( libraries, ' ' );
             local ldobjects = table.concat( objects, '" "' );
+            local environment = msvc.environment;
 
-            build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
+            build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
             sleep( 100 );
-            build.system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(native(target:filename()), intermediate_manifest) );
+            build.system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(native(target:filename()), intermediate_manifest), environment );
         end
         popd();
     end
@@ -238,3 +234,5 @@ end
 function windows.module_name( name, architecture )
     return name;
 end
+
+build.register_module( windows );

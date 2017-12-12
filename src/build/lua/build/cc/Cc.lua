@@ -17,14 +17,6 @@ local function call( cc, definition )
     end
 end
 
-local function depend( cc )
-    for _, value in ipairs(cc) do
-        local source_file = file( value );
-        assert( source_file, ("Failed to find source file '%s' for scanning"):format(tostring(value)) );
-        scan( source_file, CcScanner );
-    end
-end
-
 local function build_( cc_ )
     if cc_:outdated() then
         cc( cc_ );
@@ -43,7 +35,6 @@ local function create_target_prototype( id, language )
     
     target_prototype.create = create;
     target_prototype.call = call;
-    target_prototype.depend = depend;
     target_prototype.build = build_;
     return target_prototype;
 end
@@ -52,8 +43,3 @@ local Cc = create_target_prototype( "Cc", "c" );
 local Cxx = create_target_prototype( "Cxx", "c++" );
 local ObjC = create_target_prototype( "ObjC", "objective-c" );
 local ObjCxx = create_target_prototype( "ObjCxx", "objective-c++" );
-
-_G.Cc = Cc;
-_G.Cxx = Cxx;
-_G.ObjC = ObjC;
-_G.ObjCxx = ObjCxx;

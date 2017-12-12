@@ -8,7 +8,7 @@ local settings = build.push_settings {
 };
 
 for _, architecture in ipairs(settings.architectures) do
-    Executable ("build", architecture) {
+    build.Executable ("build", architecture) {
         libraries = {    
             "boost/libs/filesystem/src/boost_filesystem",
             "boost/libs/system/src/boost_system",
@@ -26,7 +26,7 @@ for _, architecture in ipairs(settings.architectures) do
             "sweet/assert/assert"
         };
         
-        Cxx (architecture) {
+        build.Cxx (architecture) {
             "Application.cpp", 
             "main.cpp"
         };    

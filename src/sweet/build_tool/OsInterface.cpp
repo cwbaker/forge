@@ -1,6 +1,6 @@
 //
 // OsInterface.cpp
-// Copyright (c) 2010 - 2015 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
@@ -253,22 +253,6 @@ std::string OsInterface::operating_system()
 #else
 #error "OsInterface::operating_system() is not implemented for this platform"
 #endif
-}
-
-/**
-// Set the value of an environment attribute.
-//
-// @param attribute
-//  The environment attribute to set the value of.
-//
-// @param value
-//  The value to set the environment attribute to or an empty string to unset
-//  the environment attribute.
-*/
-void OsInterface::putenv( const std::string& attribute, const std::string& value )
-{
-    std::string assignment = attribute + "=" + value;
-    ::putenv( strdup(const_cast<char*>(assignment.c_str())) );
 }
 
 /**

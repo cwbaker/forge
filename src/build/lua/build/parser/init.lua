@@ -19,9 +19,6 @@ function parser.configure( settings )
     end
 end
 
-function parser.initialize( settings )
-    parser.configure( settings );
-    putenv( "LUA_PATH", settings.parser.lua_path );
-end
-
 require "build.parser.Parser";
+
+build.register_module( parser );

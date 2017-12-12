@@ -1,5 +1,5 @@
 
-local Lipo = build.TargetPrototype( "Lipo" );
+local Lipo = build.TargetPrototype( "xcode.Lipo" );
 
 function Lipo.create( settings, id )
     local lipo = build.Target( id, Lipo );

@@ -1,7 +1,7 @@
 
 local settings = build.current_settings();
 for _, architecture in ipairs(settings.architectures) do
-    Executable ("pointer_test", architecture) {
+    build.Executable ("pointer_test", architecture) {
         libraries = {
             "sweet/pointer/pointer",
             "sweet/error/error",
@@ -9,7 +9,7 @@ for _, architecture in ipairs(settings.architectures) do
             "unit/libUnitTest"
         };
 
-        Cxx (architecture) {
+        build.Cxx (architecture) {
             "main.cpp",
             "TestPointer.cpp",
             "TestPointerCast.cpp"

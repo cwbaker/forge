@@ -7,11 +7,8 @@ function Parser.create( settings, value )
     parser.grammar = value;
     parser.settings = settings;
     parser:add_dependency( grammar );
-    return parser;
-end
-
-function Parser.static_depend( parser )
     parser:build();
+    return parser;
 end
 
 function Parser.build( parser )
@@ -20,7 +17,10 @@ function Parser.build( parser )
         print( parser.grammar );
         local arguments = ("parser -r parser/cxx %s"):format( parser.grammar );
         local result = execute( parser_, arguments );
-        assertf( result == 0, ("[[%s]] failed"):format(arguments) );
+        local environment = {
+            LUA_PATH = settings.parser.lua_path;
+        };
+        assertf( result == 0, ("[[%s]] failed"):format(arguments), environment );
     end
 end
 
@@ -32,5 +32,3 @@ function Parser.clobber( parser )
         rm( parser:filename() );
     end
 end
-
-_G.Parser = Parser;

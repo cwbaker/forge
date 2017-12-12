@@ -521,3 +521,5 @@ end
 require "build.xcode.Plist";
 require "build.xcode.Lipo";
 require "build.xcode.Xib";
+
+build.register_module( xcode );

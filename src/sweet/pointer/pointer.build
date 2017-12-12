@@ -3,13 +3,13 @@ buildfile "pointer_test/pointer_test.build";
 
 local settings = build.current_settings();
 for _, architecture in ipairs(settings.architectures) do
-    Library ("pointer", architecture) {
+    build.Library ("pointer", architecture) {
         libraries = {
             "sweet/assert/assert",
             "sweet/error/error"
         };
 
-        Cxx (architecture) {
+        build.Cxx (architecture) {
             precompiled_header = "stdafx.hpp";
             "ReferenceCount.cpp"
         };

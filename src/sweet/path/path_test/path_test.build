@@ -1,7 +1,7 @@
 
 local settings = build.current_settings();
 for _, architecture in ipairs(settings.architectures) do
-    Executable ("path_test", architecture) {
+    build.Executable ("path_test", architecture) {
         libraries = {
             "sweet/assert/assert", 
             "sweet/error/error",
@@ -9,7 +9,7 @@ for _, architecture in ipairs(settings.architectures) do
             "unit/libUnitTest"
         };
 
-        Cxx (architecture) {
+        build.Cxx (architecture) {
             precompiled_header = "stdafx.hpp";
             "main.cpp",
             "TestPath.cpp",

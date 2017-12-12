@@ -18,8 +18,6 @@ return {
     data = root();
     root = root();
 
-    buildfile = root( "project.build" );
-
     path_separator = path_separator_by_operating_system [operating_system()];
 
     user_settings_filename = home( "user_settings.lua" );
@@ -101,7 +99,7 @@ return {
                 "x86_64"
             };
             variants = {
-                "debug", "debug_dll", "release", "release_dll", "shipping", "shipping_dll"
+                "debug", "release", "shipping"
             };
             third_party_libraries = {
                 "advapi32",

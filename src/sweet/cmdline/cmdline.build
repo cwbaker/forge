@@ -3,13 +3,13 @@ buildfile "cmdline_test/cmdline_test.build";
 
 local settings = build.current_settings();
 for _, architecture in ipairs(settings.architectures) do
-    Library ("cmdline", architecture) {
+    build.Library ("cmdline", architecture) {
         libraries = {
             "sweet/assert/assert",
             "sweet/error/error"
         };
 
-        Cxx (architecture) {
+        build.Cxx (architecture) {
             "AddOption.cpp",
             "Error.cpp",
             "Option.cpp",

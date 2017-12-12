@@ -2,19 +2,19 @@
 macosx = {};
 
 function macosx.configure( settings )
-    local local_settings = build.local_settings;
-    if not local_settings.macosx then
-        local_settings.updated = true;
-        local_settings.macosx = {
-            xcrun = "/usr/bin/xcrun";
-        };
+    if operating_system() == "macosx" then
+        local local_settings = build.local_settings;
+        if not local_settings.macosx then
+            local_settings.updated = true;
+            local_settings.macosx = {
+                xcrun = "/usr/bin/xcrun";
+            };
+        end
     end
 end
 
 function macosx.initialize( settings )
-    macosx.configure( settings );
-
-    if platform == "macosx" then
+    if build.platform_matches("macosx") then
         cc = macosx.cc;
         objc = macosx.objc;
         build_library = macosx.build_library;
@@ -50,7 +50,8 @@ function macosx.cc( target )
         if dependency:outdated() then
             print( leaf(dependency.source) );
             build.system( xcrun, ('xcrun --sdk macosx clang %s -o "%s" "%s"'):format(ccflags, dependency:filename(), absolute(dependency.source)) );
-        end    
+            clang.process_dependencies( dependency );
+        end
     end
 end
 
@@ -63,7 +64,7 @@ function macosx.build_library( target )
     local objects =  {};
     for compile in target:dependencies() do
         local prototype = compile:prototype();
-        if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
+        if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
             for object in compile:dependencies() do
                 table.insert( objects, relative(object:filename()) );
             end
@@ -97,13 +98,13 @@ function macosx.build_executable( target )
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     for dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
+        if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
             for object in dependency:dependencies() do
                 if object:prototype() == nil then
                     table.insert( objects, relative(object:filename()) );
                 end
             end
-        elseif prototype == StaticLibrary or prototype == DynamicLibrary then
+        elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
             table.insert( libraries, ("-l%s"):format(dependency:id()) );
         end
     end
@@ -171,3 +172,5 @@ end
 function macosx.module_name( name, architecture )
     return ("%s_%s"):format( name, architecture );
 end
+
+build.register_module( macosx );

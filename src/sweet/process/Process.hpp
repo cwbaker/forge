@@ -1,8 +1,3 @@
-//
-// Process.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_PROCESS_PROCESS_HPP_INCLUDED
 #define SWEET_PROCESS_PROCESS_HPP_INCLUDED
 
@@ -27,6 +22,8 @@ enum ProcessFlags
     PROCESS_FLAG_PROVIDE_STDOUT_AND_STDERR = 0x02
 };
 
+class Environment;
+
 /**
 // An operating system process.
 */
@@ -47,7 +44,7 @@ class SWEET_PROCESS_DECLSPEC Process
 
     public:
         Process();
-        Process( const char* command, const char* arguments, const char* directory, int flags );
+        Process( const char* command, const char* arguments, const char* directory, const Environment* environment, int flags );
         ~Process();
 
         void wait();

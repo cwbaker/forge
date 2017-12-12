@@ -4,17 +4,15 @@ msvc = {};
 function msvc.configure( settings )
     local function registry( key )
         local values = {};
-        local RegQueryScanner = Scanner {
-            [ [[[ ]* ([A-Za-z0-9_]+) [ ]* ([A-Za-z0-9_]+) [ ]* ([A-Za-z0-9_\(\)\\\:\. ]+)]] ] = function( key, type, value )
-                values[key] = value;
-            end;
-            
-            [ [[.*]] ] = function()
-            end;
-        };
         local reg = "C:/Windows/system32/reg.exe";
         local arguments = ('reg query "%s"'):format( key );
-        build.system( reg, arguments, RegQueryScanner );
+        build.system( reg, arguments, function(line)
+            local REG_QUERY_PATTERN = "%s* ([%w_]+) %s* ([%w_]+) %s* ([%w%s_%(%)%\\%:%.]+)";
+            local key, type_, value = line:match( REG_QUERY_PATTERN );
+            if key and type_ and value then 
+                values[key] = value;
+            end
+        end );
         return values;
     end
 
@@ -46,15 +44,16 @@ function msvc.configure( settings )
 end;
 
 function msvc.initialize( settings )
-    msvc.configure( settings );
-    if platform == "windows" or platform == "" then
-        -- Make sure that the environment variable VS_UNICODE_OUTPUT is not set.  
+    if build.platform_matches("windows") then
+        -- Make sure that the environment variable VS_UNICODE_OUTPUT is not set.
+        --
         -- Visual Studio sets this to signal its tools to communicate back to 
         -- Visual Studio using named pipes rather than stdout so that unicode output 
         -- works better but this then prevents the build tool from intercepting
         -- and collating this output.
+        --
         -- See http://blogs.msdn.com/freik/archive/2006/04/05/569025.aspx.
-        putenv( "VS_UNICODE_OUTPUT", "" );
+        -- putenv( "VS_UNICODE_OUTPUT", "" );
 
         local visual_studio_directory = settings.msvc.visual_studio_directory;
         
@@ -89,10 +88,15 @@ function msvc.initialize( settings )
             table.insert( lib, ('%s\\Lib\\winv6.3\\um\\x86'):format(windows_sdk_directory) );
         end
 
-        putenv( "PATH", table.concat(path, ";") );
-        putenv( "INCLUDE", table.concat(include, ";") );
-        putenv( "LIB", table.concat(lib, ";") );
-        putenv( "LIBPATH", table.concat(libpath, ";") );
+        local environment = {
+            PATH = table.concat( path, ";" );
+            INCLUDE = table.concat( include, ";" );
+            LIB = table.concat( lib, ";" );
+            LIBPATH = table.concat( libpath, ";" );
+            SYSTEMROOT = getenv( "SYSTEMROOT" );
+            TMP = getenv( "TMP" );
+        };
+        msvc.environment = environment;
     end
 end;
 
@@ -146,6 +150,7 @@ function msvc.append_compile_flags( target, flags )
     table.insert( flags, "/FS" );
     table.insert( flags, "/FC" );
     table.insert( flags, "/c" );
+    table.insert( flags, "/showIncludes" );
 
     local language = target.language or "c++";
     if language == "c" then 
@@ -186,7 +191,7 @@ function msvc.append_compile_flags( target, flags )
     end
 
     if target.settings.optimization then
-        table.insert( flags, "/GF /O2 /Ot /Oi /GS-" );
+        table.insert( flags, "/GF /O2 /Ot /Oi /Ox /Oy /GS- /favor:blend" );
     end
 
     if target.settings.preprocess then
@@ -273,3 +278,69 @@ function msvc.append_link_libraries( target, flags )
         end
     end
 end
+
+function msvc.process_dependencies_filter( output_directory, source_directory )
+    local context = {
+        current_directory = source_directory;
+        directories = { source_directory };
+    };
+
+    -- Strip the backslash delimited prefix from _include_path_ and return the
+    -- remaining portion.  This remaining portion is the correct relative path to
+    -- a header.
+    local function relative_include_path( include_path )
+        local position = 1;
+        local start, finish = include_path:find( "\\", position, false );
+        while start do 
+            position = finish + 1;
+            start, finish = include_path:find( "\\", position, false );
+        end
+        return include_path:sub( position );
+    end
+
+    -- Match lines that indicatesource files and header files in Microsoft
+    -- Visual C++ output to gather dependencies for source file compilation.
+    local function process_dependencies_filter( line, context )
+        local SHOW_INCLUDES_PATTERN = "^Note: including file:(%s*)([^\n\r]*)[\n\r]*$";
+        local indent, path = line:match( SHOW_INCLUDES_PATTERN );
+        if indent and path then
+            local indent = #indent;
+            local directories = context.directories;
+            if indent < #directories then
+                while indent < #directories do 
+                    table.remove( directories );
+                end
+            end
+            if indent > #directories then 
+                table.insert( directories, context.current_directory );
+            end
+
+            local LOWER_CASE_DRIVE_PATTERN = "^%l:";
+            local lower_case_path = path:find( LOWER_CASE_DRIVE_PATTERN );
+            if lower_case_path then 
+                local directory = directories[#directories];
+                path = ("%s/%s"):format( directory, relative_include_path(path) );
+            end
+
+            local within_source_tree = relative( path, root() ):find( "..", 1, true ) == nil;
+            if within_source_tree then 
+                local object = context.object;
+                local header = build.SourceFile( path );
+                object:add_dependency( header );
+            end
+            context.current_directory = branch( path );
+        else
+            local SOURCE_FILE_PATTERN = "^[%w_]+%.[%w_]+[\n\r]*$";
+            local start, finish = line:find( SOURCE_FILE_PATTERN );
+            if start and finish then 
+                local object = build.File( ("%s/%s"):format(output_directory, obj_name(line)) );
+                context.object = object;
+            end
+            printf( line );
+        end
+    end
+
+    return process_dependencies_filter, context;
+end
+
+build.register_module( msvc );

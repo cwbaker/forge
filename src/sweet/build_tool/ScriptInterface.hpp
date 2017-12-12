@@ -14,9 +14,8 @@ namespace sweet
 namespace build_tool
 {
 
-class Environment;
+class Context;
 class OsInterface;
-class Scanner;
 class TargetPrototype;
 class Arguments;
 class Graph;
@@ -34,12 +33,9 @@ class ScriptInterface
     lua::Lua lua_; ///< The Lua virtual machine.
     lua::LuaObject target_prototype_metatable_; ///< The LuaObject that acts as a metatable for TargetPrototypes.
     lua::LuaObject target_prototype_prototype_; ///< The LuaObject that acts as a prototype for TargetPrototypes.
-    lua::LuaObject scanner_metatable_; ///< The LuaObject that acts as a metatable for Scanners.
-    lua::LuaObject scanner_prototype_; ///< The LuaObject that acts as a prototype for Scanners.
     lua::LuaObject target_metatable_; ///< The LuaObject that acts as a metatable for Targets.
     lua::LuaObject target_prototype_; ///< The LuaObject that acts as a prototype for Targets.
     std::vector<TargetPrototype*> target_prototypes_; ///< The TargetPrototypes that have been loaded in.
-    std::vector<Scanner*> scanners_; ///< The Scanners that have been allocated.
     path::Path root_directory_; ///< The full path to the root directory.
     path::Path initial_directory_; ///< The full path to the initial directory.
 
@@ -48,7 +44,7 @@ class ScriptInterface
         ~ScriptInterface();
 
         lua::Lua& lua();
-        Environment* environment() const;
+        Context* context() const;
 
         void set_root_directory( const path::Path& root_directory );
         const path::Path& root_directory() const;
@@ -58,8 +54,6 @@ class ScriptInterface
 
         void create_prototype( TargetPrototype* target_prototype );
         void destroy_prototype( TargetPrototype* target_prototype );
-        Scanner* create_scanner();
-        void destroy_scanner( Scanner* scanner );
         void create_target( Target* target );
         void recover_target( Target* target );
         void update_target( Target* target, TargetPrototype* target_prototype );
@@ -100,13 +94,11 @@ class ScriptInterface
         void cp( const std::string& from, const std::string& to );
         void rm( const std::string& path );
         std::string operating_system();
-        void putenv( const std::string& attribute, const std::string& value );
         const char* getenv( const char* name );
         void sleep( float milliseconds );
         float ticks();
         
         void buildfile( const std::string& filename, Target* target );
-        int bind( Target* target );
         void mark_implicit_dependencies();
         void print_dependencies( Target* target );
         void print_namespace( Target* target );
@@ -135,18 +127,14 @@ class ScriptInterface
         static int getenv_( lua_State* lua_state );
         static int file( lua_State* lua_state );
         static int target( lua_State* lua_state );
-        static int scanner( lua_State* lua_state );
-        static int preorder( lua_State* lua_state );
         static int postorder( lua_State* lua_state );
         static int execute( lua_State* lua_state );
-        static int scan( lua_State* lua_state );
 };
 
 }
 
 }
 
-SWEET_LUA_TYPE_CONVERSION( sweet::build_tool::Scanner, LuaByReference );
 SWEET_LUA_TYPE_CONVERSION( sweet::build_tool::TargetPrototype, LuaByReference );
 SWEET_LUA_TYPE_CONVERSION( sweet::build_tool::Target, LuaByReference );
 

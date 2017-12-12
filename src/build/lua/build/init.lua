@@ -16,10 +16,27 @@ function errorf( format, ... )
     error( string.format(format, ...) );
 end
 
+-- Split a '.' delimited string into a table hierarchy returning the last 
+-- level table and identifier.
+function split_modules( module, qualified_id )
+    local start = qualified_id:find( ".", 1, true );
+    if start then
+        local id = qualified_id:sub( 1, start - 1 );
+        local submodule = module[id];
+        if submodule == nil then 
+            submodule = {};
+            module[id] = submodule;
+        end
+        local remaining = qualified_id:sub( start + 1 );
+        return split_modules( submodule, remaining );
+    end
+    return module, qualified_id;
+end
+
 -- Provide buildfile() that restores the settings stack position.
 local original_buildfile = buildfile;
 function buildfile( ... )
-    local position = build.save_settings();
+    local position = build.store_settings();
     pcall( original_buildfile, ... );
     build.restore_settings( position );
 end
@@ -75,6 +92,8 @@ end
 function build.TargetPrototype( id, create_function )
     local target_prototype = TargetPrototype { id };
     getmetatable( target_prototype ).__call = create_function or build.default_create_function;
+    local module, id = split_modules( build, id );
+    module[id] = target_prototype;
     return target_prototype;
 end
 
@@ -147,19 +166,53 @@ function build.initialize( project_settings )
     build.merge_settings( settings, variant_settings );
 
     if settings.library_type == "static" then
-        Library = StaticLibrary;
+        build.Library = build.StaticLibrary;
     elseif settings.library_type == "dynamic" then
-        Library = DynamicLibrary;
+        build.Library = build.DynamicLibrary;
     else
         error( string.format("The library type '%s' is not 'static' or 'dynamic'", tostring(settings.library_type)) );
     end
 
     default_settings.cache = root( ("%s/%s_%s.cache"):format(settings.obj, platform, variant) );
     _G.settings = settings;
+    build.default_buildfiles_ = {};
+    build.default_targets_ = {};
     build.default_settings = default_settings;
     build.local_settings = local_settings;
     build.settings = settings;
+    build.configure_modules( settings );
+    build.initialize_modules( settings );
     return settings;
+end
+
+build.modules = {};
+
+-- Register *module* to be configured and initialized when the build sysetm 
+-- is initialized.
+function build.register_module( module )
+    table.insert( build.modules, module ); 
+end
+
+-- Call `configure` for each registered module that provides it.
+function build.configure_modules( settings )
+    local modules = build.modules;
+    for _, module in ipairs(modules) do 
+        local configure = module.configure;
+        if configure and type(configure) == "function" then 
+            configure( settings );
+        end
+    end
+end
+
+-- Call `initialize` for each registered module that provides it.
+function build.initialize_modules( settings )
+    local modules = build.modules;
+    for _, module in ipairs(modules) do 
+        local initialize = module.initialize;
+        if initialize and type(initialize) == "function" then 
+            initialize( settings );
+        end
+    end
 end
 
 -- Convert a version string into a date table (assuming that the version 
@@ -195,18 +248,23 @@ end
 
 -- Add a target to the current directory's target so that it will be built 
 -- when a build is invoked from that directory.
-function build.default_target( default_target )
+function build.default_target( target )
     local directory = working_directory();
-    directory:add_dependency( default_target );
+    directory:add_dependency( target );
 end
 
 -- Add targets to the current directory's target so that they will be built 
 -- when a build is invoked from that directory.
-function build.default_targets( default_targets )
-    local directory = working_directory();
-    for _, default_target in ipairs(default_targets) do
-        directory:add_dependency( target(root(default_target)) );
+function build.default_targets( targets )
+    for _, target in ipairs(targets) do 
+        local directory = working_directory();
+        table.insert( build.default_targets_, {directory:path(), absolute(target)} );
     end
+end
+
+-- Set the root buildfile to be load to populate the dependency graph.
+function build.default_buildfiles( buildfiles )
+    build.default_buildfiles_ = buildfiles;
 end
 
 -- Visit a target by calling a member function /pass/ if it has one.
@@ -216,22 +274,6 @@ function build.visit( pass, ... )
         local fn = target[pass];
         if fn then
             fn( target, unpack(args) );
-        end
-    end
-end
-
--- Visit a target by calling a member function "depend" if it has one or,
--- if there is no "depend" function and the id of the target matches that
--- of a C, C++, Objective C, or Objective C++ source or header file, then 
--- scan it with the CcScanner.
-function build.depend_visit( target )
-    local fn = target.depend;
-    if fn then
-        fn( target );
-    elseif target:prototype() == nil then
-        local id = target:id();
-        if id:find(".+%.[chi]p?p?") or id:find(".+%.mm?") then
-            scan( target, CcScanner );
         end
     end
 end
@@ -250,8 +292,8 @@ end
 
 -- Execute command with arguments and optional filter and raise an error if 
 -- it doesn't return 0.
-function build.system( command, arguments, filter )
-    if execute(command, arguments, filter) ~= 0 then       
+function build.system( command, arguments, environment, filter, ... )
+    if execute(command, arguments, environment, filter, ...) ~= 0 then       
         error( ("%s failed"):format(arguments), 0 );
     end
 end
@@ -388,18 +430,16 @@ end
 -- Load the dependency graph from the file specified by /settings.cache/ and
 -- running depend and bind passes over the target specified by /goal/ and its
 -- dependencies.
-function build.load( goal, force )
+function build.load( force )
     local load_start = ticks();
-    local cache_target = load_binary( settings.cache, initial(goal) );
+    local cache_target = load_binary( settings.cache );
     if cache_target == nil or cache_target:outdated() or build.local_settings.updated or force then
         clear();
         build.push_settings( build.settings );
-        buildfile( settings.buildfile );
+        for _, filename in ipairs(build.default_buildfiles_) do
+            buildfile( filename );
+        end
         build.pop_settings();
-
-        local root_target = find_target( root() );
-        assert( root_target , "No root target found at '"..tostring(root()).."'" );
-        preorder( build.visit("static_depend"), root_target );
 
         cache_target = find_target( settings.cache );
         assertf( cache_target, "No cache target found at '%s' after loading buildfiles", settings.cache );
@@ -412,25 +452,18 @@ function build.load( goal, force )
         cache_target:add_dependency( file(script("build/Directory")) );
         cache_target:add_dependency( file(script("build/Copy")) );
 
+        -- Add default targets as dependencies of the working directory that
+        -- was in effect when `build.default_target(s)` was called.
+        for _, default_target in ipairs(build.default_targets_) do
+            local directory = build.Target( default_target[1] );
+            local target = build.Target( default_target[2] );
+            directory:add_dependency( target );
+        end
+
         mark_implicit_dependencies();
     end
     local load_finish = ticks();
-
-    local depend_start = load_finish;
-    local all = find_target( initial(goal) );
-    assert( all, ("No target found at '%s'"):format(tostring(initial(goal))) );
-    preorder( build.depend_visit, all );
-    local depend_finish = ticks();
-
-    local bind_start = depend_finish;
-    bind( all );
-    local bind_finish = ticks();
-
-    return 
-        load_finish - load_start, 
-        depend_finish - depend_start, 
-        bind_finish - bind_start
-    ;
+    return load_finish - load_start;
 end
 
 -- Save the dependency graph to the file specified by /settings.cache/.
@@ -460,7 +493,7 @@ end
 function build.strip( path )
     local branch = branch( path );
     if branch ~= "" then 
-        return string.format( "%s/%s", branch, basename(path) );
+        return ("%s/%s"):format( branch, basename(path) );
     else
         return basename( path );
     end
@@ -504,7 +537,7 @@ function build.current_settings()
     end
 end
 
-function build.save_settings()
+function build.store_settings()
     return #build.settings_stack;
 end
 

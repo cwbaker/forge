@@ -339,3 +339,5 @@ end
 function mingw.module_name( name, architecture )
     return name;
 end
+ 
+build.register_module( mingw );

@@ -67,4 +67,3 @@ function Jar.clean( jar )
 end
 
 android.Jar = Jar;
-_G.Jar = Jar;

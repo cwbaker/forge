@@ -1,5 +1,5 @@
 
-local Plist = build.TargetPrototype( "Plist" );
+local Plist = build.TargetPrototype( "xcode.Plist" );
 
 function Plist.create( settings, filename, input )
     local plist = build.File( build.interpolate(filename, settings), Plist );

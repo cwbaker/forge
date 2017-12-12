@@ -34,6 +34,15 @@ ErrorPolicy::~ErrorPolicy()
 }
 
 /**
+// Reset the error count at the current stack level to 0.
+*/
+void ErrorPolicy::clear()
+{
+    SWEET_ASSERT( stack_index_ >= 0 && stack_index_ < ERROR_STACK_SIZE - 1 );
+    errors_[stack_index_] = 0;
+}
+
+/**
 // Push an error count onto the stack of error counts.
 //
 // Assumes that the no more than \e ERROR_STACK_SIZE (32) levels are ever

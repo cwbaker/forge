@@ -16,16 +16,16 @@ function ios.configure( settings )
 
         local xcodebuild = "/usr/bin/xcodebuild";
         local arguments = "xcodebuild -sdk iphoneos -version";
-        local result = execute( xcodebuild, arguments, Scanner {
-            [ [[([a-zA-Z0-9]+): ([^\n]+)]] ] = function( key, value )
-                if key == "ProductBuildVersion" then
+        local result = execute( xcodebuild, arguments, nil, function(line)
+            local key, value = line:match( "(%w+): ([^\n]+)" );
+            if key and value then 
+                if key == "ProductBuildVersion" then 
                     sdk_build_version = value;
+                elseif key == "SDKVersion" then
+                    sdk_version = value;
                 end
-            end;
-            [ [[[^\(]+\([a-z]+([0-9\.]+)\)]] ] = function( version )
-                sdk_version = version;
-            end;
-        } );
+            end
+        end );
         assert( result == 0, "Running xcodebuild to extract SDK name and version failed" );
 
         return sdk_version, sdk_build_version;
@@ -37,14 +37,17 @@ function ios.configure( settings )
 
         local xcodebuild = "/usr/bin/xcodebuild";
         local arguments = "xcodebuild -version";
-        local result = execute( xcodebuild, arguments, Scanner {
-            [ [[Xcode ([0-9]+)\.([0-9]+)]] ] = function( major, minor )
+        local result = execute( xcodebuild, arguments, nil, function(line)
+            local major, minor = line:match( "Xcode (%d+)%.(%d+)" );
+            if major and minor then 
                 xcode_version = ("%02d%02d"):format( tonumber(major), tonumber(minor) );
-            end;
-            [ [[Build version ([A-Za-z0-9]+)]] ] = function( build_version )
+            end
+
+            local build_version = line:match( "Build version (%w+)" )
+            if build_version then
                 xcode_build_version = build_version;
-            end;
-        } );
+            end
+        end );
         assert( result == 0, "Running xcodebuild to extract Xcode version failed" );
         
         return xcode_version, xcode_build_version;
@@ -55,11 +58,12 @@ function ios.configure( settings )
 
         local sw_vers = "/usr/bin/sw_vers";
         local arguments = "sw_vers -buildVersion";
-        local result = execute( sw_vers, arguments, Scanner {
-            [ [[([A-Za-z0-9]+)]] ] = function( version )
-                os_version = version; 
-            end;
-        } );
+        local result = execute( sw_vers, arguments, nil, function(line)
+            local version = line:match( "%w+" );
+            if version then 
+                os_version = version;
+            end
+        end );
         assert( result == 0, "Running sw_vers to extract operating system version failed" );
 
         return os_version;
@@ -88,9 +92,7 @@ function ios.configure( settings )
 end;
 
 function ios.initialize( settings )
-    ios.configure( settings );
-
-    if platform == "ios" or platform == "ios_simulator" then
+    if build.platform_matches("ios.*") then
         cc = ios.cc;
         objc = ios.objc;
         build_library = ios.build_library;
@@ -130,7 +132,8 @@ function ios.cc( target )
         if dependency:outdated() then
             print( leaf(dependency.source) );
             build.system( xcrun, ('xcrun --sdk %s clang %s -o "%s" "%s"'):format(sdkroot, ccflags, dependency:filename(), absolute(dependency.source)) );
-        end    
+            clang.process_dependencies( dependency );
+        end
     end
 end;
 
@@ -143,7 +146,7 @@ function ios.build_library( target )
     local objects =  {};
     for dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
+        if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
             for object in dependency:dependencies() do
                 table.insert( objects, relative(object:filename()) );
             end
@@ -190,11 +193,11 @@ function ios.build_executable( target )
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     for dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == Cc or prototype == Cxx or prototype == ObjC or prototype == ObjCxx then
+        if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
             for object in dependency:dependencies() do
                 table.insert( objects, relative(object:filename()) );
             end
-        elseif prototype == StaticLibrary or prototype == DynamicLibrary then
+        elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
             table.insert( libraries, ("-l%s"):format(dependency:id()) );
         end
     end
@@ -285,3 +288,5 @@ function ios.module_name( name, architecture )
 end
 
 require "build.ios.App";
+
+build.register_module( ios );

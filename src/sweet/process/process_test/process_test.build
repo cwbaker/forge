@@ -1,7 +1,7 @@
 
 local settings = build.current_settings();
 for _, architecture in ipairs(settings.architectures) do
-    Executable ("process_test", architecture) {
+    build.Executable ("process_test", architecture) {
         libraries = {
             "sweet/process/process",
             "sweet/cmdline/cmdline",
@@ -9,7 +9,7 @@ for _, architecture in ipairs(settings.architectures) do
             "sweet/assert/assert"
         };
 
-        Cxx (architecture) {
+        build.Cxx (architecture) {
             precompiled_header = "stdafx.hpp";
             "Application.cpp",
             "main.cpp"

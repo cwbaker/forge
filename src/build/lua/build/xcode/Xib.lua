@@ -1,5 +1,5 @@
 
-local Xib = build.TargetPrototype( "Xib" );
+local Xib = build.TargetPrototype( "xcode.Xib" );
 
 function Xib.create( settings, definition )
     local xib = build.Target( "", Xib, definition );

@@ -29,5 +29,3 @@ end
 function DynamicLibrary.clean( dynamic_library )
     clean_executable( dynamic_library );
 end
-
-_G.DynamicLibrary = DynamicLibrary;

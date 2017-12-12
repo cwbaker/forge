@@ -42,12 +42,27 @@ local settings = build.initialize {
     };
 };
 
-if operating_system() == "windows" then    
-    windows.initialize( settings );  
-    visual_studio.initialize( settings );
-elseif operating_system() == "macosx" then
-    macosx.initialize( settings );
-    xcode.initialize( settings );
-end
+build.default_buildfiles {
+    "boost/boost.build",
+    "lua/lua.build",
+    "sweet/assert/assert.build",
+    "sweet/atomic/atomic.build",
+    "sweet/build_tool/build_tool.build",
+    "sweet/cmdline/cmdline.build",
+    "sweet/error/error.build",
+    "sweet/lua/lua.build",
+    "sweet/path/path.build",
+    "sweet/persist/persist.build",
+    "sweet/pointer/pointer.build",
+    "sweet/process/process.build",
+    "sweet/rtti/rtti.build",
+    "sweet/thread/thread.build",
+    "sweet/traits/traits.build",
+    "unit/unit.build"
+};
 
-parser.initialize( settings );
+-- Targets built when building from the root directory and as targets when
+-- generating XCode projects and Visual Studio solutions.
+build.default_targets {
+    "sweet/build_tool/build"    
+};

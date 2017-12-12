@@ -1,9 +1,8 @@
 
 local settings = build.current_settings();
 for _, architecture in ipairs(settings.architectures) do    
-    Library ("assert", architecture) {
-        Cc (architecture) {
-            precompiled_header = "stdafx.hpp";
+    build.Library ("assert", architecture) {
+        build.Cc (architecture) {
             "assert.cpp"
         };
     };

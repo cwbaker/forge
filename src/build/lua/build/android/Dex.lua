@@ -32,7 +32,7 @@ function Dex.build( dex )
             table.insert( jars, build.classes_directory(dex) );
         end
         for dependency in dex:dependencies() do 
-            if dependency:prototype() == Jar then 
+            if dependency:prototype() == build.Jar then 
                 table.insert( jars, relative(dependency:filename()) );
             end
         end

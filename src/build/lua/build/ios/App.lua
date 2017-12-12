@@ -17,14 +17,14 @@ function App.call( app, definition )
     local entitlements = definition.entitlements;
     if entitlements then 
         app.entitlements = ("%s/%s"):format( obj_directory(app), "Entitlements.plist" );
-        table.insert( definition, Generate(app.entitlements, entitlements) );
+        table.insert( definition, build.Generate(app.entitlements, entitlements) );
     end
 
     local resource_rules = definition.resource_rules;
     if resource_rules then 
         assertf( is_file(resource_rules), "The resource rules file '%s' does not exist", tostring(resource_rules) );
         app.resource_rules = ("%s/ResourceRules.plist"):format( app:filename() );
-        table.insert( definition, Copy(app.resource_rules, resource_rules) );
+        table.insert( definition, build.Copy(app.resource_rules, resource_rules) );
     end
 
     local working_directory = working_directory();
@@ -41,7 +41,7 @@ function App.build( app )
         if app.settings.generate_dsym_bundle then 
             local executable;
             for dependency in app:dependencies() do 
-                if dependency:prototype() == Lipo then 
+                if dependency:prototype() == build.Lipo then 
                     executable = dependency:filename();
                     break;
                 end

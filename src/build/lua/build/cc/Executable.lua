@@ -29,5 +29,3 @@ end
 function Executable.clean( executable )
     clean_executable( executable );
 end
-
-_G.Executable = Executable;

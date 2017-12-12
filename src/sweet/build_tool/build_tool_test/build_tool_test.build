@@ -6,7 +6,7 @@ local settings = build.push_settings {
 };
 
 for _, architecture in ipairs(settings.architectures) do
-    Executable ("build_tool_test", architecture) {
+    build.Executable ("build_tool_test", architecture) {
         libraries = {    
             "boost/libs/filesystem/src/boost_filesystem",
             "boost/libs/system/src/boost_system",
@@ -25,15 +25,14 @@ for _, architecture in ipairs(settings.architectures) do
             "unit/libUnitTest"
         };
 
-        Cxx (architecture) {
+        build.Cxx (architecture) {
             "main.cpp",
             "ErrorChecker.cpp",
             "FileChecker.cpp",
             "TestDirectoryApi.cpp",
             "TestGraph.cpp",
             "TestPostorder.cpp",
-            "TestPreorder.cpp",
-            "TestScanner.cpp"
+            "TestPreorder.cpp"
         };
     }
 end

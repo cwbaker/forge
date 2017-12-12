@@ -529,10 +529,10 @@ void Graph::recover()
 // Mark added dependencies as being implicit.
 //
 // Dependencies are added as explicit dependencies from when a Graph is 
-// initially created or cleared (see Graph::clear()) until the 
-// Graph::mark_implicit_dependencies() is called.  After 
-// Graph::mark_implicit_dependencies() has been called dependencies are added
-// as implicit dependencies.
+// initially created or cleared (see Graph::clear()) until the function
+// Graph::mark_implicit_dependencies() is called.  Depencies are added
+// as implicit dependencies after Graph::mark_implicit_dependencies() has
+// been called.
 //
 // Implicit dependencies are cleared whenever the Target that depends on them 
 // is scanned -- they are intended to represent the implicit dependency 
@@ -808,6 +808,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
         }
     };
 
+    bind( target );
     RecursivePrinter recursive_printer( this );
     recursive_printer.print( target ? target : root_target_, path::Path(directory), 0 );
     printf( "\n\n" );

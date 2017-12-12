@@ -34,7 +34,7 @@ function Java.build( java )
             local prototype = dependency:prototype();
             if prototype == nil then
                 table.insert( source_files, relative(dependency:filename()) );
-            elseif prototype == Jar then
+            elseif prototype == build.Jar then
                 table.insert( jars, relative(dependency:filename()) );
             end
         end
@@ -87,4 +87,3 @@ function Java.clean( java )
 end
 
 android.Java = Java;
-_G.Java = Java;

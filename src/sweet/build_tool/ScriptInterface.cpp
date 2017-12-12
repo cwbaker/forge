@@ -1,18 +1,17 @@
 //
 // ScriptInterface.cpp
-// Copyright (c) 2008 - 2015 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker.  All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include "ScriptInterface.hpp"
 #include "Error.hpp"
-#include "Scanner.hpp"
 #include "TargetPrototype.hpp"
 #include "Target.hpp"
 #include "Arguments.hpp"
 #include "Graph.hpp"
 #include "BuildTool.hpp"
-#include "Environment.hpp"
+#include "Context.hpp"
 #include "Scheduler.hpp"
 #include "OsInterface.hpp"
 #include <sweet/lua/lua_functions.ipp>
@@ -20,6 +19,7 @@
 #include <sweet/lua/vector.hpp>
 #include <sweet/lua/ptr.hpp>
 #include <sweet/lua/Lua.hpp>
+#include <sweet/process/Environment.hpp>
 #include <memory>
 #include <stdlib.h>
 
@@ -72,12 +72,9 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
   lua_( build_tool->error_policy() ),
   target_prototype_metatable_( lua_ ),
   target_prototype_prototype_( lua_ ),
-  scanner_metatable_( lua_ ),
-  scanner_prototype_( lua_ ),
   target_metatable_( lua_ ),
   target_prototype_( lua_ ),
   target_prototypes_(),
-  scanners_(),
   root_directory_(),
   initial_directory_()
 {
@@ -91,20 +88,6 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
     target_prototype_prototype_.members()
         .type( SWEET_STATIC_TYPEID(TargetPrototype) )
         ( "id", &TargetPrototype::id )
-    ;
-
-    scanner_metatable_.members()
-        ( "__index", scanner_prototype_ )
-    ;
-
-    scanner_prototype_.members()
-        .type( SWEET_STATIC_TYPEID(Scanner) )
-        ( "set_initial_lines", &Scanner::set_initial_lines )
-        ( "initial_lines", &Scanner::initial_lines )
-        ( "set_later_lines", &Scanner::set_later_lines )
-        ( "later_lines", &Scanner::later_lines )
-        ( "set_maximum_matches", &Scanner::set_maximum_matches )
-        ( "maximum_matches", &Scanner::maximum_matches )
     ;
 
     target_metatable_.members()
@@ -123,32 +106,30 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "required_to_exist", &Target::required_to_exist )
         ( "set_cleanable", &Target::set_cleanable )
         ( "cleanable", &Target::cleanable )
-        ( "set_timestamp", &Target::set_timestamp )
         ( "timestamp", &Target::timestamp )
         ( "last_write_time", &Target::last_write_time )
-        ( "set_outdated", &Target::set_outdated )
         ( "outdated", &Target::outdated )
         ( "set_filename", raw(&ScriptInterface::set_filename) )
         ( "filename", raw(&ScriptInterface::filename) )
         ( "filenames", &Target::filenames )
         ( "set_working_directory", &Target::set_working_directory )
-        ( "working_directory", &ScriptInterface::working_directory, this, _1 )
+        ( "working_directory", &ScriptInterface::target_working_directory, this, _1 )
         ( "targets", raw(&ScriptInterface::targets), this )
         ( "add_dependency", &Target::add_dependency )
         ( "remove_dependency", &Target::remove_dependency )
+        ( "clear_implicit_dependencies", &Target::clear_implicit_dependencies )
         ( "dependency", raw(&ScriptInterface::dependency), this )
         ( "dependencies", raw(&ScriptInterface::dependencies), this )
     ;
 
     lua_.globals()
         ( "set_maximum_parallel_jobs", &BuildTool::set_maximum_parallel_jobs, build_tool_ )
-        ( "get_maximum_parallel_jobs", &BuildTool::maximum_parallel_jobs, build_tool_ )
+        ( "maximum_parallel_jobs", &BuildTool::maximum_parallel_jobs, build_tool_ )
         ( "set_stack_trace_enabled", &BuildTool::set_stack_trace_enabled, build_tool_ )
         ( "stack_trace_enabled", &BuildTool::stack_trace_enabled, build_tool_ )
     ;
 
     lua_.globals()
-        ( "Scanner", raw(&ScriptInterface::scanner), this )
         ( "TargetPrototype", raw(&ScriptInterface::target_prototype__), this )
         ( "file", raw(&ScriptInterface::file), this )
         ( "target", raw(&ScriptInterface::target), this )
@@ -175,7 +156,6 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "extension", &ScriptInterface::extension, this )
         ( "exec", raw(&ScriptInterface::execute), this )
         ( "execute", raw(&ScriptInterface::execute), this )
-        ( "scan", raw(&ScriptInterface::scan), this )
         ( "print", &ScriptInterface::print, this )
         ( "operating_system", &ScriptInterface::operating_system, this )
         ( "exists", &ScriptInterface::exists, this )
@@ -188,13 +168,10 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "rmdir", &ScriptInterface::rmdir, this )
         ( "cp", &ScriptInterface::cp, this )
         ( "rm", &ScriptInterface::rm, this )
-        ( "putenv", &ScriptInterface::putenv, this )
         ( "getenv", raw(&ScriptInterface::getenv_), this )
         ( "sleep", &ScriptInterface::sleep, this )
         ( "ticks", &ScriptInterface::ticks, this )
         ( "buildfile", &ScriptInterface::buildfile, this )
-        ( "bind", &ScriptInterface::bind, this )
-        ( "preorder", raw(&ScriptInterface::preorder), this )
         ( "postorder", raw(&ScriptInterface::postorder), this )
         ( "mark_implicit_dependencies", &ScriptInterface::mark_implicit_dependencies, this )
         ( "print_dependencies", &ScriptInterface::print_dependencies, this )
@@ -210,12 +187,6 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
 
 ScriptInterface::~ScriptInterface()
 {
-    while ( !scanners_.empty() )
-    {
-        delete scanners_.back();
-        scanners_.pop_back();
-    }
-
     while ( !target_prototypes_.empty() )
     {
         delete target_prototypes_.back();
@@ -228,9 +199,9 @@ lua::Lua& ScriptInterface::lua()
     return lua_;
 }
 
-Environment* ScriptInterface::environment() const
+Context* ScriptInterface::context() const
 {
-    return build_tool_->scheduler()->environment();
+    return build_tool_->scheduler()->context();
 }
 
 void ScriptInterface::set_root_directory( const path::Path& root_directory )
@@ -274,19 +245,18 @@ void ScriptInterface::create_prototype( TargetPrototype* target_prototype )
         ( "required_to_exist", &Target::required_to_exist )
         ( "set_cleanable", &Target::set_cleanable )
         ( "cleanable", &Target::cleanable )
-        ( "set_timestamp", &Target::set_timestamp )
         ( "timestamp", &Target::timestamp )
         ( "last_write_time", &Target::last_write_time )
-        ( "set_outdated", &Target::set_outdated )
         ( "outdated", &Target::outdated )
         ( "set_filename", raw(&ScriptInterface::set_filename) )
         ( "filename", raw(&ScriptInterface::filename) )
         ( "filenames", &Target::filenames )
         ( "set_working_directory", &Target::set_working_directory )
-        ( "working_directory", &ScriptInterface::working_directory, this, _1 )
+        ( "working_directory", &ScriptInterface::target_working_directory, this, _1 )
         ( "targets", raw(&ScriptInterface::targets), this )
         ( "add_dependency", &Target::add_dependency )
         ( "remove_dependency", &Target::remove_dependency )
+        ( "clear_implicit_dependencies", &Target::clear_implicit_dependencies )
         ( "dependency", raw(&ScriptInterface::dependency), this )
         ( "dependencies", raw(&ScriptInterface::dependencies), this )
     ;
@@ -300,26 +270,6 @@ void ScriptInterface::destroy_prototype( TargetPrototype* target_prototype )
 {
     SWEET_ASSERT( target_prototype );
     lua_.destroy( target_prototype );
-}
-
-Scanner* ScriptInterface::create_scanner()
-{
-    const unsigned int PATTERNS_RESERVE = 8;
-    unique_ptr<Scanner> scanner( new Scanner(PATTERNS_RESERVE, build_tool_) );
-    lua_.create( scanner.get() );
-    lua_.members( scanner.get() )
-        .type( SWEET_STATIC_TYPEID(Scanner) )
-        .metatable( scanner_metatable_ )
-        .this_pointer( scanner.get() )
-    ;
-    scanners_.push_back( scanner.get() );
-    return scanner.release();
-}
-
-void ScriptInterface::destroy_scanner( Scanner* scanner )
-{
-    SWEET_ASSERT( scanner );
-    lua_.destroy( scanner );
 }
 
 void ScriptInterface::create_target( Target* target )
@@ -395,9 +345,9 @@ TargetPrototype* ScriptInterface::target_prototype( const std::string& id )
 
 Target* ScriptInterface::find_target( const std::string& id )
 {
-    Environment* environment = ScriptInterface::environment();
-    SWEET_ASSERT( environment );
-    Target* target = build_tool_->graph()->find_target( id, environment->working_directory() );
+    Context* context = ScriptInterface::context();
+    SWEET_ASSERT( context );
+    Target* target = build_tool_->graph()->find_target( id, context->working_directory() );
     if ( target && !target->referenced_by_script() )
     {
         create_target( target );
@@ -413,9 +363,9 @@ std::string ScriptInterface::absolute( const std::string& path, const path::Path
     }
     else if ( working_directory.empty() )
     {
-        Environment* environment = ScriptInterface::environment();
-        SWEET_ASSERT( environment );
-        path::Path absolute_path( environment->directory() );
+        Context* context = ScriptInterface::context();
+        SWEET_ASSERT( context );
+        path::Path absolute_path( context->directory() );
         absolute_path /= path;
         absolute_path.normalize();
         return absolute_path.string();
@@ -433,9 +383,9 @@ std::string ScriptInterface::relative( const std::string& path, const path::Path
 {
     if ( working_directory.empty() )
     {
-        Environment* environment = ScriptInterface::environment();
-        SWEET_ASSERT( environment );
-        return environment->directory().relative( path::Path(path) ).string();
+        Context* context = ScriptInterface::context();
+        SWEET_ASSERT( context );
+        return context->directory().relative( path::Path(path) ).string();
     }
     else
     {
@@ -498,9 +448,9 @@ std::string ScriptInterface::home( const std::string& path ) const
 
 std::string ScriptInterface::anonymous() const
 {
-    Environment* environment = ScriptInterface::environment();
-    SWEET_ASSERT( environment );
-    Target* working_directory = environment->working_directory();
+    Context* context = ScriptInterface::context();
+    SWEET_ASSERT( context );
+    Target* working_directory = context->working_directory();
     SWEET_ASSERT( working_directory );
     char anonymous [256];
     unsigned int length = sprintf( anonymous, "$$%d", working_directory->anonymous() );
@@ -519,38 +469,38 @@ bool ScriptInterface::is_relative( const std::string& path )
 
 void ScriptInterface::cd( const std::string& path )
 {
-    Environment* environment = ScriptInterface::environment();
-    SWEET_ASSERT( environment );
-    environment->change_directory( path );
+    Context* context = ScriptInterface::context();
+    SWEET_ASSERT( context );
+    context->change_directory( path );
 }
 
 void ScriptInterface::pushd( const std::string& path )
 {
-    Environment* environment = ScriptInterface::environment();
-    SWEET_ASSERT( environment );
-    environment->push_directory( path );
+    Context* context = ScriptInterface::context();
+    SWEET_ASSERT( context );
+    context->push_directory( path );
 }
 
 void ScriptInterface::popd()
 {
-    Environment* environment = ScriptInterface::environment();
-    SWEET_ASSERT( environment );
-    environment->pop_directory();
+    Context* context = ScriptInterface::context();
+    SWEET_ASSERT( context );
+    context->pop_directory();
 }
 
 const std::string& ScriptInterface::pwd() const
 {
-    Environment* environment = ScriptInterface::environment();
-    SWEET_ASSERT( environment );
-    return environment->directory().string();
+    Context* context = ScriptInterface::context();
+    SWEET_ASSERT( context );
+    return context->directory().string();
 }
 
 Target* ScriptInterface::working_directory()
 {
-    Environment* environment = ScriptInterface::environment();
-    SWEET_ASSERT( environment );
+    Context* context = ScriptInterface::context();
+    SWEET_ASSERT( context );
     
-    Target* target = environment->working_directory();
+    Target* target = context->working_directory();
     if ( target && !target->referenced_by_script() )
     {
         create_target( target );
@@ -645,9 +595,9 @@ void ScriptInterface::mkdir( const std::string& path )
 
 void ScriptInterface::cpdir( const std::string& from, const std::string& to )
 {
-    Environment* environment = ScriptInterface::environment();
-    SWEET_ASSERT( environment );
-    return os_interface_->cpdir( absolute(from), absolute(to), environment->directory().branch() );
+    Context* context = ScriptInterface::context();
+    SWEET_ASSERT( context );
+    return os_interface_->cpdir( absolute(from), absolute(to), context->directory().branch() );
 }
 
 void ScriptInterface::rmdir( const std::string& path )
@@ -668,11 +618,6 @@ void ScriptInterface::rm( const std::string& path )
 std::string ScriptInterface::operating_system()
 {
     return os_interface_->operating_system();
-}
-
-void ScriptInterface::putenv( const std::string& attribute, const std::string& value )
-{
-    os_interface_->putenv( attribute, value );
 }
 
 const char* ScriptInterface::getenv( const char* name )
@@ -696,12 +641,6 @@ void ScriptInterface::buildfile( const std::string& filename, Target* target )
     return build_tool_->graph()->buildfile( filename, target );
 }
 
-int ScriptInterface::bind( Target* target )
-{
-    SWEET_ASSERT( build_tool_ );
-    return build_tool_->graph()->bind( target );
-}
-
 void ScriptInterface::mark_implicit_dependencies()
 {
     SWEET_ASSERT( build_tool_ );
@@ -711,7 +650,7 @@ void ScriptInterface::mark_implicit_dependencies()
 void ScriptInterface::print_dependencies( Target* target )
 {
     SWEET_ASSERT( build_tool_ );
-    return build_tool_->graph()->print_dependencies( target, environment()->directory().string() );
+    return build_tool_->graph()->print_dependencies( target, context()->directory().string() );
 }
 
 void ScriptInterface::print_namespace( Target* target )
@@ -728,11 +667,11 @@ void ScriptInterface::wait()
 
 void ScriptInterface::clear()
 {
-    Environment* environment = ScriptInterface::environment();
-    string working_directory = environment->working_directory()->path();
+    Context* context = ScriptInterface::context();
+    string working_directory = context->working_directory()->path();
     Graph* graph = build_tool_->graph();
     graph->clear();
-    environment->reset_directory( working_directory );
+    context->reset_directory( working_directory );
 }
 
 Target* ScriptInterface::load_xml( const std::string& filename )
@@ -740,10 +679,10 @@ Target* ScriptInterface::load_xml( const std::string& filename )
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( build_tool_->graph() );
 
-    Environment* environment = ScriptInterface::environment();
-    string working_directory = environment->working_directory()->path();
+    Context* context = ScriptInterface::context();
+    string working_directory = context->working_directory()->path();
     Target* cache_target = build_tool_->graph()->load_xml( absolute(filename) );
-    environment->reset_directory( working_directory );
+    context->reset_directory( working_directory );
     if ( cache_target )
     {
         create_target( cache_target );
@@ -762,10 +701,10 @@ Target* ScriptInterface::load_binary( const std::string& filename )
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( build_tool_->graph() );
         
-    Environment* environment = ScriptInterface::environment();
-    string working_directory = environment->working_directory()->path();
+    Context* context = ScriptInterface::context();
+    string working_directory = context->working_directory()->path();
     Target* cache_target = build_tool_->graph()->load_binary( absolute(filename) );
-    environment->reset_directory( working_directory );
+    context->reset_directory( working_directory );
     if ( cache_target )
     {
         create_target( cache_target );
@@ -813,13 +752,13 @@ Target* ScriptInterface::target_working_directory( Target* target )
 
 Target* ScriptInterface::add_target( lua_State* lua_state )
 {
-    Environment* environment = ScriptInterface::environment();
-    SWEET_ASSERT( environment );
+    Context* context = ScriptInterface::context();
+    SWEET_ASSERT( context );
 
     Graph* graph = build_tool_->graph();
     SWEET_ASSERT( graph );
 
-    Target* working_directory = environment->working_directory();
+    Target* working_directory = context->working_directory();
     SWEET_ASSERT( working_directory );
 
     const int ID_PARAMETER = 1;
@@ -1322,74 +1261,6 @@ int ScriptInterface::target( lua_State* lua_state )
     }
 }
 
-int ScriptInterface::scanner( lua_State* lua_state )
-{
-    SWEET_ASSERT( lua_state );
-    
-    try 
-    {
-        const int SCANNER_PARAMETER = 1;
-        if ( !lua_istable(lua_state, SCANNER_PARAMETER) )
-        {
-            SWEET_ERROR( RuntimeError("Table not passed when creating a Scanner") );
-        }
-        
-        ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-        SWEET_ASSERT( script_interface );
-
-        Scanner* scanner = script_interface->create_scanner();        
-        lua_pushnil( lua_state );
-        while ( lua_next(lua_state, SCANNER_PARAMETER) != 0 )
-        {
-            if ( lua_isstring(lua_state, -2) && lua_isfunction(lua_state, -1) )
-            {
-                std::string regex = lua_tostring( lua_state, -2 );
-                scanner->add_pattern( regex, script_interface->lua_, lua_state, -1 );
-            }
-            lua_pop( lua_state, 1 );
-        }
-        lua_push( lua_state, scanner );
-        return 1;
-    }
-    
-    catch ( const std::exception& exception )
-    {
-        lua_pushstring( lua_state, exception.what() );
-        return lua_error( lua_state );
-    }
-}
-
-int ScriptInterface::preorder( lua_State* lua_state )
-{
-    SWEET_ASSERT( lua_state );
-
-    try 
-    {
-        ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-        SWEET_ASSERT( script_interface );
-        
-        const int FUNCTION_PARAMETER = 1;
-        LuaValue function( script_interface->lua_, lua_state, FUNCTION_PARAMETER );
-
-        const int TARGET_PARAMETER = 2;
-        Target* target;
-        if ( !lua_isnoneornil(lua_state, TARGET_PARAMETER) )
-        {
-            target = LuaConverter<Target* >::to( lua_state, TARGET_PARAMETER );
-        }
-        
-        int failures = script_interface->build_tool_->scheduler()->preorder( function, target );
-        lua_pushinteger( lua_state, failures );        
-        return 1;
-    }
-    
-    catch ( const std::exception& exception )
-    {
-        lua_pushstring( lua_state, exception.what() );
-        return lua_error( lua_state );
-    }
-}
-
 int ScriptInterface::postorder( lua_State* lua_state )
 {
     SWEET_ASSERT( lua_state );
@@ -1408,7 +1279,14 @@ int ScriptInterface::postorder( lua_State* lua_state )
         {
             target = LuaConverter<Target* >::to( lua_state, TARGET_PARAMETER );
         }
-        
+
+        int bind_failures = script_interface->build_tool_->graph()->bind( target );
+        if ( bind_failures > 0 )
+        {
+            lua_pushinteger( lua_state, bind_failures );
+            return 1;
+        }
+
         int failures = script_interface->build_tool_->scheduler()->postorder( function, target );
         lua_pushinteger( lua_state, failures );
         return 1;
@@ -1436,78 +1314,43 @@ int ScriptInterface::execute( lua_State* lua_state )
         const int COMMAND_LINE_PARAMETER = 2;
         string command_line = LuaConverter<string>::to( lua_state, COMMAND_LINE_PARAMETER );
         
-        const int SCANNER_PROTOTYPE_PARAMETER = 3;
-        Scanner* scanner = NULL;
-        if ( !lua_isnoneornil(lua_state, SCANNER_PROTOTYPE_PARAMETER) )
+        const int ENVIRONMENT_PARAMETER = 3;
+        unique_ptr<process::Environment> environment;
+        if ( !lua_isnoneornil(lua_state, ENVIRONMENT_PARAMETER) )
         {
-            scanner = LuaConverter<Scanner*>::to( lua_state, SCANNER_PROTOTYPE_PARAMETER );
+            environment.reset( new process::Environment );
+            lua_pushnil( lua_state );
+            while ( lua_next(lua_state, ENVIRONMENT_PARAMETER) )
+            {
+                if ( lua_isstring(lua_state, -2) )
+                {
+                    const char* key = lua_tostring( lua_state, -2 );
+                    const char* value = lua_tostring( lua_state, -1 );
+                    environment->append( key, value );
+                }
+                lua_pop( lua_state, 1 );
+            }
+            environment->finish();
         }
 
-        const int ARGUMENTS_PARAMETER = 4;
+        const int FILTER_PARAMETER = 4;
+        unique_ptr<lua::LuaValue> filter;
+        if ( !lua_isnoneornil(lua_state, FILTER_PARAMETER) )
+        {
+            filter.reset( new lua::LuaValue(script_interface->lua_, lua_state, FILTER_PARAMETER) );
+        }
+
+        const int ARGUMENTS_PARAMETER = 5;
         unique_ptr<Arguments> arguments;
         if ( lua_gettop(lua_state) >= ARGUMENTS_PARAMETER )
         {
             arguments.reset( new Arguments(script_interface->lua_, lua_state, ARGUMENTS_PARAMETER, lua_gettop(lua_state) + 1) );
         }
 
-        script_interface->build_tool_->scheduler()->execute( command, command_line, scanner, arguments.release(), script_interface->environment() );
+        script_interface->build_tool_->scheduler()->execute( command, command_line, environment.release(), filter.release(), arguments.release(), script_interface->context() );
         return lua_yield( lua_state, 0 );
     }
 
-    catch ( const std::exception& exception )
-    {
-        lua_pushstring( lua_state, exception.what() );
-        return lua_error( lua_state );
-    }
-}
-
-int ScriptInterface::scan( lua_State* lua_state )
-{
-    SWEET_ASSERT( lua_state );
-    
-    try
-    {
-        ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-        SWEET_ASSERT( script_interface );
-
-        const int TARGET_PARAMETER = 1;
-        Target* target = LuaConverter<Target* >::to( lua_state, TARGET_PARAMETER );
-        
-        if ( target )
-        {
-            const int SCANNER_PROTOTYPE_PARAMETER = 2;
-            Scanner* scanner = LuaConverter<Scanner*>::to( lua_state, SCANNER_PROTOTYPE_PARAMETER );
-            if ( !scanner )
-            {
-                SWEET_ERROR( NullScannerError("The scan() function was called on '%s' without a valid Scanner", target->filename(0).c_str()) );
-            }
-
-            const int ARGUMENTS_PARAMETER = 3;
-            unique_ptr<Arguments> arguments;
-            if ( lua_gettop(lua_state) >= ARGUMENTS_PARAMETER )
-            {
-                arguments.reset( new Arguments(script_interface->lua_, lua_state, ARGUMENTS_PARAMETER, lua_gettop(lua_state) + 1) );
-            }
-
-            target->bind_to_file();
-            if ( target->required_to_exist() && target->last_write_time() == 0 )
-            {
-                SWEET_ERROR( ScannedFileNotFoundError("The scanned file '%s' was not found", target->filename(0).c_str()) );
-            }
-            
-            if ( target->last_write_time() != target->last_scan_time() )
-            {
-                target->clear_implicit_dependencies();
-                target->set_last_scan_time( target->last_write_time() );
-                Environment* environment = script_interface->environment();
-                SWEET_ASSERT( environment );
-                script_interface->build_tool_->scheduler()->scan( target, scanner, arguments.release(), environment->working_directory(), environment );
-            }    
-        }
-
-        return 0;
-    }
-    
     catch ( const std::exception& exception )
     {
         lua_pushstring( lua_state, exception.what() );

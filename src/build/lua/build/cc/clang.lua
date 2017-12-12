@@ -59,6 +59,7 @@ function clang.append_compile_flags( target, flags )
     table.insert( flags, "-c" );
     table.insert( flags, ("-arch %s"):format(target.architecture) );
     table.insert( flags, "-fasm-blocks" );
+    table.insert( flags, "-MMD" );
     
     local language = target.language or "c++";
     if language then
@@ -190,3 +191,9 @@ function clang.append_link_libraries( target, libraries )
         end
     end
 end
+
+function clang.process_dependencies( target )
+    gcc.process_dependencies( target );
+end
+
+build.register_module( clang );

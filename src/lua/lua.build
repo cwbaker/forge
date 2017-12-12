@@ -1,13 +1,13 @@
 
 local settings = build.current_settings();
 for _, architecture in ipairs(settings.architectures) do
-    Library ("liblua", architecture) {
+    build.Library ("liblua", architecture) {
         libraries = {
             "sweet/assert/assert";
             "sweet/error/error";
         };
 
-        Cc (architecture) {
+        build.Cc (architecture) {
             defines = build.switch { 
                 operating_system();
                 windows = { "_CRT_SECURE_NO_DEPRECATE" };
@@ -46,12 +46,12 @@ for _, architecture in ipairs(settings.architectures) do
     };
 
     if variant == "debug" or variant == "release" or variant == "shipping" then
-        Executable ("luac", architecture) {
+        build.Executable ("luac", architecture) {
             libraries = {
                 "sweet/assert/assert",
                 "lua/liblua"
             };
-            Cc (architecture) {
+            build.Cc (architecture) {
                 defines = { 
                     "_CRT_SECURE_NO_DEPRECATE" 
                 };
@@ -60,13 +60,13 @@ for _, architecture in ipairs(settings.architectures) do
             };
         };
     
-        Executable ("lua", architecture) {
+        build.Executable ("lua", architecture) {
             project_name = "lua_";
             libraries = {
                 "sweet/assert/assert",
                 "lua/liblua"
             };        
-            Cc (architecture) {
+            build.Cc (architecture) {
                 defines = { 
                     "_CRT_SECURE_NO_DEPRECATE" 
                 };

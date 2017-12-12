@@ -30,5 +30,3 @@ function Copy.clean( copy )
         rmdir( copy:filename() );
     end
 end
-
-_G.Copy = Copy;

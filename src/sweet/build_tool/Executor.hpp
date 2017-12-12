@@ -21,17 +21,23 @@ class Thread;
 namespace process
 {
 
-class Process;
+class Environment;
+
+}
+
+namespace lua
+{
+
+class LuaValue;
 
 }
 
 namespace build_tool
 {
 
-class Scanner;
 class Arguments;
+class Context;
 class Target;
-class Environment;
 class BuildTool;
 
 /**
@@ -54,14 +60,12 @@ class Executor
         ~Executor();
         void set_maximum_parallel_jobs( int maximum_parallel_jobs );
         int maximum_parallel_jobs() const;
-        void execute( const std::string& command, const std::string& command_line, Scanner* scanner, Arguments* arguments, Environment* environment );
-        void scan( Target* target, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment );
+        void execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* filter, Arguments* arguments, Context* context );
 
     private:
         static int thread_main( void* context );
         void thread_process();
-        void thread_execute( process::Process* process, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment );
-        void thread_scan( Target* target, Scanner* scanner, Arguments* arguments, Target* working_directory, Environment* environment );
+        void thread_execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* filter, Arguments* arguments, Target* working_directory, Context* context );
         void start();
         void stop();
 };

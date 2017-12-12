@@ -29,6 +29,7 @@ class SWEET_ERROR_DECLSPEC ErrorPolicy
 public:
     ErrorPolicy();
     virtual ~ErrorPolicy();
+    void clear();
     void push_errors();
     int pop_errors();
     int errors() const;

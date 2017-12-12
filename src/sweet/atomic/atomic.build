@@ -1,5 +1,5 @@
 
 local settings = build.current_settings();
 for _, architecture in ipairs(settings.architectures) do
-    Library ("atomic", architecture);
+    build.Library ("atomic", architecture);
 end

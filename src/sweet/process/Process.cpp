@@ -1,10 +1,11 @@
 //
 // Process.cpp
-// Copyright (c) 2008 - 2014 Charles Baker.  All rights reserved
+// Copyright (c) Charles Baker.  All rights reserved
 //
 
 #include "stdafx.hpp"
 #include "Process.hpp"
+#include "Environment.hpp"
 #include "Error.hpp"
 #include <sweet/assert/assert.hpp>
 
@@ -20,9 +21,8 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/syscall.h>
 #endif
-
-extern char** environ;
 
 using namespace sweet::process;
 
@@ -53,11 +53,15 @@ Process::Process()
 // @param directory
 //  The directory to execute this Process in (assumed not null).
 //
+// @param environment
+//  The environment to execute the process with or null to execute with an 
+//  empty environment.
+//
 // @param flags
 //  A bitwise or of flags that indicates the features that this Process 
 //  needs to provide.
 */
-Process::Process( const char* command, const char* arguments, const char* directory, int flags )
+Process::Process( const char* command, const char* arguments, const char* directory, const Environment* environment, int flags )
 : flags_( flags ),
 #if defined(BUILD_OS_WINDOWS)
   process_( INVALID_HANDLE_VALUE ),
@@ -138,7 +142,8 @@ Process::Process( const char* command, const char* arguments, const char* direct
 //
 // Create the process.
 //
-    BOOL created = ::CreateProcessA( command, const_cast<char*>(arguments), NULL, NULL, TRUE, 0, NULL, directory, &startup_info, &process_information );
+    void* eenvironment = (void*) ( environment ? environment->buffer() : NULL );
+    BOOL created = ::CreateProcessA( command, const_cast<char*>(arguments), NULL, NULL, TRUE, 0, eenvironment, directory, &startup_info, &process_information );
     if ( !created )
     {
         ::CloseHandle( stdout_read );
@@ -180,17 +185,13 @@ Process::Process( const char* command, const char* arguments, const char* direct
 #elif defined(BUILD_OS_MACOSX)
     cmdline::Splitter splitter( arguments );
 
-    int original_working_directory = ::open( ".", O_RDONLY );
-    if ( original_working_directory == -1 )
-    {
-        char message [256];
-        SWEET_ERROR( ExecutingProcessFailedError("Executing '%s' failed - unable to open current directory - %s", command, Error::format(errno, message, sizeof(message))) );
-    }
-
-    int result = chdir( directory );
+    // Use the undocumented `pthread_fchdir()` system call to change the 
+    // working directory for the thread that is spawning a process rather than
+    // the global per-process working directory changed by `fchdir()`.  See 
+    // `syscall()` and `<sys/syscall.h>`.
+    int result = syscall( SYS___pthread_chdir, directory );
     if ( result != 0 )
     {
-        close( original_working_directory );
         char message [256];
         SWEET_ERROR( ExecutingProcessFailedError("Executing '%s' failed - unable to change directory to '%s' - %s", command, directory, Error::format(errno, message, sizeof(message))) );
     }
@@ -203,7 +204,6 @@ Process::Process( const char* command, const char* arguments, const char* direct
         result = pipe( files );
         if ( result != 0 )
         {
-            close( original_working_directory );
             char message [256];
             SWEET_ERROR( CreatingPipeFailedError("Creating stdout for '%s' failed - %s", command, Error::format(errno, message, sizeof(message))) );
         }
@@ -217,9 +217,8 @@ Process::Process( const char* command, const char* arguments, const char* direct
     }
 
     pid_t pid = 0;
-    result = posix_spawn( &pid, command, &file_actions, NULL, &splitter.arguments()[0], environ );
-    fchdir( original_working_directory );
-    close( original_working_directory );
+    char* const* envp = environment ? environment->values() : NULL;
+    result = posix_spawn( &pid, command, &file_actions, NULL, &splitter.arguments()[0], envp );
     posix_spawn_file_actions_destroy( &file_actions );
 
     if ( result != 0 )

@@ -37,7 +37,6 @@ class OsInterface
         void cp( const std::string& from, const std::string& to );
         void rm( const std::string& path );
         std::string operating_system();
-        void putenv( const std::string& attribute, const std::string& value );
         const char* getenv( const char* name );
         void sleep( float milliseconds );
         float ticks();

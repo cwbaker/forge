@@ -67,6 +67,7 @@ function gcc.append_compile_flags( target, flags )
     table.insert( flags, "-msoft-float" );
     table.insert( flags, "-mthumb" );
     table.insert( flags, "-Wa,--noexecstack" );
+    table.insert( flags, "-MMD" );
     
     local language = target.language or "c++";
     if language then
@@ -169,3 +170,55 @@ function gcc.append_link_libraries( target, libraries )
         end
     end
 end
+
+function gcc.process_dependencies( target )
+    local BACKSLASH = ("\\"):byte();
+    local SPACE = (" "):byte();
+    local START = "[^:%s\n\r\\]";
+    local FINISH = "[:%s\n\r\\]";
+
+    function extract( line, start )
+        if start then
+            local finish = line:find( FINISH, start + 1 );
+            while finish and line:byte(finish) == BACKSLASH and line:byte(finish + 1) == SPACE do 
+                finish = line:find( FINISH, finish + 2 );
+            end
+            if finish then 
+                finish = finish - 1;
+            end
+            return start, finish;
+        end
+    end
+
+    local filename = ("%s.d"):format( build.strip(target:filename()) );
+    local file = io.open( filename );
+    assertf( file, "Dependency file '%s' not found for '%s'", filename, target:path() );
+
+    local line = file:read();
+    if line then 
+        local start, finish = extract( line, line:find(START) or 1 );
+        if start then 
+            local filename = line:sub( start, finish ):gsub( "\\ ", " " );
+            assertf( filename == target:filename(), "Dependency file '%s' does not match '%s'", filename, target:filename() );
+            target:clear_implicit_dependencies();
+            start, finish = extract( line, line:find(START, (finish or #line) + 1) );
+        end
+        while line do 
+            while start do 
+                local filename = line:sub( start, finish ):gsub( "\\ ", " " );
+                local header = build.SourceFile( filename );
+                target:add_dependency( header );
+                start, finish = extract( line, line:find(START, (finish or #line) + 1) );
+            end
+            line = file:read();
+            if line then
+                start, finish = extract( line, line:find(START) or 1 );
+            end
+        end
+    end
+
+    file:close();
+    file = nil;
+end
+
+build.register_module( gcc );

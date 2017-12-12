@@ -1,12 +1,12 @@
 
 local settings = build.current_settings();
 for _, architecture in ipairs(settings.architectures) do
-    Library ("thread", architecture) {
+    build.Library ("thread", architecture) {
         libraries = {
             "sweet/assert/assert",
             "sweet/error/error"
         };
-        Cxx (architecture) {
+        build.Cxx (architecture) {
             precompiled_header = "stdafx.hpp";
             "Condition.cpp",
             "JobQueue.cpp",

@@ -143,13 +143,6 @@ SUITE( TestGraph )
             "assert( dependencies[2] == bar_hpp, 'bar.hpp' ); \n"
             "assert( dependencies[3] == baz_hpp, 'baz.hpp' ); \n"
             " \n"
-            "scan( foo_hpp, Scanner {} ); \n"
-            "local dependencies = {}; \n"
-            "for dependency in foo_hpp:get_dependencies() do \n"
-            "    table.insert( dependencies, dependency ); \n"
-            "end \n"
-            "assert( #dependencies == 1, '#dependencies == 1' ); \n"
-            "assert( dependencies[1] == foo_g, 'foo.g' ); \n"
         ;                
         create( "foo.hpp", "" );
         test( script );
