@@ -113,15 +113,17 @@ function macosx.cc( target )
     local ccflags = table.concat( flags, " " );
     local xcrun = target.settings.macosx.xcrun;
 
-    for _, dependency in target:dependencies() do
-        if dependency:outdated() then
-            print( build.leaf(dependency.source) );
+    for _, object in target:dependencies() do
+        if object:outdated() then
+            print( build.leaf(object.source) );
+            local dependencies = ("%s.d"):format( object:filename() );
+            local output = object:filename();
+            local input = build.absolute( object.source );
             build.system( 
                 xcrun, 
-                ('xcrun --sdk macosx clang %s -o "%s" "%s"'):format(ccflags, dependency:filename(), build.absolute(dependency.source)), 
-                nil, 
-                build.dependencies_filter(dependency) 
+                ('xcrun --sdk macosx clang %s -MMD -MF "%s" -o "%s" "%s"'):format(ccflags, dependencies, output, input)
             );
+            clang.parse_dependencies_file( dependencies, object );
         end
     end
 end

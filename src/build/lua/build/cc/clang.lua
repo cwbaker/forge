@@ -210,4 +210,24 @@ function clang.append_link_libraries( target, libraries )
     end
 end
 
+function clang.parse_dependencies_file( filename, object )
+    local file = io.open( filename, "r" );
+    assertf( file, "Opening '%s' to parse dependencies failed", filename );
+    local dependencies = file:read( "a" );
+    file:close();
+    file = nil;
+
+    local TARGET_PATTERN = "([^:]+):[ \t\n\r\\]+";
+    local DEPENDENCY_PATTERN = "([^ \t\n\r]+)[ \t\n\r%\\]+";
+    local start, finish, path = dependencies:find( TARGET_PATTERN );
+    if start and finish then 
+        local start, finish, path = dependencies:find( DEPENDENCY_PATTERN, finish + 1 );
+        while start and finish do 
+            local dependency = build.SourceFile( path );
+            object:add_dependency( dependency );
+            start, finish, path = dependencies:find( DEPENDENCY_PATTERN, finish + 1 );
+        end
+    end
+end
+
 build.register_module( clang );

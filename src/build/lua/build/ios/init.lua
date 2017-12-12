@@ -139,15 +139,17 @@ function ios.cc( target )
     local ccflags = table.concat( flags, " " );
     local xcrun = target.settings.ios.xcrun;
 
-    for _, dependency in target:dependencies() do
-        if dependency:outdated() then
-            print( leaf(dependency.source) );
+    for _, object in target:dependencies() do
+        if object:outdated() then
+            print( build.leaf(object.source) );
+            local dependencies = ("%s.d"):format( object:filename() );
+            local output = object:filename();
+            local input = build.absolute( object.source );
             build.system( 
                 xcrun, 
-                ('xcrun --sdk %s clang %s -o "%s" "%s"'):format(sdkroot, ccflags, dependency:filename(), absolute(dependency.source)),
-                nil, 
-                build.dependencies_filter(dependency) 
+                ('xcrun --sdk %s clang %s -MMD -MF "%s" -o "%s" "%s"'):format(sdkroot, ccflags, dependencies, output, input),
             );
+            clang.parse_dependencies_file( dependencies, object );
         end
     end
 end;
@@ -163,7 +165,7 @@ function ios.build_library( target )
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
             for _, object in dependency:dependencies() do
-                table.insert( objects, relative(object:filename()) );
+                table.insert( objects, build.relative(object:filename()) );
             end
         end
     end
@@ -174,7 +176,7 @@ function ios.build_library( target )
         local arobjects = table.concat( objects, [[" "]] );
         local xcrun = target.settings.ios.xcrun;
 
-        print( leaf(target:filename()) );
+        print( build.leaf(target:filename()) );
         build.system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, native(target:filename()), arobjects) );
     end
     popd();
@@ -210,7 +212,7 @@ function ios.build_executable( target )
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
             for _, object in dependency:dependencies() do
-                table.insert( objects, relative(object:filename()) );
+                table.insert( objects, build.relative(object:filename()) );
             end
         elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
             table.insert( libraries, ("-l%s"):format(dependency:id()) );
@@ -226,7 +228,7 @@ function ios.build_executable( target )
         local ldlibs = table.concat( libraries, " " );
         local xcrun = target.settings.ios.xcrun;
 
-        print( leaf(target:filename()) );
+        print( build.leaf(target:filename()) );
         build.system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
     end
     build.popd();
@@ -242,7 +244,7 @@ function ios.lipo_executable( target )
     for _, executable in target:dependencies() do 
         table.insert( executables, executable:filename() );
     end
-    print( leaf(target:filename()) );
+    print( build.leaf(target:filename()) );
     local sdk = ios.sdkroot_by_target_and_platform( target, platform );
     executables = table.concat( executables, [[" "]] );
     local xcrun = target.settings.ios.xcrun;
