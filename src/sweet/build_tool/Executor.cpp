@@ -95,6 +95,12 @@ void Executor::thread_process()
     std::unique_lock<std::mutex> lock( jobs_mutex_ );
     while ( !done_ )
     {
+        if ( jobs_.empty() )
+        {
+            jobs_empty_condition_.notify_all();
+            jobs_ready_condition_.wait( lock );
+        }
+
         if ( !jobs_.empty() )
         {
             std::function<void()> function = jobs_.front();
@@ -102,12 +108,6 @@ void Executor::thread_process()
             lock.unlock();
             function();
             lock.lock();
-        }
-
-        if ( jobs_.empty() )
-        {
-            jobs_empty_condition_.notify_all();
-            jobs_ready_condition_.wait( lock );
         }
     }
 }

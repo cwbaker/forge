@@ -300,7 +300,7 @@ function android.build_executable( target )
                 for _, directory in ipairs(android.library_directories(target.settings, target.architecture)) do
                     local source = ("%s/lib%s.so"):format( directory, runtime_library );
                     if build.exists(source) then
-                        build.cp( source, destination );
+                        build.cp( destination, source );
                         break;
                     end
                 end
