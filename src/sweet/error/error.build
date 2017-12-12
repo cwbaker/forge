@@ -1,0 +1,18 @@
+
+buildfile "error_test/error_test.build";
+
+Library "error" {
+    libraries = {
+        "sweet/assert/assert"
+    };
+
+    Source {
+        pch = "stdafx.hpp";
+        "boost_integration.cpp",
+        "dinkumware_integration.cpp",
+        "Error.cpp",
+        "ErrorPolicy.cpp",
+        "ErrorPolicyEventSink.cpp",
+        "functions.cpp"
+    }
+}

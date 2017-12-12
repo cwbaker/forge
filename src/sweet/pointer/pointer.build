@@ -1,0 +1,14 @@
+
+buildfile "pointer_test/pointer_test.build";
+
+Library "pointer" {
+    libraries = {
+        "sweet/assert/assert",
+        "sweet/error/error"
+    };
+
+    Source {
+        pch = "stdafx.hpp";
+        "ReferenceCount.cpp"
+    };
+}

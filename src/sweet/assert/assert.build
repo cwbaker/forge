@@ -1,0 +1,8 @@
+
+Library "assert" {
+    Source {
+        pch = "stdafx.hpp";
+        "assert.cpp"
+    }
+}
+

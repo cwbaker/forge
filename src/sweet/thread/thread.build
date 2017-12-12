@@ -1,0 +1,18 @@
+
+Library {
+    id = "thread";
+    
+    libraries = {
+        "sweet/assert/assert",
+        "sweet/error/error"
+    };
+
+    Source {
+        pch = "stdafx.hpp";
+        "Condition.cpp",
+        "Mutex.cpp",
+        "ScopedLock.cpp",
+        "Error.cpp",
+        "Thread.cpp"
+    };
+}

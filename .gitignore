@@ -2,10 +2,9 @@
 /bin
 /lib
 /obj
-/sweet/build.html
+/src/build.html
+/src/local_settings.lua
+sweet_build_tool.sln
 sweet_build_tool.xcodeproj
-/sweet/local_settings.lua
-/sweet/sweet_build_tool.sln
 sweet_build_tool.sublime-project
 sweet_build_tool.sublime-workspace
-/*.sln

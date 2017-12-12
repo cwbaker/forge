@@ -1,0 +1,38 @@
+
+Executable {
+    id = "build";
+
+    settings = { 
+        subsystem = "CONSOLE"; 
+        stack_size = 32768; 
+        architectures = { "x86_64" };
+    }; 
+    
+    libraries = {    
+        "build_tool/build_tool",
+        "cmdline/cmdline",
+        "lua/lua",
+        "lua/lua_/liblua",
+        "process/process",
+        "rtti/rtti",
+        "thread/thread",
+        "persist/persist",
+        "path/path",
+        "pointer/pointer",
+        "error/error",
+        "assert/assert"
+    };
+    
+    third_party_libraries = {
+        boost_library( "boost_filesystem" ),
+        boost_library( "boost_regex" ),
+        boost_library( "boost_system" ),
+        boost_library( "boost_thread" )
+    };    
+
+    Source {
+        pch = "stdafx.hpp";
+        "Application.cpp", 
+        "main.cpp"
+    };    
+}

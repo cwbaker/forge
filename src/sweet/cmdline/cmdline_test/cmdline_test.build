@@ -1,0 +1,17 @@
+
+Executable {
+    id = "cmdline_test";
+
+    libraries = {
+        "sweet/cmdline/cmdline",
+        "sweet/error/error",
+        "sweet/assert/assert",
+        "sweet/unit/libUnitTest"
+    };
+
+    Source {
+        "main.cpp",
+        "TestParser.cpp",
+        "TestSplitter.cpp"
+    };
+}

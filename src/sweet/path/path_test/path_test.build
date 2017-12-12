@@ -1,0 +1,18 @@
+
+Executable {
+    id = "path_test";
+
+    libraries = {
+        "sweet/assert/assert", 
+        "sweet/error/error",
+        "sweet/path/path",
+        "sweet/unit/libUnitTest"
+    };
+
+    Source {
+        pch = "stdafx.hpp";
+        "main.cpp",
+        "TestPath.cpp",
+        "TestWidePath.cpp"
+    };
+}

@@ -1,0 +1,17 @@
+
+buildfile "process_test/process_test.build";
+
+Library {
+    id = "process";
+
+    libraries = {
+        "sweet/assert/assert",
+        "sweet/error/error"
+    };
+
+    Source {
+        pch = "stdafx.hpp";
+        "Error.cpp",
+        "Process.cpp"
+    };
+}

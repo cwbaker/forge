@@ -1,0 +1,19 @@
+
+buildfile "cmdline_test/cmdline_test.build";
+
+Library {
+    id = "cmdline";
+
+    libraries = {
+        "sweet/assert/assert",
+        "sweet/error/error"
+    };
+
+    Source {
+        "AddOption.cpp",
+        "Error.cpp",
+        "Option.cpp",
+        "Parser.cpp",
+        "Splitter.cpp"
+    };
+}
