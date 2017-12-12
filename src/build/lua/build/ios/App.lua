@@ -17,7 +17,7 @@ function App.call( app, definition )
     local entitlements = definition.entitlements;
     if entitlements then 
         app.entitlements = ("%s/%s"):format( obj_directory(app), "Entitlements.plist" );
-        table.insert( definition, build.Generate(app.entitlements, entitlements) );
+        table.insert( definition, build.Generate (app.entitlements) (entitlements) );
     end
 
     local working_directory = build.working_directory();
@@ -51,7 +51,7 @@ function App.build( app )
         if provisioning_profile then
             local embedded_provisioning_profile = ("%s/embedded.mobileprovision"):format( app:filename() );
             build.rm( embedded_provisioning_profile );
-            build.cp( provisioning_profile, embedded_provisioning_profile );
+            build.cp( embedded_provisioning_profile, provisioning_profile );
         end
 
         if platform == "ios" then

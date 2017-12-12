@@ -286,16 +286,17 @@ end
 -- Add a target to the current directory's target so that it will be built 
 -- when a build is invoked from that directory.
 function build.default_target( target )
-    local directory = build.working_directory();
-    directory:add_dependency( target );
+    local all = build.all();
+    all:add_dependency( target );
 end
 
 -- Add targets to the current directory's target so that they will be built 
 -- when a build is invoked from that directory.
 function build.default_targets( targets )
     for _, target in ipairs(targets) do 
-        local directory = build.working_directory();
-        table.insert( build.default_targets_, {directory:path(), build.absolute(target)} );
+        local all = build.absolute( "all" );
+        local target = ("%s/all"):format( target );
+        table.insert( build.default_targets_, {all, target} );
     end
 end
 
@@ -479,15 +480,47 @@ function build.merge( destination, source )
     return destination;
 end
 
--- Find and return the initial target by searching up from the path specified
--- by *goal* until a target with at least one dependency is found.
+-- Get the *all* target for the current working directory.
+--
+-- The *all* target is the target that targets that are passed to 
+-- `build.default_target()` and `build.default_targets()` are added to and 
+-- that the build tool will build by default.
+function build.all()
+    return build.target( "all" );
+end
+
+-- Find and return the initial target to build.
+-- 
+-- If *goal* is nil or empty then the initial target is the first all target
+-- that is found in a search up from the current working directory to the
+-- root directory.
+--
+-- Otherwise if *goal* is specified then the target that matches *goal* 
+-- exactly and has at least one dependency or the target that matches 
+-- `${*goal*}/all` is returned.  If neither of those targets exists then nil 
+-- is returned.
 function build.find_initial_target( goal )
-    local all = build.find_target( goal );
-    while goal ~= "" and (all == nil or all:dependency() == nil) do 
-        goal = build.branch( goal );
-        all = build.find_target( goal );
+    if not goal or goal == "" then 
+        local goal = build.initial();
+        local all = build.find_target( ("%s/all"):format(goal) );
+        while not all and goal ~= "" do 
+            goal = build.branch( goal );
+            all = build.find_target( ("%s/all"):format(goal) );
+        end
+        return all;
     end
-    return all;
+
+    local goal = build.initial( goal );
+    local all = build.find_target( goal );
+    if all and all:dependency() then 
+        return all;
+    end
+
+    local all = build.find_target( ("%s/all"):format(goal) );
+    if all and all:dependency() then
+        return all;
+    end
+    return nil;
 end
 
 -- Load the dependency graph from the file specified by /settings.cache/ and
@@ -515,14 +548,14 @@ function build.load( force )
         -- Add default targets as dependencies of the working directory that
         -- was in effect when `build.default_target(s)` was called.
         for _, default_target in ipairs(build.default_targets_) do
-            local directory = build.Target( default_target[1] );
-            local target = build.Target( default_target[2] );
-            directory:add_dependency( target );
+            local all = build.target( default_target[1] );
+            local target = build.target( default_target[2] );
+            all:add_dependency( target );
         end
     end
     
-    local all = build.find_initial_target( build.initial(goal) );
-    assert( all, ("No target found at '%s'"):format(tostring(build.initial(goal))) );
+    local all = build.find_initial_target( goal );
+    assert( all, ("No target found at '%s'"):format(goal) );
     return all;
 end
 
