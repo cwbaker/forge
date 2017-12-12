@@ -8,6 +8,9 @@ sweet_build_tool.sln
 sweet_build_tool.xcodeproj
 sweet_build_tool.sublime-project
 sweet_build_tool.sublime-workspace
+android_debug/
+android_release/
+android_shipping/
 macosx_debug/
 macosx_release/
 macosx_shipping/
