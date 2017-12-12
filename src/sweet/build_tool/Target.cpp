@@ -785,7 +785,7 @@ void Target::add_explicit_dependency( Target* target )
     if ( target && target != this && !is_explicit_dependency(target) )
     {
         SWEET_ASSERT( target->graph() == graph() );
-        remove_implicit_dependency( target );
+        remove_dependency( target );
         dependencies_.push_back( target );
         bound_to_dependencies_ = false;
     }
@@ -804,20 +804,6 @@ void Target::clear_explicit_dependencies()
 }
 
 /**
-// Is 'target' an explicit dependency of this Target?
-//
-// @param target
-//  The Target to check for being an explicit dependency.
-//
-// @return
-//  True if 'target' is an explicit dependency of this Target otherwise false.
-*/
-bool Target::is_explicit_dependency( Target* target ) const
-{
-    return find( dependencies_.begin(), dependencies_.end(), target ) != dependencies_.end();
-}
-
-/**
 // Add 'target' as an implicit dependency of this Target.
 //
 // If a dependency is added then the the bound to dependencies flag for this
@@ -830,8 +816,9 @@ bool Target::is_explicit_dependency( Target* target ) const
 */
 void Target::add_implicit_dependency( Target* target )
 {
-    if ( target && target != this && !target->anonymous() && !is_dependency(target) )
+    if ( target && target != this && !target->anonymous() && !is_implicit_dependency(target) )
     {
+        remove_dependency( target );
         implicit_dependencies_.push_back( target );
         bound_to_dependencies_ = false;
     }
@@ -881,7 +868,7 @@ void Target::clear_implicit_dependencies()
 */
 void Target::add_ordering_dependency( Target* target )
 {
-    if ( target && target != this && !is_dependency(target) )
+    if ( target && target != this && !is_ordering_dependency(target) )
     {
         remove_dependency( target );
         ordering_dependencies_.push_back( target );
@@ -902,12 +889,12 @@ void Target::clear_ordering_dependencies()
 // If \e target is null or is not a dependency of this Target then this 
 // function silently does nothing.
 //
-// Targets are removed from both this Target's explicit and implicit 
-// dependencies.
+// Targets are removed from both this Target's explicit, implicit, and 
+// ordering dependencies.
 //
-// If a dependency is removed then the the bound to dependencies flag for this
-// Target is cleared to indicate that the outdated flag and/or timestamp are
-// potentially invalid.
+// If an explicit or implicit dependency is removed then the the bound to 
+// dependencies flag for this Target is cleared to indicate that the outdated
+// flag and/or timestamp are potentially invalid.
 //
 // @param target
 //  The Target to remove as a dependency.
@@ -931,8 +918,58 @@ void Target::remove_dependency( Target* target )
                 implicit_dependencies_.erase( i );
                 bound_to_dependencies_ = false;
             }
+            else 
+            {
+                i = find( ordering_dependencies_.begin(), ordering_dependencies_.end(), target );
+                if ( i != ordering_dependencies_.end() )
+                {
+                    ordering_dependencies_.erase( i );
+                }
+            }
         }
     }
+}
+
+/**
+// Is *target* an explicit dependency of this Target?
+//
+// @param target
+//  The Target to check for being an explicit dependency of this Target.
+//
+// @return
+//  True if *target* is an explicit dependency of this Target otherwise false.
+*/
+bool Target::is_explicit_dependency( Target* target ) const
+{
+    return find( dependencies_.begin(), dependencies_.end(), target ) != dependencies_.end();
+}
+
+/**
+// Is *target* an implicit dependency of this Target?
+//
+// @param target
+//  The Target to check for being an implicit dependency of this Target.
+//
+// @return
+//  True if *target* is an implicit dependency of this Target otherwise false.
+*/
+bool Target::is_implicit_dependency( Target* target ) const
+{
+    return find( implicit_dependencies_.begin(), implicit_dependencies_.end(), target ) != implicit_dependencies_.end();
+}
+
+/**
+// Is *target* an ordering dependency of this Target?
+//
+// @param target
+//  The Target to check for being an ordering dependency of this Target.
+//
+// @return
+//  True if *target* is an ordering dependency of this Target otherwise false.
+*/
+bool Target::is_ordering_dependency( Target* target ) const
+{
+    return find( ordering_dependencies_.begin(), ordering_dependencies_.end(), target ) != ordering_dependencies_.end();
 }
 
 /**
@@ -949,7 +986,8 @@ bool Target::is_dependency( Target* target ) const
 {
     return 
         is_explicit_dependency( target ) ||
-        find( implicit_dependencies_.begin(), implicit_dependencies_.end(), target ) != implicit_dependencies_.end()
+        is_implicit_dependency( target ) ||
+        is_ordering_dependency( target )
     ;
 }
 

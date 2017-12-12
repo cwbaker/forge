@@ -107,13 +107,15 @@ class Target
 
         void add_explicit_dependency( Target* target );
         void clear_explicit_dependencies();
-        bool is_explicit_dependency( Target* target ) const;
         void add_implicit_dependency( Target* target );
         void remove_implicit_dependency( Target* target );
         void clear_implicit_dependencies();
         void add_ordering_dependency( Target* target );
         void clear_ordering_dependencies();
         void remove_dependency( Target* target );
+        bool is_explicit_dependency( Target* target ) const;
+        bool is_implicit_dependency( Target* target ) const;
+        bool is_ordering_dependency( Target* target ) const;
         bool is_dependency( Target* target ) const;
         Target* dependency( int n ) const;
         Target* binding_dependency( int n ) const;
