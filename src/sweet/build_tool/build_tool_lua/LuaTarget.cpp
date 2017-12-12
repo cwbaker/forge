@@ -183,7 +183,9 @@ int LuaTarget::set_filename( lua_State* lua_state )
 
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
     const char* filename = lua_tostring( lua_state, FILENAME );
-    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 0;
+    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
+    luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
+    --index;
     target->set_filename( string(filename), index );
 
     return 0;
