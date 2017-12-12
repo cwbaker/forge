@@ -11,9 +11,14 @@
 #include "BuildTool.hpp"
 #include "ScriptInterface.hpp"
 #include "OsInterface.hpp"
+#include <algorithm>
 
+using std::min;
+using std::max;
 using std::swap;
 using std::vector;
+using std::string;
+using std::time_t;
 using namespace sweet;
 using namespace sweet::lua;
 using namespace sweet::build_tool;
@@ -36,11 +41,12 @@ Target::Target()
   bound_to_dependencies_( false ),
   referenced_by_script_( false ),
   required_to_exist_( false ),
-  filename_(),
+  cleanable_( false ),
   working_directory_( NULL ),
   parent_( NULL ),
   targets_(),
   dependencies_(),
+  filenames_(),
   explicit_dependencies_( 0 ),
   visiting_( false ),
   visited_revision_( 0 ),
@@ -74,11 +80,12 @@ Target::Target( const std::string& id, Graph* graph )
   bound_to_dependencies_( false ),
   referenced_by_script_( false ),
   required_to_exist_( false ),
-  filename_(),
+  cleanable_( false ),
   working_directory_( NULL ),
   parent_( NULL ),
   targets_(),
   dependencies_(),
+  filenames_(),
   explicit_dependencies_( 0 ),
   visiting_( false ),
   visited_revision_( 0 ),
@@ -280,27 +287,42 @@ void Target::bind_to_file()
 {
     if ( !bound_to_file_ )
     {
-        if ( !filename_.empty() )
+        if ( !filenames_.empty() )
         {
-            OsInterface* os_interface = graph_->get_build_tool()->get_os_interface();
-            if ( os_interface->exists(filename_) )
+            time_t latest_last_write_time = 0;
+            time_t earliest_last_write_time = std::numeric_limits<time_t>::max();
+            bool outdated = false;
+            bool bound = false;
+
+            for ( vector<string>::const_iterator filename = filenames_.begin(); filename != filenames_.end(); ++filename )
             {
-                if ( os_interface->is_regular(filename_) )
+                OsInterface* os_interface = graph_->get_build_tool()->get_os_interface();
+                if ( os_interface->exists(*filename) )
                 {
-                    std::time_t last_write_time = os_interface->last_write_time( filename_ );
-                    changed_ = last_write_time_ != last_write_time;
-                    timestamp_ = last_write_time;
-                    last_write_time_ = last_write_time;
+                    if ( os_interface->is_regular(*filename) )
+                    {
+                        time_t last_write_time = os_interface->last_write_time( *filename );
+                        latest_last_write_time = max( last_write_time, latest_last_write_time );
+                        earliest_last_write_time = min( last_write_time, earliest_last_write_time );
+                        bound = true;
+                    }
                 }
-                outdated_ = false;
+                else
+                {
+                    latest_last_write_time = std::numeric_limits<time_t>::max();
+                    earliest_last_write_time = 0;
+                    outdated = true;
+                    bound = true;
+                }
             }
-            else
+
+            if ( bound )
             {
-                changed_ = last_write_time_ != 0;
-                timestamp_ = std::numeric_limits<time_t>::max();
-                last_write_time_ = 0;
-                outdated_ = true;
+                changed_ = last_write_time_ != earliest_last_write_time;
+                timestamp_ = latest_last_write_time;
+                last_write_time_ = earliest_last_write_time;
             }
+            outdated_ = outdated;
         }
         else
         {
@@ -329,7 +351,7 @@ void Target::bind_to_dependencies()
         time_t timestamp = timestamp_;
         bool outdated = outdated_;
 
-        if ( !filename_.empty() )
+        if ( !filenames_.empty() )
         {
             for ( vector<Target*>::const_iterator i = dependencies_.begin(); i != dependencies_.end(); ++i )
             {
@@ -406,6 +428,29 @@ void Target::set_required_to_exist( bool required_to_exist )
 bool Target::is_required_to_exist() const
 {
     return required_to_exist_;
+}
+
+/**
+// Set whether or not this Target is able to be cleaned.
+//
+// @param cleanable
+//  True to set this Target as able to be cleaned or otherwise false to 
+//  prevent this Target from being cleaned.
+*/
+void Target::set_cleanable( bool cleanable )
+{
+    cleanable_ = cleanable;
+}
+
+/**
+// Is this Target able to be cleaned?
+//
+// @return
+//  True if this Target is able to be cleaned otherwise false.
+*/
+bool Target::cleanable() const
+{
+    return cleanable_;
 }
 
 /**
@@ -526,25 +571,52 @@ bool Target::is_bound_to_file() const
 /**
 // Set the filename that this Target is bound to.
 //
+// If \e index is out of the current range of filenames then empty filenames
+// are inserted up to and including the filename at \e index.
+//
 // @param filename
 //  The name of the file to bind this Target to or an empty string to set 
 //  this Target not to be bound to any file.
+//
+// @param index
+//  The index of the filename to set.
 */
-void Target::set_filename( const std::string& filename )
+void Target::set_filename( const std::string& filename, int index )
 {
-    filename_ = filename;
+    SWEET_ASSERT( index >= 0 );
+    if ( index >= filenames_.size() )
+    {
+        filenames_.insert( filenames_.end(), index - filenames_.size() + 1, string() );
+    }
+    filenames_[index] = filename;
 }
 
 /**
 // Get the filename that this Target is bound to.
 //
+// @param index
+//  The index of the filename to return (assumed to be within the valid range
+//  of filenames added to this Target).
+//
 // @return
 //  The name of the file that this Target is bound to or an empty string if 
 //  this Target isn't bound to a file.
 */
-const std::string& Target::get_filename() const
+const std::string& Target::filename( int index ) const
 {
-    return filename_;
+    SWEET_ASSERT( index >= 0 && index < filenames_.size() );
+    return filenames_[index];
+}
+
+/**
+// Get the filenames bound to this Target.
+//
+// @return
+//  The filenames.
+*/
+const std::vector<std::string>& Target::filenames() const
+{
+    return filenames_;
 }
 
 /**

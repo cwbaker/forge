@@ -232,7 +232,7 @@ void Executor::thread_scan( Target* target, Scanner* scanner, Arguments* argumen
 
             if ( ::ferror(file) != 0 )
             {
-                SWEET_ERROR( ScanningFileFailedError("Scanning '%s' failed", target->get_filename().c_str()) );
+                SWEET_ERROR( ScanningFileFailedError("Scanning '%s' failed", target->filename(0).c_str()) );
             }
         }
         

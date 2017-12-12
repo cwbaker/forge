@@ -37,11 +37,12 @@ class SWEET_BUILD_TOOL_DECLSPEC Target
     bool bound_to_dependencies_; ///< Whether or not this Target is bound to its dependencies.
     bool referenced_by_script_; ///< Whether or not this Target is referenced by a scripting object.  
     bool required_to_exist_; ///< Whether or not this Target is required to be bound to an existing file.
-    std::string filename_; ///< The filename of this Target.
+    bool cleanable_; ///< Whether or not this Target is able to be cleaned.
     Target* working_directory_; ///< The Target that relative paths expressed when this Target is visited are relative to.
     Target* parent_; ///< The parent of this Target in the Target namespace or null if this Target has no parent.
     std::vector<Target*> targets_; ///< The children of this Target in the Target namespace.
     std::vector<Target*> dependencies_; ///< The Targets that this Target depends on.
+    std::vector<std::string> filenames_; ///< The filenames of this Target.
     int explicit_dependencies_; ///< The number of dependencies that are explicit and not removed by Target::clear_dependencies().
     bool visiting_; ///< Whether or not this Target is in the process of being visited.
     int visited_revision_; ///< The visited revision the last time this Target was visited.
@@ -73,6 +74,9 @@ class SWEET_BUILD_TOOL_DECLSPEC Target
         void set_required_to_exist( bool required_to_exist );
         bool is_required_to_exist() const;
 
+        void set_cleanable( bool cleanable );
+        bool cleanable() const;
+
         void set_timestamp( std::time_t timestamp );
         std::time_t get_timestamp() const;
         std::time_t get_last_write_time() const;
@@ -85,8 +89,9 @@ class SWEET_BUILD_TOOL_DECLSPEC Target
         bool is_changed() const;
         bool is_bound_to_file() const;
 
-        void set_filename( const std::string& filename );
-        const std::string& get_filename() const;
+        void set_filename( const std::string& filename, int index = 0 );
+        const std::string& filename( int index = 0 ) const;
+        const std::vector<std::string>& filenames() const;
 
         void set_working_directory( Target* target );
         Target* get_working_directory() const;

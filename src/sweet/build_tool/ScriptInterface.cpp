@@ -121,13 +121,16 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "prototype", &Target::get_prototype )
         ( "set_required_to_exist", &Target::set_required_to_exist )
         ( "is_required_to_exist", &Target::is_required_to_exist )
+        ( "set_cleanable", &Target::set_cleanable )
+        ( "cleanable", &Target::cleanable )
         ( "set_timestamp", &Target::set_timestamp )
         ( "get_timestamp", &Target::get_timestamp )
         ( "get_last_write_time", &Target::get_last_write_time )
         ( "set_outdated", &Target::set_outdated )
         ( "is_outdated", &Target::is_outdated )
-        ( "set_filename", &Target::set_filename )
-        ( "get_filename", &Target::get_filename )
+        ( "set_filename", raw(&ScriptInterface::set_filename) )
+        ( "filename", raw(&ScriptInterface::filename) )
+        ( "filenames", &Target::filenames )
         ( "set_working_directory", &Target::set_working_directory )
         ( "get_working_directory", &ScriptInterface::get_working_directory, this, _1 )
         ( "get_targets", raw(&ScriptInterface::get_targets), this )
@@ -269,13 +272,16 @@ void ScriptInterface::create_prototype( TargetPrototype* target_prototype )
         ( "prototype", &Target::get_prototype )
         ( "set_required_to_exist", &Target::set_required_to_exist )
         ( "is_required_to_exist", &Target::is_required_to_exist )
+        ( "set_cleanable", &Target::set_cleanable )
+        ( "cleanable", &Target::cleanable )
         ( "set_timestamp", &Target::set_timestamp )
         ( "get_timestamp", &Target::get_timestamp )
         ( "get_last_write_time", &Target::get_last_write_time )
         ( "set_outdated", &Target::set_outdated )
         ( "is_outdated", &Target::is_outdated )
-        ( "set_filename", &Target::set_filename )
-        ( "get_filename", &Target::get_filename )
+        ( "set_filename", raw(&ScriptInterface::set_filename) )
+        ( "filename", raw(&ScriptInterface::filename) )
+        ( "filenames", &Target::filenames )
         ( "set_working_directory", &Target::set_working_directory )
         ( "get_working_directory", &ScriptInterface::get_working_directory, this, _1 )
         ( "get_targets", raw(&ScriptInterface::get_targets), this )
@@ -903,6 +909,40 @@ int ScriptInterface::target_prototype__( lua_State* lua_state )
     }
 }
 
+int ScriptInterface::set_filename( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int FILENAME = 2;
+    const int INDEX = 3;
+
+    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    const char* filename = lua_tostring( lua_state, FILENAME );
+    int index = lua_isnumber( lua_state, INDEX ) ? lua_tointeger( lua_state, INDEX ) : 0;
+    target->set_filename( string(filename), index );
+
+    return 0;
+}
+
+int ScriptInterface::filename( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int INDEX = 2;
+
+    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    int index = lua_isnumber( lua_state, INDEX ) ? lua_tointeger( lua_state, INDEX ) : 0;
+    if ( index >= 0 && index < int(target->filenames().size()) )
+    {
+        const std::string& filename = target->filename( index );
+        lua_pushlstring( lua_state, filename.c_str(), filename.length() );
+    }
+    else
+    {
+        lua_pushlstring( lua_state, "", 1 );
+    }
+
+    return 1;
+}
+
 struct GetTargetsTargetReferencedByScript
 {
     ScriptInterface* script_interface_;
@@ -1425,7 +1465,7 @@ int ScriptInterface::scan( lua_State* lua_state )
             Scanner* scanner = LuaConverter<Scanner*>::to( lua_state, SCANNER_PROTOTYPE_PARAMETER );
             if ( !scanner )
             {
-                SWEET_ERROR( NullScannerError("The scan() function was called on '%s' without a valid Scanner", target->get_filename().c_str()) );
+                SWEET_ERROR( NullScannerError("The scan() function was called on '%s' without a valid Scanner", target->filename(0).c_str()) );
             }
 
             const int ARGUMENTS_PARAMETER = 3;
@@ -1438,7 +1478,7 @@ int ScriptInterface::scan( lua_State* lua_state )
             target->bind_to_file();
             if ( target->is_required_to_exist() && target->get_last_write_time() == 0 )
             {
-                SWEET_ERROR( ScannedFileNotFoundError("The scanned file '%s' was not found", target->get_filename().c_str()) );
+                SWEET_ERROR( ScannedFileNotFoundError("The scanned file '%s' was not found", target->filename(0).c_str()) );
             }
             
             if ( target->get_last_write_time() != target->get_last_scan_time() )

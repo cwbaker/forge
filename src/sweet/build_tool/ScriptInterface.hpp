@@ -123,6 +123,8 @@ class ScriptInterface
         Target* get_working_directory( Target* target );
         Target* add_target( lua_State* lua_state );
         static int target_prototype__( lua_State* lua_state );
+        static int set_filename( lua_State* lua_state );
+        static int filename( lua_State* lua_state );
         static int get_targets( lua_State* lua_state );
         static int dependency( lua_State* lua_state );
         static int get_dependencies( lua_State* lua_state );

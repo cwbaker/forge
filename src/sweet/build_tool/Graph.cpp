@@ -186,12 +186,14 @@ int Graph::get_successful_revision() const
 // If \e id refers to an already existing Target that doesn't have a 
 // TargetPrototype set then the existing Target is updated to have 
 // \e target_prototype as its TargetPrototype and \e working_directory as its
-// working directory.  The working directory is updated to allow Targets for 
-// C/C++ libraries to be lazily created as plain file Targets by depending 
-// executables before the libraries themselves are defined.  When the library
-// is lazily defined by the executable reference the working directory is the
-// working directory for the executable.  When the library is defined it 
-// specifies the correct TargetPrototype and working directory.
+// working directory.
+//
+// The working directory is updated to allow Targets for C/C++ libraries to be
+// lazily created as plain file Targets by depending executables before the 
+// libraries themselves are defined.  When the library is lazily defined by 
+// the executable reference the working directory is the working directory 
+// for the executable.  When the library is defined it specifies the correct
+// TargetPrototype and working directory.
 //
 // If \e id refers to an already existing Target that already has a 
 // TargetPrototype set then an error is generated as it is not clear which
@@ -444,7 +446,7 @@ struct Bind
 
             if ( target->is_required_to_exist() && target->is_bound_to_file() && target->get_last_write_time() == 0 )
             {
-                build_tool_->error( "The source file '%s' does not exist", target->get_filename().c_str() );
+                build_tool_->error( "The source file '%s' does not exist", target->filename(0).c_str() );
                 ++failures_;
             }
         }
@@ -724,13 +726,13 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             {
                 return target->get_id().c_str();
             }
-            else if ( target->get_filename().empty() )
+            else if ( target->filenames().empty() )
             {
                 return target->get_path().c_str();
             }
             else
             {
-                return target->get_filename().c_str();
+                return target->filename(0).c_str();
             }
         }
         
@@ -766,11 +768,11 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             );
 
 
-            if ( !target->get_filename().empty() )
+            if ( !target->filenames().empty() )
             {
                 timestamp = target->get_last_write_time();
                 time = ::localtime( &timestamp );
-                path::Path filename = directory.relative( path::Path(target->get_filename()) );
+                path::Path filename = directory.relative( path::Path(target->filename(0)) );
                 printf( " '%s' %04d-%02d-%02d %02d:%02d:%02d", 
                     filename.string().c_str(),
                     time->tm_year + 1900, 
