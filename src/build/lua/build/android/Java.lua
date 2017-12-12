@@ -70,7 +70,7 @@ function Java.build( java )
                 end
             end
 
-            build.system( javac, ('javac -Xlint:unchecked -d "%s" -sourcepath "%s" -classpath "%s" -target 1.5 -bootclasspath "%s" -encoding UTF-8 -g -source 1.5 %s'):format(output, table.concat(sourcepaths, ":"), classpath, table.concat(jars, ":"), table.concat(source_files, " ")) );
+            build.system( javac, ('javac -Xlint:unchecked -d "%s" -sourcepath "%s" -classpath "%s" -target 1.7 -bootclasspath "%s" -encoding UTF-8 -g -source 1.7 %s'):format(output, table.concat(sourcepaths, ":"), classpath, table.concat(jars, ":"), table.concat(source_files, " ")) );
 
             local timestamp_file = io.open( java:filename(), "wb" );
             assertf( timestamp_file, "Opening '%s' to write generated text failed", java:filename() );

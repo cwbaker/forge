@@ -1,4 +1,13 @@
 
+-- Switch platform to 'ios_simulator' if the specified platform is 'ios' but
+-- the environment variable 'SDKROOT' contains 'iPhoneSimulator'.  This is to
+-- accomodate builds triggered from Xcode that always specify 'ios' as the 
+-- platform but might be building for the iOS simulator.
+local sdkroot = getenv( "SDKROOT" );
+if platform and platform == "ios" and sdkroot and sdkroot:find("iPhoneSimulator") then 
+    platform = "ios_simulator";
+end
+
 ios = {};
 
 function ios.sdkroot_by_target_and_platform( target, platform )
@@ -257,12 +266,12 @@ function ios.deploy( directory )
         assertf( is_file(ios_deploy), "No 'ios-deploy' executable found at '%s'", ios_deploy );
         build.system( ios_deploy, ('ios-deploy --timeout 1 --bundle "%s"'):format(app:filename()) );
     else
-        printf( ios_deploy, "No 'ios-deploy' executable specified in settings" );
+        printf( "No 'ios-deploy' executable specified by 'settings.ios.ios_deploy'" );
     end
 end
 
 function ios.obj_directory( target )
-    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, relative(target:working_directory():path(), root()) );
+    return ("%s/%s"):format( target.settings.obj, relative(target:working_directory():path(), root()) );
 end
 
 function ios.cc_name( name )
@@ -285,8 +294,8 @@ function ios.dll_name( name )
     return ("%s.dylib"):format( name );
 end
 
-function ios.exe_name( name, architecture )
-    return ("%s_%s"):format( name, architecture );
+function ios.exe_name( name )
+    return ("%s"):format( name );
 end
 
 function ios.module_name( name, architecture )

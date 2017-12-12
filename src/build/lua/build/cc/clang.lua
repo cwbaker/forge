@@ -81,6 +81,9 @@ function clang.append_compile_flags( target, flags )
             table.insert( flags, '"-DIBOutlet=__attribute__((iboutlet))"' );
             table.insert( flags, '"-DIBOutletCollection(ClassName)=__attribute__((iboutletcollection(ClassName)))"' );
             table.insert( flags, '"-DIBAction=void)__attribute__((ibaction)"' );
+            if target.settings.objc_arc then
+                table.insert( flags, "-fobjc-arc" );
+            end
         end
     end
         

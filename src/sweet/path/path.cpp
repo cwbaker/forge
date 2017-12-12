@@ -4,7 +4,6 @@
 #include <windows.h>
 #elif defined(BUILD_OS_MACOSX)
 #include <unistd.h>
-// #include <time.h>
 #include <mach-o/dyld.h>
 #endif
 #include <stdlib.h>
@@ -33,6 +32,8 @@ std::string executable( const std::string& path )
     _NSGetExecutablePath( NULL, &size );
     char executable [size];
     _NSGetExecutablePath( executable, &size );
+#else
+    const char* executable = "";
 #endif    
 
     path::Path absolute_path( executable );
@@ -49,7 +50,7 @@ std::string home( const std::string& path )
 #elif defined (BUILD_OS_MACOSX)
     const char* HOME = "HOME";
 #else
-#error "ScriptInterface::home() is not implemented for this platform"
+    const char* HOME = "HOME";
 #endif
     
     if ( path::Path(path).is_absolute() )

@@ -13,7 +13,7 @@ function android.configure( settings )
         if operating_system() == "windows" then
             return "C:/Program Files/Java/jdk1.6.0_39";
         else
-            return "/Library/Java/JavaVirtualMachines/1.7.0.jdk/Contents/Home";
+            return "/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home";
         end
     end
 
@@ -43,7 +43,7 @@ function android.configure( settings )
             build_tools_directory = ("%s/build-tools/22.0.1"):format( autodetect_sdk_directory() );
             toolchain_version = "4.9";
             ndk_platform = "android-14";
-            sdk_platform = "android-16";
+            sdk_platform = "android-22";
             architectures = { "armv5", "armv7" };
         };
     end
@@ -306,7 +306,7 @@ function android.deploy( directory )
 end
 
 function android.obj_directory( target )
-    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, relative(target:working_directory():path(), root()) );
+    return ("%s/%s"):format( target.settings.obj, relative(target:working_directory():path(), root()) );
 end
 
 function android.cc_name( name )

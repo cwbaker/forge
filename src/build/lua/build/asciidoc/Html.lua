@@ -29,6 +29,9 @@ function Html.build( html )
             ('-o "%s"'):format( html:filename() ),
             ('"%s"'):format( html:dependency():filename() )
         };
-        build.system( python, arguments, nil, build.dependencies_filter(html) );
+        local environment = {
+            PATH = getenv( "PATH" );
+        };
+        build.system( python, arguments, environment, build.dependencies_filter(html) );
     end
 end

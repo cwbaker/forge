@@ -28,7 +28,7 @@ local function create_target_prototype( id, language )
     local function create( settings, architecture )
         local cc = build.Target( anonymous(), target_prototype );
         cc.settings = settings;
-        cc.architecture = architecture;
+        cc.architecture = architecture or settings.default_architecture;
         cc.language = language;
         return cc;
     end

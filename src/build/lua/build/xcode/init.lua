@@ -504,10 +504,6 @@ end
 -- The "xcode_build" command entry point (global) this is used by generated
 -- Xcode projects to trigger a build or clean.
 function xcode_build()
-    local architectures = getenv( "ARCHS" );
-    if platform == "ios" and architectures and string.find(architectures, "i386") then 
-        platform = "ios_simulator";
-    end
     action = action or "build";
     if action == "" or action == "build" then
         local failures = default();

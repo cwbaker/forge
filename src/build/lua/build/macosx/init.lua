@@ -90,10 +90,14 @@ function macosx.clean_library( target )
 end
 
 function macosx.build_executable( target )
-    local flags = {
-        "-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk";
-    };
+    local flags = {};
     clang.append_link_flags( target, flags );
+
+    local macosx_deployment_target = target.settings.macosx_deployment_target;
+    if macosx_deployment_target then 
+        table.insert( flags, ("-mmacosx-version-min=%s"):format(macosx_deployment_target) );
+    end
+
     clang.append_library_directories( target, flags );
 
     local objects = {};
@@ -103,6 +107,7 @@ function macosx.build_executable( target )
     for dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
+            assertf( target.architecture == dependency.architecture, "Architectures for '%s' and '%s' don't match", target:path(), dependency:path() );
             for object in dependency:dependencies() do
                 if object:prototype() == nil then
                     table.insert( objects, relative(object:filename()) );

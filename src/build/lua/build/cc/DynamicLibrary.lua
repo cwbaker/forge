@@ -2,6 +2,7 @@
 local DynamicLibrary = build.TargetPrototype( "DynamicLibrary" );
 
 function DynamicLibrary.create( settings, id, architecture )
+    architecture = architecture or settings.default_architecture
     local dynamic_library = build.Target( ("%s_%s"):format(id, architecture), DynamicLibrary );
     dynamic_library.settings = settings;
     dynamic_library.architecture = architecture;

@@ -41,7 +41,7 @@ function App.build( app )
         if app.settings.generate_dsym_bundle then 
             local executable;
             for dependency in app:dependencies() do 
-                if dependency:prototype() == build.Lipo then 
+                if dependency:prototype() == build.xcode.Lipo then 
                     executable = dependency:filename();
                     break;
                 end
@@ -61,29 +61,31 @@ function App.build( app )
             cp( provisioning_profile, embedded_provisioning_profile );
         end
 
-        local command_line = {
-            "codesign";
-            ('-s "%s"'):format( _G.signing_identity or app.settings.ios.signing_identity );
-            "--force";
-            "--no-strict";
-            "-vv";
-            ('"%s"'):format( app:filename() );
-        };
-        local entitlements = app.entitlements;
-        if entitlements then 
-            table.insert( command_line, ('--entitlements "%s"'):format(entitlements) );
-        end
+        if platform == "ios" then
+            local command_line = {
+                "codesign";
+                ('-s "%s"'):format( _G.signing_identity or app.settings.ios.signing_identity );
+                "--force";
+                "--no-strict";
+                "-vv";
+                ('"%s"'):format( app:filename() );
+            };
+            local entitlements = app.entitlements;
+            if entitlements then 
+                table.insert( command_line, ('--entitlements "%s"'):format(entitlements) );
+            end
 
-        local resource_rules = app.resource_rules;
-        if resource_rules then 
-            table.insert( command_line, ('--resource-rules "%s"'):format(resource_rules) );
-        end
+            local resource_rules = app.resource_rules;
+            if resource_rules then 
+                table.insert( command_line, ('--resource-rules "%s"'):format(resource_rules) );
+            end
 
-        local environment = {
-            CODESIGN_ALLOCATE = app.settings.ios.codesign_allocate;
-        };
-        local codesign = app.settings.ios.codesign;
-        build.system( codesign, table.concat(command_line, " "), environment );
+            local environment = {
+                CODESIGN_ALLOCATE = app.settings.ios.codesign_allocate;
+            };
+            local codesign = app.settings.ios.codesign;
+            build.system( codesign, table.concat(command_line, " "), environment );
+        end
     end
 end
 

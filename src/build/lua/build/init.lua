@@ -121,10 +121,10 @@ end
 
 -- Perform per run initialization of the build system.
 function build.initialize( project_settings )
+    -- Set default values for variables that can be passed on the command line.
     platform = platform or operating_system();
     variant = variant or "debug";
     version = version or ("%s %s %s"):format( os.date("%Y.%m.%d.%H%M"), platform, variant );
-    environment = environment or "dev";
     goal = goal or "";
     jobs = jobs or 4;
     toolset = toolset or build.switch { 
@@ -666,7 +666,6 @@ dll_name = build.dll_name;
 exe_name = build.exe_name;
 module_name = build.module_name;
 
-require "build.default_settings";
 require "build.commands";
 require "build.Generate";
 require "build.Directory";

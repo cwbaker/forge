@@ -14,7 +14,6 @@ function clean()
     local all = all or find_target( initial(goal) );
     assert( all, ("No target found at '%s'"):format(tostring(initial(goal))) );
     local failures = postorder( build.clean_visit, all );
-    rm( settings.cache );
     printf( "build: clean=%sms", tostring(math.ceil(ticks())) );
     return failures;
 end

@@ -2,6 +2,7 @@
 local StaticLibrary = build.TargetPrototype( "StaticLibrary" );
 
 function StaticLibrary.create( settings, id, architecture )
+    architecture = architecture or settings.default_architecture
     local static_library = build.Target( ("%s_%s"):format(id, architecture), StaticLibrary );
     static_library.settings = settings;
     static_library.architecture = architecture;

@@ -10,12 +10,12 @@ local path_separator_by_operating_system = {
 };
 
 return {
-    bin = root();
-    lib = root();
-    obj = root();
-    gen = root();
-    classes = root();
-    data = root();
+    bin = root( ("../%s_%s/bin"):format(platform, variant) );
+    lib = root( ("../%s_%s/lib"):format(platform, variant) );
+    obj = root( ("../%s_%s/obj"):format(platform, variant) );
+    gen = root( ("../%s_%s/gen"):format(platform, variant) );
+    classes = root( ("../%s_%s/classes"):format(platform, variant) );
+    data = root( ("../%s_%s/data"):format(platform, variant) );
     root = root();
 
     path_separator = path_separator_by_operating_system [operating_system()];
@@ -34,6 +34,7 @@ return {
 
     settings_by_platform = {
         [""] = {
+            default_architecture = "";
             architectures = {
                 ""
             };
@@ -43,8 +44,9 @@ return {
         };
 
         ["android"] = {
+            default_architecture = "armv7";
             architectures = { 
-                "armv5", "armv7" 
+                "armv7" 
             };
             variants = {
                 "debug", "release", "shipping"
@@ -52,6 +54,7 @@ return {
         };
 
         ["macosx"] = {
+            default_architecture = "x86_64";
             architectures = {
                 "i386", "x86_64"
             };
@@ -63,8 +66,9 @@ return {
         };
 
         ["ios"] = {
+            default_architecture = "armv7";
             architectures = {
-                "armv7", "armv7s"
+                "armv7", "arm64"
             };
             variants = {
                 "debug", "release", "shipping"
@@ -78,8 +82,9 @@ return {
         };
 
         ["ios_simulator"] = {
+            default_architecture = "x86_64";
             architectures = {
-                "i386"
+                "i386", "x86_64"
             };
             variants = {
                 "debug", "release", "shipping"
@@ -95,6 +100,7 @@ return {
         };
 
         ["windows"] = {
+            default_architecture = "i386";
             architectures = {
                 "i386"
             };
@@ -129,6 +135,7 @@ return {
             library_type = "static";
             link_time_code_generation = false;
             minimal_rebuild = true;
+            objc_arc = true;
             optimization = false;
             pre_compiled_headers = true;
             preprocess = false;
@@ -158,6 +165,7 @@ return {
             library_type = "dynamic";
             link_time_code_generation = false;
             minimal_rebuild = true;
+            objc_arc = true;
             optimization = false;
             pre_compiled_headers = true;
             preprocess = false;
@@ -187,6 +195,7 @@ return {
             library_type = "static";
             link_time_code_generation = true;
             minimal_rebuild = false;
+            objc_arc = true;
             optimization = true;
             pre_compiled_headers = true;
             preprocess = false;
@@ -216,6 +225,7 @@ return {
             library_type = "dynamic";
             link_time_code_generation = true;
             minimal_rebuild = false;
+            objc_arc = true;
             optimization = true;
             pre_compiled_headers = true;
             preprocess = false;
@@ -245,6 +255,7 @@ return {
             library_type = "static";
             link_time_code_generation = true;
             minimal_rebuild = false;
+            objc_arc = true;
             optimization = true;
             pre_compiled_headers = true;
             preprocess = false;
@@ -274,6 +285,7 @@ return {
             library_type = "dynamic";
             link_time_code_generation = true;
             minimal_rebuild = false;
+            objc_arc = true;
             optimization = true;
             pre_compiled_headers = true;
             preprocess = false;

@@ -2,9 +2,9 @@
 local Executable = build.TargetPrototype( "Executable" );
 
 function Executable.create( settings, id, architecture )
-    local executable = build.Target( ("%s_%s"):format(id, architecture), Executable );
+    local executable = build.Target( id, Executable );
     executable.settings = settings;
-    executable.architecture = architecture;
+    executable.architecture = architecture or settings.default_architecture;
     executable:set_filename( ("%s/%s"):format(settings.bin, exe_name(id, architecture)) );
     executable:add_dependency( Directory(branch(executable:filename())) );
     build.default_target( executable );
