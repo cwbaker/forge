@@ -138,6 +138,71 @@ void OsInterface::mkdir( const std::string& path )
 }
 
 /**
+// Recursively copy a directory and its contents to another directory only
+// copying newer files.
+//
+// Directories and files that start with a '.' aren't recursed into or 
+// copied so that directory hierarchies beneath .svn can be ignored.
+//
+// @param from
+//  The directory to copy from.
+//
+// @param to
+//  The directory to copy to.
+*/
+void OsInterface::cpdir( const std::string& from, const std::string& to, const path::Path& base_path )
+{
+    using namespace boost::filesystem;
+
+    path::Path from_path( from );
+    path::Path to_path( to );
+
+    if ( exists(from_path.string()) )
+    {
+        recursive_directory_iterator i = recursive_directory_iterator( from_path.string() );
+        recursive_directory_iterator end;
+
+        while ( i != end )
+        {
+            SWEET_ASSERT( i != end );
+            const boost::filesystem::path& source = i->path();
+            if ( !source.empty() && source.filename().string().at(0) != '.' )
+            {
+                path::Path destination = to_path / from_path.relative( source.string() );
+                if ( is_directory(source.string()) )
+                {
+                    if ( !exists(destination.string()) )
+                    {
+                        create_directories( destination.string() );
+                    }
+                }
+                else if ( !exists(destination.string()) || last_write_time(source.string()) > last_write_time(destination.string()) )
+                {
+                    boost::filesystem::path destination_directory = destination.branch().string();
+                    if ( !exists(destination_directory.string()) )
+                    {
+                        create_directories( destination_directory );
+                    }
+
+                    if ( exists(destination.string()) )
+                    {
+                        remove( destination.string() );
+                    }
+
+                    copy_file( *i, destination.string() );
+                }
+            }
+            else
+            {
+                i.no_push();
+            }
+
+            ++i;
+        }
+    }
+}
+
+/**
 // Recursively remove a directory and its contents.
 //
 // @param path

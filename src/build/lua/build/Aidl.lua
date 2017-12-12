@@ -9,7 +9,7 @@ function AidlPrototype.build( aidl )
     if not exists(aidl:get_filename()) or aidl:is_outdated() then
         local settings = aidl.settings;
         local aidl_ = "%s/aidl" % settings.android.build_tools_directory;
-        local output = absolute( "gen" );
+        local output = absolute( "." );
         local platform = "%s/platforms/%s/framework.aidl" % { settings.android.sdk_directory, settings.android.sdk_platform };
         local source = aidl.source;
         build.system( aidl_, [[aidl -o%s -p%s %s]] % {output, platform, source} );

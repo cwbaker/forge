@@ -474,6 +474,21 @@ function build.add_library_dependencies( target )
     target.libraries = libraries;
 end
 
+function build.add_jar_dependencies( target )
+    local jars = {};
+    if platform ~= "" and target.jars then
+        for _, value in ipairs(target.jars) do
+            local jar = find_target( root("%s.jar" % value) );
+            assert( jar, "Failed to find JAR '%s' for '%s'" % {value, relative(target:path(), root())} );
+            if build.built_for_platform_and_variant(jar.settings) then
+                table.insert( jars, jar );
+                target:add_dependency( jar );
+            end
+        end
+        target.jars = jars;
+    end
+end
+
 function build.add_module_dependencies( target, filename, architecture, settings )
     if build.built_for_platform_and_variant(settings) then
         local working_directory = working_directory();

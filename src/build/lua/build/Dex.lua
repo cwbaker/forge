@@ -1,6 +1,10 @@
 
 DexPrototype = TargetPrototype { "Dex" };
 
+function DexPrototype.static_depend( jar )
+    build.add_jar_dependencies( jar );
+end
+
 function DexPrototype.build( jar )
     if jar:is_outdated() then
         print( leaf(jar:get_filename()) );
@@ -13,8 +17,20 @@ function DexPrototype.build( jar )
         else
             table.insert( jars, [[\"%s/classes\"]] % obj_directory(jar) );
         end
-        for _, library in ipairs(jar.settings.libraries) do 
-            table.insert( jars, library );
+        if jar.jars then 
+            for _, jar in ipairs(jar.jars) do 
+                table.insert( jars, jar:get_filename() );
+            end
+        end
+        if jar.third_party_jars then 
+            for _, jar in ipairs(jar.third_party_jars) do 
+                table.insert( jars, jar );
+            end
+        end
+        if jar.settings.third_party_jars then
+            for _, jar in ipairs(jar.settings.third_party_jars) do 
+                table.insert( jars, jar );
+            end
         end
 
         local dx = native( "%s/dx" % jar.settings.android.build_tools_directory );
@@ -38,7 +54,11 @@ function Dex( id )
             local settings = build.push_settings( dependencies.settings );
             if build.built_for_platform_and_variant(settings) then
                 local jar = target( "", DexPrototype, dependencies );
+                build.push_settings {
+                    classes = "%s/%s_%s/%s/classes" % { settings.obj, platform, variant, relative(jar:get_working_directory():path(), root()) };
+                };
                 build.add_module_dependencies( jar, "%s/%s.dex" % {settings.bin, id}, "", settings );
+                build.pop_settings();
                 table.insert( jars, jar );
             end
             build.pop_settings();

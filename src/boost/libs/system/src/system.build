@@ -1,8 +1,6 @@
 
 Library "boost_system" {
     Cxx {
-        -- Disable automatic linking to Boost libraries.
-        defines = { "BOOST_ALL_NO_LIB" };
         "error_code.cpp"
     };
 }

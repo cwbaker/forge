@@ -5,7 +5,7 @@ function msvc.configure( settings )
     local function registry( key )
         local values = {};
         local RegQueryScanner = Scanner {
-            [ [[[ ]* ([A-Za-z0-9_]+) [ ]* ([A-Za-z0-9_]+) [ ]* ([A-Za-z0-9_\\\:\. ]+)]] ] = function( key, type, value )
+            [ [[[ ]* ([A-Za-z0-9_]+) [ ]* ([A-Za-z0-9_]+) [ ]* ([A-Za-z0-9_\(\)\\\:\. ]+)]] ] = function( key, type, value )
                 values[key] = value;
             end;
             
@@ -27,8 +27,10 @@ function msvc.configure( settings )
     end
 
     local function autodetect_windows_sdk_directory()
-        local windows_sdk = registry( [[HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows]] ) or "C:\\Program Files (x86)\\Windows Kits\\8.1";
-        return windows_sdk.CurrentInstallFolder;
+        local windows_sdk = registry( [[HKLM\SOFTWARE\Microsoft\Windows Kits\Installed Roots]] );
+        if windows_sdk then 
+            return windows_sdk.KitsRoot81 or windows_sdk.KitsRoot;
+        end
     end
 
     if operating_system() == "windows" then

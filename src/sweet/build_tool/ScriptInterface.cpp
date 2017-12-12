@@ -176,6 +176,7 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "ls", &ScriptInterface::ls, this )
         ( "find", &ScriptInterface::find, this )
         ( "mkdir", &ScriptInterface::mkdir, this )
+        ( "cpdir", &ScriptInterface::cpdir, this )
         ( "rmdir", &ScriptInterface::rmdir, this )
         ( "cp", &ScriptInterface::cp, this )
         ( "rm", &ScriptInterface::rm, this )
@@ -631,6 +632,13 @@ boost::filesystem::recursive_directory_iterator ScriptInterface::find( const std
 void ScriptInterface::mkdir( const std::string& path )
 {
     return os_interface_->mkdir( absolute(path) );
+}
+
+void ScriptInterface::cpdir( const std::string& from, const std::string& to )
+{
+    Environment* environment = get_environment().get();
+    SWEET_ASSERT( environment );
+    return os_interface_->cpdir( absolute(from), absolute(to), environment->directory().branch() );
 }
 
 void ScriptInterface::rmdir( const std::string& path )
