@@ -20,15 +20,13 @@ build:all {
             "sweet/build_tool/build_tool",
             "sweet/build_tool/build_tool_lua/build_tool_lua",
             "sweet/process/process",
-            "sweet/persist/persist",
             "sweet/luaxx/luaxx",
             "sweet/cmdline/cmdline",
-            "sweet/rtti/rtti",
             "sweet/error/error",
             "sweet/assert/assert",
             "lua/liblua",
             "boost/libs/filesystem/src/boost_filesystem",
-            "boost/libs/system/src/boost_system",
+            "boost/libs/system/src/boost_system"
         };
 
         system_libraries = build:switch {

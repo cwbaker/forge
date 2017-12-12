@@ -54,8 +54,6 @@ void LuaGraph::create( BuildTool* build_tool, lua_State* lua_state )
         { "print_namespace", &LuaGraph::print_namespace },
         { "wait", &LuaGraph::wait },
         { "clear", &LuaGraph::clear },
-        { "load_xml", &LuaGraph::load_xml },
-        { "save_xml", &LuaGraph::save_xml },
         { "load_binary", &LuaGraph::load_binary },
         { "save_binary", &LuaGraph::save_binary },
         { NULL, NULL }
@@ -283,32 +281,6 @@ int LuaGraph::clear( lua_State* lua_state )
     string working_directory = context->working_directory()->path();
     build_tool->graph()->clear();
     context->reset_directory( working_directory );
-    return 0;
-}
-
-int LuaGraph::load_xml( lua_State* lua_state )
-{
-    const int BUILD_TOOL = 1;
-    const int FILENAME = 2;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    Context* context = build_tool->context();
-    const char* filename = luaL_checkstring( lua_state, FILENAME );
-    string working_directory = context->working_directory()->path();
-    Target* cache_target = build_tool->graph()->load_xml( build_tool->absolute(string(filename)).string() );
-    context->reset_directory( working_directory );
-    if ( cache_target )
-    {
-        build_tool->create_target_lua_binding( cache_target );
-    }
-    luaxx_push( lua_state, cache_target );
-    return 1;
-}
-
-int LuaGraph::save_xml( lua_State* lua_state )
-{
-    const int BUILD_TOOL = 1;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    build_tool->graph()->save_xml();
     return 0;
 }
 

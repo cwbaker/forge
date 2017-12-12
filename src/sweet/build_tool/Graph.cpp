@@ -11,9 +11,11 @@
 #include "Scheduler.hpp"
 #include "System.hpp"
 #include "path_functions.hpp"
-#include "persist.hpp"
+#include "GraphReader.hpp"
+#include "GraphWriter.hpp"
 #include <sweet/assert/assert.hpp>
 #include <memory>
+#include <fstream>
 
 using std::list;
 using std::vector;
@@ -55,13 +57,11 @@ Graph::Graph( BuildTool* build_tool )
   successful_revision_( 0 )
 {
     SWEET_ASSERT( build_tool_ );
-    root_target_ = new Target( "", this );
+    root_target_.reset( new Target("", this) );
 }
 
 Graph::~Graph()
 {
-    delete root_target_;
-
     while ( !target_prototypes_.empty() )
     {
         delete target_prototypes_.back();
@@ -77,7 +77,7 @@ Graph::~Graph()
 */
 Target* Graph::root_target() const
 {
-    return root_target_;
+    return root_target_.get();
 }
 
 /**
@@ -263,7 +263,7 @@ TargetPrototype* Graph::target_prototype( const std::string& id )
 Target* Graph::target( const std::string& id, TargetPrototype* target_prototype, Target* working_directory )
 {
     boost::filesystem::path path( id );
-    Target* target = working_directory && path.is_relative() ? working_directory : root_target_;
+    Target* target = working_directory && path.is_relative() ? working_directory : root_target_.get();
     SWEET_ASSERT( target );
 
     if ( !id.empty() )
@@ -340,7 +340,7 @@ Target* Graph::find_target( const std::string& id, Target* working_directory )
     if ( !id.empty() )
     {
         boost::filesystem::path path( id );
-        target = working_directory && path.is_relative() ? working_directory : root_target_;
+        target = working_directory && path.is_relative() ? working_directory : root_target_.get();
         boost::filesystem::path::const_iterator i = path.begin();
         SWEET_ASSERT( target );
 
@@ -566,7 +566,7 @@ int Graph::bind( Target* target )
     }
 
     Bind bind( build_tool_ );
-    bind.visit( target ? target : root_target_ );
+    bind.visit( target ? target : root_target_.get() );
     return bind.failures_;
 }
 
@@ -619,7 +619,7 @@ void Graph::clear()
         }
     };
 
-    RecursiveClear::clear( root_target_ );
+    RecursiveClear::clear( root_target_.get() );
 }
 
 /**
@@ -648,67 +648,6 @@ void Graph::recover()
 //  The target that corresponds to the file that this Graph was loaded from or
 //  null if there was no cache target.
 */
-Target* Graph::load_xml( const std::string& filename )
-{
-    SWEET_ASSERT( !filename.empty() );
-    SWEET_ASSERT( boost::filesystem::path(filename).is_absolute() );
-    SWEET_ASSERT( build_tool_ );
-
-    filename_ = filename;
-    cache_target_ = nullptr;
-
-    if ( build_tool_->system()->exists(filename) )
-    {
-        sweet::persist::XmlReader reader( build_tool_->error_policy() );
-        enter( reader );
-        Graph graph;
-        reader.read( filename.c_str(), "graph", graph );
-        exit( reader );
-        if ( graph.root_target() )
-        {
-            swap( graph );
-            recover();
-            return cache_target_;
-        }
-    }
-
-    recover();
-    return nullptr;
-}
-
-/**
-// Save this Graph to an XML file.
-//
-// @param filename
-//  The name of the file to save this Graph to.
-*/
-void Graph::save_xml()
-{
-    SWEET_ASSERT( build_tool_ );
-
-    if ( !filename_.empty() )
-    {
-        sweet::persist::XmlWriter writer( build_tool_->error_policy() );
-        enter( writer );
-        writer.write( filename_.c_str(), "graph", *this );
-        exit( writer );
-    }
-    else
-    {
-        build_tool_->error( "Unable to save a dependency graph without trying to load it first" );
-    }
-}
-
-/**
-// Load this Graph from a binary file.
-//
-// @param filename
-//  The name of the file to load this Graph from.
-//
-// @return
-//  The target that corresponds to the file that this Graph was loaded from or
-//  null if there was no cache target.
-*/
 Target* Graph::load_binary( const std::string& filename )
 {
     SWEET_ASSERT( !filename.empty() );
@@ -720,14 +659,12 @@ Target* Graph::load_binary( const std::string& filename )
 
     if ( build_tool_->system()->exists(filename) )
     {
-        sweet::persist::BinaryReader reader( build_tool_->error_policy() );
-        enter( reader );
-        Graph graph;
-        reader.read( filename.c_str(), "graph", graph );
-        exit( reader );
-        if ( graph.root_target() )
+        std::ifstream ifstream( filename, std::ios::binary );
+        GraphReader graph_reader( &ifstream, &build_tool_->error_policy() );
+        unique_ptr<Target> root_target = graph_reader.read( filename );
+        if ( root_target )
         {
-            swap( graph );
+            root_target_.swap( root_target );
             recover();
             return cache_target_;
         }
@@ -746,10 +683,9 @@ void Graph::save_binary()
 
     if ( !filename_.empty() )
     {
-        sweet::persist::BinaryWriter writer( build_tool_->error_policy() );
-        enter( writer );
-        writer.write( filename_.c_str(), "graph", *this );
-        exit( writer );
+        std::ofstream ofstream( filename_, std::ios::binary );
+        GraphWriter graph_writer( &ofstream );
+        graph_writer.write( root_target_.get() );
     }
     else
     {
@@ -924,7 +860,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
     bind( target );
     RecursivePrinter recursive_printer( this );
-    recursive_printer.print_recursively( target ? target : root_target_, boost::filesystem::path(directory), 0 );
+    recursive_printer.print_recursively( target ? target : root_target_.get(), boost::filesystem::path(directory), 0 );
     printf( "\n\n" );
 }
 
@@ -990,6 +926,6 @@ void Graph::print_namespace( Target* target )
     };
 
     RecursivePrinter recursive_printer( this );
-    recursive_printer.print( target ? target : root_target_, 0 );
+    recursive_printer.print( target ? target : root_target_.get(), 0 );
     printf( "\n\n" );
 }

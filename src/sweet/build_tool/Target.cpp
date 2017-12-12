@@ -7,6 +7,8 @@
 #include "Error.hpp"
 #include "TargetPrototype.hpp"
 #include "Graph.hpp"
+#include "GraphWriter.hpp"
+#include "GraphReader.hpp"
 #include "BuildTool.hpp"
 #include "System.hpp"
 #include <sweet/assert/assert.hpp>
@@ -15,6 +17,7 @@
 using std::min;
 using std::max;
 using std::swap;
+using std::remove;
 using std::vector;
 using std::string;
 using std::time_t;
@@ -1384,4 +1387,64 @@ int Target::postorder_height() const
 int Target::next_anonymous_index()
 {
     return anonymous_++;
+}
+
+/**
+// Write this Target to \e writer.
+//
+// @param writer
+//  The GraphWriter to use to serialize this Target to.
+*/
+void Target::write( GraphWriter& writer )
+{
+    writer.object_address( this );
+    writer.value( id_ );
+    writer.value( last_write_time_ );
+    writer.value( built_ );
+    writer.value( filenames_ );
+    writer.value( targets_ );
+    writer.refer( implicit_dependencies_ );    
+}
+
+/**
+// Read this Target from \e reader.
+//
+// @param reader 
+//  The GraphReader to deserialize this Target from.
+*/
+void Target::read( GraphReader& reader )
+{
+    reader.object_address( this );
+    reader.value( &id_ );
+    reader.value( &last_write_time_ );
+    reader.value( &built_ );
+    reader.value( &filenames_ );
+    reader.value( &targets_ );
+    reader.refer( &implicit_dependencies_ );
+}
+
+/**
+// Resolve this Target's implicit dependencies to their new addresses.
+//
+// Recursively updates the addresses of this Target and its ancestors implicit
+// dependencies from their old addresses when the Graph was written out to 
+// their new addresses now that the Graph has been read back in.
+//
+// @param reader
+//  The GraphReader just read in the Graph.
+*/
+void Target::resolve( const GraphReader& reader )
+{
+    for ( vector<Target*>::iterator i = implicit_dependencies_.begin(); i != implicit_dependencies_.end(); ++i )
+    {
+        *i = reinterpret_cast<Target*>( reader.find_address_by_old_address(*i) );
+    }
+    implicit_dependencies_.erase( remove(implicit_dependencies_.begin(), implicit_dependencies_.end(), nullptr), implicit_dependencies_.end() );
+
+    for ( vector<Target*>::const_iterator i = targets_.begin(); i != targets_.end(); ++i )
+    {
+        Target* target = *i;
+        SWEET_ASSERT( target );
+        target->resolve( reader );
+    }
 }

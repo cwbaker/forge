@@ -30,9 +30,7 @@ for _, build in build:default_builds("cc_.*") do
             "sweet/error/error",
             "lua/liblua",
             "sweet/path/path",
-            "sweet/persist/persist",
-            "sweet/process/process",
-            "sweet/rtti/rtti"
+            "sweet/process/process"
         };    
 
         build:Cxx () {
@@ -46,6 +44,8 @@ for _, build in build:default_builds("cc_.*") do
             "Executor.cpp",
             "Filter.cpp",
             "Graph.cpp",
+            "GraphReader.cpp",
+            "GraphWriter.cpp",
             "Job.cpp",
             "Reader.cpp", 
             "Scheduler.cpp", 

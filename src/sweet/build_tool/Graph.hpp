@@ -2,9 +2,9 @@
 #define SWEET_BUILD_TOOL_GRAPH_HPP_INCLUDED
 
 #include <sweet/error/macros.hpp>
-#include <sweet/rtti/macros.hpp>
 #include <vector>
 #include <string>
+#include <memory>
 
 namespace sweet
 {
@@ -25,7 +25,7 @@ class Graph
     BuildTool* build_tool_; ///< The BuildTool that this Graph is part of.
     std::vector<TargetPrototype*> target_prototypes_; ///< The TargetPrototypes that have been created.
     std::string filename_; ///< The filename that this Graph was most recently loaded from.
-    Target* root_target_; ///< The root Target for this Graph.
+    std::unique_ptr<Target> root_target_; ///< The root Target for this Graph.
     Target* cache_target_; ///< The cache Target for this Graph.
     bool traversal_in_progress_; ///< True when a traversal is in progress otherwise false.
     int visited_revision_; ///< The current visit revision.
@@ -57,16 +57,10 @@ class Graph
         void swap( Graph& graph );
         void clear();
         void recover();
-        Target* load_xml( const std::string& filename );
-        void save_xml();
         Target* load_binary( const std::string& filename );
         void save_binary();
         void print_dependencies( Target* target, const std::string& directory );
         void print_namespace( Target* target );
-
-        template <class Archive> void enter( Archive& archive );
-        template <class Archive> void exit( Archive& archive );
-        template <class Archive> void persist( Archive& archive );
 };
 
 }

@@ -11,6 +11,8 @@ namespace sweet
 namespace build_tool
 {
 
+class GraphWriter;
+class GraphReader;
 class TargetPrototype;
 class Graph;
 class BuildTool;
@@ -136,6 +138,9 @@ class Target
         
         int next_anonymous_index();
 
+        void write( GraphWriter& writer );
+        void read( GraphReader& reader );
+        void resolve( const GraphReader& reader );
         template <class Archive> void persist( Archive& archive );
 };
 
