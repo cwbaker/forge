@@ -50,6 +50,11 @@ void LuaTarget::create( lua::Lua* lua )
         ( "__index", *target_prototype_ )
         ( "__tostring", raw(&LuaTarget::filename) )
     ;
+
+    const int BUILD = 1;
+    lua_State* lua_state = lua->get_lua_state();
+    lua_push_object( lua_state, target_prototype_ );
+    lua_setfield( lua_state, BUILD, "Target" );
 }
 
 void LuaTarget::destroy()

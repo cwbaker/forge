@@ -49,6 +49,11 @@ void LuaTargetPrototype::create( lua::Lua* lua, LuaTarget* lua_target )
         .type( SWEET_STATIC_TYPEID(TargetPrototype) )
         ( "id", &TargetPrototype::id )
     ;
+
+    const int BUILD = 1;
+    lua_State* lua_state = lua->get_lua_state();
+    lua_push_object( lua_state, target_prototype_prototype_ );
+    lua_setfield( lua_state, BUILD, "Target" );
 }
 
 void LuaTargetPrototype::destroy()
