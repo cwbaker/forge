@@ -12,7 +12,6 @@
 #include <sweet/build_tool/Graph.hpp>
 #include <sweet/build_tool/Target.hpp>
 #include <sweet/build_tool/TargetPrototype.hpp>
-#include <sweet/lua/lua_functions.hpp>
 #include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
 #include <lua/lua.hpp>

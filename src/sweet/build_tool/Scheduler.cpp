@@ -68,8 +68,6 @@ public:
 Scheduler::Scheduler( BuildTool* build_tool )
 : build_tool_( build_tool ),
   buildfile_event_sink_( nullptr ),
-  contexts_(),
-  free_contexts_(),
   active_contexts_(),
   results_mutex_(),
   results_condition_(),
@@ -83,12 +81,6 @@ Scheduler::Scheduler( BuildTool* build_tool )
 
 Scheduler::~Scheduler()
 {
-    while ( !contexts_.empty() )
-    {
-        delete contexts_.back();
-        contexts_.pop_back();
-    }
-
     delete buildfile_event_sink_;
 }
 
@@ -110,24 +102,6 @@ void Scheduler::load( const boost::filesystem::path& path )
 void Scheduler::command( const boost::filesystem::path& path, const std::string& function )
 {
     call( path, function );
-    while ( dispatch_results() )
-    {
-    }
-}
-
-void Scheduler::execute( const char* start, const char* finish )
-{
-    SWEET_ASSERT( start );
-    SWEET_ASSERT( finish );
-    SWEET_ASSERT( start <= finish );
-
-    Graph* graph = build_tool_->graph();
-    Context* context = allocate_context( graph->target(build_tool_->initial().string()) );
-    process_begin( context );
-    context->context_thread().resume( start, finish, "BuildTool" )
-    .end();
-    process_end( context );
-
     while ( dispatch_results() )
     {
     }
@@ -255,7 +229,6 @@ void Scheduler::error( const std::string& what, Context* context )
     if ( context )
     {
         SWEET_ASSERT( !active_contexts_.empty() );    
-        SWEET_ASSERT( find(free_contexts_.begin(), free_contexts_.end(), context) == free_contexts_.end() );
         SWEET_ASSERT( context == active_contexts_.back() || find(active_contexts_.begin(), active_contexts_.end(), context) == active_contexts_.end() );
         if ( context == active_contexts_.back() )
         {
@@ -477,23 +450,8 @@ Context* Scheduler::context() const
 Context* Scheduler::allocate_context( Target* working_directory, Job* job )
 {
     SWEET_ASSERT( working_directory );
-    SWEET_ASSERT( !job || job->working_directory() == working_directory );
-    
-    if ( free_contexts_.empty() )
-    {
-        const int DEFAULT_ENVIRONMENTS_GROW_BY = 16;
-        contexts_.reserve( contexts_.size() + DEFAULT_ENVIRONMENTS_GROW_BY );
-        free_contexts_.reserve( free_contexts_.size() + DEFAULT_ENVIRONMENTS_GROW_BY );
-        for ( int i = 0; i < DEFAULT_ENVIRONMENTS_GROW_BY; ++i )
-        {
-            unique_ptr<Context> context( new Context(boost::filesystem::path(""), build_tool_) );
-            free_contexts_.push_back( context.get() );
-            contexts_.push_back( context.release() );
-        }
-    }
-
-    Context* context = free_contexts_.back();
-    free_contexts_.pop_back();
+    SWEET_ASSERT( !job || job->working_directory() == working_directory );    
+    Context* context = new Context( boost::filesystem::path(""), build_tool_ );
     context->reset_directory_to_target( working_directory );
     context->set_job( job );
     return context;
@@ -502,7 +460,6 @@ Context* Scheduler::allocate_context( Target* working_directory, Job* job )
 void Scheduler::free_context( Context* context )
 {
     SWEET_ASSERT( context );
-    SWEET_ASSERT( std::find(free_contexts_.begin(), free_contexts_.end(), context) == free_contexts_.end() );
 
     Job* job = context->job();
     if ( job )
@@ -510,8 +467,7 @@ void Scheduler::free_context( Context* context )
         job->set_state( JOB_COMPLETE );
     }
 
-    free_contexts_.push_back( context );
-    context->set_job( NULL );
+    delete context;
 }
 
 void Scheduler::destroy_context( Context* context )
@@ -524,6 +480,8 @@ void Scheduler::destroy_context( Context* context )
         job->set_state( JOB_COMPLETE );
         job->target()->set_successful( false );
     }
+
+    delete context;
 }
 
 bool Scheduler::dispatch_results()

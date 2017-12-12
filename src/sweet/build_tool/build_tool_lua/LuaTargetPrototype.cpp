@@ -39,7 +39,7 @@ void LuaTargetPrototype::create( lua_State* lua_state, LuaTarget* lua_target )
     luaxx_create( lua_state_, this, TARGET_PROTOTYPE_TYPE );
 
     luaL_newmetatable( lua_state_, TARGET_PROTOTYPE_METATABLE );
-    lua_push_object( lua_state_, lua_target->target_prototype() );
+    luaxx_push( lua_state_, lua_target );
     lua_setfield( lua_state_, -2, "__index" );
     lua_pop( lua_state_, 1 );
 

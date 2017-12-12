@@ -8,15 +8,6 @@ struct lua_State;
 namespace sweet
 {
 
-namespace lua
-{
-
-class AddMember;
-class LuaObject;
-class Lua;
-
-}
-
 namespace build_tool
 {
 
@@ -26,16 +17,13 @@ class BuildTool;
 
 class LuaTarget
 {
-    lua::Lua* lua_; ///< The main Lua virtual machine to create the target API in.
-    lua::LuaObject* target_prototype_; ///< The LuaObject that acts as a prototype for Targets.
+    lua_State* lua_state_; ///< The main Lua virtual machine to create the target API in.
 
 public:
     LuaTarget();
     ~LuaTarget();
 
-    lua::LuaObject* target_prototype() const;
-
-    void create( lua::Lua* lua );
+    void create( lua_State* lua_state );
     void destroy();
     void create_target( Target* target );
     void recover_target( Target* target );

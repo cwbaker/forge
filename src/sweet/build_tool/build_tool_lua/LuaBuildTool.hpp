@@ -8,13 +8,6 @@ struct lua_State;
 namespace sweet
 {
     
-namespace lua
-{
-
-class Lua;
-
-}
-
 namespace build_tool
 {
 
@@ -30,7 +23,8 @@ class LuaTargetPrototype;
 
 class LuaBuildTool
 {
-    lua::Lua* lua_;
+    BuildTool* build_tool_;
+    lua_State* lua_state_;
     LuaFileSystem* lua_file_system_;
     LuaContext* lua_context_;
     LuaGraph* lua_graph_;
@@ -39,11 +33,11 @@ class LuaBuildTool
     LuaTargetPrototype* lua_target_prototype_;
 
 public:
-    LuaBuildTool( BuildTool* build_tool, lua::Lua* lua );
+    LuaBuildTool( BuildTool* build_tool, lua_State* lua_state );
     ~LuaBuildTool();
     LuaTarget* lua_target() const;
     LuaTargetPrototype* lua_target_prototype() const;
-    void create( BuildTool* build_tool, lua::Lua* lua );
+    void create( BuildTool* build_tool, lua_State* lua_state );
     void destroy();
 
 private:

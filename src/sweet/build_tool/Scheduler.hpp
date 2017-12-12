@@ -38,8 +38,6 @@ class Scheduler
 {
     BuildTool* build_tool_; ///< The BuildTool that this Scheduler is part of.
     BuildfileEventSink* buildfile_event_sink_; ///< The LuaThreadEventSink that handles `buildfile()` coroutines finishing.
-    std::vector<Context*> contexts_; ///< The currently allocated Contexts.
-    std::vector<Context*> free_contexts_; ///< The Contexts that are free and waiting to be assigned a Job.
     std::vector<Context*> active_contexts_; ///< The stack of Contexts that are currently executing Lua scripts.
     std::mutex results_mutex_; ///< The mutex that ensures exclusive access to the results queue.
     std::condition_variable results_condition_; ///< The Condition that is used to wait for results.
@@ -53,8 +51,6 @@ class Scheduler
 
         void load( const boost::filesystem::path& path );
         void command( const boost::filesystem::path& path, const std::string& command );
-        void execute( const boost::filesystem::path& path, const std::string& function );
-        void execute( const char* start, const char* finish );        
         int buildfile( const boost::filesystem::path& path );
         void call( const boost::filesystem::path& path, const std::string& function );
         void postorder_visit( int function, Job* job );

@@ -55,7 +55,7 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
     SWEET_ASSERT( boost::filesystem::path(initial_directory).is_absolute() );
 
     lua_ = new lua::Lua( error_policy_ );
-    lua_build_tool_ = new LuaBuildTool( this, lua_ );
+    lua_build_tool_ = new LuaBuildTool( this, lua_->get_lua_state() );
     system_ = new System;
     reader_ = new Reader( this );
     graph_ = new Graph( this );
@@ -411,20 +411,6 @@ void BuildTool::execute( const std::string& filename, const std::string& command
     {
         scheduler_->command( path, command );
     }
-}
-
-/**
-// Execute [\e start, \e finish).
-//
-// @param start
-//  The first character of the script to execute.
-//
-// @param finish
-//  One past the last character of the script to execute.
-*/
-void BuildTool::execute( const char* start, const char* finish )
-{
-    scheduler_->execute( start, finish );
 }
 
 void BuildTool::create_target_lua_binding( Target* target )

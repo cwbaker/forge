@@ -5,10 +5,9 @@
 
 #include "LuaTarget.hpp"
 #include "LuaBuildTool.hpp"
+#include "types.hpp"
 #include <sweet/build_tool/Target.hpp>
 #include <sweet/build_tool/TargetPrototype.hpp>
-#include <sweet/lua/Lua.hpp>
-#include <sweet/lua/LuaObject.hpp>
 #include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
 #include <lua/lua.hpp>
@@ -23,8 +22,7 @@ using namespace sweet::build_tool;
 static const char* TARGET_METATABLE = "build.Target";
 
 LuaTarget::LuaTarget()
-: lua_( NULL ),
-  target_prototype_( NULL )
+: lua_state_( nullptr )
 {
 }
 
@@ -33,27 +31,14 @@ LuaTarget::~LuaTarget()
     destroy();
 }
 
-lua::LuaObject* LuaTarget::target_prototype() const
+void LuaTarget::create( lua_State* lua_state )
 {
-    return target_prototype_;
-}
-
-void LuaTarget::create( lua::Lua* lua )
-{
-    SWEET_ASSERT( lua );
+    SWEET_ASSERT( lua_state );
 
     destroy();
 
-    lua_ = lua;
-    target_prototype_ = new lua::LuaObject( *lua_ );
-
-    lua_State* lua_state = lua_->get_lua_state();
-    SWEET_ASSERT( lua_state );
-
-    lua_push_object( lua_state, target_prototype_ );
-    lua_push_value<rtti::Type>( lua_state, SWEET_STATIC_TYPEID(Target) );
-    lua_setfield( lua_state, -2, lua::TYPE_KEYWORD );
-    lua_pop( lua_state, 1 );
+    lua_state_ = lua_state;
+    luaxx_create( lua_state_, this, TARGET_TYPE );
 
     static const luaL_Reg functions[] = 
     {
@@ -80,9 +65,9 @@ void LuaTarget::create( lua::Lua* lua )
         { "add_ordering_dependency", &LuaTarget::add_ordering_dependency },
         { nullptr, nullptr }
     };
-    lua_push_object( lua_state, target_prototype_ );
-    luaL_setfuncs( lua_state, functions, 0 );
-    lua_pop( lua_state, 1 );
+    luaxx_push( lua_state_, this );
+    luaL_setfuncs( lua_state_, functions, 0 );
+    lua_pop( lua_state_, 1 );
 
     static const luaL_Reg implicit_creation_functions [] = 
     {
@@ -99,29 +84,30 @@ void LuaTarget::create( lua::Lua* lua )
         { "any_dependencies", &LuaTarget::any_dependencies },
         { nullptr, nullptr }
     };
-    lua_push_object( lua_state, target_prototype_ );
-    lua_pushlightuserdata( lua_state, this );
-    luaL_setfuncs( lua_state, implicit_creation_functions, 1 );    
-    lua_pop( lua_state, 1 );
+    luaxx_push( lua_state_, this );
+    lua_pushlightuserdata( lua_state_, this );
+    luaL_setfuncs( lua_state_, implicit_creation_functions, 1 );    
+    lua_pop( lua_state_, 1 );
 
-    luaL_newmetatable( lua_state, TARGET_METATABLE );
-    lua_push_object( lua_state, target_prototype_ );
-    lua_setfield( lua_state, -2, "__index" );
-    lua_pushcfunction( lua_state, &LuaTarget::filename );
-    lua_setfield( lua_state, -2, "__tostring" );
-    lua_pop( lua_state, 1 );
+    luaL_newmetatable( lua_state_, TARGET_METATABLE );
+    luaxx_push( lua_state_, this );
+    lua_setfield( lua_state_, -2, "__index" );
+    lua_pushcfunction( lua_state_, &LuaTarget::filename );
+    lua_setfield( lua_state_, -2, "__tostring" );
+    lua_pop( lua_state_, 1 );
 
     const int BUILD = 1;
-    lua_push_object( lua_state, target_prototype_ );
-    lua_setfield( lua_state, BUILD, "Target" );
+    luaxx_push( lua_state_, this );
+    lua_setfield( lua_state_, BUILD, "Target" );
 }
 
 void LuaTarget::destroy()
 {
-    delete target_prototype_;
-    target_prototype_ = NULL;
-
-    lua_ = NULL;
+    if ( lua_state_ )
+    {
+        luaxx_destroy( lua_state_, this );
+        lua_state_ = nullptr;
+    }
 }
 
 void LuaTarget::create_target( Target* target )
@@ -130,8 +116,7 @@ void LuaTarget::create_target( Target* target )
 
     if ( !target->referenced_by_script() )
     {
-        lua_State* lua_state = lua_->get_lua_state();
-        lua_create_object( lua_state, target );
+        lua_create_object( lua_state_, target );
         target->set_referenced_by_script( true );
         recover_target( target );
         update_target( target );
@@ -141,14 +126,13 @@ void LuaTarget::create_target( Target* target )
 void LuaTarget::recover_target( Target* target )
 {
     SWEET_ASSERT( target );
-    lua_State* lua_state = lua_->get_lua_state();
-    lua_push_object( lua_state, target );
-    lua_push_value<rtti::Type>( lua_state, SWEET_STATIC_TYPEID(Target) );
-    lua_setfield( lua_state, -2, lua::TYPE_KEYWORD );
-    lua_pushlightuserdata( lua_state, target );
-    lua_setfield( lua_state, -2, lua::THIS_KEYWORD );
-    luaL_setmetatable( lua_state, TARGET_METATABLE );
-    lua_pop( lua_state, 1 );
+    lua_push_object( lua_state_, target );
+    lua_push_value<rtti::Type>( lua_state_, SWEET_STATIC_TYPEID(Target) );
+    lua_setfield( lua_state_, -2, lua::TYPE_KEYWORD );
+    lua_pushlightuserdata( lua_state_, target );
+    lua_setfield( lua_state_, -2, lua::THIS_KEYWORD );
+    luaL_setmetatable( lua_state_, TARGET_METATABLE );
+    lua_pop( lua_state_, 1 );
 }
 
 void LuaTarget::update_target( Target* target )
@@ -158,26 +142,23 @@ void LuaTarget::update_target( Target* target )
     TargetPrototype* target_prototype = target->prototype();
     if ( target_prototype )
     {
-        lua_State* lua_state = lua_->get_lua_state();
-        lua_push_object( lua_state, target );
-        luaxx_push( lua_state, target_prototype );
-        lua_setmetatable( lua_state, -2 );
-        lua_pop( lua_state, 1 );
+        lua_push_object( lua_state_, target );
+        luaxx_push( lua_state_, target_prototype );
+        lua_setmetatable( lua_state_, -2 );
+        lua_pop( lua_state_, 1 );
     }
     else
     {
-        lua_State* lua_state = lua_->get_lua_state();
-        lua_push_object( lua_state, target );
-        luaL_setmetatable( lua_state, TARGET_METATABLE );
-        lua_pop( lua_state, 1 );
+        lua_push_object( lua_state_, target );
+        luaL_setmetatable( lua_state_, TARGET_METATABLE );
+        lua_pop( lua_state_, 1 );
     }
 }
 
 void LuaTarget::destroy_target( Target* target )
 {
     SWEET_ASSERT( target );
-    lua_State* lua_state = lua_->get_lua_state();
-    lua_destroy_object( lua_state, target );
+    lua_destroy_object( lua_state_, target );
     target->set_referenced_by_script( false );
 }
 

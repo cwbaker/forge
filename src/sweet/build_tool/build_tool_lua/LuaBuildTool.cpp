@@ -17,8 +17,6 @@
 #include <sweet/build_tool/Scheduler.hpp>
 #include <sweet/process/Process.hpp>
 #include <sweet/process/Environment.hpp>
-#include <sweet/lua/Lua.hpp>
-#include <sweet/lua/lua_types.hpp>
 #include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
 #include <lua/lua.hpp>
@@ -31,8 +29,9 @@ using namespace sweet::lua;
 using namespace sweet::luaxx;
 using namespace sweet::build_tool;
 
-LuaBuildTool::LuaBuildTool( BuildTool* build_tool, lua::Lua* lua )
-: lua_( nullptr ),
+LuaBuildTool::LuaBuildTool( BuildTool* build_tool, lua_State* lua_state )
+: build_tool_( nullptr ),
+  lua_state_( nullptr ),
   lua_file_system_( nullptr ),
   lua_context_( nullptr ),
   lua_graph_( nullptr ),
@@ -40,7 +39,7 @@ LuaBuildTool::LuaBuildTool( BuildTool* build_tool, lua::Lua* lua )
   lua_target_( nullptr ),
   lua_target_prototype_( nullptr )
 {
-    create( build_tool, lua );
+    create( build_tool, lua_state );
 }
 
 LuaBuildTool::~LuaBuildTool()
@@ -60,14 +59,15 @@ LuaTargetPrototype* LuaBuildTool::lua_target_prototype() const
     return lua_target_prototype_;
 }
 
-void LuaBuildTool::create( BuildTool* build_tool, lua::Lua* lua )
+void LuaBuildTool::create( BuildTool* build_tool, lua_State* lua_state )
 {
     SWEET_ASSERT( build_tool );
-    SWEET_ASSERT( lua );
+    SWEET_ASSERT( lua_state );
 
     destroy();
 
-    lua_ = lua;
+    build_tool_ = build_tool;
+    lua_state_ = lua_state;
     lua_file_system_ = new LuaFileSystem;
     lua_context_ = new LuaContext;
     lua_graph_ = new LuaGraph;
@@ -88,21 +88,25 @@ void LuaBuildTool::create( BuildTool* build_tool, lua::Lua* lua )
         { nullptr, nullptr }
     };
 
-    lua_State* lua_state = lua->get_lua_state();
-    luaxx_create( lua_state, build_tool, BUILD_TOOL_TYPE );
-    luaxx_push( lua_state, build_tool );
-    luaL_setfuncs( lua_state, functions, 0 );
-    lua_context_->create( build_tool, lua_state );
-    lua_file_system_->create( build_tool, lua_state );
-    lua_graph_->create( build_tool, lua_state );
-    lua_system_->create( build_tool, lua_state );
-    lua_target_->create( lua );
-    lua_target_prototype_->create( lua->get_lua_state(), lua_target_ );
-    lua_setglobal( lua_state, "build" );
+    luaxx_create( lua_state_, build_tool, BUILD_TOOL_TYPE );
+    luaxx_push( lua_state_, build_tool );
+    luaL_setfuncs( lua_state_, functions, 0 );
+    lua_context_->create( build_tool, lua_state_ );
+    lua_file_system_->create( build_tool, lua_state_ );
+    lua_graph_->create( build_tool, lua_state_ );
+    lua_system_->create( build_tool, lua_state_ );
+    lua_target_->create( lua_state_ );
+    lua_target_prototype_->create( lua_state_, lua_target_ );
+    lua_setglobal( lua_state_, "build" );
 }
 
 void LuaBuildTool::destroy()
 {
+    if ( lua_state_ )
+    {
+        luaxx_destroy( lua_state_, build_tool_ );
+    }
+
     delete lua_target_prototype_;
     lua_target_prototype_ = nullptr;
 
@@ -121,15 +125,8 @@ void LuaBuildTool::destroy()
     delete lua_file_system_;
     lua_file_system_ = nullptr;
 
-    if ( lua_ )
-    {
-        lua_State* lua_state = lua_->get_lua_state();
-        if ( lua_state )
-        {
-            lua_destroy_object( lua_state, this );
-        }
-        lua_ = nullptr;
-    }
+    lua_state_ = nullptr;
+    build_tool_ = nullptr;
 }
 
 int LuaBuildTool::set_maximum_parallel_jobs( lua_State* lua_state )

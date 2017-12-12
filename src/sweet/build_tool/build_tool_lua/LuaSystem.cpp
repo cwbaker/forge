@@ -8,7 +8,6 @@
 #include "types.hpp"
 #include <sweet/build_tool/BuildTool.hpp>
 #include <sweet/build_tool/System.hpp>
-#include <sweet/lua/lua_functions.hpp>
 #include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
 #include <lua/lua.hpp>
