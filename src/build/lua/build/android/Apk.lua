@@ -5,7 +5,6 @@ function Apk.create( settings, id )
     local package = build.Target( ("%s.apk"):format(id), Apk );
     package:set_filename( ("%s/%s.apk"):format(settings.bin, id) );
     package.settings = settings;
-    build.default_target( package );
     build.push_settings {
         bin = ("%s/%s"):format( settings.bin, id );
         data = ("%s/%s"):format( settings.bin, id );
@@ -14,16 +13,15 @@ function Apk.create( settings, id )
 end
 
 function Apk.call( package, definition )
-    local working_directory = build.working_directory();
-    for _, dependency in ipairs(definition) do 
-        working_directory:remove_dependency( dependency );
-        package:add_dependency( dependency );
-        dependency.module = package;
-    end
     local android_manifest = definition.android_manifest;
     if android_manifest then 
         package:add_dependency( android_manifest );
         package.android_manifest = android_manifest;
+    end
+
+    for _, dependency in ipairs(definition) do 
+        package:add_dependency( dependency );
+        dependency.module = package;
     end
 end
 

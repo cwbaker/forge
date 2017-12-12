@@ -246,9 +246,8 @@ function ios.lipo_executable( target )
     for _, executable in target:dependencies() do 
         table.insert( executables, executable:filename() );
     end
-    print( build.leaf(target:filename()) );
     local sdk = ios.sdkroot_by_target_and_platform( target, platform );
-    executables = table.concat( executables, [[" "]] );
+    executables = table.concat( executables, '" "' );
     local xcrun = target.settings.ios.xcrun;
     build.system( xcrun, ('xcrun --sdk %s lipo -create -output "%s" "%s"'):format(sdk, target:filename(), executables) );
 end
@@ -258,7 +257,7 @@ end
 function ios.deploy( directory )
     local ios_deploy = build.settings.ios.ios_deploy;
     if ios_deploy then 
-        local directory = directory or find_target( initial() );
+        local directory = directory or find_target( initial("all") );
         local app = nil;
         for _, dependency in directory:dependencies() do
             if dependency:prototype() == ios.App then 

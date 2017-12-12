@@ -80,6 +80,7 @@ function build.default_create_function( target_prototype, ... )
                 else
                     target:set_filename( identifier );
                 end
+                target:set_cleanable( true );
                 target:add_ordering_dependency( build.Directory(build.branch(target)) );
                 target.settings = settings;
                 return target;
@@ -169,6 +170,58 @@ end
 
 function build.SourceDirectory( value, settings )
     return build.SourceFile( value, settings );
+end
+
+function build.Map( target_prototype, replacement, pattern, filenames )
+    local targets = {};
+    local settings = settings or build.current_settings();
+    for _, filename in ipairs(filenames) do 
+        local source = build.relative( filename );
+        local destination, substitutions = source:gsub( pattern, replacement );
+        if substitutions > 0 then 
+            local target = target_prototype (destination) (source);
+            table.insert( targets, target );
+        end
+    end
+    return table.unpack( targets );
+end
+
+function build.Ls( target_prototype, replacement, pattern, settings )
+    local targets = {};
+    local settings = settings or build.current_settings();
+    local cache = build.find_target( settings.cache );
+    cache:add_dependency( build.SourceDirectory(build.pwd()) );
+    for source_filename in build.ls("") do
+        local source = build.relative( source_filename );
+        local filename, substitutions = source:gsub( pattern, replacement );
+        if substitutions > 0 then    
+            local destination = build.interpolate( filename, settings );
+            local target = target_prototype (destination) (source);
+            table.insert( targets, target );
+        end
+    end
+    return table.unpack( targets );
+end
+
+function build.Find( target_prototype, replacement, pattern, settings )
+    local targets = {};
+    local settings = settings or build.current_settings();
+    local cache = build.find_target( settings.cache );
+    cache:add_dependency( build.SourceDirectory(build.pwd()) );
+    for source_filename in build.find("") do
+        if build.is_file(source_filename) then
+            local source = build.relative( source_filename );
+            local filename, substitutions = source:gsub( pattern, replacement );
+            if substitutions > 0 then
+                local destination = build.interpolate( filename, settings );
+                local target = target_prototype (destination) (source);
+                table.insert( targets, target );
+            end
+        elseif build.is_directory(source_filename) then 
+            cache:add_dependency( build.SourceDirectory(source_filename) );
+        end
+    end
+    return table.unpack( targets );
 end
 
 -- Perform per run initialization of the build system.
@@ -303,13 +356,6 @@ function build.version_code( version, reference_time )
     return math.ceil( os.difftime(version_time, reference_time) / SECONDS_PER_HALF_DAY );
 end
 
--- Add a target to the current directory's target so that it will be built 
--- when a build is invoked from that directory.
-function build.default_target( target )
-    local all = build.all();
-    all:add_dependency( target );
-end
-
 -- Add targets to the current directory's target so that they will be built 
 -- when a build is invoked from that directory.
 function build.default_targets( targets )
@@ -342,9 +388,17 @@ end
 function build.build_visit( target )
     local build_function = target.build;
     if build_function and target:outdated() then 
+        local filename = target:filename();
+        if filename ~= "" then
+            printf( build.leaf(filename) );
+        end
+        target:clear_implicit_dependencies();
         local success, error_message = pcall( build_function, target );
         target:set_built( success );
-        assert( success, error_message );
+        if not success then 
+            build.clean_visit( target );
+            assert( success, error_message );
+        end
     end
 end
 
@@ -500,13 +554,18 @@ function build.merge( destination, source )
     return destination;
 end
 
--- Get the *all* target for the current working directory.
+-- Get the *all* target for the current working directory adding any 
+-- targets that are passed in as dependencies.
 --
 -- The *all* target is the target that targets that are passed to 
 -- `build.default_target()` and `build.default_targets()` are added to and 
 -- that the build tool will build by default.
-function build.all()
-    return build.target( "all" );
+function build.all( dependencies )
+    local all = build.target( "all" );
+    if dependencies then 
+        build.default_call_function( all, dependencies );
+    end
+    return all;
 end
 
 -- Find and return the initial target to build.
@@ -612,6 +671,18 @@ function build.object( filename, architecture, settings )
     return ("%s/%s"):format( settings.obj, filename );
 end
 
+-- Convert /path/ into a generated files directory path by prepending the 
+-- generated directory to the portion of /path/ that is relative to the root
+-- directory.
+function build.generated( filename, architecture, settings )
+    settings = settings or build.current_settings();
+    filename = build.relative( build.absolute(filename), build.root() );
+    if architecture then 
+        return ("%s/%s/%s"):format( settings.gen, architecture, filename );
+    end
+    return ("%s/%s"):format( settings.gen, filename );
+end
+
 -- Strip the extension from a path (e.g. "foo.txt" -> "foo" and "bar/foo.txt"
 -- -> "bar/foo".
 function build.strip( path )
@@ -695,7 +766,6 @@ end
 -- Add dependencies detected by the injected build hooks library to the 
 -- target /target/.
 function build.dependencies_filter( target )
-    target:clear_implicit_dependencies();
     return function( line )
         if line:match("^==") then 
             local READ_PATTERN = "^== read '([^']*)'";

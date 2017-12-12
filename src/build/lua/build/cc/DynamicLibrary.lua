@@ -8,7 +8,6 @@ function DynamicLibrary.create( settings, id, architecture )
     dynamic_library.architecture = architecture;
     dynamic_library:set_filename( ("%s/%s"):format(settings.bin, dll_name(id, architecture)) );    
     dynamic_library:add_ordering_dependency( build.Directory(build.branch(dynamic_library:filename())) );
-    build.default_target( dynamic_library );
     return dynamic_library;
 end
 

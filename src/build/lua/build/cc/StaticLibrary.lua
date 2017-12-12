@@ -8,7 +8,6 @@ function StaticLibrary.create( settings, id, architecture )
     static_library.architecture = architecture;
     static_library:set_filename( ("%s/%s"):format(settings.lib, lib_name(id, architecture)) );
     static_library:add_ordering_dependency( build.Directory(build.branch(static_library:filename())) );
-    build.default_target( static_library );
     return static_library;
 end
 

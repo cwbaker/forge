@@ -494,7 +494,7 @@ function xcodeproj()
     platform = "";
     variant = "";
     build.load( true );
-    local all = all or build.find_target( build.root() );
+    local all = all or build.find_target( build.root("all") );
     assertf( all, "Missing target at '%s' to generate Xcode project from", build.root() );
     assertf( build.settings.xcode, "Missing Xcode settings in 'settings.xcode'" );
     assertf( build.settings.xcode.xcodeproj, "Missing Xcode project filename in 'settings.xcode.xcodeproj'" );
@@ -511,9 +511,9 @@ function xcode_build()
         assertf( failures == 0, "%d failures", failures );
         if failures == 0 then 
             if platform == "ios" then
-                ios.deploy( build.find_target(build.initial()) );
+                ios.deploy( build.find_target(build.initial("all")) );
             elseif platform == "android" then
-                android.deploy( build.find_target(build.initial()) );
+                android.deploy( build.find_target(build.initial("all")) );
             end
         end
     elseif action == "clean" then

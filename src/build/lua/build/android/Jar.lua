@@ -6,7 +6,6 @@ function Jar.create( settings, id )
     jar:set_filename( ("%s/%s"):format(settings.lib, id) );
     jar.settings = settings;
     build.add_jar_dependencies( jar, settings.jars );
-    build.working_directory():add_dependency( jar );
     return jar;
 end
 

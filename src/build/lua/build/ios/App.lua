@@ -5,7 +5,6 @@ function App.create( settings, id )
     local app = build.Target( ("%s.app"):format(id), App );
     app:set_filename( ("%s/%s.app"):format(settings.bin, id) );
     app.settings = settings;
-    build.default_target( app );
     build.push_settings {
         bin = app:filename();
         data = app:filename();
@@ -20,9 +19,7 @@ function App.call( app, definition )
         table.insert( definition, build.Generate (app.entitlements) (entitlements) );
     end
 
-    local working_directory = build.working_directory();
     for _, dependency in ipairs(definition) do 
-        working_directory:remove_dependency( dependency );
         app:add_dependency( dependency );
         dependency.module = app;
     end
@@ -40,9 +37,9 @@ function App.build( app )
                 end
             end
             if executable then 
-                build.system( xcrun, ([[xcrun dsymutil -o "%s.dSYM" "%s"]]):format(app:filename(), executable) );
+                build.system( xcrun, ('xcrun dsymutil -o "%s.dSYM" "%s"'):format(app:filename(), executable) );
                 if app.settings.strip then 
-                    build.system( xcrun, ([[xcrun strip "%s"]]):format(executable) );
+                    build.system( xcrun, ('xcrun strip "%s"'):format(executable) );
                 end
             end
         end
@@ -61,7 +58,7 @@ function App.build( app )
                 "--force";
                 "--no-strict";
                 "-vv";
-                ('"%s"'):format( app:filename() );
+                ('"%s"'):format( app );
             };
             local entitlements = app.entitlements;
             if entitlements then 
