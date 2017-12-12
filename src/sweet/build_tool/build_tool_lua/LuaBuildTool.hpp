@@ -1,7 +1,7 @@
 #ifndef SWEET_BUILD_TOOL_LUABUILDTOOL_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_LUABUILDTOOL_HPP_INCLUDED
 
-#include <sweet/lua/Lua.hpp>
+#include <vector>
 
 struct lua_State;
 
@@ -56,9 +56,5 @@ private:
 }
 
 }
-
-SWEET_LUA_TYPE_CONVERSION( sweet::build_tool::TargetPrototype, LuaByReference );
-SWEET_LUA_TYPE_CONVERSION( sweet::build_tool::Target, LuaByReference );
-SWEET_LUA_TYPE_CONVERSION( sweet::build_tool::BuildTool, LuaByReference );
 
 #endif

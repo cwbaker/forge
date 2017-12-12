@@ -8,7 +8,7 @@
 namespace sweet
 {
 
-namespace lua
+namespace luaxx
 {
 
 /**

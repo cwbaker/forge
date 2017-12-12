@@ -15,7 +15,6 @@ using std::string;
 using boost::filesystem::directory_iterator;
 using boost::filesystem::recursive_directory_iterator;
 using namespace sweet;
-using namespace sweet::lua;
 using namespace sweet::luaxx;
 using namespace sweet::build_tool;
 

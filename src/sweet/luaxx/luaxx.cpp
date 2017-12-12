@@ -41,6 +41,40 @@ const char* TYPE_KEYWORD = "__luaxx_type";
 const char* WEAK_OBJECTS_KEYWORD = "__luaxx_weak_objects";
 
 /**
+// Create a new, independent Lua state.
+//
+// @return 
+//  The newly created lua_State.
+*/
+lua_State* luaxx_newstate()
+{
+    lua_State* lua_state = luaL_newstate();
+    luaL_openlibs( lua_state );
+
+    // Create the weak objects metatable and table.  The metatable is used to 
+    // mark the table as storing weak references.  The table stores the tables 
+    // that correspond to an application's C++ objects that have been weakened 
+    // and have their lifetime managed by the Lua virtual machine.  The table
+    // stored using the address of the C++ object as a key.
+    //
+    // The table uses weak keys and values so that tables may hold strong 
+    // references back to C++ objects (via intrusive_ptrs, shared_ptrs, ptrs, 
+    // etc) without the C++ objects creating cyclic references back to the 
+    // Lua tables (because those C++ objects indirectly hold a reference to the 
+    // table through their LuaObject).  The table can still be resolved from the
+    // LuaObject because its address is stored in the weak objects table but this
+    // reference isn't counted during a garbage collection sweep.
+    lua_newtable( lua_state );
+    lua_newtable( lua_state );
+    lua_pushstring( lua_state, "kv" );
+    lua_setfield( lua_state, -2, "__mode" );
+    lua_setmetatable( lua_state, -2 );
+    lua_setfield( lua_state, LUA_REGISTRYINDEX, WEAK_OBJECTS_KEYWORD );
+
+    return lua_state;
+}
+
+/**
 // Create a Lua object in \e lua identified by \e object.
 //
 // @param lua
@@ -444,6 +478,38 @@ void* luaxx_check( lua_State* lua, int position, const char* tname )
 }
 
 /**
+// Implement the lua_Alloc function using `realloc()` and `free().
+//
+// @param context
+//  Application supplied context (ignored).
+// 
+// @param ptr
+//  The address of any existing allocation to be reallocated or null to 
+//  allocate a new block of memory.
+// 
+// @param osize
+//  The old size of the memory block (ignored).
+// 
+// @param nsize
+//  The size of the memory block to allocate.
+// 
+// @return
+//  A pointer to the newly allocated memory.
+*/
+void* luaxx_allocate( void* /*context*/, void* ptr, size_t /*osize*/, size_t nsize )
+{
+    if ( nsize == 0 ) 
+    {
+        free( ptr );
+        return 0;
+    }
+    else
+    {
+        return realloc( ptr, nsize );
+    }
+}
+
+/**
 // Do a Lua stack trace.
 //
 // This function is pushed onto the stack for each Lua and LuaThread object 
@@ -481,9 +547,7 @@ int luaxx_stack_trace_for_call( lua_State* lua_state )
     {
         lua_getinfo( lua_state, "Snl", &debug );
     
-    //
-    // Source and line number.
-    //
+        // Source and line number.
         lua_pushliteral( lua_state, "\n  " );        
         if ( debug.currentline > 0 )
         {
@@ -494,9 +558,7 @@ int luaxx_stack_trace_for_call( lua_State* lua_state )
             lua_pushfstring( lua_state, "%s(1) : ", debug.source );
         }
 
-    //
-    // Application provided name or other implicit location information.
-    //
+        // Application provided name or other implicit location information.
         if ( *debug.namewhat != '\0' )
         {
             lua_pushfstring( lua_state, "in function " LUA_QS, debug.name );
@@ -571,9 +633,7 @@ const char* luaxx_stack_trace_for_resume( lua_State* lua_state, bool stack_trace
         {
             lua_getinfo( lua_state, "Snl", &debug );
         
-        //
-        // Source and line number.
-        //
+            // Source and line number.
             written += snprintf( message + written, max(length - written, 0), "\n  " );        
             if ( debug.currentline > 0 )
             {
@@ -584,9 +644,7 @@ const char* luaxx_stack_trace_for_resume( lua_State* lua_state, bool stack_trace
                 written += snprintf( message + written, max(length - written, 0), "%s(1) : ", debug.source );
             }
 
-        //
-        // Application provided name or other implicit location information.
-        //
+            // Application provided name or other implicit location information.
             if ( *debug.namewhat != '\0' )
             {
                 written += snprintf( message + written, max(length - written, 0), "in function " LUA_QS, debug.name );

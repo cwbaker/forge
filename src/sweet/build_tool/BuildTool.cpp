@@ -17,11 +17,12 @@
 #include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
 #include <sweet/build_tool/build_tool_lua/LuaTarget.hpp>
 #include <sweet/build_tool/build_tool_lua/LuaTargetPrototype.hpp>
+#include <sweet/error/ErrorPolicy.hpp>
+#include <sweet/assert/assert.hpp>
 
 using std::string;
 using std::vector;
 using namespace sweet;
-using namespace sweet::lua;
 using namespace sweet::build_tool;
 
 static const char* ROOT_FILENAME = "build.lua";

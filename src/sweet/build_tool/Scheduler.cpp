@@ -16,6 +16,7 @@
 #include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
 #include <sweet/process/Environment.hpp>
 #include <sweet/luaxx/luaxx.hpp>
+#include <sweet/error/ErrorPolicy.hpp>
 #include <list>
 #include <string>
 #include <memory>

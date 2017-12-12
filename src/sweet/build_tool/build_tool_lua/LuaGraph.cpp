@@ -20,7 +20,6 @@
 using std::min;
 using std::string;
 using namespace sweet;
-using namespace sweet::lua;
 using namespace sweet::luaxx;
 using namespace sweet::build_tool;
 
