@@ -52,7 +52,7 @@ template <class Archive> void Graph::exit( Archive& archive )
 */
 template <class Archive> void Graph::persist( Archive& archive )
 {
-    const int BUILD_GRAPH_VERSION = 10;
+    const int BUILD_GRAPH_VERSION = 11;
     archive.enter( "Sweet Build Graph", BUILD_GRAPH_VERSION, *this );
     if ( archive.version() != BUILD_GRAPH_VERSION )
     {
@@ -78,6 +78,7 @@ template <class Archive> void Target::persist( Archive& archive )
     archive.value( "last_write_time", last_write_time_ );
     archive.value( "last_scan_time", last_scan_time_ );
     archive.value( "referenced_by_script", referenced_by_script_ );
+    archive.value( "required_to_exist", required_to_exist_ );
     archive.value( "filename", filename_ );
     archive.refer( "working_directory", working_directory_ );
     archive.value( "targets", "target", targets_ );
