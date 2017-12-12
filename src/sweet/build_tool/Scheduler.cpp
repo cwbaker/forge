@@ -176,6 +176,7 @@ void Scheduler::output( const std::string& output, Filter* filter, Arguments* ar
         Context* context = allocate_context( working_directory );
         process_begin( context );
         lua_State* lua_state = context->lua_state();
+        lua_rawgeti( lua_state, LUA_REGISTRYINDEX, filter->reference() );
         lua_pushlstring( lua_state, output.c_str(), output.size() );
         int parameters = 1;
         if ( arguments )
