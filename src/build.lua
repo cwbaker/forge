@@ -51,7 +51,6 @@ build.default_buildfiles {
     "sweet/lua/lua.build",
     "sweet/path/path.build",
     "sweet/persist/persist.build",
-    "sweet/pointer/pointer.build",
     "sweet/process/process.build",
     "sweet/rtti/rtti.build",
     "sweet/thread/thread.build",

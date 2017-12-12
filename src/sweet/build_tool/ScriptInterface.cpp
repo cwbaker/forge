@@ -17,7 +17,6 @@
 #include <sweet/lua/lua_functions.ipp>
 #include <sweet/lua/filesystem.hpp>
 #include <sweet/lua/vector.hpp>
-#include <sweet/lua/ptr.hpp>
 #include <sweet/lua/Lua.hpp>
 #include <sweet/process/Environment.hpp>
 #include <memory>

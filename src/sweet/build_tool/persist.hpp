@@ -6,7 +6,6 @@
 #include <sweet/rtti/macros.hpp>
 #include <sweet/lua/persist.hpp>
 #include <sweet/persist/lua.hpp>
-#include <sweet/persist/ptr.hpp>
 #include <sweet/persist/vector.hpp>
 #include <sweet/persist/persist.hpp>
 

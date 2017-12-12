@@ -18,7 +18,6 @@
 #include <sweet/thread/ScopedLock.hpp>
 #include <sweet/process/Environment.hpp>
 #include <sweet/lua/LuaThread.hpp>
-#include <sweet/lua/ptr.hpp>
 #include <list>
 #include <string>
 #include <memory>
