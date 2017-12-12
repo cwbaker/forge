@@ -374,7 +374,7 @@ local function find_targets_by_prototype( target, prototype )
         table.insert( targets, target );
         return targets;
     end
-    for dependency in target:dependencies() do 
+    for _, dependency in target:dependencies() do 
         if dependency:prototype() == prototype then 
             table.insert( targets, dependency );
         end
@@ -433,7 +433,7 @@ function xcode.generate_project( name, project )
     populate_source( root(), {"^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java"}, {"^.*%.framework"} );
 
     for _, platform in ipairs(build.settings.platforms) do 
-        for target in project:dependencies() do 
+        for _, target in project:dependencies() do 
             if target then 
                 if platform:match("ios.*") and _G.ios then
                     local ios_apps = find_targets_by_prototype( target, build.ios.App );

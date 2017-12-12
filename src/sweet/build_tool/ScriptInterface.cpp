@@ -105,6 +105,8 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "prototype", &Target::prototype )
         ( "set_required_to_exist", &Target::set_required_to_exist )
         ( "required_to_exist", &Target::required_to_exist )
+        ( "set_always_bind", &Target::set_always_bind )
+        ( "always_bind", &Target::always_bind )
         ( "set_cleanable", &Target::set_cleanable )
         ( "cleanable", &Target::cleanable )
         ( "timestamp", &Target::timestamp )
@@ -116,8 +118,9 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "set_working_directory", &Target::set_working_directory )
         ( "working_directory", &ScriptInterface::target_working_directory, this, _1 )
         ( "targets", raw(&ScriptInterface::targets), this )
-        ( "add_dependency", &Target::add_dependency )
+        ( "add_dependency", &Target::add_explicit_dependency )
         ( "remove_dependency", &Target::remove_dependency )
+        ( "add_implicit_dependency", &Target::add_implicit_dependency )
         ( "clear_implicit_dependencies", &Target::clear_implicit_dependencies )
         ( "dependency", raw(&ScriptInterface::dependency), this )
         ( "dependencies", raw(&ScriptInterface::dependencies), this )
@@ -177,7 +180,6 @@ ScriptInterface::ScriptInterface( OsInterface* os_interface, BuildTool* build_to
         ( "ticks", &ScriptInterface::ticks, this )
         ( "buildfile", &ScriptInterface::buildfile, this )
         ( "postorder", raw(&ScriptInterface::postorder), this )
-        ( "mark_implicit_dependencies", &ScriptInterface::mark_implicit_dependencies, this )
         ( "print_dependencies", &ScriptInterface::print_dependencies, this )
         ( "print_namespace", &ScriptInterface::print_namespace, this )
         ( "wait", &ScriptInterface::wait, this )
@@ -257,6 +259,8 @@ void ScriptInterface::create_prototype( TargetPrototype* target_prototype )
         ( "prototype", &Target::prototype )
         ( "set_required_to_exist", &Target::set_required_to_exist )
         ( "required_to_exist", &Target::required_to_exist )
+        ( "set_always_bind", &Target::set_always_bind )
+        ( "always_bind", &Target::always_bind )
         ( "set_cleanable", &Target::set_cleanable )
         ( "cleanable", &Target::cleanable )
         ( "timestamp", &Target::timestamp )
@@ -268,8 +272,9 @@ void ScriptInterface::create_prototype( TargetPrototype* target_prototype )
         ( "set_working_directory", &Target::set_working_directory )
         ( "working_directory", &ScriptInterface::target_working_directory, this, _1 )
         ( "targets", raw(&ScriptInterface::targets), this )
-        ( "add_dependency", &Target::add_dependency )
+        ( "add_dependency", &Target::add_explicit_dependency )
         ( "remove_dependency", &Target::remove_dependency )
+        ( "add_implicit_dependency", &Target::add_implicit_dependency )
         ( "clear_implicit_dependencies", &Target::clear_implicit_dependencies )
         ( "dependency", raw(&ScriptInterface::dependency), this )
         ( "dependencies", raw(&ScriptInterface::dependencies), this )
@@ -666,12 +671,6 @@ void ScriptInterface::buildfile( const std::string& filename )
     return build_tool_->graph()->buildfile( filename );
 }
 
-void ScriptInterface::mark_implicit_dependencies()
-{
-    SWEET_ASSERT( build_tool_ );
-    return build_tool_->graph()->mark_implicit_dependencies();
-}
-
 void ScriptInterface::print_dependencies( Target* target )
 {
     SWEET_ASSERT( build_tool_ );
@@ -990,9 +989,9 @@ int ScriptInterface::dependency( lua_State* lua_state )
     }
     --index;
 
-    if ( index < int(target->dependencies().size()) )
+    Target* dependency = target->dependency( index );
+    if ( dependency )
     {
-        Target* dependency = target->dependency( index );
         if ( !dependency->referenced_by_script() )
         {
             ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
@@ -1008,53 +1007,48 @@ int ScriptInterface::dependency( lua_State* lua_state )
     return 1;
 }
 
-struct GetDependenciesTargetReferencedByScript
+int ScriptInterface::dependencies_iterator( lua_State* lua_state )
 {
-    ScriptInterface* script_interface_;
-    
-    GetDependenciesTargetReferencedByScript( ScriptInterface* script_interface )
-    : script_interface_( script_interface )
+    const int TARGET = 1;
+    const int INDEX = 2;
+    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    int index = lua_tointeger( lua_state, INDEX );
+    if ( target )
     {
-        SWEET_ASSERT( script_interface_ );
-    }
-    
-    bool operator()( lua_State* /*lua_state*/, Target* target ) const
-    {
-        SWEET_ASSERT( target );
-        if ( !target->referenced_by_script() )
+        Target* dependency = target->dependency( index - 1 );
+        if ( dependency )
         {
-            script_interface_->create_target( target );
+            if ( !dependency->referenced_by_script() )
+            {
+                ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+                SWEET_ASSERT( script_interface );
+                script_interface->create_target( dependency );
+            }
+            lua_pushinteger( lua_state, index + 1 );
+            LuaConverter<Target*>::push( lua_state, dependency );
+            return 2;
         }
-        return true;
     }
-};
+    return 0;
+}
 
 int ScriptInterface::dependencies( lua_State* lua_state )
 {
-    SWEET_ASSERT( lua_state );
-
-    try
+    const int TARGET = 1;
+    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    if ( !target )
     {
-        ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-        SWEET_ASSERT( script_interface );
-
-        const int TARGET_PARAMETER = 1;
-        Target* target = LuaConverter<Target* >::to( lua_state, TARGET_PARAMETER );
-        if ( !target )
-        {
-            SWEET_ERROR( RuntimeError("Null Target passed to 'Target.get_dependencies()'") );
-        }
-
-        const vector<Target*>& dependencies = target->dependencies();
-        lua_push_iterator( lua_state, dependencies.begin(), dependencies.end(), GetDependenciesTargetReferencedByScript(script_interface) );
-        return 1;
+        SWEET_ERROR( RuntimeError("Nil Target passed to 'Target.dependencies()'") );
+        return lua_error( lua_state );
     }
 
-    catch ( const std::exception& exception )
-    {
-        lua_pushstring( lua_state, exception.what() );
-        return lua_error( lua_state );        
-    }
+    ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+    SWEET_ASSERT( script_interface );    
+    lua_pushlightuserdata( lua_state, script_interface );
+    lua_pushcclosure( lua_state, &ScriptInterface::dependencies_iterator, 1 );
+    LuaConverter<Target*>::push( lua_state, target );
+    lua_pushinteger( lua_state, 1 );
+    return 3;
 }
 
 int ScriptInterface::absolute_( lua_State* lua_state )

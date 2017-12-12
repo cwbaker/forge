@@ -32,7 +32,6 @@ Graph::Graph()
   filename_(),
   root_target_(),
   cache_target_(),
-  implicit_dependencies_( false ),
   traversal_in_progress_( false ),
   visited_revision_( 0 ),
   successful_revision_( 0 )
@@ -50,7 +49,6 @@ Graph::Graph( BuildTool* build_tool )
   filename_(),
   root_target_(),
   cache_target_(),
-  implicit_dependencies_( false ),
   traversal_in_progress_( false ),
   visited_revision_( 0 ),
   successful_revision_( 0 )
@@ -367,7 +365,7 @@ void Graph::buildfile( const std::string& filename )
     buildfile_target->set_filename( path.string() );
     if ( cache_target_ )
     {
-        cache_target_->add_dependency( buildfile_target );
+        cache_target_->add_explicit_dependency( buildfile_target );
     }
     build_tool_->scheduler()->buildfile( path );
 }
@@ -419,12 +417,10 @@ struct Bind
         {
             ScopedVisit visit( target );
 
-            const vector<Target*>& dependencies = target->dependencies();
-            for ( vector<Target*>::const_iterator i = dependencies.begin(); i != dependencies.end(); ++i )
+            int i = 0;
+            Target* dependency = target->dependency( i );
+            while ( dependency )
             {
-                Target* dependency = *i;
-                SWEET_ASSERT( dependency );
-
                 if ( !dependency->visiting() )
                 {
                     Bind::visit( dependency );
@@ -434,6 +430,8 @@ struct Bind
                     build_tool_->warning( "Ignoring cyclic dependency from '%s' to '%s' during binding", target->id().c_str(), dependency->id().c_str() );
                     dependency->set_successful( true );
                 }
+                ++i;
+                dependency = target->dependency( i );
             }
 
             target->bind();
@@ -476,7 +474,6 @@ int Graph::bind( Target* target )
 */
 void Graph::swap( Graph& graph )
 {
-    std::swap( implicit_dependencies_, graph.implicit_dependencies_ );
     std::swap( root_target_, graph.root_target_ );
 }
 
@@ -497,11 +494,25 @@ void Graph::swap( Graph& graph )
 void Graph::clear()
 {
     SWEET_ASSERT( build_tool_ );
-    delete root_target_;
-    root_target_ = new Target( "", this );
-    cache_target_ = NULL;
-    recover();
-    implicit_dependencies_ = false;
+
+    struct RecursiveClear
+    {
+        static void clear( Target* target )
+        {
+            SWEET_ASSERT( target );
+            target->clear_explicit_dependencies();
+
+            const vector<Target*>& targets = target->targets();
+            for ( vector<Target*>::const_iterator i = targets.begin(); i != targets.end(); ++i )
+            {
+                Target* target = *i;
+                SWEET_ASSERT( target );
+                RecursiveClear::clear( target );
+            }
+        }
+    };
+
+    RecursiveClear::clear( root_target_ );
 }
 
 /**
@@ -518,42 +529,6 @@ void Graph::recover()
         cache_target_->set_filename( filename_ );
         bind( cache_target_ );
     }
-}
-
-/**
-// Mark added dependencies as being implicit.
-//
-// Dependencies are added as explicit dependencies from when a Graph is 
-// initially created or cleared (see Graph::clear()) until the function
-// Graph::mark_implicit_dependencies() is called.  Depencies are added
-// as implicit dependencies after Graph::mark_implicit_dependencies() has
-// been called.
-//
-// Implicit dependencies are cleared whenever the Target that depends on them 
-// is scanned -- they are intended to represent the implicit dependency 
-// relationships discovered while scanning source files (e.g. when scanning 
-// C/C++ source files for the header files that they include).
-//
-// Explicit dependencies are not cleared when the Target that depends on them 
-// is scanned -- they are intended to represent the explicit dependency 
-// relationships expressed directly in the buildfiles loaded to specify the 
-// initial dependency graph.
-*/
-void Graph::mark_implicit_dependencies()
-{
-    implicit_dependencies_ = true;
-}
-
-/**
-// Are dependencies added to Targets implicit?
-//
-// @return
-//  True if added dependencies are implicit dependencies otherwise false to 
-//  indicate that added dependencies are explicit.
-*/
-bool Graph::implicit_dependencies() const
-{
-    return implicit_dependencies_;
 }
 
 /**
@@ -584,8 +559,8 @@ Target* Graph::load_xml( const std::string& filename )
         reader.read( path.string().c_str(), "graph", graph );
         exit( reader );
         swap( graph );
-        recover();
     }
+    recover();
     return cache_target_;
 }
 
@@ -641,8 +616,9 @@ Target* Graph::load_binary( const std::string& filename )
         reader.read( path.string().c_str(), "graph", graph );
         exit( reader );
         swap( graph );
-        recover();
     }
+
+    recover();
     return cache_target_;
 }
 
@@ -783,11 +759,10 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             {
                 target->set_visited( true );            
             
-                const vector<Target*>& dependencies = target->dependencies();
-                for ( vector<Target*>::const_iterator i = dependencies.begin(); i != dependencies.end(); ++i )
+                int i = 0;
+                Target* dependency = target->dependency( i );
+                while ( dependency )
                 {
-                    Target* dependency = *i;
-                    SWEET_ASSERT( dependency );
                     if ( !dependency->visiting() )
                     {
                         print( dependency, directory, level + 1 );
@@ -798,6 +773,8 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                         SWEET_ASSERT( build_tool );
                         build_tool->warning( "Ignoring cyclic dependency from '%s' to '%s' while printing dependencies", target->id().c_str(), dependency->id().c_str() );
                     }
+                    ++i;
+                    dependency = target->dependency( i );
                 }
             }
         }

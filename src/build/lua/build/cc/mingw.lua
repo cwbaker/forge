@@ -157,7 +157,7 @@ function mingw.cc( target )
     table.insert( defines, ('-DBUILD_VERSION="\\"%s\\""'):format(version) );
     cppdefines = table.concat( defines, " " );
 
-    for dependency in target:dependencies() do
+    for _, dependency in target:dependencies() do
         if dependency:is_outdated() and dependency ~= target.precompiled_header then
             if dependency:prototype() == nil then
                 print( leaf(dependency.source) );
@@ -181,10 +181,10 @@ function mingw.build_library( target )
     
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     local objects = {};
-    for dependency in target:dependencies() do
+    for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == Cc or prototype == Cxx then
-            for object in dependency:dependencies() do
+            for _, object in dependency:dependencies() do
                 if object:prototype() == nil and object ~= dependency.precompiled_header then
                     table.insert( objects, relative(object:filename()) );
                 end
@@ -258,10 +258,10 @@ function mingw.build_executable( target )
     local objects = {};
     local libraries = {};
 
-    for dependency in target:dependencies() do
+    for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == Cc or prototype == Cxx then
-            for object in dependency:dependencies() do
+            for _, object in dependency:dependencies() do
                 if object:prototype() == nil and object ~= dependency.precompiled_header then
                     table.insert( objects, relative(object:filename()) );
                 end

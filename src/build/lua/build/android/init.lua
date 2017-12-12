@@ -161,7 +161,7 @@ function android.cc( target )
 
     local ccflags = table.concat( flags, " " );
     local gcc_ = ("%s/bin/arm-linux-androideabi-gcc"):format( android.toolchain_directory(target.settings, target.architecture) );
-    for dependency in target:dependencies() do
+    for _, dependency in target:dependencies() do
         if dependency:outdated() then
             print( leaf(dependency.source) );
             build.system( 
@@ -181,10 +181,10 @@ function android.build_library( target )
     
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     local objects = {};
-    for compile in target:dependencies() do
+    for _, compile in target:dependencies() do
         local prototype = compile:prototype();
         if prototype == build.Cc or prototype == build.Cxx then
-            for object in compile:dependencies() do
+            for _, object in compile:dependencies() do
                 table.insert( objects, relative(object:filename()) )
             end
         end
@@ -228,10 +228,10 @@ function android.build_executable( target )
     local libraries = {};
 
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
-    for dependency in target:dependencies() do
+    for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx then
-            for object in dependency:dependencies() do
+            for _, object in dependency:dependencies() do
                 if object:prototype() == nil then
                     table.insert( objects, relative(object:filename()) );
                 end
@@ -283,7 +283,7 @@ function android.deploy( directory )
     if sdk_directory then 
         local directory = directory or find_target( initial() );
         local apk = nil;
-        for dependency in directory:dependencies() do
+        for _, dependency in directory:dependencies() do
             if dependency:prototype() == android.Apk then 
                 apk = dependency;
                 break;

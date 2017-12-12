@@ -342,12 +342,10 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
                 ScopedVisit visit( target );
 
                 int height = 0;
-                const vector<Target*>& dependencies = target->dependencies();
-                for ( vector<Target*>::const_iterator i = dependencies.begin(); i != dependencies.end(); ++i )
+                int i = 0;
+                Target* dependency = target->dependency( i );
+                while ( dependency )
                 {
-                    Target* dependency = *i;
-                    SWEET_ASSERT( dependency );
-
                     if ( !dependency->visiting() )
                     {
                         Postorder::visit( dependency );
@@ -358,6 +356,9 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
                         build_tool_->warning( "Ignoring cyclic dependency from '%s' to '%s'", target->id().c_str(), dependency->id().c_str() );
                         dependency->set_successful( true );
                     }
+
+                    ++i;
+                    dependency = target->dependency( i );
                 }
 
                 if ( target->referenced_by_script() && target->working_directory() )

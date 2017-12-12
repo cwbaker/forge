@@ -25,7 +25,6 @@ class SWEET_BUILD_TOOL_DECLSPEC Graph
     std::string filename_; ///< The filename that this Graph was most recently loaded from.
     Target* root_target_; ///< The root Target for this Graph.
     Target* cache_target_; ///< The cache Target for this Graph.
-    bool implicit_dependencies_; ///< True if dependencies added to Targets in this Graph are implicit.
     bool traversal_in_progress_; ///< True when a traversal is in progress otherwise false.
     int visited_revision_; ///< The current visit revision.
     int successful_revision_; ///< The current success revision.
@@ -54,8 +53,6 @@ class SWEET_BUILD_TOOL_DECLSPEC Graph
         void swap( Graph& graph );
         void clear();
         void recover();
-        void mark_implicit_dependencies();
-        bool implicit_dependencies() const;
         Target* load_xml( const std::string& filename );
         void save_xml();
         Target* load_binary( const std::string& filename );

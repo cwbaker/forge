@@ -123,6 +123,7 @@ class ScriptInterface
         static int filename( lua_State* lua_state );
         static int targets( lua_State* lua_state );
         static int dependency( lua_State* lua_state );
+        static int dependencies_iterator( lua_State* lua_state );
         static int dependencies( lua_State* lua_state );
         static int absolute_( lua_State* lua_state );
         static int relative_( lua_State* lua_state );

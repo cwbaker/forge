@@ -40,7 +40,7 @@ function App.build( app )
         local xcrun = app.settings.ios.xcrun;
         if app.settings.generate_dsym_bundle then 
             local executable;
-            for dependency in app:dependencies() do 
+            for _, dependency in app:dependencies() do 
                 if dependency:prototype() == build.xcode.Lipo then 
                     executable = dependency:filename();
                     break;

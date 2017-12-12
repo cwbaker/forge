@@ -61,7 +61,7 @@ local function find_projects( target, projects, directories )
 	if prototype == build.Executable or prototype == build.StaticLibrary or prototype == build.DynamicLibrary then 
         add_project( projects, directories, target );
 	end
-	for dependency in target:dependencies() do 
+	for _, dependency in target:dependencies() do 
 		find_projects( dependency, projects, directories );
 	end
 end

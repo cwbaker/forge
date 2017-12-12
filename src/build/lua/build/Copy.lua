@@ -13,6 +13,7 @@ end
 
 function Copy.build( copy )
     if copy:outdated() then
+        print( leaf(copy:filename()) );
         if is_file(copy.source) then 
             rm( copy:filename() );
             cp( copy.source, copy:filename() );

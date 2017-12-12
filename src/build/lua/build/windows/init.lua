@@ -35,7 +35,7 @@ function windows.cc( target )
     
     local objects_by_source = {};
     local sources_by_directory = {};
-    for dependency in target:dependencies() do
+    for _, dependency in target:dependencies() do
         if dependency:outdated() then
             local directory = branch( dependency.source );
             local sources = sources_by_directory[directory];
@@ -78,10 +78,10 @@ function windows.build_library( target )
     
     pushd( ("%s%s"):format(obj_directory(target), target.architecture) );
     local objects = {};
-    for dependency in target:dependencies() do
+    for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx then
-            for object in dependency:dependencies() do
+            for _, object in dependency:dependencies() do
                 table.insert( objects, relative(object:filename()) );
             end
         end
@@ -111,10 +111,10 @@ function windows.build_executable( target )
     local objects = {};
     local libraries = {};
 
-    for dependency in target:dependencies() do
+    for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx then
-            for object in dependency:dependencies() do
+            for _, object in dependency:dependencies() do
                 table.insert( objects, obj_name(object:id()) );
             end
         elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then

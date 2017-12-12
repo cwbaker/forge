@@ -139,7 +139,7 @@ function ios.cc( target )
     local ccflags = table.concat( flags, " " );
     local xcrun = target.settings.ios.xcrun;
 
-    for dependency in target:dependencies() do
+    for _, dependency in target:dependencies() do
         if dependency:outdated() then
             print( leaf(dependency.source) );
             build.system( 
@@ -159,10 +159,10 @@ function ios.build_library( target )
 
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     local objects =  {};
-    for dependency in target:dependencies() do
+    for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
-            for object in dependency:dependencies() do
+            for _, object in dependency:dependencies() do
                 table.insert( objects, relative(object:filename()) );
             end
         end
@@ -206,10 +206,10 @@ function ios.build_executable( target )
     local libraries = {};
 
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
-    for dependency in target:dependencies() do
+    for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
-            for object in dependency:dependencies() do
+            for _, object in dependency:dependencies() do
                 table.insert( objects, relative(object:filename()) );
             end
         elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
@@ -239,7 +239,7 @@ end
 
 function ios.lipo_executable( target )
     local executables = {};
-    for executable in target:dependencies() do 
+    for _, executable in target:dependencies() do 
         table.insert( executables, executable:filename() );
     end
     print( leaf(target:filename()) );
@@ -256,7 +256,7 @@ function ios.deploy( directory )
     if ios_deploy then 
         local directory = directory or find_target( initial() );
         local app = nil;
-        for dependency in directory:dependencies() do
+        for _, dependency in directory:dependencies() do
             if dependency:prototype() == ios.App then 
                 app = dependency;
                 break;

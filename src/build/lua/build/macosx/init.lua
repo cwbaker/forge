@@ -46,7 +46,7 @@ function macosx.cc( target )
     local ccflags = table.concat( flags, " " );
     local xcrun = target.settings.macosx.xcrun;
 
-    for dependency in target:dependencies() do
+    for _, dependency in target:dependencies() do
         if dependency:outdated() then
             print( leaf(dependency.source) );
             build.system( 
@@ -66,10 +66,10 @@ function macosx.build_library( target )
 
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     local objects =  {};
-    for compile in target:dependencies() do
+    for _, compile in target:dependencies() do
         local prototype = compile:prototype();
         if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
-            for object in compile:dependencies() do
+            for _, object in compile:dependencies() do
                 table.insert( objects, relative(object:filename()) );
             end
         end
@@ -104,11 +104,11 @@ function macosx.build_executable( target )
     local libraries = {};
 
     pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
-    for dependency in target:dependencies() do
+    for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
             assertf( target.architecture == dependency.architecture, "Architectures for '%s' and '%s' don't match", target:path(), dependency:path() );
-            for object in dependency:dependencies() do
+            for _, object in dependency:dependencies() do
                 if object:prototype() == nil then
                     table.insert( objects, relative(object:filename()) );
                 end
@@ -138,7 +138,7 @@ end
 
 function macosx.lipo_executable( target )
     local executables = {};
-    for executable in target:dependencies() do 
+    for _, executable in target:dependencies() do 
         table.insert( executables, executable:filename() );
     end
     print( leaf(target:filename()) );

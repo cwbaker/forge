@@ -56,7 +56,7 @@ function R.build( resource )
 end
 
 function R.clean( resource )
-    for dependency in resource:dependencies() do 
+    for _, dependency in resource:dependencies() do 
         rm( dependency:filename() );
     end
 end

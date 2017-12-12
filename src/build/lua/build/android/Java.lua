@@ -30,7 +30,7 @@ function Java.build( java )
         local jars = {};
         local source_files = {};
         table.insert( jars, ("%s/platforms/%s/android.jar"):format(settings.android.sdk_directory, settings.android.sdk_platform) );
-        for dependency in java:dependencies() do 
+        for _, dependency in java:dependencies() do 
             local prototype = dependency:prototype();
             if prototype == nil then
                 table.insert( source_files, relative(dependency:filename()) );

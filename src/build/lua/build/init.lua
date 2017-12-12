@@ -113,9 +113,17 @@ end
 function build.SourceFile( value, settings )
     local target = value;
     if type(target) == "string" then 
+        settings = settings or build.current_settings();
         target = file( build.interpolate(value, settings) );
         target:set_required_to_exist( true );
+        target:set_cleanable( false );
     end
+    return target;
+end
+
+function build.SourceDirectory( value, settings )
+    local target = build.SourceFile( value, settings );
+    target:set_always_bind( true );
     return target;
 end
 
@@ -241,12 +249,12 @@ function build.version_time( version )
     return os.time( build.version_date(version) );
 end
 
--- Convert a version string into the number of half days passed since the 
--- reference time of 2013/01/01 00:00 (assuming that the version string is of
--- the form '%Y.%m.%d.%H%M').
-function build.version_code( version )
+-- Convert a version string into the number of half days passed since 
+-- *reference_time* or since 2012/01/01 00:00 if *reference_time* is not 
+-- provided (assuming that the version string is of the form '%Y.%m.%d.%H%M').
+function build.version_code( version, reference_time )
+    reference_time = reference_time or os.time( {year = 2012; month = 1; day = 1; hour = 0; min = 0; sec = 0} );
     local SECONDS_PER_HALF_DAY = 12 * 60 * 60;
-    local reference_time = os.time( {year = 2013; month = 1; day = 1; hour = 0; min = 0; sec = 0} );
     local version_time = build.version_time( version );
     return math.ceil( os.difftime(version_time, reference_time) / SECONDS_PER_HALF_DAY );
 end
@@ -466,8 +474,6 @@ function build.load( force )
             local target = build.Target( default_target[2] );
             directory:add_dependency( target );
         end
-
-        mark_implicit_dependencies();
     end
     local load_finish = ticks();
     return load_finish - load_start;
@@ -576,9 +582,10 @@ function build.add_jar_dependencies( jar, jars )
 end
 
 -- Add dependencies detected by the injected build hooks library to the 
--- target /object/.
-function build.dependencies_filter( object )
-    local function filter( line )
+-- target /target/.
+function build.dependencies_filter( target )
+    target:clear_implicit_dependencies();
+    return function( line )
         if line:match("^==") then 
             local READ_PATTERN = "^== read '([^']*)'";
             local filename = line:match( READ_PATTERN );
@@ -586,14 +593,13 @@ function build.dependencies_filter( object )
                 local within_source_tree = relative( absolute(filename), root() ):find( "..", 1, true ) == nil;
                 if within_source_tree then 
                     local header = build.SourceFile( filename );
-                    object:add_dependency( header );
+                    target:add_implicit_dependency( header );
                 end
             end
         else
             print( line );
         end
     end
-    return filter;
 end
 
 -- Append values from /value/ to /values/.
