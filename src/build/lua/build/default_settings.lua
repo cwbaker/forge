@@ -96,7 +96,7 @@ return {
 
         ["windows"] = {
             architectures = {
-                "x86_64"
+                "i386"
             };
             variants = {
                 "debug", "release", "shipping"

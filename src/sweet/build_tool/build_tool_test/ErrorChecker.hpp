@@ -3,7 +3,7 @@
 #define ERROR_CHECKER_HPP_INCLUDED
 
 #include <sweet/build_tool/BuildToolEventSink.hpp>
-#include <sweet/error/ErrorPolicyEventSink.hpp>
+#include <sweet/error/ErrorPolicy.hpp>
 #include <string>
 #include <vector>
 
@@ -15,7 +15,7 @@ namespace build_tool
 
 class BuildTool;
 
-struct ErrorChecker : public BuildToolEventSink, public error::ErrorPolicyEventSink
+struct ErrorChecker : public error::ErrorPolicy, public BuildToolEventSink
 {
     std::vector<std::string> messages;
     int errors;
@@ -23,8 +23,10 @@ struct ErrorChecker : public BuildToolEventSink, public error::ErrorPolicyEventS
     ErrorChecker();
     virtual ~ErrorChecker();
     void build_tool_error( BuildTool* build_tool, const char* mmessage );
-    void error( const char* mmessage );
     void test( const char* script );
+
+private:
+    void report_error( const char* message );
 };    
 
 }

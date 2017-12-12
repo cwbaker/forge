@@ -21,7 +21,7 @@ function android.configure( settings )
         if operating_system() == "windows" then
             return "C:/android/android-ndk";
         else
-            return home( "android-ndk" );
+            return home( "Library/Android/ndk" );
         end
     end
 
@@ -29,7 +29,7 @@ function android.configure( settings )
         if operating_system() == "windows" then
             return "C:/Program Files (x86)/Android/android-sdk";
         else
-            return home( "android-sdk-macosx" );
+            return home( "Library/Android/sdk" );
         end
     end
 
@@ -40,8 +40,8 @@ function android.configure( settings )
             jdk_directory = autodetect_jdk_directory();
             ndk_directory = autodetect_ndk_directory();
             sdk_directory = autodetect_sdk_directory();
-            build_tools_directory = ("%s/build-tools/19.0.0"):format( autodetect_sdk_directory() );
-            toolchain_version = "4.6";
+            build_tools_directory = ("%s/build-tools/22.0.1"):format( autodetect_sdk_directory() );
+            toolchain_version = "4.9";
             ndk_platform = "android-14";
             sdk_platform = "android-16";
             architectures = { "armv5", "armv7" };

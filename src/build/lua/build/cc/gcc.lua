@@ -148,9 +148,11 @@ function gcc.append_link_flags( target, flags )
         table.insert( flags, "-debug" );
     end
 
-    if target.settings.generate_map_file then
-        table.insert( flags, ('-Wl,-Map,"%s"'):format(native(("%s/%s.map"):format(obj_directory(target), target:id()))) );
-    end
+    -- The latest GCC with Android (or clang with iOS) doesn't recognize 
+    -- '-Wl,map' to specify the path to output a mapfile.
+    -- if target.settings.generate_map_file then
+    --     table.insert( flags, ('-Wl,-Map,"%s"'):format(native(("%s.map"):format(target:filename()))) );
+    -- end
 
     if target.settings.strip and not target.settings.generate_dsym_bundle then
         table.insert( flags, "-Wl,--strip-all" );

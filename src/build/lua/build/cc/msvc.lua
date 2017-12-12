@@ -6,8 +6,8 @@ function msvc.configure( settings )
         local values = {};
         local reg = "C:/Windows/system32/reg.exe";
         local arguments = ('reg query "%s"'):format( key );
-        build.system( reg, arguments, function(line)
-            local REG_QUERY_PATTERN = "%s* ([%w_]+) %s* ([%w_]+) %s* ([%w%s_%(%)%\\%:%.]+)";
+        build.system( reg, arguments, nil, nil, function(line)
+            local REG_QUERY_PATTERN = "%s* ([%w_]+) %s* ([%w_]+) %s* ([^\n\r]+)";
             local key, type_, value = line:match( REG_QUERY_PATTERN );
             if key and type_ and value then 
                 values[key] = value;

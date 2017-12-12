@@ -433,27 +433,36 @@ function xcode.generate_project( name, project )
     populate_source( root(), {"^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java"}, {"^.*%.framework"} );
 
     for _, platform in ipairs(build.settings.platforms) do 
-        for _, path in ipairs(build.settings.xcodeproj.targets) do 
-            local target = find_target( root(path) );
+        for target in project:dependencies() do 
             if target then 
                 if platform:match("ios.*") and _G.ios then
-                    local ios_apps = find_targets_by_prototype( target, ios.App );
+                    local ios_apps = find_targets_by_prototype( target, build.ios.App );
                     for _, ios_app in ipairs(ios_apps) do 
                         add_legacy_target( ios_app, platform );
                     end
                 end
 
                 if platform == "android" and _G.android then
-                    local android_apks = find_targets_by_prototype( target, android.Apk );
+                    local android_apks = find_targets_by_prototype( target, build.android.Apk );
                     for _, android_apk in ipairs(android_apks) do 
                         add_legacy_target( android_apk, platform );
                     end
                 end
 
                 if platform == "macosx" then
-                    local executables = find_targets_by_prototype( target, Executable );
+                    local executables = find_targets_by_prototype( target, build.Executable );
                     for _, executable in ipairs(executables) do 
                         add_legacy_target( executable, platform );
+                    end
+
+                    local dynamic_libraries = find_targets_by_prototype( target, build.DynamicLibrary );
+                    for _, dynamic_library in ipairs(dynamic_libraries) do 
+                        add_legacy_target( dynamic_library, platform );
+                    end
+
+                    local binaries = find_targets_by_prototype( target, build.xcode.Lipo );
+                    for _, binary in ipairs(binaries) do 
+                        add_legacy_target( binary, platform );
                     end
                 end
             end
@@ -484,13 +493,12 @@ end
 function xcodeproj()
     platform = "";
     variant = "";
-    build.load( nil, true );
+    build.load( true );
     local all = all or find_target( root() );
-    assertf( all, "No target found at '%s'", root() );
-    assert( settings.xcodeproj, "The Xcode project settings are not specified by 'settings.xcodeproj'" );
-    assert( settings.xcodeproj.filename, "The Xcode project filename is not specified by 'settings.xcodeproj.filename'" );
-    assert( settings.xcodeproj.targets, "The Xcode project targets are not specified by 'settings.xcodeproj.targets'" );
-    xcode.generate_project( settings.xcodeproj.filename, all );
+    assertf( all, "Missing target at '%s' to generate Xcode project from", root() );
+    assertf( build.settings.visual_studio, "Missing Xcode settings in 'settings.xcode'" );
+    assertf( build.settings.visual_studio.sln, "Missing Xcode project filename in 'settings.xcode.xcodeproj'" );
+    xcode.generate_project( settings.xcode.xcodeproj, all );
 end
 
 -- The "xcode_build" command entry point (global) this is used by generated

@@ -54,6 +54,7 @@ class BasicPath
         String extension() const;
         BasicPath relative( const BasicPath& path ) const;
 
+        void pop_back();
         BasicPath& normalize();
         BasicPath& operator/=( const BasicPath& path );
         BasicPath operator/( const BasicPath& path ) const;

@@ -98,8 +98,9 @@ function solution()
     variant = "";
     build.load();    
     local all = find_target( root() );
-    assertf( all, "No target found at '%s' to generate Visual Studio solution", root() );
-    assertf( build.settings.sln, "The solution filename is not specified by settings.sln" );
+    assertf( all, "Missing target at '%s' to generate Visual Studio solution from", root() );
+    assertf( build.settings.visual_studio, "Missing Visual Studio settings in 'settings.visual_studio'" );
+    assertf( build.settings.visual_studio.sln, "Missing solution filename in 'settings.visual_studio.sln'" );
 
     local directories = {};
     local projects = {};
@@ -119,7 +120,7 @@ function solution()
 		popd();
     end
 
-    build.visual_studio.sln.generate( build.settings.sln, projects, directories[all:path()].children );
+    build.visual_studio.sln.generate( build.settings.visual_studio.sln, projects, directories[all:path()].children );
 end
 
 _G.sln = solution;

@@ -12,7 +12,8 @@ for _, architecture in ipairs(settings.architectures) do
         build.Cxx (architecture) {
             precompiled_header = "stdafx.hpp";
             "BasicPath.cpp",
-            "BasicPathTraits.cpp"
+            "BasicPathTraits.cpp",
+            "path.cpp"
         };
     };
 end

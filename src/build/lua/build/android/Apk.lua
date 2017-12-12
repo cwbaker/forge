@@ -43,7 +43,7 @@ function Apk.build( package )
         local keystore = _G.keystore or relative( ("%s/debug.keystore"):format(package:working_directory():path()) );
         build.system( jarsigner, ("jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s -storepass %s %s.unaligned %s"):format(keystore, keypass, relative(package:filename()), key) );
 
-        local zipalign = ("%s/tools/zipalign"):format( settings.android.sdk_directory );
+        local zipalign = ("%s/zipalign"):format( settings.android.build_tools_directory );
         build.system( zipalign, ("zipalign -f 4 %s.unaligned %s"):format(relative(package:filename()), relative(package:filename())) );
         popd();
     end

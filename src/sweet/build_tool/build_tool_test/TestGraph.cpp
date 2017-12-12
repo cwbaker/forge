@@ -1,12 +1,12 @@
 //
 // TestGraph.cpp
-// Copyright (c) 2010 - 2013 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
 #include "stdafx.hpp"
 #include "ErrorChecker.hpp"
 #include "FileChecker.hpp"
-#include <sweet/unit/UnitTest.h>
+#include <unit/UnitTest.h>
 
 using namespace sweet::build_tool;
 
@@ -76,10 +76,6 @@ SUITE( TestGraph )
 
     TEST_FIXTURE( FileChecker, source_files_that_exist_do_not_generate_errors )
     {
-        const char* expected_message =
-        {
-            "The source file 'D:/sweet/sweet_build_tool/sweet/build_tool/build_tool_test/foo.cpp' does not exist",
-        };
         const char* script = 
             "local foo_cpp = file( 'foo.cpp' ); \n"
             "foo_cpp:set_required_to_exist( true ); \n"

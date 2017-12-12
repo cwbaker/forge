@@ -1,8 +1,3 @@
-//
-// path.hpp
-// Copyright (c) Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_PATH_PATH_HPP_INCLUDED
 #define SWEET_PATH_PATH_HPP_INCLUDED
 
@@ -39,6 +34,10 @@ namespace sweet
 */
 namespace path
 {
+
+std::string executable( const std::string& path );
+std::string home( const std::string& path );
+
 }
 
 }

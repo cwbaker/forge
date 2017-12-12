@@ -5,7 +5,7 @@
 #include <sweet/build_tool/BuildToolEventSink.hpp>
 #include <sweet/build_tool/ScriptInterface.hpp>
 #include <sweet/lua/Lua.hpp>
-#include <sweet/unit/UnitTest.h>
+#include <unit/UnitTest.h>
 
 using namespace sweet::build_tool;
 

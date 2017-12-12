@@ -3,14 +3,15 @@
 #include "ErrorChecker.hpp"
 #include <sweet/build_tool/BuildTool.hpp>
 #include <sweet/error/ErrorPolicy.hpp>
+#include <sweet/assert/assert.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 
 using namespace sweet::build_tool;
 
 ErrorChecker::ErrorChecker()
-: build_tool::BuildToolEventSink(),
-  error::ErrorPolicyEventSink(),
+: error::ErrorPolicy(),
+  build_tool::BuildToolEventSink(),
   messages(),
   errors( 0 )
 {
@@ -20,13 +21,7 @@ ErrorChecker::~ErrorChecker()
 {
 }
 
-void ErrorChecker::build_tool_error( BuildTool* build_tool, const char* mmessage )
-{
-    messages.push_back( mmessage );
-    ++errors;
-}    
-
-void ErrorChecker::error( const char* mmessage )
+void ErrorChecker::build_tool_error( BuildTool* /*build_tool*/, const char* mmessage )
 {
     messages.push_back( mmessage );
     ++errors;
@@ -37,7 +32,12 @@ void ErrorChecker::test( const char* script )
     SWEET_ASSERT( script );
     messages.clear();
     errors = 0;          
-    error::ErrorPolicy error_policy( this );  
-    BuildTool build_tool( boost::filesystem::initial_path<boost::filesystem::path>().string(), error_policy, this );
+    BuildTool build_tool( boost::filesystem::initial_path<boost::filesystem::path>().string(), *this, this );
     build_tool.execute( script, script + strlen(script) );
 }
+
+void ErrorChecker::report_error( const char* mmessage )
+{
+    messages.push_back( mmessage );
+    ++errors;
+}    

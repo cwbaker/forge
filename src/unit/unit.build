@@ -1,7 +1,10 @@
 
 buildfile "unit_test/unit_test.build";
 
-local settings = build.current_settings();
+local settings = build.push_settings {
+    warning_level = 0;
+};
+
 for _, architecture in ipairs(settings.architectures) do 
     local libUnitTest = build.Library ("libUnitTest", architecture) {
         build.Cxx (architecture) {
@@ -41,3 +44,5 @@ for _, architecture in ipairs(settings.architectures) do
         };
     end
 end
+
+build.pop_settings();

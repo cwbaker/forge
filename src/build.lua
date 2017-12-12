@@ -26,13 +26,11 @@ local settings = build.initialize {
     library_directories = {
         root( ("../%s_%s/lib"):format(platform, variant) ),
     };
-    sln = root( "../sweet_build_tool.sln" );
-    xcodeproj = {
-        filename = root( "../sweet_build_tool.xcodeproj" );
-        targets = {
-            "sweet/build_tool/build",
-            "sweet/build_tool/build_tool_test"
-        };
+    visual_studio = {
+        sln = root( "../sweet_build_tool.sln" );
+    };
+    xcode = {
+        xcodeproj = root( "../sweet_build_tool.xcodeproj" );
     };
     zero_brane_studio = {
         mobdebug = build.switch { operating_system();
@@ -65,5 +63,6 @@ build.default_buildfiles {
 -- generating XCode projects and Visual Studio solutions.
 build.default_targets {
     "sweet/build_tool/build",
-    "sweet/build_tool/build_hooks"
+    "sweet/build_tool/build_hooks",
+    "sweet/build_tool/build_tool_test"
 };

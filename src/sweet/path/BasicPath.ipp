@@ -459,6 +459,16 @@ BasicPath<String, Traits> BasicPath<String, Traits>::relative( const BasicPath& 
 }
 
 /**
+// Remove the last element of this path.
+*/
+template <class String, class Traits>
+void BasicPath<String, Traits>::pop_back()
+{
+    SWEET_ASSERT( !elements_.empty() );
+    elements_.pop_back();
+}
+
+/**
 // Normalize a path by removing any adjacent adjacent name and parent 
 // elements.
 //
