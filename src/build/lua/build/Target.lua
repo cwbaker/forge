@@ -13,7 +13,7 @@ setmetatable( Target, {
 } );
 
 function Target:depend( dependencies )
-    local settings = build:current_settings();
+    local settings = self.settings;
     if type(dependencies) == "string" then
         local source_file = build:SourceFile( dependencies, settings );
         self:add_dependency( source_file );
@@ -28,7 +28,7 @@ function Target:depend( dependencies )
 end
 
 function Target:implicit_depend( dependencies )
-    local settings = build:current_settings();
+    local settings = self.settings;
     if type(dependencies) == "string" then
         local source_file = build:SourceFile( dependencies, settings );
         self:add_implicit_dependency( source_file );

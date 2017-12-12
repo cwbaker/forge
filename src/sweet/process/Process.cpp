@@ -328,6 +328,12 @@ void Process::run( const char* arguments )
 
     if ( result != 0 )
     {
+        for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
+        {
+            close( pipe->read_fd );
+            pipe->read_fd = -1;
+        }
+
         char message [256];
         SWEET_ERROR( ExecutingProcessFailedError("Executing '%s' failed - %s", executable_, Error::format(result, message, sizeof(message))) );
     }

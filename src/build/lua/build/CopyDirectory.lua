@@ -5,11 +5,12 @@ function CopyDirectory.create( settings, identifier )
     local identifier = build:interpolate( identifier, settings );
     local copy_directory = build:Target( build:anonymous(), CopyDirectory );
     copy_directory:add_ordering_dependency( build:Directory(build:absolute(identifier)) );
+    copy_directory.settings = settings;
     return copy_directory;
 end
 
 function CopyDirectory:depend( source_directory )
-    local settings = build:current_settings();
+    local settings = self.settings;
     local source_directory = build:interpolate( source_directory, settings );
     local destination_directory = self:ordering_dependency():filename();
     local cache = build:find_target( settings.cache );

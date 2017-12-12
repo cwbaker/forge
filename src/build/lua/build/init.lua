@@ -278,38 +278,6 @@ function build:default_targets( targets )
     end
 end
 
--- Visit a target by calling a member function "build" if it exists and 
--- setting that Target's built flag to true if the function returns with
--- no errors.
-function build.build_visit( target )
-    local build_function = target.build;
-    if build_function and target:outdated() then 
-        local filename = target:filename();
-        if filename ~= "" then
-            printf( build:leaf(filename) );
-        end
-        target:clear_implicit_dependencies();
-        local success, error_message = pcall( build_function, target );
-        target:set_built( success );
-        if not success then 
-            build.clean_visit( target );
-            assert( success, error_message );
-        end
-    end
-end
-
--- Visit a target by calling a member function "clean" if it exists or if
--- there is no "clean" function and the target is not marked as a source file
--- that must exist then its associated file is deleted.
-function build.clean_visit( target )
-    local clean_function = target.clean;
-    if clean_function then 
-        clean_function( target );
-    elseif target:cleanable() and target:filename() ~= "" then 
-        build:rm( target:filename() );
-    end
-end
-
 -- Execute command with arguments and optional filter and raise an error if 
 -- it doesn't return 0.
 function build:system( command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... )
