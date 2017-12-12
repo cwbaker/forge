@@ -54,7 +54,7 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public pointer::enable_ptr_from_this<Ta
     bool visiting_; ///< Whether or not this Target is in the process of being visited.
     int visited_revision_; ///< The visited revision the last time this Target was visited.
     int successful_revision_; ///< The successful revision the last time this Target was successfully visited.
-    int height_; ///< The height of this Target in the current or most recent dependency graph traversal.
+    int postorder_height_; ///< The height of this Target in the current or most recent dependency graph traversal.
     int anonymous_; ///< The anonymous index for this Target that will generate the next anonymous identifier requested from this Target.
 
     public:
@@ -122,8 +122,8 @@ class SWEET_BUILD_TOOL_DECLSPEC Target : public pointer::enable_ptr_from_this<Ta
         void set_successful( bool successful );
         bool is_successful() const;
 
-        void set_height( int height );
-        int get_height() const;
+        void set_postorder_height( int height );
+        int postorder_height() const;
         
         int anonymous();
 

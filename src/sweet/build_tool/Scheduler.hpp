@@ -68,7 +68,7 @@ class Scheduler
         void preorder_visit( const lua::LuaValue& function, ptr<Target> target );
         void postorder_visit( const lua::LuaValue& function, Job* job );
         void execute_finished( int exit_code, ptr<Environment> environment );
-        void scan_finished();
+        void scan_finished( ptr<Arguments> arguments );
         void output( const std::string& output, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory );
         void match( const Pattern* pattern, ptr<Target> target, const std::string& match, ptr<Arguments> arguments, ptr<Target> working_directory );
         void error( const std::string& what, ptr<Environment> environment );
@@ -77,7 +77,7 @@ class Scheduler
         void push_error( const std::exception& exception, ptr<Environment> environment );
         void push_match( const Pattern* pattern, const std::string& match, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Target> target );
         void push_execute_finished( int exit_code, ptr<Environment> environment );
-        void push_scan_finished();
+        void push_scan_finished( ptr<Arguments> arguments );
 
         void execute( const std::string& command, const std::string& command_line, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Environment> environment );
         void scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory, ptr<Environment> environment );

@@ -4,8 +4,11 @@ DexPrototype = TargetPrototype { "Dex" };
 function DexPrototype.build( jar )
     if jar:is_outdated() then
         print( leaf(jar:get_filename()) );
-        local dx = native( "%s/platform-tools/dx.bat" % jar.settings.android.sdk_directory );
-        build.shell( [["%s" --dex --verbose --output="%s" "%s/classes"]] % {dx, jar:get_filename(), obj_directory(jar)} );
+        local dx = native( "%s/platform-tools/dx" % jar.settings.android.sdk_directory );
+        if operating_system() == "windows" then
+            dx = "%s.bat" % dx;
+        end
+        build.shell( [[\"%s\" --dex --verbose --output=\"%s\" \"%s/classes\"]] % {dx, jar:get_filename(), obj_directory(jar)} );
     end    
 end
 
@@ -21,7 +24,7 @@ function Dex( id )
             local settings = build.push_settings( dependencies.settings );
             if build.built_for_platform_and_variant(settings) then
                 local jar = target( "", DexPrototype, dependencies );
-                build.add_module_dependencies( jar, "%s/%s.dex" % {settings.bin, id} );
+                build.add_module_dependencies( jar, "%s/%s.dex" % {settings.bin, id}, "", settings );
                 table.insert( jars, jar );
             end
             build.pop_settings();

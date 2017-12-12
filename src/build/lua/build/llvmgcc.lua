@@ -324,11 +324,11 @@ function llvmgcc.lib_name( name, architecture )
 end;
 
 function llvmgcc.dll_name( name )
-    return "%s_%s.dylib" % { name, variant };
+    return "%s.dylib" % { name };
 end;
 
-function llvmgcc.exe_name( name )
-    return "%s_%s" % { name, variant };
+function llvmgcc.exe_name( name, architecture )
+    return "%s_%s" % { name, architecture };
 end;
 
 function llvmgcc.module_name( name, architecture )

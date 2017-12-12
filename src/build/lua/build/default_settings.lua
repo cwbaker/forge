@@ -44,7 +44,7 @@ build.default_settings = {
 
         ["llvmgcc"] = {
             architectures = {
-                "x86_64"
+                "i386", "x86_64"
             };
             variants = {
                 "debug", "release", "shipping"

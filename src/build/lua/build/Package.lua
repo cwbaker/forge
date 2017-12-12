@@ -3,9 +3,9 @@ PackagePrototype = TargetPrototype { "Package" };
 
 function PackagePrototype.build( package )
     if package:is_outdated() and platform == "android" then
-        local aapt = "%s/platform-tools/aapt.exe" % package.settings.android.sdk_directory;
+        local aapt = "%s/platform-tools/aapt" % package.settings.android.sdk_directory;
         local resources = table.concat( build.expand(package.resources), " -S " );
-        local android_jar = "%s/platforms/android-16/android.jar" % package.settings.android.sdk_directory;
+        local android_jar = "%s/platforms/%s/android.jar" % { package.settings.android.sdk_directory, package.settings.android.sdk_platform };
         build.system( aapt, [[aapt package -f -M AndroidManifest.xml -S %s -I "%s" -F "%s.unaligned"]] % {resources, android_jar, package:get_filename()} );
 
         pushd( "%s/%s" % {branch(package:get_filename()), package:id()} );
@@ -15,11 +15,11 @@ function PackagePrototype.build( package )
             end
         end
 
-        local jarsigner = "%s/bin/jarsigner.exe" % package.settings.android.jdk_directory;
+        local jarsigner = "%s/bin/jarsigner" % package.settings.android.jdk_directory;
         local keystore = relative( "%s/debug.keystore" % package:get_working_directory():path() );
         build.system( jarsigner, "jarsigner -keystore %s -storepass android %s.unaligned androiddebugkey" % {keystore, relative(package:get_filename())} );
 
-        local zipalign = "%s/tools/zipalign.exe" % package.settings.android.sdk_directory;
+        local zipalign = "%s/tools/zipalign" % package.settings.android.sdk_directory;
         build.system( zipalign, "zipalign -f 4 %s.unaligned %s" % {relative(package:get_filename()), relative(package:get_filename())} );
         popd();
     end

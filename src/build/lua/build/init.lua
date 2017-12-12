@@ -121,6 +121,18 @@ function build.visit( pass, ... )
     end
 end
 
+-- Visit a target by calling a member function "depend" if it has one or,
+-- if there is no "depend" function and the id of the target matches that
+-- of a C/C++ source or header file, then scan it with the CcScanner.
+function build.depend_visit( target )
+    local fn = target.depend;
+    if fn then
+        fn( target );
+    elseif target:prototype() == nil and string.find(target:id(), ".+%.[chi]p?p?") then
+        scan( target, CcScanner );
+    end
+end
+
 -- Determine whether or not to load or build based on whether or not a 
 -- settings table has platforms and variants fields that match the current
 -- platform(s) and/or variant(s).
@@ -326,7 +338,7 @@ function build.load()
 
     local all = find_target( initial(goal) );
     assert( all, "No target found at '"..tostring(initial(goal)).."'" );
-    preorder( build.visit("depend"), all );
+    preorder( build.depend_visit, all );
     bind( all );
 end
 

@@ -2,7 +2,6 @@
 local function local_include( target, match )
     local header = file( "%s%s" % {target:directory(), match} );
     target:add_dependency( header );
-    scan( header, CcScanner );
 end
 
 local function global_include( target, match )
@@ -10,7 +9,6 @@ local function global_include( target, match )
     if exists(filename) then
         local header = file( filename );
         target:add_dependency( header );
-        scan( header, CcScanner );
     end
 end
 

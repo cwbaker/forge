@@ -229,14 +229,14 @@ void Executor::thread_scan( ptr<Target> target, ptr<Scanner> scanner, ptr<Argume
         catch ( const std::exception& exception )
         {
             scheduler->push_error( exception, environment );
-            scheduler->push_scan_finished();
+            scheduler->push_scan_finished( arguments );
         }
         
         ::fclose( file );
         file = NULL;
     }
 
-    scheduler->push_scan_finished();
+    scheduler->push_scan_finished( arguments );
 }
 
 void Executor::start()

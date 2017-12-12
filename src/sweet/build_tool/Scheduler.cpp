@@ -179,8 +179,12 @@ void Scheduler::execute_finished( int exit_code, ptr<Environment> environment )
     process_end( environment );
 }
 
-void Scheduler::scan_finished()
+void Scheduler::scan_finished( ptr<Arguments> arguments )
 {
+    // Reset arguments here on the main thread to avoid accessing the Lua
+    // virtual machine from multiple threads as happens if the arguments are
+    // destroyed in the worker threads provided by the executor.
+    arguments.reset();
 }
 
 void Scheduler::output( const std::string& output, ptr<Scanner> scanner, ptr<Arguments> arguments, ptr<Target> working_directory )
@@ -283,11 +287,11 @@ void Scheduler::push_execute_finished( int exit_code, ptr<Environment> environme
     results_condition_.notify_all();
 }
 
-void Scheduler::push_scan_finished()
+void Scheduler::push_scan_finished( ptr<Arguments> arguments )
 {
     thread::ScopedLock lock( results_mutex_ );
     --jobs_;
-    results_.push_back( boost::bind(&Scheduler::scan_finished, this) );
+    results_.push_back( boost::bind(&Scheduler::scan_finished, this, arguments) );
     results_condition_.notify_all();
 }
 
@@ -316,12 +320,14 @@ int Scheduler::preorder( const lua::LuaValue& function, ptr<Target> target )
 {
     struct Preorder
     {
-        const lua::LuaValue& function_;
         BuildTool* build_tool_;
+        std::vector<Target*> targets_;
+        std::vector<Target*> next_targets_;
     
-        Preorder( const lua::LuaValue& function, BuildTool* build_tool )
-        : function_( function ),
-          build_tool_( build_tool )
+        Preorder( BuildTool* build_tool )
+        : build_tool_( build_tool ),
+          targets_(),
+          next_targets_()
         {
             SWEET_ASSERT( build_tool_ );
             build_tool_->get_graph()->begin_traversal();
@@ -332,31 +338,56 @@ int Scheduler::preorder( const lua::LuaValue& function, ptr<Target> target )
             build_tool_->get_graph()->end_traversal();
         }
     
-        void visit( Target* target )
+        bool empty() const
         {
-            if ( !target->is_visited() )
-            {
-                target->set_visited( true );
-                if ( target->is_referenced_by_script() && target->get_working_directory() )
-                {
-                    Scheduler* scheduler = build_tool_->get_scheduler();
-                    scheduler->preorder_visit( function_, target->ptr_from_this() );
-                    scheduler->dispatch_results();
-                }
+            return targets_.empty();
+        }
 
-            //
-            // The following loop deliberately iterates using an index to 
-            // avoid problems that may occur if the vector is reallocated if 
-            // dependencies are added or removed by the script.
-            //
+        std::vector<Target*>::const_iterator begin() const
+        {
+            return targets_.begin();
+        }
+
+        std::vector<Target*>::const_iterator end() const
+        {
+            return targets_.end();
+        }
+
+        void start( Target* target )
+        {
+            targets_.clear();
+            targets_.push_back( target );
+        }
+
+        void move_to_dependencies()
+        {
+            unsigned int targets = 0;
+            for ( vector<Target*>::const_iterator i = targets_.begin(); i != targets_.end(); ++i )
+            {
+                Target* target = *i;
+                SWEET_ASSERT( target );
+                targets += target->get_dependencies().size();
+            }
+
+            next_targets_.clear();
+            next_targets_.reserve( targets );
+            for ( vector<Target*>::const_iterator i = targets_.begin(); i != targets_.end(); ++i )
+            {
+                Target* target = *i;
+                SWEET_ASSERT( target );
                 const vector<Target*>& dependencies = target->get_dependencies();
-                for ( size_t i = 0; i < dependencies.size(); ++i )
+                for ( vector<Target*>::const_iterator j = dependencies.begin(); j != dependencies.end(); ++j )
                 {
-                    Target* dependency = dependencies[i];
+                    Target* dependency = *j;
                     SWEET_ASSERT( dependency );
-                    Preorder::visit( dependency );
+                    if ( !dependency->is_visited() )
+                    {
+                        dependency->set_visited( true );
+                        next_targets_.push_back( dependency );
+                    }
                 }
             }
+            targets_.swap( next_targets_ );
         }
     };    
 
@@ -367,8 +398,26 @@ int Scheduler::preorder( const lua::LuaValue& function, ptr<Target> target )
     }
 
     failures_ = 0;
-    Preorder preorder( function, build_tool_ );
-    preorder.visit( target ? target.get() : graph->get_root_target() );
+    Preorder preorder( build_tool_ );
+    preorder.start( target ? target.get() : graph->get_root_target() );
+
+    while ( !preorder.empty() )
+    {
+        vector<Target*>::const_iterator i = preorder.begin();
+        while ( i != preorder.end() )
+        {
+            Target* target = *i;
+            SWEET_ASSERT( target );
+            if ( target->is_referenced_by_script() && target->get_working_directory() )
+            {
+                preorder_visit( function, target->ptr_from_this() );
+            }
+            ++i;
+        }
+        wait();
+        preorder.move_to_dependencies();
+    }
+
     wait();
     return failures_;
 }
@@ -474,7 +523,7 @@ int Scheduler::postorder( const lua::LuaValue& function, ptr<Target> target )
                     if ( !dependency->is_visiting() )
                     {
                         Postorder::visit( dependency );
-                        height = std::max( height, dependency->get_height() + 1 );
+                        height = std::max( height, dependency->postorder_height() + 1 );
                     }
                     else
                     {
@@ -485,12 +534,12 @@ int Scheduler::postorder( const lua::LuaValue& function, ptr<Target> target )
 
                 if ( target->is_referenced_by_script() && target->get_working_directory() )
                 {
-                    target->set_height( height );
+                    target->set_postorder_height( height );
                     jobs_.push_back( Job(target, height) );
                 }
                 else
                 {
-                    target->set_height( -1 );
+                    target->set_postorder_height( -1 );
                     target->set_successful( true );
                 }
             }

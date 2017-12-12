@@ -30,7 +30,7 @@ class Environment;
 class Target;
 
 /**
-// A visit that is queued up and carried out during as postorder traversal
+// A visit that is queued up and carried out during a postorder traversal
 // of a Graph.
 */
 class Job

@@ -3,12 +3,12 @@ AndroidResourcePrototype = TargetPrototype { "AndroidResource" };
 
 function AndroidResourcePrototype.build( android_resource )
     if android_resource:is_outdated() then
-        local sdk_directory = "C:/Program Files (x86)/Android/android-sdk";
-
-        local aapt = "%s/platform-tools/aapt.exe" % sdk_directory;
+        local sdk_directory = android_resource.settings.android.sdk_directory;
+        local sdk_platform = android_resource.settings.android.sdk_platform;
+        local aapt = "%s/platform-tools/aapt" % sdk_directory;
         local output_directory = "%s/gen" % { obj_directory(android_resource) };
         local resource_directories = table.concat( android_resource, " -S " );
-        local android_jar = "%s/platforms/android-16/android.jar" % { sdk_directory };
+        local android_jar = "%s/platforms/%s/android.jar" % { sdk_directory, sdk_platform };
         local proguard_txt = "%s/proguard.txt" % obj_directory( android_resource );
         build.system( aapt, [[aapt package -f -m -J "%s" -M AndroidManifest.xml -S %s -I "%s" -G "%s"]] % {output_directory, resource_directories, android_jar, proguard_txt} );
     end

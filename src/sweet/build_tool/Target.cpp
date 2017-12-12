@@ -47,7 +47,7 @@ Target::Target()
   visiting_( false ),
   visited_revision_( 0 ),
   successful_revision_( 0 ),
-  height_( -1 ),
+  postorder_height_( -1 ),
   anonymous_( 0 )
 {
 }
@@ -87,7 +87,7 @@ Target::Target( const std::string& id, Graph* graph )
   visiting_( false ),
   visited_revision_( 0 ),
   successful_revision_( 0 ),
-  height_( -1 ),
+  postorder_height_( -1 ),
   anonymous_( 0 )
 {
     SWEET_ASSERT( graph_ );
@@ -940,34 +940,31 @@ bool Target::is_successful() const
 }
 
 /**
-// Set the height of this Target in the current pass of the Graph that it is
-// part of.
+// Set the postorder height of this Target.
 //
-// A height of -1 indicates that this Target isn't part of the dependency
-// graph proper because its LuaObject doesn't have a function to visit for
-// the current pass.  Targets that don't have a function to visit for the 
-// current pass don't get queued to be visited but are treated as if they
-// were successfully visited so that other Targets that depend on them are
-// built correctly.
+// The postorder height is the height, measured in Targets, from the leaves to
+// the root.  That is any target without dependencies has a height of 0; any
+// target with dependencies has a height equal to the maximum height of any of
+// its dependencies plus 1.  This gives leaves a height of 0 and makes the 
+// root of the highest node.
 //
 // @param height
-//  The value to set the height of this Target to.
+//  The value to set the postorder height of this Target to.
 */
-void Target::set_height( int height )
+void Target::set_postorder_height( int height )
 {
-    height_ = height;
+    postorder_height_ = height;
 }
 
 /**
-// Get the height of this Target in a pass of the dependency graph that it is
-// part of.
+// Get the postorder height of this Target.
 //
 // @return
-//  The height of this Target.
+//  The postorder height of this Target.
 */
-int Target::get_height() const
+int Target::postorder_height() const
 {
-    return height_;
+    return postorder_height_;
 }
 
 /**

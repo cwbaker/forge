@@ -10,27 +10,39 @@ local directory_by_architecture = {
 
 function android.configure( settings )
     function autodetect_jdk_directory()
-        return "C:/Program Files/Java/jdk1.6.0_39";
+        if operating_system() == "windows" then
+            return "C:/Program Files/Java/jdk1.6.0_39";
+        else
+            return "/Library/Java/Home";
+        end
     end
 
     function autodetect_ndk_directory()
-        return "C:/android/android-ndk";
+        if operating_system() == "windows" then
+            return "C:/android/android-ndk";
+        else
+            return home( "android-ndk" );
+        end
     end
 
     function autodetect_sdk_directory()
-        return "C:/Program Files (x86)/Android/android-sdk";
+        if operating_system() == "windows" then
+            return "C:/Program Files (x86)/Android/android-sdk";
+        else
+            return home( "android-sdk-macosx" );
+        end
     end
 
     local local_settings = build.local_settings;
     if not local_settings.android then
         local_settings.updated = true;
         local_settings.android = {
-            jdk_directory = autodetect_jdk_directory() or "C:/Program Files/Java/jdk1.6.0_39";
-            ndk_directory = autodetect_ndk_directory() or "C:/android/android-ndk";
-            sdk_directory = autodetect_sdk_directory() or "C:/Program Files (x86)/Android/android-sdk";
+            jdk_directory = autodetect_jdk_directory();
+            ndk_directory = autodetect_ndk_directory();
+            sdk_directory = autodetect_sdk_directory();
             toolchain_version = "4.6";
             ndk_platform = "android-14";
-            sdk_platform = "android-16";
+            sdk_platform = "android-15";
             architectures = { "armv5", "armv7" };
         };
     end
@@ -44,7 +56,16 @@ function android.toolchain_directory( settings, architecture )
         ["mips"] = "mipsel-linux-android",
         ["x86"] = "x86"
     };
-    return "%s/toolchains/%s-%s/prebuilt/%s" % { android.ndk_directory, toolchain_by_architecture[architecture], android.toolchain_version, "windows" };
+    local prebuilt_by_operating_system = {
+        windows = "windows";
+        macosx = "darwin-x86_64";
+    };
+    return "%s/toolchains/%s-%s/prebuilt/%s" % { 
+        android.ndk_directory, 
+        toolchain_by_architecture [architecture], 
+        android.toolchain_version, 
+        prebuilt_by_operating_system [operating_system()]
+    };
 end
 
 function android.platform_directory( settings, architecture )
@@ -84,10 +105,19 @@ function android.initialize( settings )
         -- See http://blogs.msdn.com/freik/archive/2006/04/05/569025.aspx.
         putenv( "VS_UNICODE_OUTPUT", "" );
 
-        local path = {
-            "%s/bin" % android.toolchain_directory(settings, "armv5")
-        };
-        putenv( "PATH", table.concat(path, ";") );
+        if operating_system() == "windows" then
+            local path = {
+                "%s/bin" % android.toolchain_directory(settings, "armv5")
+            };
+            putenv( "PATH", table.concat(path, ";") );
+        else
+            local path = {
+                "/usr/bin",
+                "/bin",
+                "%s/bin" % android.toolchain_directory(settings, "armv5")
+            };
+            putenv( "PATH", table.concat(path, ":") );
+        end
         
         cc = android.cc;
         build_library = android.build_library;
@@ -110,7 +140,7 @@ function android.initialize( settings )
 end
 
 function android.cc( target )
-    local gcc = "%s/bin/arm-linux-androideabi-gcc.exe" % android.toolchain_directory( target.settings, target.architecture );
+    local gcc = "%s/bin/arm-linux-androideabi-gcc" % android.toolchain_directory( target.settings, target.architecture );
 
     local defines = {
         " ",
@@ -176,12 +206,17 @@ function android.cc( target )
         "-fno-strict-aliasing",
         "-finline",
         "-finline-limit=64",
-        "-march=armv5te",
         "-mtune=xscale",
         "-msoft-float",
         "-mthumb";
         "-Wa,--noexecstack"
     };
+
+    if target.architecture == "armv5" then
+        table.insert( flags, "-march=armv5te" );
+    elseif target.architecture == "armv7" then
+        table.insert( flags, "-march=armv7" );
+    end
 
     if target.settings.compile_as_c then
         table.insert( flags, "-x c" );
@@ -248,7 +283,7 @@ function android.cc( target )
 end
 
 function android.build_library( target )
-    local ar = "%s/bin/arm-linux-androideabi-ar.exe" % android.toolchain_directory( target.settings, target.architecture );
+    local ar = "%s/bin/arm-linux-androideabi-ar" % android.toolchain_directory( target.settings, target.architecture );
 
     local arflags = " ";
     
@@ -281,7 +316,7 @@ function android.clean_library( target )
 end
 
 function android.build_executable( target )
-    local gxx = "%s/bin/arm-linux-androideabi-g++.exe" % android.toolchain_directory( target.settings, target.architecture );
+    local gxx = "%s/bin/arm-linux-androideabi-g++" % android.toolchain_directory( target.settings, target.architecture );
 
     local flags = { 
         " ",

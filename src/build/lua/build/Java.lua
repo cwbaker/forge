@@ -13,7 +13,7 @@ function JavaPrototype.build( java )
         end
 
         if #source_files > 0 then
-            local javac = "%s/bin/javac.exe" % java.settings.android.jdk_directory;
+            local javac = "%s/bin/javac" % java.settings.android.jdk_directory;
             local output = "%s/classes" % obj_directory( java );
             local sourcepath = "%s;%s/gen" % { absolute("src/%s" % java.package), obj_directory(java) };
             local classpath = output;
