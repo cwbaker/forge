@@ -44,9 +44,9 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
   lua_build_tool_( NULL ),
   system_( NULL ),
   reader_( NULL ),
-  executor_( NULL ),
-  scheduler_( NULL ),
   graph_( NULL ),
+  scheduler_( NULL ),
+  executor_( NULL ),
   root_directory_(),
   initial_directory_(),
   home_directory_(),
@@ -58,9 +58,9 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
     lua_build_tool_ = new LuaBuildTool( this, lua_ );
     system_ = new System;
     reader_ = new Reader( this );
-    executor_ = new Executor( this );
-    scheduler_ = new Scheduler( this );
     graph_ = new Graph( this );
+    scheduler_ = new Scheduler( this );
+    executor_ = new Executor( this );
 
     root_directory_ = make_drive_uppercase( initial_directory );
     initial_directory_ = make_drive_uppercase( initial_directory );
@@ -77,9 +77,9 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
 */
 BuildTool::~BuildTool()
 {
-    delete graph_;
-    delete scheduler_;
     delete executor_;
+    delete scheduler_;
+    delete graph_;
     delete reader_;
     delete system_;
     delete lua_build_tool_;
@@ -110,18 +110,6 @@ System* BuildTool::system() const
 }
 
 /**
-// Get the Graph for this BuildTool.
-//
-// @return
-//  The Graph.
-*/
-Graph* BuildTool::graph() const
-{
-    SWEET_ASSERT( graph_ );
-    return graph_;
-}
-
-/**
 // Get the Reader for this BuildTool.
 //
 // @return
@@ -134,15 +122,15 @@ Reader* BuildTool::reader() const
 }
 
 /**
-// Get the Executor for this BuildTool.
+// Get the Graph for this BuildTool.
 //
 // @return
-//  The Executor.
+//  The Graph.
 */
-Executor* BuildTool::executor() const
+Graph* BuildTool::graph() const
 {
-    SWEET_ASSERT( executor_ );
-    return executor_;
+    SWEET_ASSERT( graph_ );
+    return graph_;
 }
 
 /**
@@ -155,6 +143,18 @@ Scheduler* BuildTool::scheduler() const
 {
     SWEET_ASSERT( scheduler_ );
     return scheduler_;
+}
+
+/**
+// Get the Executor for this BuildTool.
+//
+// @return
+//  The Executor.
+*/
+Executor* BuildTool::executor() const
+{
+    SWEET_ASSERT( executor_ );
+    return executor_;
 }
 
 /**

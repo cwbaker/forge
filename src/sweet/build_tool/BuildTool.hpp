@@ -47,9 +47,9 @@ class BuildTool
     LuaBuildTool* lua_build_tool_; ///< The Lua bindings to the build tool library.
     System* system_; ///< The System that provides access to the operating system.
     Reader* reader_; ///< The reader that filters executable output and dependencies.
-    Executor* executor_; ///< The executor that schedules threads to process commands.
-    Scheduler* scheduler_; ///< The scheduler that schedules environments to process jobs in the dependency graph.
     Graph* graph_; ///< The dependency graph of targets used to determine which targets are outdated.
+    Scheduler* scheduler_; ///< The scheduler that schedules environments to process jobs in the dependency graph.
+    Executor* executor_; ///< The executor that schedules threads to process commands.
     boost::filesystem::path root_directory_; ///< The full path to the root directory.
     boost::filesystem::path initial_directory_; ///< The full path to the initial directory.
     boost::filesystem::path home_directory_; ///< The full path to the user's home directory.
@@ -61,10 +61,10 @@ class BuildTool
 
         error::ErrorPolicy& error_policy() const;
         System* system() const;
-        Graph* graph() const;
         Reader* reader() const;
-        Executor* executor() const;
+        Graph* graph() const;
         Scheduler* scheduler() const;
+        Executor* executor() const;
         Context* context() const;
         lua::Lua* lua() const;
         LuaBuildTool* lua_build_tool() const;
