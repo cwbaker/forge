@@ -20,6 +20,7 @@ local function default_identifier_filename( identifier, architecture, settings )
 end
 
 function StaticLibrary.create( settings, identifier, architecture )
+    local architecture = architecture or settings.default_architecture;
     local identifier, filename = default_identifier_filename( identifier, architecture, settings );
     local static_library = build.Target( identifier, StaticLibrary );
     static_library:set_filename( filename );

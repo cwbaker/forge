@@ -469,14 +469,14 @@ function build.save_settings( settings, filename )
             file:write( "{\n" );
             for _, v in ipairs(value) do
                 indent( level + 1 );
-                build.serialize( file, v, level + 1 );
+                serialize( file, v, level + 1 );
                 file:write( ",\n" );
             end
             for k, v in pairs(value) do
                 if type(k) == "string" then
                     indent( level + 1 );
                     file:write( ("%s = "):format(k) );
-                    build.serialize( file, v, level + 1 );
+                    serialize( file, v, level + 1 );
                     file:write( ";\n" );
                 end
             end
@@ -488,7 +488,7 @@ function build.save_settings( settings, filename )
     local file = io.open( filename, "wb" );
     assertf( file, "Opening %s to write settings failed", filename );
     file:write( "\nreturn " );
-    build.serialize( file, settings, 0 );
+    serialize( file, settings, 0 );
     file:write( "\n" );
     file:close();
 end

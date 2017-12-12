@@ -79,7 +79,7 @@ local function add_legacy_target( target, platform )
             working_directory = working_directory;
             configuration_list = uuid();
             platform = platform;
-            build = build.root( "build/build" );
+            build = build.root( build.executable("build") );
             path = filename;
             settings = settings;
             configurations = add_configurations( target.architecture, settings.variants );
@@ -493,7 +493,6 @@ end
 function xcodeproj()
     platform = "";
     variant = "";
-    build.load( true );
     local all = all or build.find_target( build.root("all") );
     assertf( all, "Missing target at '%s' to generate Xcode project from", build.root() );
     assertf( build.settings.xcode, "Missing Xcode settings in 'settings.xcode'" );

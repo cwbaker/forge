@@ -20,6 +20,7 @@ local function default_identifier_filename( identifier, architecture, settings )
 end
 
 function DynamicLibrary.create( settings, identifier, architecture )
+    local architecture = architecture or settings.default_architecture;
     local identifier, filename = default_identifier_filename( identifier, architecture, settings );
     local dynamic_library = build.Target( identifier, DynamicLibrary );
     dynamic_library:set_filename( filename );

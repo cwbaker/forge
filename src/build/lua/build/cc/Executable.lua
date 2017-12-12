@@ -20,6 +20,7 @@ local function default_identifier_filename( identifier, architecture, settings )
 end
 
 function Executable.create( settings, identifier, architecture )
+    local architecture = architecture or settings.default_architecture;
     local identifier, filename = default_identifier_filename( identifier, architecture, settings );
     local executable = build.Target( identifier, Executable );
     executable:set_filename( filename );

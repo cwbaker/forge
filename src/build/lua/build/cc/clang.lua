@@ -230,8 +230,12 @@ function clang.parse_dependencies_file( filename, object )
     if start and finish then 
         local start, finish, path = dependencies:find( DEPENDENCY_PATTERN, finish + 1 );
         while start and finish do 
-            local dependency = build.ImplicitSourceFile( path:gsub("\\ ", " ") );
-            object:add_implicit_dependency( dependency );
+            local filename = path:gsub( "\\ ", " " );
+            local within_source_tree = build.relative( build.absolute(filename), build.root() ):find( "..", 1, true ) == nil;
+            if within_source_tree then 
+                local dependency = build.ImplicitSourceFile( path:gsub("\\ ", " ") );
+                object:add_implicit_dependency( dependency );
+            end
             start, finish, path = dependencies:find( DEPENDENCY_PATTERN, finish + 1 );
         end
     end
