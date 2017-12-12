@@ -388,10 +388,10 @@ void BuildTool::assign( const std::vector<std::string>& assignments )
 //  The path to the script file to execute or an empty string to take the
 //  default action of executing the root file 'build.lua'.
 //
-// @param commands
-//  The functions to call once the root file has been loaded.
+// @param command
+//  The function to call once the root file has been loaded.
 */
-void BuildTool::execute( const std::string& filename, const std::vector<std::string>& commands )
+void BuildTool::execute( const std::string& filename, const std::string& command )
 {
     boost::filesystem::path path( filename );
     if ( path.empty() )
@@ -409,10 +409,7 @@ void BuildTool::execute( const std::string& filename, const std::vector<std::str
     int errors = error_policy_.pop_errors();
     if ( errors == 0 )
     {
-        for ( vector<string>::const_iterator command = commands.begin(); command != commands.end(); ++command )
-        {
-            scheduler_->command( path, *command );
-        }
+        scheduler_->command( path, command );
     }
 }
 

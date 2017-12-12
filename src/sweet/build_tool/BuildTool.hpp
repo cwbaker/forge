@@ -89,7 +89,7 @@ class BuildTool
 
         void search_up_for_root_directory( const std::string& directory );
         void assign( const std::vector<std::string>& assignments_and_commands );
-        void execute( const std::string& filename, const std::vector<std::string>& assignments_and_commands );
+        void execute( const std::string& filename, const std::string& command );
         void execute( const char* start, const char* finish );
 
         void create_target_lua_binding( Target* target );

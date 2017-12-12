@@ -80,6 +80,7 @@ Application::Application( int argc, char** argv )
                 assignments.push_back( *i );
             }
         }
+        
         if ( commands.empty() )
         {
             const char* DEFAULT_COMMAND = "default";
@@ -87,11 +88,16 @@ Application::Application( int argc, char** argv )
         }
     
         error::ErrorPolicy error_policy;
-        BuildTool build_tool( directory, error_policy, this );
-        build_tool.set_stack_trace_enabled( stack_trace_enabled );
-        build_tool.search_up_for_root_directory( directory );
-        build_tool.assign( assignments );
-        build_tool.execute( filename, commands );
+        vector<string>::const_iterator command = commands.begin(); 
+        while ( error_policy.errors() == 0 && command != commands.end() )
+        {
+            BuildTool build_tool( directory, error_policy, this );
+            build_tool.set_stack_trace_enabled( stack_trace_enabled );
+            build_tool.search_up_for_root_directory( directory );
+            build_tool.assign( assignments );
+            build_tool.execute( filename, *command );
+            ++command;
+        }
     }
 }
 
