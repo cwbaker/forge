@@ -12,7 +12,7 @@ local function call( cc, definition )
         local object = build.File( ("%s/%s/%s/%s"):format(obj_directory(cc), architecture, build.relative(source:branch()), obj_name(value)) );
         object.source = value;
         object:add_dependency( source );
-        object:add_dependency( Directory(object:branch()) );
+        object:add_ordering_dependency( build.Directory(object:branch()) );
         cc:add_dependency( object );
     end
 end

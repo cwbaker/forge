@@ -2,8 +2,9 @@
 local R = build.TargetPrototype( "android.R" );
 
 function R.create( settings, definition )
-    local gen_directory = ("%s/%s"):format( settings.gen, relative(working_directory():path(), root()) );
-    local resource = build.Target( anonymous(), R );
+    local working_directory = build.working_directory();
+    local gen_directory = ("%s/%s"):format( settings.gen, build.relative(working_directory:path(), build.root()) );
+    local resource = build.Target( build.anonymous(), R );
     resource.settings = settings;
     resource.gen_directory = gen_directory;
     resource.packages = definition.packages;
@@ -13,7 +14,8 @@ end
 
 function R.call( resource, definition, settings )
     local settings = settings or build.current_settings();
-    local gen_directory = ("%s/%s"):format( settings.gen, relative(working_directory():path(), root()) );
+    local working_directory = build.working_directory();
+    local gen_directory = ("%s/%s"):format( settings.gen, build.relative(working_directory:path(), build.root()) );
     for _, package in ipairs(definition.packages) do
         r_java = build.File( ("%s/%s/R.java"):format(gen_directory, string.gsub(package, "%.", "/")) );
         r_java.settings = settings;
@@ -51,8 +53,8 @@ function R.generate( resource )
     local i = 1;
     local dependency = resource:dependency( i );
     while dependency do 
-        if extension(dependency:filename()) == "" then
-            table.insert( flags, ('-S "%s"'):format(relative(dependency:filename())) );
+        if build.extension(dependency:filename()) == "" then
+            table.insert( flags, ('-S "%s"'):format(build.relative(dependency:filename())) );
         end
         i = i + 1;
         dependency = resource:dependency( i );
@@ -70,7 +72,7 @@ function R.build( resource )
 end
 
 function R.clobber( resource )
-    rmdir( resource:filename() );
+    build.rmdir( resource:filename() );
 end
 
 android.R = R;

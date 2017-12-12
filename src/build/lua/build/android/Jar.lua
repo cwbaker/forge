@@ -6,7 +6,7 @@ function Jar.create( settings, id )
     jar:set_filename( ("%s/%s"):format(settings.lib, id) );
     jar.settings = settings;
     build.add_jar_dependencies( jar, settings.jars );
-    working_directory():add_dependency( jar );
+    build.working_directory():add_dependency( jar );
     return jar;
 end
 
@@ -19,7 +19,7 @@ function Jar.call( jar, definition )
 end
 
 local function included( jar, filename )
-    if is_directory(filename) then 
+    if build.is_directory(filename) then 
         return false;
     end
 
@@ -45,25 +45,25 @@ end
 
 function Jar.build( jar )
     if jar:outdated() then
-        print( leaf(jar:filename()) );
-        local jar_ = native( ("%s/bin/jar"):format(jar.settings.android.jdk_directory) );
+        print( build.leaf(jar:filename()) );
+        local jar_ = build.native( ("%s/bin/jar"):format(jar.settings.android.jdk_directory) );
         local directory = build.classes_directory( jar );
-        pushd( directory );
+        build.pushd( directory );
 
         local classes = {};
-        for filename in find(".") do 
+        for filename in build.find(".") do 
             if included(jar, filename) then
-                table.insert( classes, relative(filename) );
+                table.insert( classes, build.relative(filename) );
             end
         end
 
         build.system( jar_, ('jar cvf "%s" "%s"'):format(jar:filename(), table.concat(classes, [[" "]])) );
-        popd();
+        build.popd();
     end    
 end
 
 function Jar.clean( jar )
-    rm( jar:filename() );
+    build.rm( jar:filename() );
 end
 
 android.Jar = Jar;

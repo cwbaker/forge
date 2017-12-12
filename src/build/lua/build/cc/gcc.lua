@@ -40,7 +40,7 @@ end
 function gcc.append_include_directories( target, include_directories )
     if target.include_directories then
         for _, directory in ipairs(target.include_directories) do
-            table.insert( include_directories, ('-I "%s"'):format(relative(directory)) );
+            table.insert( include_directories, ('-I "%s"'):format(build.relative(directory)) );
         end
     end
 
@@ -151,7 +151,7 @@ function gcc.append_link_flags( target, flags )
     -- The latest GCC with Android (or clang with iOS) doesn't recognize 
     -- '-Wl,map' to specify the path to output a mapfile.
     -- if target.settings.generate_map_file then
-    --     table.insert( flags, ('-Wl,-Map,"%s"'):format(native(("%s.map"):format(target:filename()))) );
+    --     table.insert( flags, ('-Wl,-Map,"%s"'):format(build.native(("%s.map"):format(target:filename()))) );
     -- end
 
     if target.settings.strip and not target.settings.generate_dsym_bundle then
@@ -159,10 +159,10 @@ function gcc.append_link_flags( target, flags )
     end
 
     if target.settings.exported_symbols_list then
-        table.insert( flags, ('-exported_symbols_list "%s"'):format(absolute(target.settings.exported_symbols_list)) );
+        table.insert( flags, ('-exported_symbols_list "%s"'):format(build.absolute(target.settings.exported_symbols_list)) );
     end
 
-    table.insert( flags, ('-o "%s"'):format(native(target:filename())) );
+    table.insert( flags, ('-o "%s"'):format(build.native(target:filename())) );
 end
 
 function gcc.append_link_libraries( target, libraries )

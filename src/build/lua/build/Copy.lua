@@ -6,7 +6,7 @@ function Copy.create( settings, destination, source )
     source = build.interpolate( source, settings );
     local copy = build.File( destination, Copy );
     copy:add_dependency( build.file(source) );
-    copy:add_dependency( Directory(build.branch(destination)) );
+    copy:add_ordering_dependency( build.Directory(build.branch(destination)) );
     copy.source = source;
     return copy;
 end

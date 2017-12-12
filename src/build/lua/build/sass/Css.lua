@@ -10,7 +10,7 @@ function Css.create( settings, filename, scss_filename, definition )
     css:add_dependency( scss );
 
     local directory = build.Directory( css:branch() );
-    css:add_dependency( directory );
+    css:add_ordering_dependency( directory );
 
     return css;
 end

@@ -10,7 +10,7 @@ function Pdf.create( settings, filename )
     pdf:add_dependency( source );
 
     local directory = build.Directory( pdf:branch() );
-    pdf:add_dependency( directory );
+    pdf:add_ordering_dependency( directory );
 
     local working_directory = working_directory();
     working_directory:add_dependency( pdf );

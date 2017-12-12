@@ -22,12 +22,12 @@ function App.call( app, definition )
 
     local resource_rules = definition.resource_rules;
     if resource_rules then 
-        assertf( is_file(resource_rules), "The resource rules file '%s' does not exist", tostring(resource_rules) );
+        assertf( build.is_file(resource_rules), "The resource rules file '%s' does not exist", tostring(resource_rules) );
         app.resource_rules = ("%s/ResourceRules.plist"):format( app:filename() );
         table.insert( definition, build.Copy(app.resource_rules, resource_rules) );
     end
 
-    local working_directory = working_directory();
+    local working_directory = build.working_directory();
     for _, dependency in ipairs(definition) do 
         working_directory:remove_dependency( dependency );
         app:add_dependency( dependency );
@@ -57,8 +57,8 @@ function App.build( app )
         local provisioning_profile = _G.provisioning_profile or app.settings.provisioning_profile;
         if provisioning_profile then
             local embedded_provisioning_profile = ("%s/embedded.mobileprovision"):format( app:filename() );
-            rm( embedded_provisioning_profile );
-            cp( provisioning_profile, embedded_provisioning_profile );
+            build.rm( embedded_provisioning_profile );
+            build.cp( provisioning_profile, embedded_provisioning_profile );
         end
 
         if platform == "ios" then
@@ -80,9 +80,6 @@ function App.build( app )
                 table.insert( command_line, ('--resource-rules "%s"'):format(resource_rules) );
             end
 
-            local environment = {
-                CODESIGN_ALLOCATE = app.settings.ios.codesign_allocate;
-            };
             local codesign = app.settings.ios.codesign;
             build.system( codesign, table.concat(command_line, " "), environment );
         end
@@ -90,7 +87,7 @@ function App.build( app )
 end
 
 function App.clean( app )
-    rmdir( app:filename() );
+    build.rmdir( app:filename() );
 end
 
 ios.App = App;

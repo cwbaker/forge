@@ -5,8 +5,8 @@ function Dex.create( settings, id )
     local dex = build.Target( "", Dex, definition );
     dex:set_filename( ("%s/%s.dex"):format(settings.bin, id) );
     dex.settings = settings;
-    dex:add_dependency( Directory(dex:directory()) );
-    dex:add_dependency( Directory(build.classes_directory(dex)) );
+    dex:add_ordering_dependency( build.Directory(dex:branch()) );
+    dex:add_ordering_dependency( build.Directory(build.classes_directory(dex)) );
     build.add_jar_dependencies( dex, settings.jars );
     return dex;
 end
@@ -26,20 +26,20 @@ end
 
 function Dex.build( dex )
     if dex:outdated() then
-        print( leaf(dex:filename()) );
+        print( build.leaf(dex:filename()) );
 
         local jars = {};
         if dex.proguard and dex.settings.android.proguard_enabled then 
             local proguard = dex.proguard; 
             local proguard_sh = ("%s/tools/proguard/bin/proguard.sh"):format( dex.settings.android.sdk_directory );
-            build.system( proguard_sh, ('proguard.sh -printmapping \"%s/%s.map\" "@%s"'):format(build.classes_directory(dex), leaf(dex:filename()), proguard:filename()) );
+            build.system( proguard_sh, ('proguard.sh -printmapping \"%s/%s.map\" "@%s"'):format(build.classes_directory(dex), build.leaf(dex:filename()), proguard:filename()) );
             table.insert( jars, ('\"%s/classes.jar\"'):format(build.classes_directory(dex)) );
         else
             table.insert( jars, build.classes_directory(dex) );
         end
         for _, dependency in dex:dependencies() do 
             if dependency:prototype() == build.Jar then 
-                table.insert( jars, relative(dependency:filename()) );
+                table.insert( jars, build.relative(dependency:filename()) );
             end
         end
         if dex.third_party_jars then 
@@ -53,8 +53,8 @@ function Dex.build( dex )
             end
         end
 
-        local dx = native( ("%s/dx"):format(dex.settings.android.build_tools_directory) );
-        if operating_system() == "windows" then
+        local dx = build.native( ("%s/dx"):format(dex.settings.android.build_tools_directory) );
+        if build.operating_system() == "windows" then
             dx = ("%s.bat"):format( dx );
         end
         build.shell( ('\"%s\" --dex --verbose --output=\"%s\" %s'):format(dx, dex:filename(), table.concat(jars, " ")) );
@@ -62,7 +62,7 @@ function Dex.build( dex )
 end
 
 function Dex.clean( dex )
-    rm( dex:filename() );
+    build.rm( dex:filename() );
 end
 
 android.Dex = Dex;

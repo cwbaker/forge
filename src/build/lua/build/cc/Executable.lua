@@ -6,7 +6,7 @@ function Executable.create( settings, id, architecture )
     executable.settings = settings;
     executable.architecture = architecture or settings.default_architecture;
     executable:set_filename( ("%s/%s"):format(settings.bin, exe_name(id, architecture)) );
-    executable:add_dependency( Directory(build.branch(executable:filename())) );
+    executable:add_ordering_dependency( build.Directory(build.branch(executable:filename())) );
     build.default_target( executable );
     return executable;
 end

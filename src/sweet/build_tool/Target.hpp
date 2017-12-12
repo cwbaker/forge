@@ -36,13 +36,13 @@ class Target
     bool bound_to_dependencies_; ///< Whether or not this Target is bound to its dependencies.
     bool referenced_by_script_; ///< Whether or not this Target is referenced by a scripting object.  
     bool required_to_exist_; ///< Whether or not this Target is required to be bound to an existing file.
-    bool always_bind_; ///< Always bind this Target to the file system even if it is a directory with no dependencies.
     bool cleanable_; ///< Whether or not this Target is able to be cleaned.
     Target* working_directory_; ///< The Target that relative paths expressed when this Target is visited are relative to.
     Target* parent_; ///< The parent of this Target in the Target namespace or null if this Target has no parent.
     std::vector<Target*> targets_; ///< The children of this Target in the Target namespace.
     std::vector<Target*> dependencies_; ///< The Targets that this Target depends on.
     std::vector<Target*> implicit_dependencies_; ///< The Targets that this Target implicitly depends on.
+    std::vector<Target*> ordering_dependencies_; ///< The Targets that must build before this Target is built.
     std::vector<std::string> filenames_; ///< The filenames of this Target.
     bool visiting_; ///< Whether or not this Target is in the process of being visited.
     int visited_revision_; ///< The visited revision the last time this Target was visited.
@@ -78,9 +78,6 @@ class Target
         void set_cleanable( bool cleanable );
         bool cleanable() const;
 
-        void set_always_bind( bool always_bind );
-        bool always_bind() const;
-
         void set_timestamp( std::time_t timestamp );
         std::time_t timestamp() const;
         std::time_t last_write_time() const;
@@ -114,9 +111,14 @@ class Target
         void add_implicit_dependency( Target* target );
         void remove_implicit_dependency( Target* target );
         void clear_implicit_dependencies();
+        void add_ordering_dependency( Target* target );
+        void clear_ordering_dependencies();
         void remove_dependency( Target* target );
         bool is_dependency( Target* target ) const;
         Target* dependency( int n ) const;
+        Target* binding_dependency( int n ) const;
+        Target* explicit_dependency( int n ) const;
+        Target* ordering_dependency( int n ) const;
 
         bool buildable() const;
         std::string generate_failed_dependencies_message() const;

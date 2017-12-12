@@ -10,7 +10,7 @@ function Html.create( settings, filename, txt_filename, definition )
     html:add_dependency( source );
 
     local directory = build.Directory( html:branch() );
-    html:add_dependency( directory );
+    html:add_ordering_dependency( directory );
 
     local working_directory = build.working_directory();
     working_directory:add_dependency( html );

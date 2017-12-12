@@ -68,7 +68,7 @@ function build.default_create_function( target_prototype, ... )
     else
         local id = select( 1, ... );
         local definition = select( 2, ... );
-        return target( id, target_prototype, definition );
+        return build.target( id, target_prototype, definition );
     end
 end
 
@@ -80,7 +80,7 @@ function build.default_call_function( target, ... )
         local definition = select( 1, ... );
         for _, value in ipairs(definition) do 
             if type(value) == "string" then
-                target:add_dependency( file(value) );
+                target:add_dependency( build.SourceFile(value) );
             elseif type(value) == "table" then
                 target:add_dependency( value );
             end
@@ -132,9 +132,7 @@ function build.ImplicitSourceFile( value, settings )
 end
 
 function build.SourceDirectory( value, settings )
-    local target = build.SourceFile( value, settings );
-    target:set_always_bind( true );
-    return target;
+    return build.SourceFile( value, settings );
 end
 
 -- Perform per run initialization of the build system.
@@ -327,13 +325,13 @@ end
 -- Execute a command through the host system's native shell - either 
 -- "C:/windows/system32/cmd.exe" on Windows system or "/bin/sh" anywhere else.
 function build.shell( arguments, filter )
-    if operating_system() == "windows" then
+    if build.operating_system() == "windows" then
         local cmd = "C:/windows/system32/cmd.exe";
-        local result = execute( cmd, ('cmd /c "%s"'):format(arguments), filter );
+        local result = build.execute( cmd, ('cmd /c "%s"'):format(arguments), filter );
         assertf( result == 0, "[[%s]] failed (result=%d)", arguments, result );
     else
         local sh = "/bin/sh";
-        local result = execute( sh, ('sh -c "%s"'):format(arguments), filter );
+        local result = build.execute( sh, ('sh -c "%s"'):format(arguments), filter );
         assertf( result == 0, "[[%s]] failed (result=%d)", arguments, tonumber(result) );
     end
 end
@@ -510,6 +508,17 @@ function build.script( name )
     errorf( "Script '%s' not found", filename );
 end
 
+-- Convert /path/ into an object directory path by prepending the object 
+-- directory to the portion of /path/ that is relative to the root directory.
+function build.object( filename, architecture, settings )
+    settings = settings or build.current_settings();
+    filename = build.relative( build.absolute(filename), build.root() );
+    if architecture then 
+        return ("%s/%s/%s"):format( settings.obj, architecture, filename );
+    end
+    return ("%s/%s"):format( settings.obj, filename );
+end
+
 -- Strip the extension from a path (e.g. "foo.txt" -> "foo" and "bar/foo.txt"
 -- -> "bar/foo".
 function build.strip( path )
@@ -633,15 +642,15 @@ function build.copy( value )
 end
 
 function build.gen_directory( target )
-    return string.format( "%s/%s", target.settings.gen, relative(target:working_directory():path(), root()) );
+    return string.format( "%s/%s", target.settings.gen, build.relative(target:working_directory():path(), build.root()) );
 end
 
 function build.classes_directory( target )
-    return string.format( "%s/%s", target.settings.classes, relative(target:working_directory():path(), root()) );
+    return string.format( "%s/%s", target.settings.classes, build.relative(target:working_directory():path(), build.root()) );
 end
 
 function build.obj_directory( target )
-    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, relative(target:working_directory():path(), root()) );
+    return ("%s/%s_%s/%s"):format( target.settings.obj, platform, variant, build.relative(target:working_directory():path(), build.root()) );
 end;
 
 function build.cc_name( name )

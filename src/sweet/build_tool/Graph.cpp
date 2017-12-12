@@ -607,6 +607,7 @@ void Graph::clear()
         {
             SWEET_ASSERT( target );
             target->clear_explicit_dependencies();
+            target->clear_ordering_dependencies();
             target->destroy_anonymous_targets();
             target->graph()->build_tool()->destroy_target_lua_binding( target );
 

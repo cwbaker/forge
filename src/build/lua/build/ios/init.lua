@@ -88,7 +88,6 @@ function ios.configure( settings )
             local_settings.ios = {
                 xcrun = "/usr/bin/xcrun";
                 signing_identity = "iPhone Developer";
-                codesign_allocate = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/codesign_allocate";
                 codesign = "/usr/bin/codesign";
                 plutil = "/usr/bin/plutil";
                 sdk_name = "iphoneos";
@@ -147,7 +146,7 @@ function ios.cc( target )
             local input = build.absolute( object.source );
             build.system( 
                 xcrun, 
-                ('xcrun --sdk %s clang %s -MMD -MF "%s" -o "%s" "%s"'):format(sdkroot, ccflags, dependencies, output, input),
+                ('xcrun --sdk %s clang %s -MMD -MF "%s" -o "%s" "%s"'):format(sdkroot, ccflags, dependencies, output, input)
             );
             clang.parse_dependencies_file( dependencies, object );
         end
@@ -159,7 +158,7 @@ function ios.build_library( target )
         "-static"
     };
 
-    pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
+    build.pushd( ("%s/%s"):format(obj_directory(target), target.architecture) );
     local objects =  {};
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
@@ -177,14 +176,14 @@ function ios.build_library( target )
         local xcrun = target.settings.ios.xcrun;
 
         print( build.leaf(target:filename()) );
-        build.system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, native(target:filename()), arobjects) );
+        build.system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, build.native(target:filename()), arobjects) );
     end
-    popd();
+    build.popd();
 end;
 
 function ios.clean_library( target )
-    rm( target:filename() );
-    rmdir( obj_directory(target) );
+    build.rm( target:filename() );
+    build.rmdir( obj_directory(target) );
 end;
 
 function ios.build_executable( target )
@@ -235,8 +234,8 @@ function ios.build_executable( target )
 end
 
 function ios.clean_executable( target )
-    rm( target:filename() );
-    rmdir( obj_directory(target) );
+    build.rm( target:filename() );
+    build.rmdir( obj_directory(target) );
 end
 
 function ios.lipo_executable( target )
@@ -265,7 +264,7 @@ function ios.deploy( directory )
             end
         end
         assertf( app, "No ios.App target found as a dependency of '%s'", directory:path() );
-        assertf( is_file(ios_deploy), "No 'ios-deploy' executable found at '%s'", ios_deploy );
+        assertf( build.is_file(ios_deploy), "No 'ios-deploy' executable found at '%s'", ios_deploy );
         build.system( ios_deploy, ('ios-deploy --timeout 1 --bundle "%s"'):format(app:filename()) );
     else
         printf( "No 'ios-deploy' executable specified by 'settings.ios.ios_deploy'" );
