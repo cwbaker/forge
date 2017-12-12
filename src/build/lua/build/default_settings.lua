@@ -101,9 +101,9 @@ return {
         };
 
         ["windows"] = {
-            default_architecture = "i386";
+            default_architecture = "x86_64";
             architectures = {
-                "i386"
+                "x86_64"
             };
             variants = {
                 "debug", "release", "shipping"

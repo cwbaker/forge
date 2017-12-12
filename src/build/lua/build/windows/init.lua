@@ -56,7 +56,6 @@ function windows.cc( target )
             local source = table.concat( sources, '" "' );
             local cl = msvc.visual_studio_tool( target, "cl.exe" );
             local environment = msvc.environments_by_architecture[target.architecture];
-            printf( "cc(), pwd='%s'", build.pwd() );
             build.system( 
                 cl, 
                 ('cl %s /Fo%s "%s"'):format(ccflags, output_directory, source), 
@@ -179,7 +178,7 @@ function windows.build_executable( target )
             local environment = msvc.environments_by_architecture[target.architecture];
 
             build.system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
-            sleep( 100 );
+            build.sleep( 100 );
             build.system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(build.native(target:filename()), intermediate_manifest), environment );
         end
         build.popd();
