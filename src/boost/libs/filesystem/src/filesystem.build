@@ -19,7 +19,7 @@ for _, architecture in ipairs(settings.architectures) do
         };
     };
 
-    if platform == "mingw" or platform == "msvc" then
+    if platform == "windows" then
         boost_filesystem {
             Cxx (architecture) {
                 "windows_file_codecvt.cpp"

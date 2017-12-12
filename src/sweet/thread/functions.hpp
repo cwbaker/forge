@@ -26,7 +26,7 @@ namespace thread
 */
 inline int current_thread_id()
 {
-#if defined(BUILD_PLATFORM_MSVC) || defined(BUILD_PLATFORM_MINGW)
+#if defined(BUILD_OS_WINDOWS)
     return static_cast<int>( ::GetCurrentThreadId() );
 #elif defined(BUILD_OS_MACOSX)
     return static_cast<int>( pthread_self() );

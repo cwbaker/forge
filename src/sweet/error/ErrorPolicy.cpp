@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#if defined(BUILD_PLATFORM_MSVC)
+#if defined(_MSC_VER)
 #define vsnprintf _vsnprintf
 #endif
 

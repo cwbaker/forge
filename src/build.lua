@@ -6,6 +6,7 @@ require "build.parser";
 require "build.visual_studio";
 require "build.xcode";
 require "build.macosx";
+require "build.windows";
 
 function initialize()
     platform = platform or operating_system();
@@ -42,8 +43,7 @@ function initialize()
     };
 
     if operating_system() == "windows" then    
-        mingw.initialize( settings );        
-        msvc.initialize( settings );
+        windows.initialize( settings );  
         visual_studio.initialize( settings );
     elseif operating_system() == "macosx" then
         macosx.initialize( settings );
