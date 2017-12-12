@@ -439,7 +439,8 @@ struct Bind
 
             if ( target->required_to_exist() && target->bound_to_file() && target->last_write_time() == 0 )
             {
-                build_tool_->error( "The source file '%s' does not exist", target->filename(0).c_str() );
+                const vector<string>& filenames = target->filenames();
+                build_tool_->error( "The source file '%s' does not exist", !filenames.empty() ? filenames[0].c_str() : target->path().c_str() );
                 ++failures_;
             }
         }
@@ -460,6 +461,13 @@ struct Bind
 int Graph::bind( Target* target )
 {
     SWEET_ASSERT( !target || target->graph() == this );
+
+    Graph* graph = build_tool_->graph();
+    if ( graph->traversal_in_progress() )
+    {
+        SWEET_ERROR( PostorderCalledRecursivelyError("Bind called from within another bind or postorder traversal") );
+        return 0;
+    }
 
     Bind bind( build_tool_ );
     bind.visit( target ? target : root_target_ );

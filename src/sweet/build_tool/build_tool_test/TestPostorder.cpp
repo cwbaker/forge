@@ -45,7 +45,7 @@ SUITE( TestPostorder )
             "postorder( function(target) postorder(function(target) end, recursive_postorder_error) end, recursive_postorder_error ); \n"
         ;
         test( script );
-        CHECK_EQUAL( "Postorder called from within another preorder or postorder traversal", messages[0] );
+        CHECK_EQUAL( "Postorder called from within another bind or postorder traversal", messages[0] );
         CHECK_EQUAL( "Postorder visit of 'recursive_postorder_error' failed", messages[1] );
         CHECK( errors == 2 );
     }
@@ -58,7 +58,7 @@ SUITE( TestPostorder )
             "postorder( function(target) postorder(function(target) end, recursive_postorder_error) end, recursive_postorder_error ); \n"
         ;
         test( script );
-        CHECK_EQUAL( "Postorder called from within another preorder or postorder traversal", messages[0] );
+        CHECK_EQUAL( "Postorder called from within another bind or postorder traversal", messages[0] );
         CHECK_EQUAL( "Postorder visit of 'recursive_postorder_error' failed", messages[1] );
         CHECK( errors == 2 );
     }

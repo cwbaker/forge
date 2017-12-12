@@ -14,11 +14,9 @@ for _, architecture in ipairs(settings.architectures) do
             "sweet/cmdline/cmdline",
             "sweet/lua/lua",
             "sweet/persist/persist",
-            "sweet/thread/thread",
             "sweet/path/path",
             "sweet/process/process",
             "sweet/rtti/rtti",
-            "sweet/pointer/pointer",
             "lua/liblua",
             "sweet/error/error",
             "sweet/assert/assert",
@@ -31,8 +29,7 @@ for _, architecture in ipairs(settings.architectures) do
             "FileChecker.cpp",
             "TestDirectoryApi.cpp",
             "TestGraph.cpp",
-            "TestPostorder.cpp",
-            "TestPreorder.cpp"
+            "TestPostorder.cpp"
         };
     }
 end

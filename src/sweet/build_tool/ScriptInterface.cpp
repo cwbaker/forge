@@ -1312,7 +1312,14 @@ int ScriptInterface::postorder( lua_State* lua_state )
     {
         ScriptInterface* script_interface = reinterpret_cast<ScriptInterface*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
         SWEET_ASSERT( script_interface );
-        
+
+        Graph* graph = script_interface->build_tool_->graph();
+        if ( graph->traversal_in_progress() )
+        {
+            SWEET_ERROR( PostorderCalledRecursivelyError("Postorder called from within another bind or postorder traversal") );
+            return lua_error( lua_state );
+        }
+         
         const int FUNCTION_PARAMETER = 1;
         LuaValue function( script_interface->lua_, lua_state, FUNCTION_PARAMETER );
 

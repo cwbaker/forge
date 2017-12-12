@@ -374,7 +374,8 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
     Graph* graph = build_tool_->graph();
     if ( graph->traversal_in_progress() )
     {
-        SWEET_ERROR( PostorderCalledRecursivelyError("Postorder called from within another preorder or postorder traversal") );
+        SWEET_ERROR( PostorderCalledRecursivelyError("Postorder called from within another bind or postorder traversal") );
+        return 0;
     }
     
     failures_ = 0;

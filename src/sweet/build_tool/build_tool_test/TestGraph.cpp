@@ -18,8 +18,8 @@ SUITE( TestGraph )
             "local foo_cpp = file( 'foo.cpp' ); \n"
             "local foo_obj = file( 'foo.obj' ); \n"
             "foo_obj:add_dependency( foo_cpp ); \n"
-            "bind( foo_obj ); \n"
-            "assert( foo_obj:is_outdated() ); \n"
+            "postorder( function() end, foo_obj ); \n"
+            "assert( foo_obj:outdated() ); \n"
         ;
         create( "foo.cpp", "" );
         test( script );
@@ -34,8 +34,8 @@ SUITE( TestGraph )
             "local foo_cpp = target( 'foo.cpp', SourceFilePrototype ); \n"
             "local foo_obj = target( 'foo.obj', FilePrototype ); \n"
             "foo_obj:add_dependency( foo_cpp ); \n"
-            "bind( foo_obj ); \n"
-            "assert( foo_obj:is_outdated() == false ); \n"
+            "postorder( function() end, foo_obj ); \n"
+            "assert( foo_obj:outdated() == false ); \n"
         ;
         create( "foo.cpp", "" );
         create( "foo.obj", "" );
@@ -51,8 +51,8 @@ SUITE( TestGraph )
             "local foo_obj = file( 'foo.obj' ); \n"
             "foo_cpp:add_dependency( foo_hpp ); \n"
             "foo_obj:add_dependency( foo_cpp ); \n"
-            "bind( foo_obj ); \n"
-            "assert( foo_obj:is_outdated() ); \n"
+            "postorder( function() end, foo_obj ); \n"
+            "assert( foo_obj:outdated() ); \n"
         ;
         create( "foo.cpp", "", 1 );
         create( "foo.hpp", "", 2 );
@@ -68,7 +68,7 @@ SUITE( TestGraph )
             "local FilePrototype = TargetPrototype { 'File', BIND_GENERATED_FILE }; \n"
             "local foo_cpp = target( 'foo.cpp', SourceFilePrototype ); \n"
             "foo_cpp:set_required_to_exist( true ); \n"
-            "bind( foo_cpp ); \n"
+            "postorder( function() end, foo_cpp ); \n"
         ;
         test( script );
         CHECK( errors == 1 );
@@ -79,7 +79,7 @@ SUITE( TestGraph )
         const char* script = 
             "local foo_cpp = file( 'foo.cpp' ); \n"
             "foo_cpp:set_required_to_exist( true ); \n"
-            "bind( foo_cpp ); \n"
+            "postorder( function() end, foo_cpp ); \n"
         ;
         create( "foo.cpp", "" );
         test( script );
@@ -90,13 +90,13 @@ SUITE( TestGraph )
     {
         const char* script = 
             "local filename = 'header_files_that_are_removed_behave_correctly.cache'; \n"
-            "local success = load_binary( filename ); \n"
-            "assert( not success, 'Graph already exists' ); \n"
+            "assert( not exists(absolute(filename)), 'Graph already exists' ); \n"
+            "load_binary( filename ); \n"
             "local foo_cpp = file( 'foo.cpp' ); \n"
             "foo_cpp:set_required_to_exist( true ); \n"
             "local foo_hpp = file( 'foo.hpp' ); \n"
             "foo_cpp:add_dependency( foo_hpp ); \n"
-            "bind( foo_cpp ); \n"
+            "postorder( function() end, foo_cpp ); \n"
             "save_binary( filename ); \n"
         ;
         remove( "header_files_that_are_removed_behave_correctly.cache" );
@@ -107,41 +107,14 @@ SUITE( TestGraph )
 
         const char* second_script = 
             "local filename = 'header_files_that_are_removed_behave_correctly.cache'; \n"
-            "local success = load_binary( filename ); \n"
-            "assert( success, 'Loading graph failed' ); \n"
+            "assert( exists(absolute(filename)), 'Graph does not exist' ); \n"
+            "load_binary( filename ); \n"
             "local foo_cpp = file( 'foo.cpp' ); \n"
-            "bind( foo_cpp ); \n"
+            "postorder( function() end, foo_cpp ); \n"
         ;
         remove( "foo.hpp" );
         test( second_script );
         remove( "header_files_that_are_removed_behave_correctly.cache" );
-        CHECK( errors == 0 );
-    }
-
-    TEST_FIXTURE( FileChecker, explicit_dependencies_are_not_removed_by_scan )
-    {
-        const char* script = 
-            "local foo_hpp = file( 'foo.hpp' ); \n"
-            "local foo_g = file( 'foo.g' ); \n"
-            "foo_hpp:add_dependency( foo_g ); \n"
-            "mark_implicit_dependencies(); \n"
-            "local bar_hpp = file( 'bar.hpp' ); \n"
-            "foo_hpp:add_dependency( bar_hpp ); \n"
-            "local baz_hpp = file( 'baz.hpp' ); \n"
-            "foo_hpp:add_dependency( baz_hpp ); \n"
-            " \n"
-            "local dependencies = {}; \n"
-            "for dependency in foo_hpp:get_dependencies() do \n"
-            "    table.insert( dependencies, dependency ); \n"
-            "end \n"
-            "assert( #dependencies == 3, '#dependencies == 3' ); \n"
-            "assert( dependencies[1] == foo_g, 'foo.g' ); \n"
-            "assert( dependencies[2] == bar_hpp, 'bar.hpp' ); \n"
-            "assert( dependencies[3] == baz_hpp, 'baz.hpp' ); \n"
-            " \n"
-        ;                
-        create( "foo.hpp", "" );
-        test( script );
         CHECK( errors == 0 );
     }
 
@@ -166,7 +139,7 @@ SUITE( TestGraph )
         const char* script =
             "local SourceFilePrototype = TargetPrototype { 'File', BIND_SOURCE_FILE }; \n"
             "local foo_cpp = target( 'foo.cpp', SourceFilePrototype ); \n"
-            "assert( foo_cpp:parent() == foo_cpp:get_working_directory() ); \n"
+            "assert( foo_cpp:parent() == foo_cpp:working_directory() ); \n"
         ;
         test( script );
         CHECK( errors == 0 );
