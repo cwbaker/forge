@@ -30,6 +30,11 @@ LuaTarget::~LuaTarget()
     destroy();
 }
 
+lua::LuaObject* LuaTarget::target_prototype() const
+{
+    return target_prototype_;
+}
+
 void LuaTarget::create( lua::Lua* lua )
 {
     SWEET_ASSERT( lua );

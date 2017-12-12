@@ -33,9 +33,11 @@ class LuaTarget
 public:
     LuaTarget();
     ~LuaTarget();
+
+    lua::LuaObject* target_prototype() const;
+
     void create( lua::Lua* lua );
     void destroy();
-
     void create_target( Target* target );
     void recover_target( Target* target );
     void update_target( Target* target );

@@ -46,7 +46,7 @@ template <class Archive> void Graph::exit( Archive& /*archive*/ )
 */
 template <class Archive> void Graph::persist( Archive& archive )
 {
-    const int BUILD_GRAPH_VERSION = 24;
+    const int BUILD_GRAPH_VERSION = 29;
     archive.enter( "Sweet Build Graph", BUILD_GRAPH_VERSION, *this );
     if ( archive.version() == BUILD_GRAPH_VERSION )
     {
@@ -66,17 +66,11 @@ template <class Archive> void Graph::persist( Archive& archive )
 template <class Archive> void Target::persist( Archive& archive )
 {
     archive.value( "id", id_ );
-    archive.value( "prototype", prototype_ );
     archive.value( "last_write_time", last_write_time_ );
-    archive.value( "required_to_exist", required_to_exist_ );
-    archive.value( "cleanable", cleanable_ );
     archive.value( "built", built_ );
     archive.value( "filenames", filenames_ );
-    archive.refer( "working_directory", working_directory_ );
     archive.value( "targets", "target", targets_ );
-    archive.refer( "dependencies", "dependency", dependencies_ );
     archive.refer( "implicit_dependencies", "dependency", implicit_dependencies_ );
-    archive.refer( "ordering_dependencies", "dependency", ordering_dependencies_ );
 }
 
 /**

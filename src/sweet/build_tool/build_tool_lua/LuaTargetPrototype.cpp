@@ -42,18 +42,13 @@ void LuaTargetPrototype::create( lua::Lua* lua, LuaTarget* lua_target )
     target_prototype_prototype_ = new lua::LuaObject( *lua_ );
 
     target_prototype_metatable_->members()
-        ( "__index", target_prototype_prototype_ )
-    ;
-
-    target_prototype_prototype_->members()
-        .type( SWEET_STATIC_TYPEID(TargetPrototype) )
-        ( "id", &TargetPrototype::id )
+        ( "__index", lua_target->target_prototype() )
     ;
 
     const int BUILD = 1;
     lua_State* lua_state = lua->get_lua_state();
     lua_push_object( lua_state, target_prototype_prototype_ );
-    lua_setfield( lua_state, BUILD, "Target" );
+    lua_setfield( lua_state, BUILD, "TargetPrototype" );
 }
 
 void LuaTargetPrototype::destroy()
@@ -81,8 +76,6 @@ void LuaTargetPrototype::create_target_prototype( TargetPrototype* target_protot
         ( "__index", target_prototype )
         ( "__tostring", raw(LuaTarget::filename) )
     ;
-    AddMember add_member = lua_->members( target_prototype );
-    lua_target_->register_functions( add_member );
 }
 
 void LuaTargetPrototype::destroy_target_prototype( TargetPrototype* target_prototype )

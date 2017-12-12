@@ -79,7 +79,7 @@ local function add_legacy_target( target, platform )
             working_directory = working_directory;
             configuration_list = uuid();
             platform = platform;
-            build = build.root( build.executable("build") );
+            build = build.executable( "build" );
             path = filename;
             settings = settings;
             configurations = add_configurations( target.architecture, settings.variants );
