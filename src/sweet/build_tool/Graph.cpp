@@ -450,8 +450,13 @@ Target* Graph::find_or_create_target_by_element( Target* target, const std::stri
 //
 // @param filename
 //  The name of the buildfile to load.
+//
+// @return 
+//  The number of errors that occured while loading and executing the 
+//  buildfile or -1 if the buildfile yields (0 indicates successful
+//  completion of the call).
 */
-void Graph::buildfile( const std::string& filename )
+int Graph::buildfile( const std::string& filename )
 {
     SWEET_ASSERT( build_tool_ );
     SWEET_ASSERT( root_target_ );
@@ -465,7 +470,7 @@ void Graph::buildfile( const std::string& filename )
     {
         cache_target_->add_explicit_dependency( buildfile_target );
     }
-    build_tool_->scheduler()->buildfile( path );
+    return build_tool_->scheduler()->buildfile( path );
 }
 
 struct ScopedVisit

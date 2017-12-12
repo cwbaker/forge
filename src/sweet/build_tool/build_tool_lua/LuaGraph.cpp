@@ -244,8 +244,13 @@ int LuaGraph::buildfile( lua_State* lua_state )
     SWEET_ASSERT( build_tool );
     const int FILENAME = 1;
     const char* filename = luaL_checkstring( lua_state, FILENAME );
-    build_tool->graph()->buildfile( string(filename) );
-    return 0;
+    int errors = build_tool->graph()->buildfile( string(filename) );
+    if ( errors >= 0 )
+    {
+        lua_pushinteger( lua_state, errors );
+        return 1;
+    }
+    return lua_yield( lua_state, 0 );
 }
 
 int LuaGraph::postorder( lua_State* lua_state )

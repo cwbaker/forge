@@ -37,8 +37,9 @@ end
 local original_buildfile = build.buildfile;
 function buildfile( ... )
     local position = build.store_settings();
-    pcall( original_buildfile, ... );
+    local success, errors_or_error_message = pcall( original_buildfile, ... );
     build.restore_settings( position );
+    assertf( success and errors_or_error_message == 0, "Loading buildfile '%s' failed", tostring(select(1, ...)) );
 end
 
 build = _G.build or {};

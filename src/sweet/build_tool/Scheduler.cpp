@@ -14,6 +14,7 @@
 #include "Error.hpp"
 #include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
 #include <sweet/process/Environment.hpp>
+#include <sweet/lua/LuaThreadEventSink.hpp>
 #include <sweet/lua/LuaThread.hpp>
 #include <list>
 #include <string>
@@ -29,8 +30,43 @@ using namespace sweet;
 using namespace sweet::lua;
 using namespace sweet::build_tool;
 
+namespace sweet
+{
+
+namespace build_tool
+{
+
+class BuildfileEventSink : public lua::LuaThreadEventSink
+{
+    Scheduler* scheduler_;
+
+public:
+    BuildfileEventSink( Scheduler* scheduler )
+    : scheduler_( scheduler )
+    {
+        SWEET_ASSERT( scheduler_ );
+    }
+
+    void lua_thread_returned( LuaThread* /*thread*/, void* ccontext )
+    {
+        Context* context = reinterpret_cast<Context*>( ccontext );
+        scheduler_->buildfile_finished( context, true );
+    }
+
+    void lua_thread_errored( LuaThread* /*thread*/, void* ccontext )
+    {
+        Context* context = reinterpret_cast<Context*>( ccontext );
+        scheduler_->buildfile_finished( context, false );
+    }
+};
+
+}
+
+}
+
 Scheduler::Scheduler( BuildTool* build_tool )
 : build_tool_( build_tool ),
+  buildfile_event_sink_( nullptr ),
   contexts_(),
   free_contexts_(),
   active_contexts_(),
@@ -41,6 +77,7 @@ Scheduler::Scheduler( BuildTool* build_tool )
   failures_( 0 )
 {
     SWEET_ASSERT( build_tool_ );
+    buildfile_event_sink_ = new BuildfileEventSink( this );
 }
 
 Scheduler::~Scheduler()
@@ -50,11 +87,20 @@ Scheduler::~Scheduler()
         delete contexts_.back();
         contexts_.pop_back();
     }
+
+    delete buildfile_event_sink_;
 }
 
 void Scheduler::load( const boost::filesystem::path& path )
 {
-    buildfile( path );
+    SWEET_ASSERT( path.is_absolute() );
+
+    Context* context = allocate_context( build_tool_->graph()->target(path.parent_path().generic_string()) );
+    process_begin( context );
+    context->context_thread().resume( path.string().c_str(), path.filename().string().c_str() )
+    .end();
+    process_end( context );
+
     while ( dispatch_results() )
     {        
     }
@@ -86,15 +132,19 @@ void Scheduler::execute( const char* start, const char* finish )
     }
 }
 
-void Scheduler::buildfile( const boost::filesystem::path& path )
+int Scheduler::buildfile( const boost::filesystem::path& path )
 {
     SWEET_ASSERT( path.is_absolute() );
+    SWEET_ASSERT( !active_contexts_.empty() );
 
+    Context* calling_context = active_contexts_.back();
     Context* context = allocate_context( build_tool_->graph()->target(path.parent_path().generic_string()) );
     process_begin( context );
     context->context_thread().resume( path.string().c_str(), path.filename().string().c_str() )
-    .end();
-    process_end( context );
+    .end( buildfile_event_sink_, calling_context );
+    bool yielded = context->context_thread().get_state() == LUA_THREAD_SUSPENDED;
+    int errors = process_end( context );
+    return yielded ? -1 : errors;
 }
 
 void Scheduler::call( const boost::filesystem::path& path, const std::string& function )
@@ -160,6 +210,19 @@ void Scheduler::filter_finished( lua::LuaValue* filter, Arguments* arguments )
     // arguments are deleted in the worker threads provided by the Executor.  
     delete filter;
     delete arguments;
+}
+
+void Scheduler::buildfile_finished( Context* context, bool success )
+{
+    SWEET_ASSERT( context );
+    if ( context->context_thread().get_state() == LUA_THREAD_SUSPENDED )
+    {
+        process_begin( context );
+        context->context_thread().resume()
+            ( success ? 0 : 1 )
+        .end();
+        process_end( context );    
+    }
 }
 
 void Scheduler::output( const std::string& output, lua::LuaValue* filter, Arguments* arguments, Target* working_directory )
@@ -495,11 +558,13 @@ int Scheduler::process_end( Context* context )
     {
         if ( state == lua::LUA_THREAD_READY )
         {
+            context->context_thread().fire_returned();
             free_context( context );
         }
     }
     else
     {
+        context->context_thread().fire_errored();
         destroy_context( context );
     }
     return errors;

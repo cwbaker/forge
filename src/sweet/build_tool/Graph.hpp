@@ -52,7 +52,7 @@ class Graph
         Target* find_target_by_element( Target* target, const std::string& element );
         Target* find_or_create_target_by_element( Target* target, const std::string& element );
                 
-        void buildfile( const std::string& filename );
+        int buildfile( const std::string& filename );
         int bind( Target* target = NULL );        
         void swap( Graph& graph );
         void clear();

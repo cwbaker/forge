@@ -34,6 +34,7 @@ class Arguments;
 class Pattern;
 class Target;
 class BuildTool;
+class BuildfileEventSink;
 
 /**
 // Handle general processing and calls into Lua from loading buildfiles,
@@ -43,9 +44,10 @@ class BuildTool;
 class Scheduler
 {
     BuildTool* build_tool_; ///< The BuildTool that this Scheduler is part of.
-    std::vector<Context*> contexts_; ///< The currently allocated Environments.
-    std::vector<Context*> free_contexts_; ///< The Environments that are free and waiting to be assigned a Job.
-    std::vector<Context*> active_contexts_; ///< The stack of Environments that are currently executing Lua scripts.
+    BuildfileEventSink* buildfile_event_sink_; ///< The LuaThreadEventSink that handles `buildfile()` coroutines finishing.
+    std::vector<Context*> contexts_; ///< The currently allocated Contexts.
+    std::vector<Context*> free_contexts_; ///< The Contexts that are free and waiting to be assigned a Job.
+    std::vector<Context*> active_contexts_; ///< The stack of Contexts that are currently executing Lua scripts.
     std::mutex results_mutex_; ///< The mutex that ensures exclusive access to the results queue.
     std::condition_variable results_condition_; ///< The Condition that is used to wait for results.
     std::deque<std::function<void()> > results_; ///< The functions to be executed as a result of jobs processing in the thread pool.
@@ -60,11 +62,12 @@ class Scheduler
         void command( const boost::filesystem::path& path, const std::string& command );
         void execute( const boost::filesystem::path& path, const std::string& function );
         void execute( const char* start, const char* finish );        
-        void buildfile( const boost::filesystem::path& path );
+        int buildfile( const boost::filesystem::path& path );
         void call( const boost::filesystem::path& path, const std::string& function );
         void postorder_visit( const lua::LuaValue& function, Job* job );
         void execute_finished( int exit_code, Context* context, process::Environment* environment );
         void filter_finished( lua::LuaValue* filter, Arguments* arguments );
+        void buildfile_finished( Context* context, bool success );
         void output( const std::string& output, lua::LuaValue* filter, Arguments* arguments, Target* working_directory );
         void error( const std::string& what, Context* context );
 
@@ -72,7 +75,6 @@ class Scheduler
         void push_error( const std::exception& exception, Context* context );
         void push_execute_finished( int exit_code, Context* context, process::Environment* environment );
         void push_filter_finished( lua::LuaValue* filter, Arguments* arguments );
-        void push_scan_finished( Arguments* arguments );
 
         void execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* dependencies_filter, lua::LuaValue* stdout_filter, lua::LuaValue* stderr_filter, Arguments* arguments, Context* context );
         void wait();

@@ -183,7 +183,7 @@ int LuaBuildTool::execute( lua_State* lua_state )
         {
             if ( !lua_isfunction(lua_state, STDOUT_FILTER) && !lua_istable(lua_state, STDOUT_FILTER) )
             {
-                lua_pushstring( lua_state, "Expected a function or callable table as 4th parameter (dependencies filter)" );
+                lua_pushstring( lua_state, "Expected a function or callable table as 5th parameter (stdout filter)" );
                 return lua_error( lua_state );
             }
             stdout_filter.reset( new lua::LuaValue(*build_tool->lua(), lua_state, STDOUT_FILTER) );
@@ -195,7 +195,7 @@ int LuaBuildTool::execute( lua_State* lua_state )
         {
             if ( !lua_isfunction(lua_state, STDERR_FILTER) && !lua_istable(lua_state, STDERR_FILTER) )
             {
-                lua_pushstring( lua_state, "Expected a function or callable table as 4th parameter (dependencies filter)" );
+                lua_pushstring( lua_state, "Expected a function or callable table as 6th parameter (stderr filter)" );
                 return lua_error( lua_state );
             }
             stderr_filter.reset( new lua::LuaValue(*build_tool->lua(), lua_state, STDERR_FILTER) );
