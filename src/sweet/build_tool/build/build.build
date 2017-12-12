@@ -24,6 +24,8 @@ Executable "build" {
     };
     
     Cxx {
+        -- Disable automatic linking to Boost libraries.
+        defines = { "BOOST_ALL_NO_LIB" };
         pch = "stdafx.hpp";
         "Application.cpp", 
         "main.cpp"

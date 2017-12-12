@@ -4,6 +4,8 @@ buildfile "build_tool_test/build_tool_test.build";
 
 Library "build_tool" {
     libraries = {
+        "boost/libs/filesystem/src/boost_filesystem",
+        "boost/libs/system/src/boost_system",
         "sweet/assert/assert",
         "sweet/error/error",
         "sweet/lua/lua",
@@ -17,6 +19,8 @@ Library "build_tool" {
     };    
 
     Cxx {
+        -- Disable automatic linking to Boost libraries.
+        defines = { "BOOST_ALL_NO_LIB" };
         pch = "stdafx.hpp";
         "BuildTool.cpp",
         "BuildToolEventSink.cpp",

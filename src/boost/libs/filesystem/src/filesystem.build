@@ -1,6 +1,8 @@
 
 Library "boost_filesystem" {
     Cxx {
+        -- Disable automatic linking to Boost libraries.
+        defines = { "BOOST_ALL_NO_LIB" };
         "codecvt_error_category.cpp",
         "operations.cpp",
         "path.cpp",
@@ -11,6 +13,8 @@ Library "boost_filesystem" {
     };
 
     Cxx {
+        -- Disable automatic linking to Boost libraries.
+        defines = { "BOOST_ALL_NO_LIB" };
         settings = {
             platforms = { "mingw", "msvc" };
         };
