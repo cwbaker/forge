@@ -51,6 +51,7 @@ return {
             variants = {
                 "debug", "release", "shipping"
             };
+            runtime_library = "gnustl_shared";
         };
 
         ["macosx"] = {

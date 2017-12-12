@@ -7,7 +7,6 @@
 #include "Scheduler.hpp"
 #include "BuildTool.hpp"
 #include "Error.hpp"
-#include <sweet/thread/ScopedLock.hpp>
 #include <sweet/error/Error.hpp>
 #include <sweet/assert/assert.hpp>
 #include <stdlib.h>
@@ -48,12 +47,12 @@ void Reader::read( intptr_t fd_or_handle, lua::LuaValue* filter, Arguments* argu
 {
     if ( filter )
     {
-        thread::ScopedLock lock( jobs_mutex_ );
+        std::unique_lock<std::mutex> lock( jobs_mutex_ );
         jobs_.push_back( std::bind(&Reader::thread_read, this, fd_or_handle, filter, arguments, working_directory) );
         ++active_jobs_;
         while ( active_jobs_ > int(threads_.size()) )
         {
-            unique_ptr<thread::Thread> thread( new thread::Thread(&Reader::thread_main, this) );
+            unique_ptr<std::thread> thread( new std::thread(&Reader::thread_main, this) );
             threads_.push_back( thread.release() );
         }
         jobs_ready_condition_.notify_all();
@@ -70,7 +69,7 @@ int Reader::thread_main( void* context )
 
 void Reader::thread_process()
 {
-    thread::ScopedLock lock( jobs_mutex_ );
+    std::unique_lock<std::mutex> lock( jobs_mutex_ );
     while ( !done_ )
     {
         if ( !jobs_.empty() )
@@ -155,7 +154,7 @@ void Reader::stop()
     if ( !threads_.empty() )
     {
         {
-            thread::ScopedLock lock( jobs_mutex_ );
+            std::unique_lock<std::mutex> lock( jobs_mutex_ );
             if ( !jobs_.empty() )
             {
                 jobs_empty_condition_.wait( lock );
@@ -164,13 +163,13 @@ void Reader::stop()
             jobs_ready_condition_.notify_all();
         }
 
-        for ( vector<thread::Thread*>::iterator i = threads_.begin(); i != threads_.end(); ++i )
+        for ( vector<std::thread*>::iterator i = threads_.begin(); i != threads_.end(); ++i )
         {
             try
             {
-                thread::Thread* thread = *i;
+                std::thread* thread = *i;
                 SWEET_ASSERT( thread );
-                thread->join( 2000 );
+                thread->join();
             }
 
             catch ( const std::exception& exception )

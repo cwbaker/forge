@@ -44,7 +44,6 @@ build.default_buildfiles {
     "boost/boost.build",
     "lua/lua.build",
     "sweet/assert/assert.build",
-    "sweet/atomic/atomic.build",
     "sweet/build_tool/build_tool.build",
     "sweet/cmdline/cmdline.build",
     "sweet/error/error.build",

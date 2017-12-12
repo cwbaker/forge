@@ -17,6 +17,11 @@ function Dex.call( dex, definition )
         dex:add_dependency( dependency );
         dependency.module = dex;
     end
+    local proguard = definition.proguard;
+    if proguard then 
+        dex:add_dependency( proguard );
+        dex.proguard = proguard;
+    end
 end
 
 function Dex.build( dex )
@@ -24,9 +29,10 @@ function Dex.build( dex )
         print( leaf(dex:filename()) );
 
         local jars = {};
-        if dex.settings.android.proguard_enabled then 
-            local proguard = ("%s/tools/proguard/bin/proguard.sh"):format( dex.settings.android.sdk_directory );
-            build.system( proguard, ('proguard.sh -printmapping \"%s/%s.map\" @proguard.cfg'):format(build.classes_directory(dex), leaf(dex:filename())) );
+        if dex.proguard and dex.settings.android.proguard_enabled then 
+            local proguard = dex.proguard; 
+            local proguard_sh = ("%s/tools/proguard/bin/proguard.sh"):format( dex.settings.android.sdk_directory );
+            build.system( proguard_sh, ('proguard.sh -printmapping \"%s/%s.map\" "@%s"'):format(build.classes_directory(dex), leaf(dex:filename()), proguard:filename()) );
             table.insert( jars, ('\"%s/classes.jar\"'):format(build.classes_directory(dex)) );
         else
             table.insert( jars, build.classes_directory(dex) );

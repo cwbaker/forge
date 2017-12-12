@@ -14,8 +14,6 @@
 #include "Executor.hpp"
 #include "Arguments.hpp"
 #include "Error.hpp"
-#include <sweet/atomic/atomic.ipp>
-#include <sweet/thread/ScopedLock.hpp>
 #include <sweet/process/Environment.hpp>
 #include <sweet/lua/LuaThread.hpp>
 #include <list>
@@ -29,7 +27,6 @@ using std::vector;
 using std::string;
 using std::unique_ptr;
 using namespace sweet;
-using namespace sweet::atomic;
 using namespace sweet::lua;
 using namespace sweet::build_tool;
 
@@ -208,21 +205,21 @@ void Scheduler::error( const std::string& what, Context* context )
 
 void Scheduler::push_output( const std::string& output, lua::LuaValue* filter, Arguments* arguments, Target* working_directory )
 {
-    thread::ScopedLock lock( results_mutex_ );
+    std::unique_lock<std::mutex> lock( results_mutex_ );
     results_.push_back( std::bind(&Scheduler::output, this, output, filter, arguments, working_directory) );
     results_condition_.notify_all();
 }
 
 void Scheduler::push_error( const std::exception& exception, Context* context )
 {
-    thread::ScopedLock lock( results_mutex_ );
+    std::unique_lock<std::mutex> lock( results_mutex_ );
     results_.push_back( std::bind(&Scheduler::error, this, string(exception.what()), context) );
     results_condition_.notify_all();
 }
 
 void Scheduler::push_execute_finished( int exit_code, Context* context, process::Environment* environment )
 {
-    thread::ScopedLock lock( results_mutex_ );
+    std::unique_lock<std::mutex> lock( results_mutex_ );
     --jobs_;
     results_.push_back( std::bind(&Scheduler::execute_finished, this, exit_code, context, environment) );
     results_condition_.notify_all();
@@ -230,14 +227,14 @@ void Scheduler::push_execute_finished( int exit_code, Context* context, process:
 
 void Scheduler::push_filter_finished( lua::LuaValue* filter, Arguments* arguments )
 {
-    thread::ScopedLock lock( results_mutex_ );
+    std::unique_lock<std::mutex> lock( results_mutex_ );
     results_.push_back( std::bind(&Scheduler::filter_finished, this, filter, arguments) );
     results_condition_.notify_all();
 }
 
 void Scheduler::execute( const std::string& command, const std::string& command_line, process::Environment* environment, lua::LuaValue* dependencies_filter, lua::LuaValue* stdout_filter, lua::LuaValue* stderr_filter, Arguments* arguments, Context* context )
 {
-    thread::ScopedLock lock( results_mutex_ );
+    std::unique_lock<std::mutex> lock( results_mutex_ );
     build_tool_->executor()->execute( command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context );
     ++jobs_;
 }
@@ -461,7 +458,7 @@ void Scheduler::destroy_context( Context* context )
 
 bool Scheduler::dispatch_results()
 {
-    thread::ScopedLock lock( results_mutex_ );
+    std::unique_lock<std::mutex> lock( results_mutex_ );
     if ( jobs_ > 0 && results_.empty() )
     {
         results_condition_.wait( lock );

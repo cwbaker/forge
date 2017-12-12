@@ -82,17 +82,54 @@ end
 
 function android.include_directories( settings, architecture )
     local android = settings.android;
-    return {
-        ("%s/sources/cxx-stl/gnu-libstdc++/%s/libs/%s/include"):format( android.ndk_directory, android.toolchain_version, directory_by_architecture[architecture] ),
-        ("%s/sources/cxx-stl/gnu-libstdc++/%s/include"):format( android.ndk_directory, android.toolchain_version )
-    };
+    local runtime_library = settings.runtime_library;
+    if runtime_library:match("gnustl.*") then
+        return {
+            ("%s/sources/cxx-stl/gnu-libstdc++/%s/libs/%s/include"):format( android.ndk_directory, android.toolchain_version, directory_by_architecture[architecture] ),
+            ("%s/sources/cxx-stl/gnu-libstdc++/%s/include"):format( android.ndk_directory, android.toolchain_version )
+        };
+    elseif runtime_library:match("stlport.*") then
+        return {
+            ("%s/sources/cxx-stl/stlport/stlport"):format( android.ndk_directory )
+        };
+    elseif runtime_library:match("c++.*") then
+        return {
+            ("%s/sources/cxx-stl/llvm-libc++/libcxx/include"):format( android.ndk_directory )
+        };
+    elseif runtime_library:match("gabi++.*") then 
+        return {
+            ("%s/sources/cxx-stl/gabi++/include"):format( android.ndk_directory )
+        };
+    else 
+        assertf( false, "Unrecognized C++ runtime library '%s'", tostring(runtime_library) );
+    end
 end
 
 function android.library_directories( settings, architecture )
-    return {
-        ("%s/usr/lib"):format( android.platform_directory(settings, architecture) ),
-        ("%s/sources/cxx-stl/gnu-libstdc++/%s/libs/%s"):format( settings.android.ndk_directory, settings.android.toolchain_version, directory_by_architecture[architecture] )
-    };
+    local runtime_library = settings.runtime_library;
+    if runtime_library:match("gnustl.*") then
+        return {
+            ("%s/usr/lib"):format( android.platform_directory(settings, architecture) ),
+            ("%s/sources/cxx-stl/gnu-libstdc++/%s/libs/%s"):format( settings.android.ndk_directory, settings.android.toolchain_version, directory_by_architecture[architecture] )
+        };
+    elseif runtime_library:match("stlport.*") then
+        return {
+            ("%s/usr/lib"):format( android.platform_directory(settings, architecture) ),
+            ("%s/sources/cxx-stl/stlport/libs/%s"):format( settings.android.ndk_directory, directory_by_architecture[architecture] )
+        };
+    elseif runtime_library:match("c++.*") then 
+        return {
+            ("%s/usr/lib"):format( android.platform_directory(settings, architecture) ),
+            ("%s/sources/cxx-stl/llvm-libc++/libs/%s"):format( settings.android.ndk_directory, directory_by_architecture[architecture] )
+        };
+    elseif runtime_library:match("gabi++.*") then 
+        return {
+            ("%s/usr/lib"):format( android.platform_directory(settings, architecture) ),
+            ("%s/sources/cxx-stl/gabi++/libs/%s"):format( settings.android.ndk_directory, directory_by_architecture[architecture] )
+        };
+    else 
+        assertf( false, "Unrecognized C++ runtime library '%s'", tostring(runtime_library) );
+    end
 end
 
 function android.initialize( settings )
@@ -217,9 +254,9 @@ function android.build_executable( target )
         "-Wl,-z,now",
         ('-o "%s"'):format( native(target:filename()) )
     };
+
     gcc.append_link_flags( target, flags );
     gcc.append_library_directories( target, flags );
-
     for _, directory in ipairs(android.library_directories(target.settings, target.architecture)) do
         table.insert( flags, ('-L"%s"'):format(directory) );
     end
@@ -242,14 +279,15 @@ function android.build_executable( target )
     end
 
     gcc.append_link_libraries( target, libraries );
-
-    if target.system_libraries then 
-        for _, library in ipairs(target.system_libraries) do 
-            local destination = ("%s/lib%s.so"):format( branch(target:filename()), library );
+    local runtime_library = target.settings.runtime_library;
+    if runtime_library then 
+        table.insert( flags, ("-l%s"):format(runtime_library) );
+        if runtime_library:match(".*_shared") then 
+            local destination = ("%s/lib%s.so"):format( branch(target:filename()), runtime_library );
             if not exists(destination) then 
-                print( ("lib%s.so"):format(library) );
+                printf( ("lib%s.so"):format(runtime_library) );
                 for _, directory in ipairs(android.library_directories(target.settings, target.architecture)) do
-                    local source = ("%s/lib%s.so"):format( directory, library );
+                    local source = ("%s/lib%s.so"):format( directory, runtime_library );
                     if exists(source) then
                         cp( source, destination );
                         break;
@@ -295,9 +333,9 @@ function android.deploy( directory )
 
         local device_connected = false;
         local function adb_get_state_filter( state )
-            device_connected = state == "device";
+            device_connected = string.find( state, "device" ) ~= nil;
         end
-        build.system( adb, ('adb get-state'), adb_get_state_filter );
+        build.system( adb, ('adb get-state'), android.environment, nil, adb_get_state_filter );
         if device_connected then
             printf( "Deploying '%s'...", apk:filename() );
             build.system( adb, ('adb install -r "%s"'):format(apk:filename()), android.environment );

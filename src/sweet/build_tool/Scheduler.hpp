@@ -2,12 +2,12 @@
 #define SWEET_BUILD_TOOL_SCHEDULER_HPP_INCLUDED
 
 #include "declspec.hpp"
-#include <sweet/thread/Condition.hpp>
-#include <sweet/thread/Mutex.hpp>
 #include <sweet/path/Path.hpp>
 #include <deque>
 #include <vector>
 #include <functional>
+#include <mutex>
+#include <condition_variable>
 
 namespace sweet
 {
@@ -47,8 +47,8 @@ class Scheduler
     std::vector<Context*> contexts_; ///< The currently allocated Environments.
     std::vector<Context*> free_contexts_; ///< The Environments that are free and waiting to be assigned a Job.
     std::vector<Context*> active_contexts_; ///< The stack of Environments that are currently executing Lua scripts.
-    thread::Mutex results_mutex_; ///< The mutex that ensures exclusive access to the results queue.
-    thread::Condition results_condition_; ///< The Condition that is used to wait for results.
+    std::mutex results_mutex_; ///< The mutex that ensures exclusive access to the results queue.
+    std::condition_variable results_condition_; ///< The Condition that is used to wait for results.
     std::deque<std::function<void()> > results_; ///< The functions to be executed as a result of jobs processing in the thread pool.
     int jobs_; ///< The number of jobs that are running.
     int failures_; ///< The number of failures in the most recent preorder or postorder traversal.

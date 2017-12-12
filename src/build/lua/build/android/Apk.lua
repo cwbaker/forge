@@ -20,15 +20,23 @@ function Apk.call( package, definition )
         package:add_dependency( dependency );
         dependency.module = package;
     end
+    local android_manifest = definition.android_manifest;
+    if android_manifest then 
+        package:add_dependency( android_manifest );
+        package.android_manifest = android_manifest;
+    end
 end
 
 function Apk.build( package )
     if package:outdated() then
+        local android_manifest = package.android_manifest;
+        assertf( android_manifest, "Android APK '%s' does not specify 'android_manifest'", package:path() );
+
         local settings = package.settings;
         local aapt = ("%s/aapt"):format( settings.android.build_tools_directory );
         local resources = table.concat( settings.resources, " -S " );
         local android_jar = ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
-        build.system( aapt, ('aapt package --auto-add-overlay -f -M AndroidManifest.xml -S %s -I "%s" -F "%s.unaligned"'):format(resources, android_jar, package:filename()) );
+        build.system( aapt, ('aapt package --auto-add-overlay -f -M "%s" -S %s -I "%s" -F "%s.unaligned"'):format(android_manifest:filename(), resources, android_jar, package:filename()) );
 
         pushd( ("%s/%s"):format(branch(package:filename()), basename(package:id())) );
         for file in find("") do 

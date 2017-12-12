@@ -20,12 +20,20 @@ function R.call( resource, definition, settings )
         r_java:add_dependency( Directory(r_java:branch()) );
         resource:add_dependency( r_java );
     end
+    local android_manifest = definition.android_manifest;
+    if android_manifest then 
+        resource:add_dependency( android_manifest );
+        resource.android_manifest = android_manifest;
+    end
     for _, directory in ipairs(definition) do 
-        table.insert( resource, directory );
+        resource:add_dependency( build.SourceDirectory(directory) );
     end
 end
 
 function R.generate( resource )
+    local android_manifest = resource.android_manifest;
+    assertf( android_manifest, "Android R '%s' does not specify 'android_manifest'", resource:path() );
+
     local flags = {
         "package",
         "--auto-add-overlay",
@@ -33,15 +41,21 @@ function R.generate( resource )
         "-m",
         ([[-I "%s/platforms/%s/android.jar"]]):format( resource.settings.android.sdk_directory, resource.settings.android.sdk_platform ),
         ([[-J "%s"]]):format( resource.gen_directory ),
-        "-M AndroidManifest.xml",
+        ('-M "%s"'):format( android_manifest:filename() )
     };
 
     if resource.packages then 
         table.insert( flags, ("--extra-packages %s"):format(table.concat(resource.packages, ":")) );
     end
 
-    for _, directory in ipairs(resource) do 
-        table.insert( flags, ([[-S "%s"]]):format(directory) );
+    local i = 1;
+    local dependency = resource:dependency( i );
+    while dependency do 
+        if extension(dependency:filename()) == "" then
+            table.insert( flags, ('-S "%s"'):format(relative(dependency:filename())) );
+        end
+        i = i + 1;
+        dependency = resource:dependency( i );
     end
 
     print( ("%s/*/R.java"):format(resource.gen_directory) );
@@ -52,12 +66,6 @@ end
 function R.build( resource )
     if resource:outdated() then
         resource:generate();
-    end
-end
-
-function R.clean( resource )
-    for _, dependency in resource:dependencies() do 
-        rm( dependency:filename() );
     end
 end
 

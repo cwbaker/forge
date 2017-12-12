@@ -1,22 +1,15 @@
 #ifndef SWEET_BUILD_TOOL_READER_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_READER_HPP_INCLUDED
 
-#include <sweet/thread/Thread.hpp>
-#include <sweet/thread/Mutex.hpp>
-#include <sweet/thread/Condition.hpp>
 #include <vector>
 #include <deque>
 #include <functional>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 namespace sweet
 {
-
-namespace thread
-{
-
-class Thread;
-
-}
 
 namespace lua
 {
@@ -35,11 +28,11 @@ class BuildTool;
 class Reader
 {
     BuildTool* build_tool_; ///< The BuildTool that this Reader is part of.
-    thread::Mutex jobs_mutex_; ///< The mutex that ensures exclusive access to this Reader's jobs.
-    thread::Condition jobs_empty_condition_; ///< The condition attribute that notifies jobs are processed.
-    thread::Condition jobs_ready_condition_; ///< The condition attribute that notifies jobs ready.
+    std::mutex jobs_mutex_; ///< The mutex that ensures exclusive access to this Reader's jobs.
+    std::condition_variable jobs_empty_condition_; ///< The condition attribute that notifies jobs are processed.
+    std::condition_variable jobs_ready_condition_; ///< The condition attribute that notifies jobs ready.
     std::deque<std::function<void ()> > jobs_; ///< The functions to be executed in the thread pool.
-    std::vector<thread::Thread*> threads_; ///< The thread pool for this Reader.
+    std::vector<std::thread*> threads_; ///< The thread pool for this Reader.
     int active_jobs_; ///< The number of active jobs.
     bool done_; ///< Whether or not this Reader has finished processing.
 

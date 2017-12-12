@@ -152,10 +152,9 @@ function build.initialize( project_settings )
 
     -- Set default settings (all other settings inherit from this table).
     local default_settings = dofile( build.script("build/default_settings") );
-    build.merge_settings( default_settings, project_settings );
 
     local local_settings = {};
-    setmetatable( local_settings, {__index = default_settings} );
+    setmetatable( local_settings, {__index = default_settings}  );
 
     local user_settings_filename = default_settings.user_settings_filename;
     if exists(user_settings_filename) then
@@ -167,16 +166,17 @@ function build.initialize( project_settings )
         build.merge_settings( local_settings, dofile(local_settings_filename) );
     end
 
+    local variant_settings = default_settings.settings_by_variant[variant];
+    assertf( variant_settings, "The variant '%s' is not supported", variant );
+
+    local platform_settings = default_settings.settings_by_platform[platform];
+    assertf( platform_settings, "The platform '%s' is not supported", platform );
+
     local settings = {};
     setmetatable( settings, {__index = local_settings} );
-
-    local platform_settings = settings.settings_by_platform[platform];
-    assertf( platform_settings, "The platform '%s' is not supported", platform );
-    build.merge_settings( settings, platform_settings );
-
-    local variant_settings = settings.settings_by_variant[variant];
-    assertf( variant_settings, "The variant '%s' is not supported", variant );
     build.merge_settings( settings, variant_settings );
+    build.merge_settings( settings, platform_settings );
+    build.merge_settings( settings, project_settings );
 
     if settings.library_type == "static" then
         build.Library = build.StaticLibrary;

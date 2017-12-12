@@ -2,21 +2,15 @@
 #define SWEET_BUILD_TOOL_EXECUTOR_HPP_INCLUDED
 
 #include "declspec.hpp"
-#include <sweet/thread/Condition.hpp>
-#include <sweet/thread/Mutex.hpp>
 #include <vector>
 #include <deque>
 #include <functional>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 
 namespace sweet
 {
-
-namespace thread
-{
-
-class Thread;
-
-}
 
 namespace process
 {
@@ -48,13 +42,13 @@ class BuildTool;
 class Executor
 {
     BuildTool* build_tool_; ///< The BuildTool that this Executor is part of.
-    thread::Mutex jobs_mutex_; ///< The mutex that ensures exclusive access to this Executor.
-    thread::Condition jobs_empty_condition_; ///< The condition attribute that is used to notify threads that there are jobs ready to be processed.
-    thread::Condition jobs_ready_condition_; ///< The condition attribute that is used to notify threads that there are jobs ready to be processed.
+    std::mutex jobs_mutex_; ///< The mutex that ensures exclusive access to this Executor.
+    std::condition_variable jobs_empty_condition_; ///< The condition attribute that is used to notify threads that there are jobs ready to be processed.
+    std::condition_variable jobs_ready_condition_; ///< The condition attribute that is used to notify threads that there are jobs ready to be processed.
     std::deque<std::function<void ()> > jobs_; ///< The functions to be executed in the thread pool.
     std::string build_hooks_library_; ///< The full path to the build hooks library.
     int maximum_parallel_jobs_; ///< The maximum number of parallel jobs to allow.
-    std::vector<thread::Thread*> threads_; ///< The thread pool of Threads that process the Commands.
+    std::vector<std::thread*> threads_; ///< The thread pool of threads used to process Jobs.
     bool done_; ///< Whether or not this Executor has finished processing (indicates to the threads in the thread pool that they should return).
 
     public:

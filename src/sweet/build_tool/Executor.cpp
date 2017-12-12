@@ -11,8 +11,6 @@
 #include "Context.hpp"
 #include "Reader.hpp"
 #include "Scheduler.hpp"
-#include <sweet/thread/Thread.hpp>
-#include <sweet/thread/ScopedLock.hpp>
 #include <sweet/process/Process.hpp>
 #include <sweet/process/Environment.hpp>
 #include <stdlib.h>
@@ -29,6 +27,7 @@ using namespace sweet::build_tool;
 Executor::Executor( BuildTool* build_tool )
 : build_tool_( build_tool ),
   jobs_mutex_(),
+  jobs_empty_condition_(),
   jobs_ready_condition_(),
   jobs_(),
   build_hooks_library_(),
@@ -73,7 +72,7 @@ void Executor::execute( const std::string& command, const std::string& command_l
     if ( !command.empty() )
     {
         start();
-        thread::ScopedLock lock( jobs_mutex_ );
+        std::unique_lock<std::mutex> lock( jobs_mutex_ );
         jobs_.push_back( std::bind(&Executor::thread_execute, this, command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context->working_directory(), context) );
         jobs_ready_condition_.notify_all();
     }
@@ -89,7 +88,7 @@ int Executor::thread_main( void* context )
 
 void Executor::thread_process()
 {
-    thread::ScopedLock lock( jobs_mutex_ );
+    std::unique_lock<std::mutex> lock( jobs_mutex_ );
     while ( !done_ )
     {
         if ( !jobs_.empty() )
@@ -173,12 +172,12 @@ void Executor::start()
 
     if ( threads_.empty() )
     {
-        thread::ScopedLock lock( jobs_mutex_ );
+        std::unique_lock<std::mutex> lock( jobs_mutex_ );
         done_ = false;
         threads_.reserve( maximum_parallel_jobs_ );
         for ( int i = 0; i < maximum_parallel_jobs_; ++i )
         {
-            unique_ptr<thread::Thread> thread( new thread::Thread(&Executor::thread_main, this) );
+            unique_ptr<std::thread> thread( new std::thread(&Executor::thread_main, this) );
             threads_.push_back( thread.release() );
         }
     }
@@ -189,7 +188,7 @@ void Executor::stop()
     if ( !threads_.empty() )
     {
         {
-            thread::ScopedLock lock( jobs_mutex_ );
+            std::unique_lock<std::mutex> lock( jobs_mutex_ );
             if ( !jobs_.empty() )
             {
                 jobs_empty_condition_.wait( lock );
@@ -198,13 +197,13 @@ void Executor::stop()
             jobs_ready_condition_.notify_all();
         }
 
-        for ( vector<thread::Thread*>::iterator i = threads_.begin(); i != threads_.end(); ++i )
+        for ( vector<std::thread*>::iterator i = threads_.begin(); i != threads_.end(); ++i )
         {
             try
             {
-                thread::Thread* thread = *i;
+                std::thread* thread = *i;
                 SWEET_ASSERT( thread );
-                thread->join( 2000 );
+                thread->join();
             }
 
             catch ( const std::exception& exception )
