@@ -49,11 +49,18 @@ public:
     static int filename( lua_State* lua_state );
     static int directory( lua_State* lua_state );
     static int targets( lua_State* lua_state );
-    static int dependency( lua_State* lua_state );
-    static int dependencies_iterator( lua_State* lua_state );
-    static int dependencies( lua_State* lua_state );
+    static int any_dependency( lua_State* lua_state );
+    static int any_dependencies_iterator( lua_State* lua_state );
+    static int any_dependencies( lua_State* lua_state );
+    static int explicit_dependency( lua_State* lua_state );
     static int explicit_dependencies_iterator( lua_State* lua_state );
     static int explicit_dependencies( lua_State* lua_state );
+    static int implicit_dependency( lua_State* lua_state );
+    static int implicit_dependencies_iterator( lua_State* lua_state );
+    static int implicit_dependencies( lua_State* lua_state );
+    static int ordering_dependency( lua_State* lua_state );
+    static int ordering_dependencies_iterator( lua_State* lua_state );
+    static int ordering_dependencies( lua_State* lua_state );
 };
 
 }

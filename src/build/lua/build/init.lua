@@ -62,28 +62,36 @@ function build.variant_matches( ... )
 end
 
 function build.default_create_function( target_prototype, ... )
-    local create = target_prototype.create;
-    if create then 
+    local create_function = target_prototype.create;
+    if create_function then 
         local settings = build.current_settings();
-        return create( settings, ... );
+        return create_function( settings, ... );
     else
-        local id = select( 1, ... );
+        local settings = build.current_settings();
+        local id = build.interpolate( select(1, ...), settings );
         local definition = select( 2, ... );
-        return build.target( id, target_prototype, definition );
+        local target = build.File( id, target_prototype, definition );
+        target:add_ordering_dependency( build.Directory(build.branch(target)) );
+        target.settings = settings;
+        return target;
     end
 end
 
 function build.default_call_function( target, ... )
-    local call = target.call;
-    if call then 
-        call( target, ... );
+    local call_function = target.call;
+    if call_function then 
+        call_function( target, ... );
     else
+        local settings = build.current_settings();
         local definition = select( 1, ... );
-        for _, value in ipairs(definition) do 
-            if type(value) == "string" then
-                target:add_dependency( build.SourceFile(value) );
-            elseif type(value) == "table" then
-                target:add_dependency( value );
+        if type(definition) == "string" then
+            local source_file = build.SourceFile( definition, settings );
+            target:add_dependency( source_file );
+        elseif type(definition) == "table" then
+            build.merge( target, definition );
+            for _, value in ipairs(definition) do 
+                local source_file = build.SourceFile( value, settings );
+                target:add_dependency( source_file );
             end
         end
     end
@@ -311,9 +319,9 @@ end
 -- setting that Target's built flag to true if the function returns with
 -- no errors.
 function build.build_visit( target )
-    local fn = target.build;
-    if fn then 
-        local success, error_message = pcall( fn, target );
+    local build_function = target.build;
+    if build_function and target:outdated() then 
+        local success, error_message = pcall( build_function, target );
         target:set_built( success );
         assert( success, error_message );
     end
@@ -323,9 +331,9 @@ end
 -- there is no "clean" function and the target is not marked as a source file
 -- that must exist then its associated file is deleted.
 function build.clean_visit( target )
-    local fn = target.clean;
-    if fn then 
-        fn( target );
+    local clean_function = target.clean;
+    if clean_function then 
+        clean_function( target );
     elseif target:cleanable() and target:filename() ~= "" then 
         build.rm( target:filename() );
     end
@@ -472,10 +480,10 @@ function build.merge( destination, source )
 end
 
 -- Find and return the initial target by searching up from the path specified
--- by *goal* until a target is found.
+-- by *goal* until a target with at least one dependency is found.
 function build.find_initial_target( goal )
     local all = build.find_target( goal );
-    while not all and goal ~= "" do 
+    while goal ~= "" and (all == nil or all:dependency() == nil) do 
         goal = build.branch( goal );
         all = build.find_target( goal );
     end

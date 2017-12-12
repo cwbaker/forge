@@ -1,42 +1,18 @@
 
 local Generate = build.TargetPrototype( "Generate" );
 
-function Generate.create( settings, filename, template )
-    local template_file = build.file( template );
-    template_file:set_required_to_exist( true );
-
-    filename = build.interpolate( filename, settings );
-    local generated_file = build.file( filename, Generate );
-    generated_file.template = template;
-    generated_file.settings = settings;
-    generated_file:add_dependency( template_file );
-    if generated_file:directory() ~= build.pwd() then
-        generated_file:add_ordering_dependency( build.Directory(generated_file:directory()) );
+function Generate.build( generate )
+    local outputs = {};
+    for _, dependency in generate:dependencies() do 
+        local template = assert( loadfile(build.native(build.absolute(dependency))) );
+        local success, output_or_error_message = pcall( template, generate );
+        assert( success, output_or_error_message );
+        table.insert( outputs, output_or_error_message );
     end
-    generated_file:build();
-    return generated_file;
-end
 
-function Generate.build( generated_file )
-    if not build.exists(generated_file:filename()) or generated_file:outdated() then
-        print( build.leaf(generated_file:filename()) );
-        local template = assert( loadfile(build.native(build.absolute(generated_file.template))) );
-        local success, output = pcall( template, generated_file );
-        assertf( success, "Executing '%s' failed - %s", generated_file.template, output );
-
-        local directory = generated_file:directory();
-        if not build.exists(directory) then 
-            build.mkdir( directory );
-        end
-
-        local output_file = io.open( generated_file:filename(), "wb" );
-        assertf( output_file, "Opening '%s' to write generated text failed", generated_file:filename() );
-        output_file:write( output );
-        output_file:close();
-        output_file = nil;
-    end
-end
-
-function Generate.clean( generated_file )
-    build.rm( generated_file:filename() );
+    local output_file, error_message = io.open( generate:filename(), "wb" );
+    assert( output_file, error_message );
+    output_file:write( table.concat(outputs, "") );
+    output_file:close();
+    output_file = nil;
 end

@@ -141,9 +141,14 @@ void LuaTarget::register_functions( lua::AddMember& add_member )
         ( "add_implicit_dependency", &Target::add_implicit_dependency )
         ( "clear_implicit_dependencies", &Target::clear_implicit_dependencies )
         ( "add_ordering_dependency", &Target::add_ordering_dependency )
-        ( "dependency", raw(&LuaTarget::dependency), this )
-        ( "dependencies", raw(&LuaTarget::dependencies), this )
+        ( "dependency", raw(&LuaTarget::explicit_dependency), this )
+        ( "dependencies", raw(&LuaTarget::explicit_dependencies), this )
+        ( "implicit_dependency", raw(&LuaTarget::implicit_dependency), this )
+        ( "implicit_dependencies", raw(&LuaTarget::implicit_dependencies), this )
+        ( "explicit_dependency", raw(&LuaTarget::explicit_dependency), this )
         ( "explicit_dependencies", raw(&LuaTarget::explicit_dependencies), this )
+        ( "any_dependency", raw(&LuaTarget::any_dependency), this )
+        ( "any_dependencies", raw(&LuaTarget::any_dependencies), this )
     ;
 }
 
@@ -289,7 +294,7 @@ int LuaTarget::targets( lua_State* lua_state )
     }
 }
 
-int LuaTarget::dependency( lua_State* lua_state )
+int LuaTarget::any_dependency( lua_State* lua_state )
 {
     SWEET_ASSERT( lua_state );
 
@@ -302,7 +307,7 @@ int LuaTarget::dependency( lua_State* lua_state )
     luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
     --index;
 
-    Target* dependency = target->dependency( index );
+    Target* dependency = target->any_dependency( index );
     if ( dependency )
     {
         if ( !dependency->referenced_by_script() )
@@ -320,7 +325,7 @@ int LuaTarget::dependency( lua_State* lua_state )
     return 1;
 }
 
-int LuaTarget::dependencies_iterator( lua_State* lua_state )
+int LuaTarget::any_dependencies_iterator( lua_State* lua_state )
 {
     const int TARGET = 1;
     const int INDEX = 2;
@@ -328,7 +333,7 @@ int LuaTarget::dependencies_iterator( lua_State* lua_state )
     int index = static_cast<int>( lua_tointeger(lua_state, INDEX) );
     if ( target )
     {
-        Target* dependency = target->dependency( index - 1 );
+        Target* dependency = target->any_dependency( index - 1 );
         if ( dependency )
         {
             if ( !dependency->referenced_by_script() )
@@ -345,7 +350,7 @@ int LuaTarget::dependencies_iterator( lua_State* lua_state )
     return 0;
 }
 
-int LuaTarget::dependencies( lua_State* lua_state )
+int LuaTarget::any_dependencies( lua_State* lua_state )
 {
     const int TARGET = 1;
     Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
@@ -354,10 +359,41 @@ int LuaTarget::dependencies( lua_State* lua_state )
     LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
     SWEET_ASSERT( lua_target_api );    
     lua_pushlightuserdata( lua_state, lua_target_api );
-    lua_pushcclosure( lua_state, &LuaTarget::dependencies_iterator, 1 );
+    lua_pushcclosure( lua_state, &LuaTarget::any_dependencies_iterator, 1 );
     LuaConverter<Target*>::push( lua_state, target );
     lua_pushinteger( lua_state, 1 );
     return 3;
+}
+
+int LuaTarget::explicit_dependency( lua_State* lua_state )
+{
+    SWEET_ASSERT( lua_state );
+
+    const int TARGET = 1;
+    const int INDEX = 2;
+    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
+
+    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
+    luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
+    --index;
+
+    Target* dependency = target->explicit_dependency( index );
+    if ( dependency )
+    {
+        if ( !dependency->referenced_by_script() )
+        {
+            LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+            SWEET_ASSERT( lua_target_api );
+            lua_target_api->create_target( dependency );
+        }
+        LuaConverter<Target*>::push( lua_state, dependency );
+    }
+    else
+    {
+        lua_pushnil( lua_state );
+    }
+    return 1;
 }
 
 int LuaTarget::explicit_dependencies_iterator( lua_State* lua_state )
@@ -395,6 +431,148 @@ int LuaTarget::explicit_dependencies( lua_State* lua_state )
     SWEET_ASSERT( lua_target_api );    
     lua_pushlightuserdata( lua_state, lua_target_api );
     lua_pushcclosure( lua_state, &LuaTarget::explicit_dependencies_iterator, 1 );
+    LuaConverter<Target*>::push( lua_state, target );
+    lua_pushinteger( lua_state, 1 );
+    return 3;
+}
+
+int LuaTarget::implicit_dependency( lua_State* lua_state )
+{
+    SWEET_ASSERT( lua_state );
+
+    const int TARGET = 1;
+    const int INDEX = 2;
+    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
+
+    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
+    luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
+    --index;
+
+    Target* dependency = target->implicit_dependency( index );
+    if ( dependency )
+    {
+        if ( !dependency->referenced_by_script() )
+        {
+            LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+            SWEET_ASSERT( lua_target_api );
+            lua_target_api->create_target( dependency );
+        }
+        LuaConverter<Target*>::push( lua_state, dependency );
+    }
+    else
+    {
+        lua_pushnil( lua_state );
+    }
+    return 1;
+}
+
+int LuaTarget::implicit_dependencies_iterator( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int INDEX = 2;
+    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    int index = static_cast<int>( lua_tointeger(lua_state, INDEX) );
+    if ( target )
+    {
+        Target* dependency = target->implicit_dependency( index - 1 );
+        if ( dependency )
+        {
+            if ( !dependency->referenced_by_script() )
+            {
+                LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+                SWEET_ASSERT( lua_target_api );
+                lua_target_api->create_target( dependency );
+            }
+            lua_pushinteger( lua_state, index + 1 );
+            LuaConverter<Target*>::push( lua_state, dependency );
+            return 2;
+        }
+    }
+    return 0;
+}
+
+int LuaTarget::implicit_dependencies( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
+
+    LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+    SWEET_ASSERT( lua_target_api );    
+    lua_pushlightuserdata( lua_state, lua_target_api );
+    lua_pushcclosure( lua_state, &LuaTarget::implicit_dependencies_iterator, 1 );
+    LuaConverter<Target*>::push( lua_state, target );
+    lua_pushinteger( lua_state, 1 );
+    return 3;
+}
+
+int LuaTarget::ordering_dependency( lua_State* lua_state )
+{
+    SWEET_ASSERT( lua_state );
+
+    const int TARGET = 1;
+    const int INDEX = 2;
+    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
+
+    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
+    luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
+    --index;
+
+    Target* dependency = target->ordering_dependency( index );
+    if ( dependency )
+    {
+        if ( !dependency->referenced_by_script() )
+        {
+            LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+            SWEET_ASSERT( lua_target_api );
+            lua_target_api->create_target( dependency );
+        }
+        LuaConverter<Target*>::push( lua_state, dependency );
+    }
+    else
+    {
+        lua_pushnil( lua_state );
+    }
+    return 1;
+}
+
+int LuaTarget::ordering_dependencies_iterator( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int INDEX = 2;
+    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    int index = static_cast<int>( lua_tointeger(lua_state, INDEX) );
+    if ( target )
+    {
+        Target* dependency = target->ordering_dependency( index - 1 );
+        if ( dependency )
+        {
+            if ( !dependency->referenced_by_script() )
+            {
+                LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+                SWEET_ASSERT( lua_target_api );
+                lua_target_api->create_target( dependency );
+            }
+            lua_pushinteger( lua_state, index + 1 );
+            LuaConverter<Target*>::push( lua_state, dependency );
+            return 2;
+        }
+    }
+    return 0;
+}
+
+int LuaTarget::ordering_dependencies( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    Target* target = LuaConverter<Target*>::to( lua_state, TARGET );
+    luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
+
+    LuaTarget* lua_target_api = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+    SWEET_ASSERT( lua_target_api );    
+    lua_pushlightuserdata( lua_state, lua_target_api );
+    lua_pushcclosure( lua_state, &LuaTarget::ordering_dependencies_iterator, 1 );
     LuaConverter<Target*>::push( lua_state, target );
     lua_pushinteger( lua_state, 1 );
     return 3;

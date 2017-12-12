@@ -521,7 +521,7 @@ struct Bind
             ScopedVisit visit( target );
 
             int i = 0;
-            Target* dependency = target->dependency( i );
+            Target* dependency = target->any_dependency( i );
             while ( dependency )
             {
                 if ( !dependency->visiting() )
@@ -535,7 +535,7 @@ struct Bind
                     ++failures_;
                 }
                 ++i;
-                dependency = target->dependency( i );
+                dependency = target->any_dependency( i );
             }
 
             target->bind();

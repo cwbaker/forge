@@ -111,15 +111,15 @@ int LuaContext::absolute( lua_State* lua_state )
     const int BASE_PATH = 2;
     if ( !lua_isnoneornil(lua_state, BASE_PATH) )
     {
-        const char* base_path = luaL_checkstring( lua_state, BASE_PATH );
-        boost::filesystem::path path = sweet::build_tool::absolute( boost::filesystem::path(luaL_checkstring(lua_state, PATH)), boost::filesystem::path(base_path) );
+        const char* base_path = luaL_tolstring( lua_state, BASE_PATH, nullptr );
+        boost::filesystem::path path = sweet::build_tool::absolute( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)), boost::filesystem::path(base_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
         BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
         SWEET_ASSERT( build_tool );
-        boost::filesystem::path path = build_tool->absolute( boost::filesystem::path(luaL_checkstring(lua_state, PATH)) );
+        boost::filesystem::path path = build_tool->absolute( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     return 1;
@@ -131,15 +131,15 @@ int LuaContext::relative( lua_State* lua_state )
     const int BASE_PATH = 2;
     if ( !lua_isnoneornil(lua_state, BASE_PATH) )
     {
-        const char* base_path = luaL_checkstring( lua_state, BASE_PATH );
-        boost::filesystem::path path = sweet::build_tool::relative( boost::filesystem::path(luaL_checkstring(lua_state, PATH)), boost::filesystem::path(base_path) );
+        const char* base_path = luaL_tolstring( lua_state, BASE_PATH, nullptr );
+        boost::filesystem::path path = sweet::build_tool::relative( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)), boost::filesystem::path(base_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
         BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
         SWEET_ASSERT( build_tool );
-        boost::filesystem::path path = build_tool->relative( boost::filesystem::path(luaL_checkstring(lua_state, PATH)) );
+        boost::filesystem::path path = build_tool->relative( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     return 1;
@@ -158,7 +158,7 @@ int LuaContext::root( lua_State* lua_state )
     }
     else
     {
-        boost::filesystem::path path = build_tool->root( boost::filesystem::path(luaL_checkstring(lua_state, PATH)) );
+        boost::filesystem::path path = build_tool->root( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
 
@@ -178,7 +178,7 @@ int LuaContext::initial( lua_State* lua_state )
     }
     else
     {
-        boost::filesystem::path path = build_tool->initial( boost::filesystem::path(luaL_checkstring(lua_state, PATH)) );
+        boost::filesystem::path path = build_tool->initial( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
 
@@ -198,7 +198,7 @@ int LuaContext::executable( lua_State* lua_state )
     }
     else
     {
-        boost::filesystem::path path = build_tool->executable( boost::filesystem::path(luaL_checkstring(lua_state, PATH)) );
+        boost::filesystem::path path = build_tool->executable( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
 
@@ -218,7 +218,7 @@ int LuaContext::home( lua_State* lua_state )
     }
     else
     {
-        boost::filesystem::path path = build_tool->home( boost::filesystem::path(luaL_checkstring(lua_state, PATH)) );
+        boost::filesystem::path path = build_tool->home( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
 
@@ -290,7 +290,7 @@ int LuaContext::leaf( lua_State* lua_state )
 int LuaContext::basename( lua_State* lua_state )
 {
     const int PATH = 1;
-    string basename = boost::filesystem::path( luaL_checkstring(lua_state, PATH) ).stem().generic_string();
+    string basename = boost::filesystem::path( luaL_tolstring(lua_state, PATH, nullptr) ).stem().generic_string();
     lua_pushlstring( lua_state, basename.c_str(), basename.length() );
     return 1;
 }
@@ -298,7 +298,7 @@ int LuaContext::basename( lua_State* lua_state )
 int LuaContext::extension( lua_State* lua_state )
 {
     const int PATH = 1;
-    string extension = boost::filesystem::path( luaL_checkstring(lua_state, PATH) ).extension().generic_string();
+    string extension = boost::filesystem::path( luaL_tolstring(lua_state, PATH, nullptr) ).extension().generic_string();
     lua_pushlstring( lua_state, extension.c_str(), extension.length() );
     return 1;
 }

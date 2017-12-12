@@ -407,7 +407,7 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
 
                 int height = 0;
                 int i = 0;
-                Target* dependency = target->dependency( i );
+                Target* dependency = target->any_dependency( i );
                 while ( dependency )
                 {
                     if ( !dependency->visiting() )
@@ -423,7 +423,7 @@ int Scheduler::postorder( const lua::LuaValue& function, Target* target )
                     }
 
                     ++i;
-                    dependency = target->dependency( i );
+                    dependency = target->any_dependency( i );
                 }
 
                 if ( target->referenced_by_script() && target->working_directory() )

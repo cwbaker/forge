@@ -118,11 +118,11 @@ class Target
         bool is_implicit_dependency( Target* target ) const;
         bool is_ordering_dependency( Target* target ) const;
         bool is_dependency( Target* target ) const;
-        Target* dependency( int n ) const;
-        Target* binding_dependency( int n ) const;
         Target* explicit_dependency( int n ) const;
         Target* implicit_dependency( int n ) const;
         Target* ordering_dependency( int n ) const;
+        Target* binding_dependency( int n ) const;
+        Target* any_dependency( int n ) const;
 
         bool buildable() const;
         std::string error_identifier() const;

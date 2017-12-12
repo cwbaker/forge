@@ -6,9 +6,7 @@ function Directory.create( settings, id )
 end
 
 function Directory.build( directory )
-    if directory:outdated() then
-        build.mkdir( directory:filename() );
-    end
+    build.mkdir( directory:filename() );
 end
 
 function Directory.clean( directory )
