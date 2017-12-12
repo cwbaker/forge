@@ -148,7 +148,6 @@ function macosx.build_library( target )
     end
     
     if #objects > 0 then
-        print( build.leaf(target:filename()) );
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
         local xcrun = target.settings.macosx.xcrun;
@@ -204,8 +203,6 @@ function macosx.build_executable( target )
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, " " );
         local xcrun = target.settings.macosx.xcrun;
-
-        print( build.leaf(target:filename()) );
         build.system( xcrun, ('xcrun --sdk macosx clang++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
     end
     build.popd();
@@ -220,7 +217,6 @@ function macosx.lipo_executable( target )
     for _, executable in target:dependencies() do 
         table.insert( executables, executable:filename() );
     end
-    print( build.leaf(target:filename()) );
     executables = table.concat( executables, [[" "]] );
     local xcrun = target.settings.macosx.xcrun;
     build.system( xcrun, ('xcrun --sdk macosx lipo -create -output "%s" "%s"'):format(target:filename(), executables) );
@@ -242,16 +238,16 @@ function macosx.obj_name( name, architecture )
     return ("%s.o"):format( build.basename(name) );
 end
 
-function macosx.lib_name( name, architecture )
-    return ("lib%s_%s.a"):format( name, architecture );
+function macosx.lib_name( name )
+    return ("lib%s.a"):format( name );
 end
 
 function macosx.dll_name( name )
     return ("%s.dylib"):format( name );
 end
 
-function macosx.exe_name( name )
-    return ("%s"):format( name );
+function macosx.exe_name( name, architecture )
+    return name;
 end
 
 function macosx.module_name( name, architecture )

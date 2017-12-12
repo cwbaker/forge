@@ -57,7 +57,7 @@ if build.platform_matches("macosx") or build.platform_matches("windows") then
     if variant == "debug" or variant == "release" or variant == "shipping" then
         for _, architecture in ipairs(settings.architectures) do
             build.all {
-                build.Executable (("luac_%s"):format(architecture), architecture) {
+                build.Executable (("${bin}/luac_%s"):format(architecture), architecture) {
                     libraries = {
                         "sweet/assert/assert",
                         "lua/liblua"
@@ -73,7 +73,7 @@ if build.platform_matches("macosx") or build.platform_matches("windows") then
         end
 
         build.all {
-            build.Executable "lua" {
+            build.Executable "${bin}/lua" {
                 project_name = "lua_";
                 libraries = {
                     "sweet/assert/assert",

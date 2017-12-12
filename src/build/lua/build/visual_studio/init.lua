@@ -1,7 +1,6 @@
 
 local visual_studio = {};
 
-require "build.fs";
 require "build.visual_studio.vcxproj";
 require "build.visual_studio.sln";
 
@@ -90,6 +89,38 @@ local function generate_uuids( objects )
     end
 end
 
+local function filter( filename, includes, excludes )
+    if is_directory(filename) then 
+        return false;
+    end
+    if excludes then 
+        for _, pattern in ipairs(excludes) do 
+            if string.match(filename, pattern) then 
+                return false;
+            end
+        end
+    end
+    if includes then 
+        for _, pattern in ipairs(includes) do 
+            if string.match(filename, pattern) then 
+                return true;
+            end
+        end
+        return false;
+    end
+    return true;
+end
+
+local function ls( path, includes, excludes )
+    local files = {};
+    for filename in build.ls(path or pwd()) do 
+        if filter(filename, includes, excludes) then
+            table.insert( files, filename );
+        end
+    end
+    return files;
+end
+
 -- Generate a Visual Studio solution with projects for all of the 
 -- `Executable`, `StaticLibrary`, and `DynamicLibrary` targets that are 
 -- recursively dependencies of the root directory.
@@ -109,13 +140,12 @@ function visual_studio.solution()
     generate_uuids( directories );
     prune( directories[all:path()] );
 
-    local fs = build.fs;
     for _, project in pairs(projects) do 
         local target = project.target;
         target.uuid = project.uuid;
     	pushd( target:working_directory():path() );
 		local DEFAULT_SOURCE = { "^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java$" };
-		local files = fs.ls( pwd(), DEFAULT_SOURCE );
+		local files = ls( pwd(), DEFAULT_SOURCE );
 		build.visual_studio.vcxproj.generate( target, files );
 		popd();
     end

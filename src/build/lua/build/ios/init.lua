@@ -142,10 +142,10 @@ function ios.cc( target )
         if object:outdated() then
             object:set_built( false );
             local source = object:dependency();
-            print( build.leaf(source:id()) );
-            local dependencies = ("%s.d"):format( object:filename() );
+            print( build.leaf(source) );
+            local dependencies = ("%s.d"):format( object );
             local output = object:filename();
-            local input = build.absolute( source:filename() );
+            local input = build.absolute( source );
             build.system( 
                 xcrun, 
                 ('xcrun --sdk %s clang %s -MMD -MF "%s" -o "%s" "%s"'):format(sdkroot, ccflags, dependencies, output, input)
@@ -177,8 +177,6 @@ function ios.build_library( target )
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, [[" "]] );
         local xcrun = target.settings.ios.xcrun;
-
-        print( build.leaf(target:filename()) );
         build.system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, build.native(target:filename()), arobjects) );
     end
     build.popd();
@@ -229,8 +227,6 @@ function ios.build_executable( target )
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, " " );
         local xcrun = target.settings.ios.xcrun;
-
-        print( build.leaf(target:filename()) );
         build.system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
     end
     build.popd();
@@ -289,8 +285,8 @@ function ios.obj_name( name, architecture )
     return ("%s.o"):format( build.basename(name) );
 end
 
-function ios.lib_name( name, architecture )
-    return ("lib%s_%s.a"):format( name, architecture );
+function ios.lib_name( name )
+    return ("lib%s.a"):format( name );
 end
 
 function ios.dll_name( name )

@@ -9,14 +9,6 @@ local directory_by_architecture = {
 };
 
 function android.configure( settings )
-    function autodetect_jdk_directory()
-        if build.operating_system() == "windows" then
-            return "C:/Program Files/Java/jdk1.6.0_39";
-        else
-            return "/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home";
-        end
-    end
-
     function autodetect_ndk_directory()
         if build.operating_system() == "windows" then
             return "C:/android/android-ndk";
@@ -37,7 +29,6 @@ function android.configure( settings )
     if not local_settings.android then
         local_settings.updated = true;
         local_settings.android = {
-            jdk_directory = autodetect_jdk_directory();
             ndk_directory = autodetect_ndk_directory();
             sdk_directory = autodetect_sdk_directory();
             build_tools_directory = ("%s/build-tools/22.0.1"):format( autodetect_sdk_directory() );
@@ -293,19 +284,6 @@ function android.build_executable( target )
     local runtime_library = target.settings.runtime_library;
     if runtime_library then 
         table.insert( flags, ("-l%s"):format(runtime_library) );
-        if runtime_library:match(".*_shared") then 
-            local destination = ("%s/lib%s.so"):format( build.branch(target:filename()), runtime_library );
-            if not build.exists(destination) then 
-                printf( ("lib%s.so"):format(runtime_library) );
-                for _, directory in ipairs(android.library_directories(target.settings, target.architecture)) do
-                    local source = ("%s/lib%s.so"):format( directory, runtime_library );
-                    if build.exists(source) then
-                        build.cp( destination, source );
-                        break;
-                    end
-                end
-            end
-        end
     end
 
     if #objects > 0 then
@@ -370,12 +348,12 @@ function android.obj_name( name, architecture )
     return ("%s.o"):format( build.basename(name) );
 end
 
-function android.lib_name( name, architecture )
-    return ("lib%s_%s.a"):format( name, architecture );
+function android.lib_name( name )
+    return ("lib%s.a"):format( name );
 end
 
 function android.dll_name( name, architecture )
-    return ("lib/%s/lib%s.so"):format( directory_by_architecture[architecture], name );
+    return ("lib/%s/lib%s.so"):format( directory_by_architecture[architecture], build.basename(name) );
 end
 
 function android.exe_name( name, architecture )
@@ -386,12 +364,44 @@ function android.module_name( name, architecture )
     return ("%s_%s"):format( name, architecture );
 end
 
+function android.android_jar( settings )
+    local settings = settings or build.current_settings();
+    return ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
+end
+
+function android.DynamicLibrary( name, architecture )
+    local filename = ("${apk}/%s"):format( android.dll_name(name, architecture) );
+    local dynamic_library = build.default_create( build.DynamicLibrary, filename );
+    dynamic_library.architecture = architecture or settings.default_architecture;
+
+    local group = build.Target( build.anonymous() );
+    group:add_dependency( dynamic_library );
+    group.depend = function( group, dependencies )
+        return dynamic_library:depend( dependencies );
+    end
+
+    local runtime_library = dynamic_library.settings.runtime_library;
+    if runtime_library then 
+        if runtime_library:match(".*_shared") then 
+            local destination = ("%s/lib%s.so"):format( build.branch(dynamic_library:filename()), runtime_library );
+            for _, directory in ipairs(android.library_directories(dynamic_library.settings, dynamic_library.architecture)) do
+                local source = ("%s/lib%s.so"):format( directory, runtime_library );
+                if build.exists(source) then
+                    local copy = build.Copy (destination) (source);
+                    group:add_dependency( copy );
+                    break;
+                end
+            end
+        end
+    end
+
+    return group;
+end
+
 require "build.android.Aidl";
 require "build.android.Apk";
 require "build.android.BuildConfig";
 require "build.android.Dex";
-require "build.android.Jar";
-require "build.android.Java";
 require "build.android.R";
 
 build.register_module( android );

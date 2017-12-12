@@ -2,7 +2,7 @@
 local settings = build.current_settings();
 for _, architecture in ipairs(settings.architectures) do
     build.all {
-        build.Executable ("process_test", architecture) {
+        build.Executable ("${bin}/process_test", architecture) {
             libraries = {
                 "sweet/process/process",
                 "sweet/cmdline/cmdline",

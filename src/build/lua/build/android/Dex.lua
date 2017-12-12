@@ -1,67 +1,66 @@
 
 local Dex = build.TargetPrototype( "android.Dex" );
 
-function Dex.create( settings, id )
-    local dex = build.Target( "", Dex, definition );
-    dex:set_filename( ("%s/%s.dex"):format(settings.bin, id) );
-    dex.settings = settings;
-    dex:add_ordering_dependency( build.Directory(dex:directory()) );
-    dex:add_ordering_dependency( build.Directory(build.classes_directory(dex)) );
-    build.add_jar_dependencies( dex, settings.jars );
-    return dex;
-end
-
-function Dex.call( dex, definition )
-    build.add_jar_dependencies( dex, definition.jars );
-    for _, dependency in ipairs(definition) do 
-        dex:add_dependency( dependency );
-    end
-    local proguard = definition.proguard;
+function Dex:depend( dependencies )
+    local proguard = dependencies.proguard;
     if proguard then 
-        dex:add_dependency( proguard );
-        dex.proguard = proguard;
+        self:add_dependency( proguard );
+        self.proguard = proguard;
+        dependencies.proguard = nil;
     end
+
+    local jars = dependencies.jars;
+    if jars then 
+        java.add_jar_dependencies( self, dependencies.jars );
+        dependencies.jars = nil;
+    end
+
+    return build.default_depend( self, dependencies );
 end
 
-function Dex.build( dex )
-    if dex:outdated() then
-        print( build.leaf(dex:filename()) );
+function Dex:build()
+    local jars = {};
 
-        local jars = {};
-        if dex.proguard and dex.settings.android.proguard_enabled then 
-            local proguard = dex.proguard; 
-            local proguard_sh = ("%s/tools/proguard/bin/proguard.sh"):format( dex.settings.android.sdk_directory );
-            build.system( proguard_sh, ('proguard.sh -printmapping \"%s/%s.map\" "@%s"'):format(build.classes_directory(dex), build.leaf(dex:filename()), proguard:filename()) );
-            table.insert( jars, ('\"%s/classes.jar\"'):format(build.classes_directory(dex)) );
-        else
-            table.insert( jars, build.classes_directory(dex) );
-        end
-        for _, dependency in dex:dependencies() do 
-            if dependency:prototype() == build.Jar then 
-                table.insert( jars, build.relative(dependency:filename()) );
-            end
-        end
-        if dex.third_party_jars then 
-            for _, jar in ipairs(dex.third_party_jars) do 
-                table.insert( jars, jar );
-            end
-        end
-        if dex.settings.third_party_jars then
-            for _, jar in ipairs(dex.settings.third_party_jars) do 
-                table.insert( jars, jar );
-            end
-        end
+    if self.proguard and self.settings.android.proguard_enabled then 
+        local proguard = self.proguard; 
+        local proguard_sh = ("%s/tools/proguard/bin/proguard.sh"):format( self.settings.android.sdk_directory );
+        build.system( proguard_sh, ('proguard.sh -printmapping \"%s/%s.map\" "@%s"'):format(build.classes_directory(self), build.leaf(self), proguard:filename()) );
+        table.insert( jars, ('\"%s/classes.jar\"'):format(build.classes_directory(self)) );
+    else
+        table.insert( jars, build.classes_directory(self) );
+    end
 
-        local dx = build.native( ("%s/dx"):format(dex.settings.android.build_tools_directory) );
-        if build.operating_system() == "windows" then
-            dx = ("%s.bat"):format( dx );
+    local third_party_jars = self.third_party_jars;
+    if third_party_jars then 
+        for _, jar in ipairs(third_party_jars) do 
+            table.insert( jars, jar );
         end
-        build.shell( ('\"%s\" --dex --verbose --output=\"%s\" %s'):format(dx, dex:filename(), table.concat(jars, " ")) );
-    end    
-end
+    end
+    
+    local third_party_jars = self.settings.third_party_jars 
+    if third_party_jars then
+        for _, jar in ipairs(third_party_jars) do 
+            table.insert( jars, jar );
+        end
+    end
 
-function Dex.clean( dex )
-    build.rm( dex:filename() );
+    for _, dependency in self:dependencies() do 
+        if dependency:prototype() == build.Jar then 
+            table.insert( jars, build.relative(dependency:filename()) );
+        end
+    end
+
+    local dx = build.native( ("%s/dx"):format(self.settings.android.build_tools_directory) );
+    if build.operating_system() == "windows" then
+        dx = ("%s.bat"):format( dx );
+    end
+    build.shell( {
+        ('\"%s\"'):format( dx ),
+        '--dex',
+        '--verbose',
+        ('--output=\"%s\"'):format( self ), 
+        ('%s'):format( table.concat(jars, " ") )
+    } );
 end
 
 android.Dex = Dex;

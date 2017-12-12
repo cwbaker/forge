@@ -61,59 +61,35 @@ function build.variant_matches( ... )
     return variant == "" or build.matches( variant, ... );
 end
 
-function build.default_create_function( target_prototype, ... )
-    local settings = build.current_settings();
-    local create_function = target_prototype.create;
-    if create_function then 
-        return create_function( settings, ... );
-    else
-        local identifier_or_sources = select( 1, ... );
-        if type(identifier_or_sources) ~= "table" then   
-            local create_function = target_prototype.create;
-            if create_function then 
-                return create_function( settings, ... );
-            else
-                local identifier = build.interpolate( identifier_or_sources, settings );
-                local target = build.Target( identifier, target_prototype, select(2, ...) );
-                if build.is_relative(identifier) then 
-                    target:set_filename( build.object(identifier) );
-                else
-                    target:set_filename( identifier );
-                end
-                target:set_cleanable( true );
-                target:add_ordering_dependency( build.Directory(build.branch(target)) );
-                target.settings = settings;
-                return target;
-            end
-        elseif type(identifier_or_sources) == "table" then
-            local targets = {};
-            local sources = identifier_or_sources;
-            for _, source in ipairs(sources) do 
-                local target = build.default_create_function( target_prototype, build.object(source), select(2, ...) );
-                target( source );
-                table.insert( targets, target );
-            end
-            return table.unpack( targets );
+function build.default_create( target_prototype, ... )
+    local identifier_or_sources = select( 1, ... );
+    if type(identifier_or_sources) ~= "table" then   
+        local settings = build.current_settings();
+        local identifier = build.interpolate( identifier_or_sources, settings );
+        local target = build.Target( identifier, target_prototype, select(2, ...) );
+        if build.is_relative(identifier) then 
+            target:set_filename( build.object(identifier) );
+        else
+            target:set_filename( identifier );
         end
+        target:set_cleanable( true );
+        target:add_ordering_dependency( build.Directory(build.branch(target)) );
+        target.settings = settings;
+        return target;
     end
 end
 
-function build.default_call_function( target, ... )
-    local call_function = target.call;
-    if call_function then 
-        call_function( target, ... );
-    else
-        local settings = build.current_settings();
-        local definition = select( 1, ... );
-        if type(definition) == "string" then
-            local source_file = build.SourceFile( definition, settings );
+function build.default_depend( target, ... )
+    local settings = build.current_settings();
+    local dependencies = select( 1, ... );
+    if type(dependencies) == "string" then
+        local source_file = build.SourceFile( dependencies, settings );
+        target:add_dependency( source_file );
+    elseif type(dependencies) == "table" then
+        build.merge( target, dependencies );
+        for _, value in ipairs(dependencies) do 
+            local source_file = build.SourceFile( value, settings );
             target:add_dependency( source_file );
-        elseif type(definition) == "table" then
-            build.merge( target, definition );
-            for _, value in ipairs(definition) do 
-                local source_file = build.SourceFile( value, settings );
-                target:add_dependency( source_file );
-            end
         end
     end
     return target;
@@ -121,7 +97,14 @@ end
 
 function build.TargetPrototype( id, create_function )
     local target_prototype = build.target_prototype( id );
-    getmetatable( target_prototype ).__call = create_function or build.default_create_function;
+    getmetatable( target_prototype ).__call = create_function or function( target_prototype, ... )
+        local create_function = target_prototype.create;
+        if create_function then 
+            local settings = build.current_settings();
+            return create_function( settings, ... );
+        end
+        return build.default_create( target_prototype, ... );
+    end;
     local module, id = split_modules( build, id );
     module[id] = target_prototype;
     return target_prototype;
@@ -129,21 +112,33 @@ end
 
 function build.Target( id, target_prototype, definition )
     local target_ = build.target( id, target_prototype, definition );
-    getmetatable( target_ ).__call = build.default_call_function;
+    getmetatable( target_ ).__call = function( target, ... )
+        local depend_function = target.call or target.depend or build.default_depend;
+        depend_function( target, ... );
+        return target;
+    end;
     return target_;
 end
 
 function build.File( filename, target_prototype, definition )
     local target_ = build.file( filename, target_prototype, definition );
     target_:set_cleanable( true );
-    getmetatable( target_ ).__call = build.default_call_function;
+    getmetatable( target_ ).__call = function( target, ... )
+        local depend_function = target.call or target.depend or build.default_depend;
+        depend_function( target, ... );
+        return target;
+    end;
     return target_;
 end
 
 function build.GeneratedFile( filename, target_prototype, definition )
     local target_ = build.file( filename, target_prototype, definition );
     target_:set_cleanable( false );
-    getmetatable( target_ ).__call = build.default_call_function;
+    getmetatable( target_ ).__call = function( target, ... )
+        local depend_function = target.call or target.depend or build.default_depend;
+        depend_function( target, ... );
+        return target;
+    end;
     return target_;
 end
 
@@ -172,13 +167,14 @@ function build.SourceDirectory( value, settings )
     return build.SourceFile( value, settings );
 end
 
-function build.Map( target_prototype, replacement, pattern, filenames )
+function build.map( target_prototype, replacement, pattern, filenames )
     local targets = {};
     local settings = settings or build.current_settings();
-    for _, filename in ipairs(filenames) do 
-        local source = build.relative( filename );
-        local destination, substitutions = source:gsub( pattern, replacement );
+    for _, source_filename in ipairs(filenames) do 
+        local source = build.relative( source_filename );
+        local filename, substitutions = source:gsub( pattern, replacement );
         if substitutions > 0 then 
+            local destination = build.interpolate( filename, settings );
             local target = target_prototype (destination) (source);
             table.insert( targets, target );
         end
@@ -186,11 +182,9 @@ function build.Map( target_prototype, replacement, pattern, filenames )
     return table.unpack( targets );
 end
 
-function build.Ls( target_prototype, replacement, pattern, settings )
+function build.map_ls( target_prototype, replacement, pattern, settings )
     local targets = {};
     local settings = settings or build.current_settings();
-    local cache = build.find_target( settings.cache );
-    cache:add_dependency( build.SourceDirectory(build.pwd()) );
     for source_filename in build.ls("") do
         local source = build.relative( source_filename );
         local filename, substitutions = source:gsub( pattern, replacement );
@@ -203,11 +197,9 @@ function build.Ls( target_prototype, replacement, pattern, settings )
     return table.unpack( targets );
 end
 
-function build.Find( target_prototype, replacement, pattern, settings )
+function build.map_find( target_prototype, replacement, pattern, settings )
     local targets = {};
     local settings = settings or build.current_settings();
-    local cache = build.find_target( settings.cache );
-    cache:add_dependency( build.SourceDirectory(build.pwd()) );
     for source_filename in build.find("") do
         if build.is_file(source_filename) then
             local source = build.relative( source_filename );
@@ -217,8 +209,6 @@ function build.Find( target_prototype, replacement, pattern, settings )
                 local target = target_prototype (destination) (source);
                 table.insert( targets, target );
             end
-        elseif build.is_directory(source_filename) then 
-            cache:add_dependency( build.SourceDirectory(source_filename) );
         end
     end
     return table.unpack( targets );
@@ -232,13 +222,6 @@ function build.initialize( project_settings )
     version = version or ("%s %s %s"):format( os.date("%Y.%m.%d.%H%M"), platform, variant );
     goal = goal or "";
     jobs = jobs or 4;
-    toolset = toolset or build.switch { 
-        platform; 
-        android = "gcc"; 
-        ios = "clang"; 
-        macosx = "clang";
-        windows = "msvc"; 
-    };
 
     build.set_maximum_parallel_jobs( jobs );
     if build.operating_system() == "windows" then 
@@ -366,7 +349,7 @@ function build.default_targets( targets )
     end
 end
 
--- Set the root buildfile to be load to populate the dependency graph.
+-- Set the root buildfiles to be load to populate the dependency graph.
 function build.default_buildfiles( buildfiles )
     build.default_buildfiles_ = buildfiles;
 end
@@ -427,14 +410,17 @@ end
 
 -- Execute a command through the host system's native shell - either 
 -- "C:/windows/system32/cmd.exe" on Windows system or "/bin/sh" anywhere else.
-function build.shell( arguments, filter )
+function build.shell( arguments, dependencies_filter, stdout_filter, stderr_filter, ... )
+    if type(arguments) == "table" then 
+        arguments = table.concat( arguments, " " );
+    end
     if build.operating_system() == "windows" then
         local cmd = "C:/windows/system32/cmd.exe";
-        local result = build.execute( cmd, ('cmd /c "%s"'):format(arguments), filter );
+        local result = build.execute( cmd, ('cmd /c "%s"'):format(arguments), dependencies_filter, stdout_filter, stderr_filter, ... );
         assertf( result == 0, "[[%s]] failed (result=%d)", arguments, result );
     else
         local sh = "/bin/sh";
-        local result = build.execute( sh, ('sh -c "%s"'):format(arguments), filter );
+        local result = build.execute( sh, ('sh -c "%s"'):format(arguments), dependencies_filter, stdout_filter, stderr_filter, ... );
         assertf( result == 0, "[[%s]] failed (result=%d)", arguments, tonumber(result) );
     end
 end
@@ -447,6 +433,7 @@ end
 
 -- Provide shell like string interpolation.
 function build.interpolate( template, variables )
+    local variables = variables or build.current_settings();
     return (template:gsub('($%b{})', function(word) return variables[word:sub(3, -2)] or word end));
 end
 
@@ -563,7 +550,7 @@ end
 function build.all( dependencies )
     local all = build.target( "all" );
     if dependencies then 
-        build.default_call_function( all, dependencies );
+        build.default_depend( all, dependencies );
     end
     return all;
 end
@@ -650,8 +637,9 @@ function build.script( name )
     errorf( "Script '%s' not found", filename );
 end
 
--- Convert /path/ into an object directory path by prepending the object 
--- directory to the portion of /path/ that is relative to the root directory.
+-- Convert /filename/ into an object directory path by prepending the object 
+-- directory to the portion of /filename/ that is relative to the root 
+-- directory.
 function build.object( filename, architecture, settings )
     settings = settings or build.current_settings();
     filename = build.relative( build.absolute(filename), build.root() );
@@ -735,24 +723,6 @@ function build.restore_settings( position )
     end 
 end
 
-function build.add_library_dependencies( executable, libraries )
-    if libraries and platform ~= "" then
-        local architecture = executable.architecture;
-        for _, value in ipairs(libraries) do
-            local library = ("%s_%s"):format( value, architecture );
-            executable:add_dependency( build.target(build.root(library)) );
-        end
-    end
-end
-
-function build.add_jar_dependencies( jar, jars )
-    if jars and platform ~= "" then
-        for _, value in ipairs(jars) do
-            jar:add_dependency( build.target(build.root(value)) );
-        end
-    end
-end
-
 -- Add dependencies detected by the injected build hooks library to the 
 -- target /target/.
 function build.dependencies_filter( target )
@@ -786,12 +756,45 @@ function build.append( values, value )
     return values;
 end
 
+-- Return a shallow copy of the table *value*.
 function build.copy( value )
     local copied_table = {};
     for k, v in pairs(value) do 
         copied_table[k] = v;
     end
     return copied_table;
+end
+
+-- Recursively walk the dependencies of *target* until a target with a 
+-- filename or the maximum level limit is reached.
+function build.walk_dependencies( target, start, finish, maximum_level )
+    local start = start or 1;
+    local finish = finish or math.maxinteger;
+    local maximum_level = maximum_level or math.maxinteger;
+    local function walk_dependencies_recursively( target, level )
+        for _, dependency in target:dependencies() do 
+            local phony = dependency:filename() == "";
+            if not phony then
+                coroutine.yield( dependency, level );
+            end
+            if phony and level + 1 < maximum_level then 
+                walk_dependencies_recursively( dependency, level + 1 );
+            end
+        end
+    end
+    return coroutine.wrap( function() 
+        for index, dependency in target:dependencies() do 
+            if index >= start and index <= finish then 
+                local phony = dependency:filename() == "";
+                if not phony then
+                    coroutine.yield( dependency, level );
+                end
+                if phony then 
+                    walk_dependencies_recursively( dependency, 0 );
+                end
+            end
+        end
+    end );
 end
 
 function build.gen_directory( target )
@@ -818,8 +821,8 @@ function build.obj_name( name, architecture )
     return ("%s.o"):format( build.basename(name) );
 end;
 
-function build.lib_name( name, architecture )
-    return ("lib%s_%s.a"):format( name, architecture );
+function build.lib_name( name )
+    return ("lib%s.a"):format( name );
 end;
 
 function build.dll_name( name )
@@ -827,7 +830,10 @@ function build.dll_name( name )
 end;
 
 function build.exe_name( name, architecture )
-    return ("%s_%s"):format( name, architecture );
+    if architecture then 
+        return ("%s_%s"):format( name, architecture );
+    end
+    return ("%s"):format( name );
 end;
 
 function build.module_name( name, architecture )
