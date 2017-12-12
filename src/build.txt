@@ -9,7 +9,7 @@
 == Overview
 
 Sweet Build is a build tool that tracks dependencies between files; using
-their timestamps to determine which are out of date; and then carrying 
+relative timestamps to determine which are out of date; and then carrying 
 out actions to bring those files up to date.
 
 Sweet Build is similar to GNU Make, Perforce Jam, SCons, Waf, Lake, and other 
@@ -30,11 +30,13 @@ Features:
   - Lua scripting language to specify dependency graph and actions.
   - Support for builds spread across multiple directories.
   - Platform independent path and file system operations.
-  - Scanning source files for regular expressions to generate dependencies.
-  - Filtering the output of external processes using regular expressions.
+  - Automatic dependency detection via tracing open files.
+  - Filtering the output of external processes.
   - Dependency graph save and load for faster incremental builds.
   - Parallel execution to make use of multiple processors.
   - Variant builds.
+
+NOTE: Automatic dependency tracking comes with some caveats!  On Windows dependencies are only automatically tracked for 64 bit processes.  On MacOSX dependencies are only automatically tracked for non-system executables (it is possible to disable the security feature that is behind this limitation).
 
 Anti-features:
 
@@ -42,16 +44,9 @@ Anti-features:
 
 === GNU Make vs SCons vs Sweet Build
 
-These are timing tests based on the tests run by Noel Llopis in his "The Quest for the Perfect
-Build System" blog entries (parts 
-http://gamesfromwithin.com/the-quest-for-the-perfect-build-system[1], 
-http://gamesfromwithin.com/the-quest-for-the-perfect-build-system-part-2[2], and 
-http://gamesfromwithin.com/bad-news-for-scons-fans[3]).  In the test 50 libraries
-with 100 classes each are built.  Each source file includes 15 headers from its own library
-and 5 headers from other libraries.
+These are timing tests based on the tests run by Noel Llopis in his "The Quest for the Perfect Build System" blog entries (parts http://gamesfromwithin.com/the-quest-for-the-perfect-build-system[1], http://gamesfromwithin.com/the-quest-for-the-perfect-build-system-part-2[2], and http://gamesfromwithin.com/bad-news-for-scons-fans[3]).  In the test 50 libraries with 100 classes each are built.  Each source file includes 15 headers from its own library and 5 headers from other libraries.
 
-The tests are run on an Intel Core2 Duo P8600 @2.4GHz, 4GB RAM, with a Samsung SSD RBX
-series 128GB hard drive.
+The tests are run on an Intel Core2 Duo P8600 @2.4GHz, 4GB RAM, with a Samsung SSD RBX series 128GB hard drive.
 
 [options="header"]
 |====
@@ -61,38 +56,20 @@ series 128GB hard drive.
 |Sweet Build |135.4s |1.8s |1.6s
 |====
 
-Sweet Build performs well on a full rebuild because it passes all files on the command 
-line to a single invocation of the compiler while both GNU Make and SCons pass each file 
-to a separate invocation of the compiler.
+Sweet Build performs well on a full rebuild because it passes all files on the command line to a single invocation of the compiler while both GNU Make and SCons pass each file to a separate invocation of the compiler.
 
 == Installation
 
 Sweet Build consists of a single executable and the build scripts that define
-how to build C/C++ programs.  
+how to build programs for MacOSX, Windows, iOS, and Android written in C/C++, Objective-C/C++, and Java.  It is able to build from source code all the way to iOS application bundles (.app) and Android packages (.apk).
 
-The executable has no external dependencies and can be installed by copying it
-anywhere that your build process can execute it from.  The build scripts need 
-to be loaded from a file named `build.lua` in each project being built.  They 
-can be copied anywhere your build script can locate them.
+The executable has no external dependencies and can be installed by copying it anywhere that your build process can execute it from.  The build scripts need  to be loaded from a file named *build.lua* in each project being built.  They  can be copied anywhere your build script can locate them.
 
-The recommended installation method is to store the executable and build 
-scripts in a directory that is version controlled along with the rest of 
-the source code in your project.  From there the executable and the build 
-scripts can be easily located by the build process.  This method versions the
-executable and the build scripts along with the rest of the code in the 
-project.  Reverting back to a previous revision of the project also reverts 
-to the build process used to build that revision.
+The recommended installation method is to store the executable and build  scripts in a directory that is version controlled along with the rest of  the source code in your project.  From there the executable and the build scripts can be easily located by the build process.  This method versions the executable and the build scripts along with the rest of the code in the project.  Reverting back to a previous revision of the project also reverts to the build process used to build that revision.
 
-Another installation method is to copy the executable into a directory in the
-executable path specified by the `PATH` environment variable and the build 
-scripts into a directory in the Lua search path specified by the `LUA_PATH` 
-environment variable.  In this scenario the executable and the build scripts 
-are available to all projects on the machine.  The `build.lua` file can easily
-load the build scripts using Lua's `require()` function.  This method allows 
-the executable and the build scripts to be shared across multiple projects.
+Another installation method is to copy the executable into a directory in the executable path specified by the `PATH` environment variable and the build scripts into a directory in the Lua search path specified by the `LUA_PATH` environment variable.  In this scenario the executable and the build scripts are available to all projects on the machine.  The `build.lua` file can easily load the build scripts using Lua's `require()` function.  This method allows the executable and the build scripts to be shared across multiple projects.
 
-Precompiled binaries for MacOSX and Windows and source code for the latest 
-version of Sweet Build can be downloaded from http://www.sweetsoftware.co.nz/.
+Precompiled binaries for MacOSX and Windows and source code for the latest version of Sweet Build can be downloaded from http://www.sweetsoftware.co.nz/.
 
 == Usage
 
@@ -106,7 +83,7 @@ version of Sweet Build can be downloaded from http://www.sweetsoftware.co.nz/.
 
 Sweet Build is invoked by running the build executable from the command line.
 When invoked the executable searches up from the current working directory 
-until it finds a file named `build.lua`.  Once found this file is executed to 
+until it finds a file named *build.lua*.  Once found this file is executed to 
 load and initialize the build system.
 
 === Command Line
