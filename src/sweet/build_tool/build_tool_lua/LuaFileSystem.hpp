@@ -11,6 +11,8 @@ namespace sweet
 namespace build_tool
 {
 
+class BuildTool;
+
 /**
 // Provide Lua bindings to file system operations.
 */
@@ -21,7 +23,7 @@ class LuaFileSystem
 public:
     LuaFileSystem();
     ~LuaFileSystem();
-    void create( lua_State* lua_state );
+    void create( BuildTool* build_tool, lua_State* lua_state );
     void destroy();
 
 private:
@@ -45,6 +47,8 @@ private:
     static void push_recursive_directory_iterator( lua_State* lua_state, const boost::filesystem::recursive_directory_iterator& iterator );
     static boost::filesystem::recursive_directory_iterator* to_recursive_directory_iterator( lua_State* lua_state, int index );
     static int recursive_directory_iterator_gc( lua_State* lua_state );
+
+    static boost::filesystem::path absolute( lua_State* lua_state, int index );
 }; 
 
 }

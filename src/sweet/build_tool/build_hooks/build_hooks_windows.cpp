@@ -305,7 +305,6 @@ static BOOL WINAPI create_process_a_hook( LPCSTR application_name, LPSTR command
         startup_info,
         process_information 
     );
-    // printf( "CreateProcessA '%s'\n", application_name );
     return success;
 }
 
@@ -326,7 +325,6 @@ static BOOL WINAPI create_process_w_hook( LPCWSTR application_name, LPWSTR comma
     char filename [MAX_PATH + 1];
     int count = WideCharToMultiByte( CP_UTF8, 0, application_name, (int) wcslen(application_name), filename, (int) sizeof(filename), NULL, NULL );
     filename[count] = 0;
-    // printf( "CreateProcessW '%s'\n", filename );
     return success;
 }
 
@@ -345,7 +343,6 @@ static BOOL WINAPI create_process_as_user_a_hook( HANDLE token, LPCSTR applicati
         startup_info,
         process_information
     );
-    // printf( "CreateProcessAsUserA '%s'\n", application_name );
     return success;
 }
 
@@ -367,7 +364,6 @@ static BOOL WINAPI create_process_as_user_w_hook( HANDLE token, LPCWSTR applicat
     char filename [MAX_PATH + 1];
     int count = WideCharToMultiByte( CP_UTF8, 0, application_name, (int) wcslen(application_name), filename, (int) sizeof(filename), NULL, NULL );
     filename[count] = 0;
-    // printf( "CreateProcessAsUserW '%s'\n", filename );
     return success;
 }
 
@@ -389,7 +385,6 @@ static BOOL WINAPI create_process_with_logon_w_hook( LPCWSTR username, LPCWSTR d
     char filename [MAX_PATH + 1];
     int count = WideCharToMultiByte( CP_UTF8, 0, application_name, (int) wcslen(application_name), filename, (int) sizeof(filename), NULL, NULL );
     filename[count] = 0;
-    // printf( "CreateProcessWithLogonW '%s'\n", filename );
     return success;
 }
 
@@ -409,7 +404,6 @@ static BOOL WINAPI create_process_with_token_w_hook( HANDLE token, DWORD logon_f
     char filename [MAX_PATH + 1];
     int count = WideCharToMultiByte( CP_UTF8, 0, application_name, (int) wcslen(application_name), filename, (int) sizeof(filename), NULL, NULL );
     filename[count] = 0;
-    // printf( "CreateProcessWithTokenW '%s'\n", filename );
     return success;
 }
 
@@ -423,7 +417,6 @@ static NTSTATUS WINAPI nt_open_file_hook( PHANDLE file_handle, ACCESS_MASK desir
         share_access,
         open_options
     );
-    // printf( "NtOpenFile\n" );
     return status;
 }
 
@@ -442,7 +435,6 @@ static NTSTATUS WINAPI nt_create_file_hook( PHANDLE file_handle, ACCESS_MASK des
         ea_buffer,
         ea_length
     );
-    // printf( "NtCreateFile\n" );
     return status;
 }
 
@@ -461,7 +453,6 @@ static NTSTATUS WINAPI nt_create_user_process_hook( PHANDLE process_handle, PHAN
         create_info,
         attribute_list
     );
-    // printf( "NtCreateUserProcess\n" );
     return status;
 }
 

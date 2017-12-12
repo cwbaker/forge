@@ -1,9 +1,10 @@
 //
 // LuaFileSystem.cpp
-// Copyright (c) 2015 Charles Baker. All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
 #include "LuaFileSystem.hpp"
+#include <sweet/build_tool/BuildTool.hpp>
 #include <sweet/assert/assert.hpp>
 #include <lua/lua.hpp>
 
@@ -26,8 +27,9 @@ LuaFileSystem::~LuaFileSystem()
     destroy();
 }
 
-void LuaFileSystem::create( lua_State* lua_state )
+void LuaFileSystem::create( BuildTool* build_tool, lua_State* lua_state )
 {
+    SWEET_ASSERT( build_tool );
     SWEET_ASSERT( lua_state );
     SWEET_ASSERT( lua_istable(lua_state, -1) );
 
@@ -46,7 +48,8 @@ void LuaFileSystem::create( lua_State* lua_state )
         { "rm", &LuaFileSystem::rm },
         { NULL, NULL }
     };
-    luaL_setfuncs( lua_state, functions, 0 );
+    lua_pushlightuserdata( lua_state, build_tool );
+    luaL_setfuncs( lua_state, functions, 1 );
 
     luaL_newmetatable( lua_state, DIRECTORY_ITERATOR_METATABLE );
     lua_pushstring( lua_state, "__gc" );
@@ -82,7 +85,7 @@ void LuaFileSystem::destroy()
 int LuaFileSystem::exists( lua_State* lua_state )
 {
     const int PATH = 1;
-    const char* path = luaL_checkstring( lua_state, PATH );
+    boost::filesystem::path path = absolute( lua_state, PATH );
     lua_pushboolean( lua_state, boost::filesystem::exists(path) ? 1 : 0 );
     return 1;
 }
@@ -90,7 +93,7 @@ int LuaFileSystem::exists( lua_State* lua_state )
 int LuaFileSystem::is_file( lua_State* lua_state )
 {
     const int PATH = 1;
-    const char* path = luaL_checkstring( lua_state, PATH );
+    boost::filesystem::path path = absolute( lua_state, PATH );
     lua_pushboolean( lua_state, boost::filesystem::is_regular_file(path) ? 1 : 0 );
     return 1;
 }
@@ -98,7 +101,7 @@ int LuaFileSystem::is_file( lua_State* lua_state )
 int LuaFileSystem::is_directory( lua_State* lua_state )
 {
     const int PATH = 1;
-    const char* path = luaL_checkstring( lua_state, PATH );
+    boost::filesystem::path path = absolute( lua_state, PATH );
     lua_pushboolean( lua_state, boost::filesystem::is_directory(path) ? 1 : 0 );
     return 1;
 }
@@ -106,7 +109,7 @@ int LuaFileSystem::is_directory( lua_State* lua_state )
 int LuaFileSystem::ls( lua_State* lua_state )
 {
     const int PATH = 1;
-    const char* path = luaL_checkstring( lua_state, PATH );
+    boost::filesystem::path path = absolute( lua_state, PATH );
     LuaFileSystem::push_directory_iterator( lua_state, directory_iterator(path) );
     lua_pushcclosure( lua_state, &LuaFileSystem::ls_iterator, 1 );
     return 1;
@@ -115,23 +118,25 @@ int LuaFileSystem::ls( lua_State* lua_state )
 int LuaFileSystem::find( lua_State* lua_state )
 {
     const int PATH = 1;
-    const char* path = luaL_checkstring( lua_state, PATH );
+    boost::filesystem::path path = absolute( lua_state, PATH );
     LuaFileSystem::push_recursive_directory_iterator( lua_state, recursive_directory_iterator(path) );
-    lua_pushcclosure( lua_state, &LuaFileSystem::ls_iterator, 1 );
+    lua_pushcclosure( lua_state, &LuaFileSystem::find_iterator, 1 );
     return 1;
 }
 
 int LuaFileSystem::mkdir( lua_State* lua_state )
 {
     const int PATH = 1;
-    boost::filesystem::create_directories( luaL_checkstring(lua_state, PATH) );
+    boost::filesystem::path path = absolute( lua_state, PATH );
+    boost::filesystem::create_directories( path );
     return 0;
 }
 
 int LuaFileSystem::rmdir( lua_State* lua_state )
 {
     const int PATH = 1;
-    boost::filesystem::remove_all( luaL_checkstring(lua_state, PATH) );
+    boost::filesystem::path path = absolute( lua_state, PATH );
+    boost::filesystem::remove_all( path );
     return 0;
 }
 
@@ -139,14 +144,17 @@ int LuaFileSystem::cp( lua_State* lua_state )
 {
     const int FROM = 1;
     const int TO = 2;
-    boost::filesystem::copy_file( luaL_checkstring(lua_state, FROM), luaL_checkstring(lua_state, TO) );
+    boost::filesystem::path from = absolute( lua_state, FROM );
+    boost::filesystem::path to = absolute( lua_state, TO );
+    boost::filesystem::copy_file( from, to );
     return 0;
 }
 
 int LuaFileSystem::rm( lua_State* lua_state )
 {
     const int PATH = 1;
-    boost::filesystem::remove( luaL_checkstring(lua_state, PATH) );
+    boost::filesystem::path path = absolute( lua_state, PATH );
+    boost::filesystem::remove( path );
     return 0;
 }
 
@@ -222,4 +230,14 @@ int LuaFileSystem::recursive_directory_iterator_gc( lua_State* lua_state )
     const recursive_directory_iterator* iterator = LuaFileSystem::to_recursive_directory_iterator( lua_state, ITERATOR );
     iterator->~recursive_directory_iterator();
     return 0;
+}
+
+boost::filesystem::path LuaFileSystem::absolute( lua_State* lua_state, int index )
+{
+    const int BUILD_TOOL = 1;
+    BuildTool* build_tool = reinterpret_cast<BuildTool*>( lua_touserdata(lua_state, lua_upvalueindex(BUILD_TOOL)) );
+    SWEET_ASSERT( build_tool );
+    size_t length = 0;
+    const char* path = luaL_checklstring( lua_state, index, &length );
+    return build_tool->absolute( string(path, length) );
 }

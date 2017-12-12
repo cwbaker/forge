@@ -17,7 +17,7 @@ end
 
 function Css.build( css )
     if css:outdated() then
-        print( leaf(css:dependency():filename()) );
+        print( build.leaf(css:dependency():filename()) );
         local settings = css.settings;
 
         local load_paths = {};

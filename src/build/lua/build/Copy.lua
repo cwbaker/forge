@@ -17,9 +17,6 @@ function Copy.build( copy )
         if build.is_file(copy.source) then 
             build.rm( copy:filename() );
             build.cp( copy.source, copy:filename() );
-        else
-            build.rmdir( copy:filename() );
-            build.cpdir( copy.source, copy:filename() );
         end
     end
 end
@@ -27,7 +24,5 @@ end
 function Copy.clean( copy )
     if build.is_file(copy.source) then 
         build.rm( copy:filename() );
-    else
-        build.rmdir( copy:filename() );
     end
 end

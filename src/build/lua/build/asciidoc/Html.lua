@@ -2,7 +2,7 @@
 local Html = build.TargetPrototype( "asciidoc.Html" );
 
 function Html.create( settings, filename )
-    local html = build.File( ("%s/%s.html"):format(settings.doc, basename(filename)), Html )
+    local html = build.File( ("%s/%s.html"):format(settings.doc, build.basename(filename)), Html )
     html.settings = settings;
 
     local source = build.SourceFile( filename );
@@ -12,14 +12,14 @@ function Html.create( settings, filename )
     local directory = build.Directory( html:branch() );
     html:add_dependency( directory );
 
-    local working_directory = working_directory();
+    local working_directory = build.working_directory();
     working_directory:add_dependency( html );
     return html;
 end
 
 function Html.build( html )
     if html:outdated() then
-        print( leaf(html:dependency():filename()) );
+        print( build.leaf(html:dependency():filename()) );
         local settings = html.settings;
         local python = settings.python.executable;
         local arguments = {

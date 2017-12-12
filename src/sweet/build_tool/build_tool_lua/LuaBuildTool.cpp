@@ -92,7 +92,7 @@ void LuaBuildTool::create( BuildTool* build_tool, lua::Lua* lua )
     lua_State* lua_state = lua->get_lua_state();
     LuaConverter<LuaObject>::push( lua_state, *build_ );
     lua_context_->create( build_tool, lua_state );
-    lua_file_system_->create( lua_state );
+    lua_file_system_->create( build_tool, lua_state );
     lua_graph_->create( build_tool, lua_state );
     lua_system_->create( build_tool, lua_state );
     lua_target_->create( lua );

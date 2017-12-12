@@ -515,9 +515,9 @@ end
 function build.strip( path )
     local branch = build.branch( path );
     if branch ~= "" then 
-        return ("%s/%s"):format( branch, basename(path) );
+        return ("%s/%s"):format( branch, build.basename(path) );
     else
-        return basename( path );
+        return build.basename( path );
     end
 end
 
@@ -645,15 +645,15 @@ function build.obj_directory( target )
 end;
 
 function build.cc_name( name )
-    return ("%s.c"):format( basename(name) );
+    return ("%s.c"):format( build.basename(name) );
 end;
 
 function build.cxx_name( name )
-    return ("%s.cpp"):format( basename(name) );
+    return ("%s.cpp"):format( build.basename(name) );
 end;
 
 function build.obj_name( name, architecture )
-    return ("%s.o"):format( basename(name) );
+    return ("%s.o"):format( build.basename(name) );
 end;
 
 function build.lib_name( name, architecture )
@@ -685,3 +685,4 @@ require "build.commands";
 require "build.Generate";
 require "build.Directory";
 require "build.Copy";
+require "build.CopyDirectory";

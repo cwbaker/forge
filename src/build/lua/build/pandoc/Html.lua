@@ -12,7 +12,7 @@ function Html.create( settings, filename, txt_filename, definition )
     local directory = build.Directory( html:branch() );
     html:add_dependency( directory );
 
-    local working_directory = working_directory();
+    local working_directory = build.working_directory();
     working_directory:add_dependency( html );
     return html;
 end
@@ -27,9 +27,9 @@ function Html.build( html )
     end
 
     if html:outdated() then
-        print( leaf(html:dependency():filename()) );
+        print( build.leaf(html:dependency():filename()) );
         local settings = html.settings;
-        local pandoc = "/usr/local/bin/pandoc";
+        local pandoc = html.settings.pandoc.executable;
         local arguments = {
             "pandoc",
             "--standalone",
@@ -49,11 +49,17 @@ function Html.build( html )
         append_arguments( arguments, "-B ", settings.include_before_body );
         append_arguments( arguments, "-c ", html.stylesheets );
         append_arguments( arguments, "-c ", settings.stylesheets );
-        table.insert( arguments, ('-o "%s"'):format(html:filename()) );
-        table.insert( arguments, ('"%s"'):format(html:dependency():filename()) );
+
+        local output = build.relative( html:filename() );
+        table.insert( arguments, ('-o "%s"'):format(output) );
+
+        local input = build.relative( html:dependency():filename() );
+        table.insert( arguments, ('"%s"'):format(input) );
+
         local environment = {
             PATH = os.getenv( "PATH" );
         };
+
         build.system( pandoc, arguments, environment, build.dependencies_filter(html) );
     end
 end
