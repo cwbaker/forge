@@ -1,9 +1,0 @@
-
-Library {
-    id = "assert";
-
-    Source {
-        pch = "stdafx.hpp";
-        "assert.cpp"
-    }
-}
