@@ -2,7 +2,6 @@
 buildfile "build/build.build";
 buildfile "build_hooks/build_hooks.build";
 buildfile "build_tool_lua/build_tool_lua.build";
-buildfile "build_tool_test/build_tool_test.build";
 
 for _, build in build:default_builds("cc_.*") do
     local settings =  {
