@@ -1,4 +1,3 @@
-
 sweet_build_tool.sln
 sweet_build_tool.xcodeproj
 sweet_build_tool.sublime-project
@@ -11,3 +10,5 @@ shipping/
 *.sdf
 *.suo
 bootstrap
+.vs
+bootstrap-windows
