@@ -264,8 +264,8 @@ function windows.obj_name( name )
     return ("%s.obj"):format( build:basename(name) );
 end
 
-function windows.lib_name( name, architecture )
-    return ("%s_%s.lib"):format( name, architecture );
+function windows.lib_name( name )
+    return ("%s.lib"):format( name, architecture );
 end
 
 function windows.exp_name( name )
