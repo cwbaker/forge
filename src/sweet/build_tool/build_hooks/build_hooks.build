@@ -26,6 +26,10 @@ end
 if build:operating_system() == "windows" then
     build:all {
         build:DynamicLibrary "build_hooks" {
+            libraries = {    
+                "sweet/assert/assert"
+            };
+
             build:Cxx () {
                 "build_hooks_windows.cpp",
                 "ImportDescriptor.cpp"
