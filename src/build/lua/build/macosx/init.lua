@@ -265,7 +265,7 @@ function macosx.cxx_name( name )
     return ("%s.cpp"):format( build:basename(name) );
 end
 
-function macosx.obj_name( name, architecture )
+function macosx.obj_name( name )
     return ("%s.o"):format( build:basename(name) );
 end
 
