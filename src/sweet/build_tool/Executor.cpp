@@ -376,13 +376,13 @@ void Executor::inject_build_hooks_windows( process::Process* pprocess, intptr_t 
 
 #if defined BUILD_OS_WINDOWS 
 typedef BOOL (WINAPI *IsWow64ProcessFunction)( HANDLE, PBOOL );
-IsWow64ProcessFunction IsWow64Process = NULL;
+IsWow64ProcessFunction is_wow_64_process = nullptr;
 #endif
 
 void Executor::initialize_build_hooks_windows() const
 {
 #if defined BUILD_OS_WINDOWS 
-    IsWow64Process = (IsWow64ProcessFunction) GetProcAddress( GetModuleHandleA("kernel32"), "IsWow64Process" );
+    is_wow_64_process = (IsWow64ProcessFunction) GetProcAddress( GetModuleHandleA("kernel32"), "IsWow64Process" );
 #endif
 }
 
@@ -391,8 +391,8 @@ bool Executor::is_64_bit_process_windows( process::Process* process ) const
 #if defined BUILD_OS_WINDOWS
     BOOL is_32_bit_process = TRUE;
     return 
-        IsWow64Process &&
-        IsWow64Process( (HANDLE) process->process(), &is_32_bit_process ) &&
+        is_wow_64_process &&
+        is_wow_64_process( (HANDLE) process->process(), &is_32_bit_process ) &&
         !is_32_bit_process
     ;
 #else
