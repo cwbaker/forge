@@ -154,13 +154,8 @@ void Executor::thread_execute( const std::string& command, const std::string& co
     catch ( const std::exception& exception )
     {
         Scheduler* scheduler = build_tool_->scheduler();
-        scheduler->push_error( exception, context );
+        scheduler->push_error( exception );
         scheduler->push_execute_finished( EXIT_FAILURE, context, environment );
-
-        // !!! TODO !!! Make sure that filters and arguments aren't leaked 
-        // here in the case of errors.  I think this is actually safe at the
-        // moment as any filters and arguments will have been passed on to a
-        // Reader before anything has a chance to throw.
     }
 }
 

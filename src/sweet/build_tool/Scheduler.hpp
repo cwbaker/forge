@@ -57,10 +57,10 @@ class Scheduler
         void filter_finished( Filter* filter, Arguments* arguments );
         void buildfile_finished( Context* context, bool success );
         void output( const std::string& output, Filter* filter, Arguments* arguments, Target* working_directory );
-        void error( const std::string& what, Context* context );
+        void error( const std::string& what );
 
         void push_output( const std::string& output, Filter* filter, Arguments* arguments, Target* working_directory );
-        void push_error( const std::exception& exception, Context* context );
+        void push_error( const std::exception& exception );
         void push_execute_finished( int exit_code, Context* context, process::Environment* environment );
         void push_filter_finished( Filter* filter, Arguments* arguments );
 

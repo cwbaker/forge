@@ -143,7 +143,7 @@ void Reader::thread_read( intptr_t fd_or_handle, Filter* filter, Arguments* argu
     catch ( const std::exception& exception )
     {
         Scheduler* scheduler = build_tool_->scheduler();
-        scheduler->push_error( exception, NULL );
+        scheduler->push_error( exception );
         Reader::close( fd_or_handle );
     }
 }

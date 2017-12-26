@@ -192,20 +192,10 @@ void Scheduler::output( const std::string& output, Filter* filter, Arguments* ar
     }
 }
 
-void Scheduler::error( const std::string& what, Context* context )
+void Scheduler::error( const std::string& what )
 {
     SWEET_ASSERT( build_tool_ );
     build_tool_->error( what.c_str() );
-    if ( context )
-    {
-        SWEET_ASSERT( !active_contexts_.empty() );    
-        SWEET_ASSERT( context == active_contexts_.back() || find(active_contexts_.begin(), active_contexts_.end(), context) == active_contexts_.end() );
-        if ( context == active_contexts_.back() )
-        {
-            active_contexts_.pop_back();
-        }
-        destroy_context( context );
-    }
 }
 
 void Scheduler::push_output( const std::string& output, Filter* filter, Arguments* arguments, Target* working_directory )
@@ -215,10 +205,10 @@ void Scheduler::push_output( const std::string& output, Filter* filter, Argument
     results_condition_.notify_all();
 }
 
-void Scheduler::push_error( const std::exception& exception, Context* context )
+void Scheduler::push_error( const std::exception& exception )
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
-    results_.push_back( std::bind(&Scheduler::error, this, string(exception.what()), context) );
+    results_.push_back( std::bind(&Scheduler::error, this, string(exception.what())) );
     results_condition_.notify_all();
 }
 
@@ -500,7 +490,7 @@ int Scheduler::process_end( Context* context )
         }
         if ( successful )
         {
-            free_context( context );            
+            free_context( context );
         }
         else
         {
