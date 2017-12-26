@@ -109,7 +109,7 @@ function linux.build_library( target )
     };
     
     local settings = target.settings;
-    build:pushd( ("%s/%s_%s"):format(settings.obj_directory(target), settings.platform, settings.architecture) );
+    build:pushd( settings.obj_directory(target) );
     local objects = {};
     for _, compile in target:dependencies() do
         local prototype = compile:prototype();
@@ -154,7 +154,7 @@ function linux.build_executable( target )
     local libraries = {};
 
     local settings = target.settings;
-    build:pushd( ("%s/%s_%s"):format(settings.obj_directory(target), settings.platform, settings.architecture) );
+    build:pushd( settings.obj_directory(target) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx then
