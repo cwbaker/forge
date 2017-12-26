@@ -167,7 +167,7 @@ int LuaBuildTool::set_maximum_parallel_jobs( lua_State* lua_state )
     const int BUILD_TOOL = 1;
     const int MAXIMUM_PARALLEL_JOBS = 2;
     BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    int maximum_parallel_jobs = luaL_checkinteger( lua_state, MAXIMUM_PARALLEL_JOBS );
+    int maximum_parallel_jobs = static_cast<int>( luaL_checkinteger(lua_state, MAXIMUM_PARALLEL_JOBS) );
     build_tool->set_maximum_parallel_jobs( maximum_parallel_jobs );
     return 0;
 }

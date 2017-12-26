@@ -553,7 +553,7 @@ int LuaTarget::any_dependencies_iterator( lua_State* lua_state )
     const int FINISH = lua_upvalueindex( 1 );
     const int LUA_TARGET = lua_upvalueindex( 2 );
 
-    int finish = lua_tointeger( lua_state, FINISH );
+    int finish = static_cast<int>( lua_tointeger(lua_state, FINISH) );
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
 
@@ -585,10 +585,10 @@ int LuaTarget::any_dependencies( lua_State* lua_state )
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     luaL_argcheck( lua_state, target, TARGET, "expected target table" );
 
-    int start = luaL_optinteger( lua_state, START, 1 );
+    int start = static_cast<int>( luaL_optinteger(lua_state, START, 1) );
     luaL_argcheck( lua_state, start >= 1, START, "expected start >= 1" );
 
-    int finish = luaL_optinteger( lua_state, FINISH, INT_MAX );
+    int finish = static_cast<int>( luaL_optinteger(lua_state, FINISH, INT_MAX) );
     luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );
 
     LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
@@ -639,7 +639,7 @@ int LuaTarget::explicit_dependencies_iterator( lua_State* lua_state )
     const int FINISH = lua_upvalueindex( 1 );
     const int LUA_TARGET = lua_upvalueindex( 2 );
 
-    int finish = lua_tointeger( lua_state, FINISH );
+    int finish = static_cast<int>( lua_tointeger(lua_state, FINISH) );
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
 
@@ -671,10 +671,10 @@ int LuaTarget::explicit_dependencies( lua_State* lua_state )
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     luaL_argcheck( lua_state, target != nullptr, TARGET, "expected target table" );
 
-    int start = luaL_optinteger( lua_state, START, 1 );
+    int start = static_cast<int>( luaL_optinteger(lua_state, START, 1) );
     luaL_argcheck( lua_state, start >= 1, START, "expected start >= 1" );
 
-    int finish = luaL_optinteger( lua_state, FINISH, INT_MAX );
+    int finish = static_cast<int>( luaL_optinteger(lua_state, FINISH, INT_MAX) );
     luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );
 
     LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
@@ -725,7 +725,7 @@ int LuaTarget::implicit_dependencies_iterator( lua_State* lua_state )
     const int FINISH = lua_upvalueindex( 1 );
     const int LUA_TARGET = lua_upvalueindex( 2 );
 
-    int finish = lua_tointeger( lua_state, FINISH );
+    int finish = static_cast<int>( lua_tointeger(lua_state, FINISH) );
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
 
@@ -757,10 +757,10 @@ int LuaTarget::implicit_dependencies( lua_State* lua_state )
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
 
-    int start = luaL_optinteger( lua_state, START, 1 );
+    int start = static_cast<int>( luaL_optinteger(lua_state, START, 1) );
     luaL_argcheck( lua_state, start >= 1, START, "expected start >= 1" );
 
-    int finish = luaL_optinteger( lua_state, FINISH, INT_MAX );
+    int finish = static_cast<int>( luaL_optinteger(lua_state, FINISH, INT_MAX) );
     luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );
 
     LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
@@ -811,7 +811,7 @@ int LuaTarget::ordering_dependencies_iterator( lua_State* lua_state )
     const int FINISH = lua_upvalueindex( 1 );
     const int LUA_TARGET = lua_upvalueindex( 2 );
 
-    int finish = lua_tointeger( lua_state, FINISH );
+    int finish = static_cast<int>( lua_tointeger(lua_state, FINISH) );
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
     if ( target && index <= finish )
@@ -840,9 +840,9 @@ int LuaTarget::ordering_dependencies( lua_State* lua_state )
     const int FINISH = 3;
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     luaL_argcheck( lua_state, target != nullptr, TARGET, "expected target table" );
-    int start = luaL_optinteger( lua_state, START, 1 );
+    int start = static_cast<int>( luaL_optinteger(lua_state, START, 1) );
     luaL_argcheck( lua_state, start >= 1, START, "expected start >= 1" );
-    int finish = luaL_optinteger( lua_state, FINISH, INT_MAX );
+    int finish = static_cast<int>( luaL_optinteger(lua_state, FINISH, INT_MAX) );
     luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );
 
     LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
