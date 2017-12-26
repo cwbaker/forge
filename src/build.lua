@@ -5,7 +5,7 @@ require "build.cc";
 require "build.parser";
 require "build.visual_studio";
 require "build.xcode";
-require "build.macosx";
+require "build.macos";
 require "build.windows";
 
 platform = platform or build:operating_system();
@@ -34,7 +34,7 @@ local settings = build:initialize {
     };
     zero_brane_studio = {
         mobdebug = build:switch { build:operating_system();
-            macosx = "/Applications/ZeroBraneStudio.app/Contents/ZeroBraneStudio/lualibs/mobdebug/mobdebug.lua";
+            macos = "/Applications/ZeroBraneStudio.app/Contents/ZeroBraneStudio/lualibs/mobdebug/mobdebug.lua";
             windows = "C:\\Program Files (x86)\\ZeroBraneStudio\\lualibs\\mobdebug\\mobdebug.lua";
         };
     };

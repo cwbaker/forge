@@ -233,7 +233,7 @@ process::Environment* Executor::inject_build_hooks_linux( process::Environment* 
 
 process::Environment* Executor::inject_build_hooks_macosx( process::Environment* environment, bool dependencies_filter_exists ) const
 {
-#if defined(BUILD_OS_MACOSX)
+#if defined(BUILD_OS_MACOS)
     if ( !build_hooks_library_.empty() && dependencies_filter_exists )
     {
         if ( !environment )

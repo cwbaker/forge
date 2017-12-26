@@ -126,7 +126,7 @@ const char* format( int error, char* buffer, unsigned int length )
         buffer[actual_length] = 0;
         --actual_length;
     }
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOS)
     strerror_r( error, buffer, length );
 #else
     (void) error;

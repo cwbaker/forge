@@ -25,7 +25,7 @@ void sweet_break()
 {
 #if defined(BUILD_OS_WINDOWS) && defined(_MSC_VER)
     DebugBreak();
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOS)
     asm( "int $3" );
 #elif defined(BUILD_OS_LINUX)
     raise( SIGABRT );

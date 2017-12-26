@@ -1,7 +1,7 @@
 
-macosx = {};
+macos = {};
 
-function macosx.configure( settings )
+function macos.configure( settings )
     local function autodetect_macosx_sdk_version()
         local sdk_version = "";
         local sdk_build_version = "";
@@ -61,11 +61,11 @@ function macosx.configure( settings )
         return os_version;
     end
 
-    if build:operating_system() == "macosx" then
+    if build:operating_system() == "macos" then
         local local_settings = build.local_settings;
-        if not local_settings.macosx then
+        if not local_settings.macos then
             local_settings.updated = true;
-            local_settings.macosx = {
+            local_settings.macos = {
                 xcrun = "/usr/bin/xcrun";
                 sdk_version = sdk_version;
                 sdk_build_version = sdk_build_version;
@@ -77,57 +77,57 @@ function macosx.configure( settings )
     end
 end
 
-function macosx.initialize( settings )
-    if build:operating_system() == "macosx" then
+function macos.initialize( settings )
+    if build:operating_system() == "macos" then
         for _, architecture in ipairs(settings.architectures) do 
-            build:default_build( ("cc_macosx_%s"):format(architecture), build:configure {
-                obj = ("%s/cc_macosx_%s"):format( settings.obj, architecture );
-                platform = "macosx";
+            build:default_build( ("cc_macos_%s"):format(architecture), build:configure {
+                obj = ("%s/cc_macos_%s"):format( settings.obj, architecture );
+                platform = "macos";
                 architecture = architecture;
                 default_architecture = architecture;
-                cc = macosx.cc;
-                objc = macosx.objc;
-                build_library = macosx.build_library;
-                clean_library = macosx.clean_library;
-                build_executable = macosx.build_executable;
-                clean_executable = macosx.clean_executable;
-                lipo_executable = macosx.lipo_executable;
-                obj_directory = macosx.obj_directory;
-                cc_name = macosx.cc_name;
-                cxx_name = macosx.cxx_name;
-                obj_name = macosx.obj_name;
-                lib_name = macosx.lib_name;
-                dll_name = macosx.dll_name;
-                exe_name = macosx.exe_name;
+                cc = macos.cc;
+                objc = macos.objc;
+                build_library = macos.build_library;
+                clean_library = macos.clean_library;
+                build_executable = macos.build_executable;
+                clean_executable = macos.clean_executable;
+                lipo_executable = macos.lipo_executable;
+                obj_directory = macos.obj_directory;
+                cc_name = macos.cc_name;
+                cxx_name = macos.cxx_name;
+                obj_name = macos.obj_name;
+                lib_name = macos.lib_name;
+                dll_name = macos.dll_name;
+                exe_name = macos.exe_name;
             } );
         end
 
         local settings = build.settings;
         local architecture = settings.default_architecture;
-        settings.obj = build:root( ("%s/cc_macosx_%s"):format(settings.obj, architecture) );
-        settings.platform = "macosx";
+        settings.obj = build:root( ("%s/cc_macos_%s"):format(settings.obj, architecture) );
+        settings.platform = "macos";
         settings.architecture = architecture;
         settings.default_architecture = architecture;
-        settings.cc = macosx.cc;
-        settings.objc = macosx.objc;
-        settings.build_library = macosx.build_library;
-        settings.clean_library = macosx.clean_library;
-        settings.build_executable = macosx.build_executable;
-        settings.clean_executable = macosx.clean_executable;
-        settings.lipo_executable = macosx.lipo_executable;
-        settings.obj_directory = macosx.obj_directory;
-        settings.cc_name = macosx.cc_name;
-        settings.cxx_name = macosx.cxx_name;
-        settings.obj_name = macosx.obj_name;
-        settings.lib_name = macosx.lib_name;
-        settings.dll_name = macosx.dll_name;
-        settings.exe_name = macosx.exe_name;
+        settings.cc = macos.cc;
+        settings.objc = macos.objc;
+        settings.build_library = macos.build_library;
+        settings.clean_library = macos.clean_library;
+        settings.build_executable = macos.build_executable;
+        settings.clean_executable = macos.clean_executable;
+        settings.lipo_executable = macos.lipo_executable;
+        settings.obj_directory = macos.obj_directory;
+        settings.cc_name = macos.cc_name;
+        settings.cxx_name = macos.cxx_name;
+        settings.obj_name = macos.obj_name;
+        settings.lib_name = macos.lib_name;
+        settings.dll_name = macos.dll_name;
+        settings.exe_name = macos.exe_name;
     end
 end
 
-function macosx.cc( target )
+function macos.cc( target )
     local flags = {
-        '-DBUILD_OS_MACOSX'
+        '-DBUILD_OS_MACOS'
     };
     clang.append_defines( target, flags );
     clang.append_include_directories( target, flags );
@@ -139,7 +139,7 @@ function macosx.cc( target )
     end
 
     local ccflags = table.concat( flags, " " );
-    local xcrun = target.settings.macosx.xcrun;
+    local xcrun = target.settings.macos.xcrun;
 
     for _, object in target:dependencies() do
         if object:outdated() then
@@ -159,7 +159,7 @@ function macosx.cc( target )
     end
 end
 
-function macosx.build_library( target )
+function macos.build_library( target )
     local flags = {
         "-static"
     };
@@ -179,17 +179,17 @@ function macosx.build_library( target )
     if #objects > 0 then
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
-        local xcrun = target.settings.macosx.xcrun;
+        local xcrun = target.settings.macos.xcrun;
         build:system( xcrun, ('xcrun --sdk macosx libtool %s -o "%s" "%s"'):format(arflags, build:native(target:filename()), arobjects) );
     end
     build:popd();
 end
 
-function macosx.clean_library( target )
+function macos.clean_library( target )
     build:rm( target:filename() );
 end
 
-function macosx.build_executable( target )
+function macos.build_executable( target )
     local flags = {};
     clang.append_link_flags( target, flags );
 
@@ -233,52 +233,52 @@ function macosx.build_executable( target )
         local ldflags = table.concat( flags, " " );
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, " " );
-        local xcrun = settings.macosx.xcrun;
+        local xcrun = settings.macos.xcrun;
         build:system( xcrun, ('xcrun --sdk macosx clang++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
     end
     build:popd();
 end
 
-function macosx.clean_executable( target )
+function macos.clean_executable( target )
     build:rm( target:filename() );
 end
 
-function macosx.lipo_executable( target )
+function macos.lipo_executable( target )
     local executables = {};
     for _, executable in target:dependencies() do 
         table.insert( executables, executable:filename() );
     end
     executables = table.concat( executables, [[" "]] );
-    local xcrun = target.settings.macosx.xcrun;
+    local xcrun = target.settings.macos.xcrun;
     build:system( xcrun, ('xcrun --sdk macosx lipo -create -output "%s" "%s"'):format(target:filename(), executables) );
 end
 
-function macosx.obj_directory( target )
+function macos.obj_directory( target )
     return ("%s/%s"):format( target.settings.obj, build:relative(target:working_directory():path(), build:root()) );
 end
 
-function macosx.cc_name( name )
+function macos.cc_name( name )
     return ("%s.c"):format( build:basename(name) );
 end
 
-function macosx.cxx_name( name )
+function macos.cxx_name( name )
     return ("%s.cpp"):format( build:basename(name) );
 end
 
-function macosx.obj_name( name )
+function macos.obj_name( name )
     return ("%s.o"):format( build:basename(name) );
 end
 
-function macosx.lib_name( name )
+function macos.lib_name( name )
     return ("lib%s.a"):format( name );
 end
 
-function macosx.dll_name( name )
+function macos.dll_name( name )
     return ("%s.dylib"):format( name );
 end
 
-function macosx.exe_name( name, architecture )
+function macos.exe_name( name, architecture )
     return name;
 end
 
-build:register_module( macosx );
+build:register_module( macos );

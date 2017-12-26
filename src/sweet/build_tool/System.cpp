@@ -9,7 +9,7 @@
 
 #if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOS)
 #include <unistd.h>
 #include <time.h>
 #include <mach-o/dyld.h>
@@ -150,7 +150,7 @@ std::string System::executable()
     int size = ::GetModuleFileNameA( NULL, path, sizeof(path) );
     path [sizeof(path) - 1] = 0;
     return boost::filesystem::path( string(path, size) ).generic_string();
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOS)
     uint32_t size = 0;
     _NSGetExecutablePath( NULL, &size );
     char path [size];
@@ -176,7 +176,7 @@ std::string System::home()
 {
 #if defined (BUILD_OS_WINDOWS)
     const char* HOME = "USERPROFILE";
-#elif defined (BUILD_OS_MACOSX)
+#elif defined (BUILD_OS_MACOS)
     const char* HOME = "HOME";
 #elif defined (BUILD_OS_LINUX)
     const char* HOME = "HOME";
@@ -245,8 +245,8 @@ const char* System::operating_system()
 {
 #if defined(BUILD_OS_WINDOWS)
     return "windows";
-#elif defined(BUILD_OS_MACOSX)
-    return "macosx";
+#elif defined(BUILD_OS_MACOS)
+    return "macos";
 
 #elif defined(BUILD_OS_LINUX)
     return "linux";
@@ -282,7 +282,7 @@ void System::sleep( float milliseconds )
 #if defined(BUILD_OS_WINDOWS)
     SWEET_ASSERT( milliseconds >= 0.0f );
     ::Sleep( static_cast<DWORD>(milliseconds) );
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOS)
     SWEET_ASSERT( false );
     const float MICROSECONDS_PER_MILLISECOND = 1000.0f;
     usleep( milliseconds * MICROSECONDS_PER_MILLISECOND );
@@ -303,7 +303,7 @@ float System::ticks()
 {    
 #if defined(BUILD_OS_WINDOWS)
     return static_cast<float>( ::GetTickCount() ) - initial_tick_count_;
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOS)
     return static_cast<float>( (clock() - initial_tick_count_) * 1000 / CLOCKS_PER_SEC );
 #elif defined(BUILD_OS_LINUX)
     return static_cast<float>( (clock() - initial_tick_count_) * 1000 / CLOCKS_PER_SEC );

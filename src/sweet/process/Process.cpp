@@ -14,7 +14,7 @@
 #include <windows.h>
 #endif
 
-#if defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
+#if defined(BUILD_OS_MACOS) || defined(BUILD_OS_LINUX)
 #include <sweet/cmdline/Splitter.hpp>
 #include <spawn.h>
 #include <unistd.h>
@@ -29,7 +29,7 @@
 using std::vector;
 using namespace sweet::process;
 
-#if defined(BUILD_OS_MACOSX)
+#if defined(BUILD_OS_MACOS)
 extern char* const* environ;
 #endif
 
@@ -45,7 +45,7 @@ Process::Process()
 #if defined(BUILD_OS_WINDOWS)
   process_( INVALID_HANDLE_VALUE ),
   suspended_thread_( INVALID_HANDLE_VALUE )
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOS)
   process_( 0 ),
   exit_code_( 0 ),
   suspended_( false )
@@ -79,7 +79,7 @@ Process::~Process()
         }
     }
 
-#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
+#elif defined(BUILD_OS_MACOS) || defined(BUILD_OS_LINUX)
     if ( process_ != 0 )
     {
         process_ = 0;
@@ -169,7 +169,7 @@ intptr_t Process::pipe( int child_fd )
     pipe.write_fd = (intptr_t) write_fd;
     return pipe.read_fd;
 
-#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
+#elif defined(BUILD_OS_MACOS) || defined(BUILD_OS_LINUX)
     int fds [2] = { -1, -1 };
     int result = ::pipe( fds );
     if ( result != 0 )
@@ -273,7 +273,7 @@ void Process::run( const char* arguments )
 
     process_ = process_information.hProcess;
 
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOS)
     cmdline::Splitter splitter( arguments );
 
     if ( directory_ )
@@ -463,7 +463,7 @@ void Process::resume()
         ::ResumeThread( suspended_thread_ );
         suspended_thread_ = INVALID_HANDLE_VALUE;
     }
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOS)
     if ( suspended_ )
     {
         suspended_ = false;
@@ -488,7 +488,7 @@ void Process::wait()
         SWEET_ERROR( WaitForProcessFailedError("Waiting for a process failed - %s", error) );
     }
 
-#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
+#elif defined(BUILD_OS_MACOS) || defined(BUILD_OS_LINUX)
     SWEET_ASSERT( process_ != 0 );
 
     pid_t result = waitpid( process_, &exit_code_, 0 );
@@ -526,7 +526,7 @@ int Process::exit_code()
     }
 
     return exit_code;
-#elif defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
+#elif defined(BUILD_OS_MACOS) || defined(BUILD_OS_LINUX)
     SWEET_ASSERT( process_ == 0 );
     return exit_code_;
 #endif

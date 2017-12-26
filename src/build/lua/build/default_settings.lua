@@ -1,13 +1,13 @@
 
 local platforms_by_operating_system = {
     windows = { "android", "windows" };
-    macosx = { "android", "ios", "ios_simulator", "macosx" };
+    macos = { "android", "ios", "ios_simulator", "macos" };
     linux = { "linux" };
 };
 
 local path_separator_by_operating_system = {
     windows = ";";
-    macosx = ":";
+    macos = ":";
     linux = ":";
 };
 
@@ -59,7 +59,7 @@ return {
             runtime_library = "gnustl_shared";
         };
 
-        ["macosx"] = {
+        ["macos"] = {
             default_architecture = "x86_64";
             architectures = {
                 "i386", "x86_64"

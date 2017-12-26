@@ -151,7 +151,7 @@ const char* Error::format( int oserror, char* buffer, unsigned int length )
         --actual_length;
     }
     return buffer;
-#elif defined(BUILD_OS_MACOSX)
+#elif defined(BUILD_OS_MACOS)
     int result = strerror_r( oserror, buffer, length );
     (void) result;
     return buffer;

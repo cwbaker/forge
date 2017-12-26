@@ -5,7 +5,7 @@
 #include <vector>
 #include <stdint.h>
 
-#if defined(BUILD_OS_MACOSX) || defined(BUILD_OS_LINUX)
+#if defined(BUILD_OS_MACOS) || defined(BUILD_OS_LINUX)
 #include <sys/types.h>
 #endif
 
@@ -50,7 +50,7 @@ class SWEET_PROCESS_DECLSPEC Process
     void* suspended_thread_; ///< The handle to the suspended main thread of this Process.
 #endif
 
-#if defined(BUILD_OS_MACOSX)
+#if defined(BUILD_OS_MACOS)
     pid_t process_;
     int exit_code_;
     bool suspended_;
