@@ -4,7 +4,7 @@ windows = {};
 function windows.initialize( settings )
     if build:operating_system() == "windows" then
         for _, architecture in ipairs(settings.architectures) do 
-            build:default_build( ("windows-%s"):format(architecture), build:configure {
+            build:default_build( ("cc_windows_%s"):format(architecture), build:configure {
                 obj = ("%s/cc_windows_%s"):format( settings.obj, architecture );
                 architecture = architecture;
                 default_architecture = architecture;
@@ -28,6 +28,11 @@ function windows.initialize( settings )
         end
 
         local settings = build.settings;
+        local architecture = settings.default_architecture;
+        settings.obj = build:root( ('%s/cc_windows_%s'):format(settings.obj, architecture) );
+        settings.platform = "windows";
+        settings.architecture = architecture;
+        settings.default_architecture = architecture;
         settings.cc = windows.cc;
         settings.build_library = windows.build_library;
         settings.clean_library = windows.clean_library;
@@ -60,7 +65,8 @@ function windows.cc( target )
     local sources_by_directory = {};
     for _, object in target:dependencies() do
         if object:outdated() then
-            local directory = build:branch( object.source );
+            local source = object:dependency();
+            local directory = build:branch( source:filename() );
             local sources = sources_by_directory[directory];
             if not sources then 
                 sources = {};
@@ -73,12 +79,16 @@ function windows.cc( target )
         end    
     end
 
+    local settings = target.settings;
+
     for directory, sources in pairs(sources_by_directory) do
         if #sources > 0 then
-            local output_directory = build:native( ("%s%s/%s/"):format(obj_directory(target), target.architecture, directory) );
+            local settings = target.settings;
+            -- local output_directory = build:native( ("%s%s/%s/"):format(settings.obj_directory(target), target.architecture, directory) );
+            local output_directory = build:native( ("%s/%s"):format(settings.obj_directory(target), build:relative(directory)) );
             local ccflags = table.concat( flags, " " );
             local source = table.concat( sources, '" "' );
-            local cl = msvc.visual_studio_tool( target, "cl.exe" );
+            local cl = msvc.visual_cxx_tool( target, "cl.exe" );
             local environment = msvc.environments_by_architecture[target.architecture];
             build:system( 
                 cl, 
@@ -104,7 +114,9 @@ function windows.build_library( target )
         table.insert( flags, "/ltcg" );
     end
     
-    build:pushd( ("%s%s"):format(obj_directory(target), target.architecture) );
+    local settings = target.settings;
+    build:pushd( settings.obj_directory(target) );
+
     local objects = {};
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
@@ -118,7 +130,7 @@ function windows.build_library( target )
     if #objects > 0 then
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
-        local msar = msvc.visual_studio_tool( target, "lib.exe" );
+        local msar = msvc.visual_cxx_tool( target, "lib.exe" );
         local environment = msvc.environments_by_architecture[target.architecture];
         print( build:leaf(target:filename()) );
         build:system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, build:native(target:filename()), arobjects), environment );
@@ -129,7 +141,7 @@ end;
 function windows.clean_library( target )
     build:rm( target:filename() );
     build:rmdir( obj_directory(target) );
-end;
+end
 
 function windows.build_executable( target )
     local flags = {};
@@ -139,11 +151,17 @@ function windows.build_executable( target )
     local objects = {};
     local libraries = {};
 
+    local settings = target.settings;
+    build:pushd( settings.obj_directory(target) );
+
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == build.Cc or prototype == build.Cxx then
+            assertf( target.architecture == dependency.architecture, "Architectures for '%s' (%s) and '%s' (%s) don't match", target:path(), tostring(target.architecture), dependency:path(), tostring(dependency.architecture) );
             for _, object in dependency:dependencies() do
-                table.insert( objects, obj_name(object:id()) );
+                if object:prototype() == nil then
+                    table.insert( objects, build:relative(object:filename()) );
+                end
             end
         elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
             table.insert( libraries, ('%s.lib'):format(build:basename(dependency:filename())) );
@@ -153,13 +171,12 @@ function windows.build_executable( target )
     msvc.append_link_libraries( target, libraries );
 
     if #objects > 0 then
-        local msld = msvc.visual_studio_tool( target, "link.exe" );
+        local msld = msvc.visual_cxx_tool( target, "link.exe" );
         local msmt = msvc.windows_sdk_tool( target, "mt.exe" );
         local msrc = msvc.windows_sdk_tool( target, "rc.exe" );
-        local intermediate_manifest = ('%s%s_intermediate.manifest'):format( obj_directory(target), target:id() );
+        local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( settings.obj_directory(target), target:id() );
 
         print( build:leaf(target:filename()) );
-        build:pushd( ("%s%s"):format(obj_directory(target), target.architecture) );
         if target.settings.incremental_linking then
             local embedded_manifest = ("%s_embedded.manifest"):format( target:id() );
             local embedded_manifest_rc = ("%s_embedded_manifest.rc"):format( target:id() );
@@ -209,9 +226,9 @@ function windows.build_executable( target )
             build:sleep( 100 );
             build:system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(build:native(target:filename()), intermediate_manifest), environment );
         end
-        build:popd();
     end
-end;
+    build:popd();
+end
 
 function windows.clean_executable( target )
     local filename = target:filename();
@@ -224,7 +241,7 @@ function windows.lipo_executable( target )
 end
 
 function windows.obj_directory( target )
-    return ("%s/%s/"):format( target.settings.obj, build:relative(target:working_directory():path(), build:root()) );
+    return ("%s/%s"):format( target.settings.obj, build:relative(target:working_directory():path(), build:root()) );
 end
 
 function windows.cc_name( name )

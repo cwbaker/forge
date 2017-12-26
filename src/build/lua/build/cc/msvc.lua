@@ -2,6 +2,29 @@
 msvc = {};
 
 function msvc.configure( settings )
+    local function vswhere()
+        local values = {};
+        local vswhere = 'C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe';
+        local environment = {
+            ProgramData = build:getenv( 'ProgramData' );
+        };
+        build:system( vswhere, 'vswhere -latest', nil, nil, function(line)
+            local key, value = line:match( '([%w_]+): ([^\n\r]+)' );
+            if key and value then 
+                values[key] = value;
+            end
+        end );
+        return values;
+    end
+
+    local function vc_default_version( installation_path )
+        local filename = ('%s/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt'):format( installation_path );
+        local file = assert( io.open(filename, 'rb') );
+        local version = file:read( '*all' );
+        file:close();
+        return version:match('([^\n\r]+)');
+    end
+
     local function registry( key )
         local values = {};
         local reg = "C:/Windows/system32/reg.exe";
@@ -17,18 +40,35 @@ function msvc.configure( settings )
     end
 
     local function autodetect_visual_studio_directory()
-        local visual_studio_directory = os.getenv( "VS120COMNTOOLS" );
-        if visual_studio_directory then
-            visual_studio_directory = string.gsub( visual_studio_directory, "\\Common7\\Tools\\", "" );
-        end    
-        return visual_studio_directory;
+        local visual_studio_directory;
+        local values = vswhere();
+        if values then 
+            return values.installationPath;
+        end
+    end
+
+    local function autodetect_visual_cxx_directory()
+        local values = vswhere();
+        local visual_studio_directory = values.installationPath;
+        local vc_version = vc_default_version( visual_studio_directory );
+        if visual_studio_directory and vc_version then
+            return ('%s\\VC\\Tools\\MSVC\\%s'):format( visual_studio_directory, vc_version );
+        end
     end
 
     local function autodetect_windows_sdk_directory()
         local windows_sdk = registry( [[HKLM\SOFTWARE\Microsoft\Windows Kits\Installed Roots]] );
-        if windows_sdk then 
-            return windows_sdk.KitsRoot81 or windows_sdk.KitsRoot;
+        if windows_sdk.KitsRoot10 then 
+            return windows_sdk.KitsRoot10;
+        elseif windows_sdk.KitsRoot81 then
+            return windows_sdk.KitsRoot81;
+        else 
+            return windows_sdk.KitsRoot;
         end
+    end
+
+    local function autodetect_windows_sdk_version()
+        return '10.0.16299.0';
     end
 
     if build:operating_system() == "windows" then
@@ -36,8 +76,10 @@ function msvc.configure( settings )
         if not local_settings.msvc then
             local_settings.updated = true;
             local_settings.msvc = {
-                visual_studio_directory = autodetect_visual_studio_directory() or "C:/Program Files (x86)/Microsoft Visual Studio 12.0";
+                visual_studio_directory = autodetect_visual_studio_directory();
+                visual_cxx_directory = autodetect_visual_cxx_directory();
                 windows_sdk_directory = autodetect_windows_sdk_directory();
+                windows_sdk_version = autodetect_windows_sdk_version();
             };
         end
     end
@@ -56,43 +98,46 @@ function msvc.initialize( settings )
         -- putenv( "VS_UNICODE_OUTPUT", "" );
 
         local visual_studio_directory = settings.msvc.visual_studio_directory;
-        
+        local visual_cxx_directory = settings.msvc.visual_cxx_directory;
+
         local path_i386 = {
-            ('%s\\VC\\bin\\amd64_x86'):format( visual_studio_directory ),
+            ('%s\\bin\\Hostx64\\x86'):format( visual_cxx_directory ),
             ('%s\\Common7\\IDE'):format( visual_studio_directory ),
             ('%s\\Common7\\Tools'):format( visual_studio_directory ),
-            ('%s\\VC\\vcpackages'):format( visual_studio_directory ),
         };
 
         local path_x86_64 = {
-            ('%s\\VC\\bin\\amd64'):format( visual_studio_directory ),
+            ('%s\\bin\\Hostx64\\x64'):format( visual_cxx_directory ),
             ('%s\\Common7\\IDE'):format( visual_studio_directory ),
             ('%s\\Common7\\Tools'):format( visual_studio_directory ),
-            ('%s\\VC\\vcpackages'):format( visual_studio_directory ),
         };
         
         local lib_i386 = {
-            ('%s\\VC\\atlmfc\\lib'):format( visual_studio_directory ),
-            ('%s\\VC\\lib'):format( visual_studio_directory )
+            ('%s\\atlmfc\\lib\\x86'):format( visual_cxx_directory ),
+            ('%s\\lib\\x86'):format( visual_cxx_directory )
         };
 
         local lib_x86_64 = {
-            ('%s\\VC\\atlmfc\\lib\\amd64'):format( visual_studio_directory ),
-            ('%s\\VC\\lib\\amd64'):format( visual_studio_directory )
+            ('%s\\VC\\atlmfc\\lib\\x64'):format( visual_cxx_directory ),
+            ('%s\\lib\\x64'):format( visual_cxx_directory )
         };
 
         local include = {
-            ('%s\\VC\\atlmfc\\include'):format( visual_studio_directory ),
-            ('%s\\VC\\include'):format( visual_studio_directory ),
+            ('%s\\atlmfc\\include'):format( visual_cxx_directory ),
+            ('%s\\include'):format( visual_cxx_directory ),
         };
         
-        local windows_sdk_directory = settings.msvc.windows_sdk_directory;
-        if windows_sdk_directory then 
-            table.insert( include, ('%s\\Include\\um'):format(windows_sdk_directory) );
-            table.insert( include, ('%s\\Include\\shared'):format(windows_sdk_directory) );
-            table.insert( include, ('%s\\Include\\winrt'):format(windows_sdk_directory) );
-            table.insert( lib_i386, ('%s\\Lib\\winv6.3\\um\\x86'):format(windows_sdk_directory) );
-            table.insert( lib_x86_64, ('%s\\Lib\\winv6.3\\um\\x64'):format(windows_sdk_directory) );
+        local sdk_directory = settings.msvc.windows_sdk_directory;
+        local sdk_version = settings.msvc.windows_sdk_version;
+        if sdk_directory then 
+            table.insert( include, ('%s\\Include\\%s\\ucrt'):format(sdk_directory, sdk_version) );
+            table.insert( include, ('%s\\Include\\%s\\um'):format(sdk_directory, sdk_version) );
+            table.insert( include, ('%s\\Include\\%s\\shared'):format(sdk_directory, sdk_version) );
+            table.insert( include, ('%s\\Include\\%s\\winrt'):format(sdk_directory, sdk_version) );
+            table.insert( lib_i386, ('%s\\Lib\\%s\\um\\x86'):format(sdk_directory, sdk_version) );
+            table.insert( lib_i386, ('%s\\Lib\\%s\\ucrt\\x86'):format(sdk_directory, sdk_version) );
+            table.insert( lib_x86_64, ('%s\\Lib\\%s\\um\\x64'):format(sdk_directory, sdk_version) );
+            table.insert( lib_x86_64, ('%s\\Lib\\%s\\ucrt\\x64'):format(sdk_directory, sdk_version) );
         end
 
         msvc.environments_by_architecture = {
@@ -116,19 +161,22 @@ function msvc.initialize( settings )
     end
 end;
 
-function msvc.visual_studio_tool( target, tool )
+function msvc.visual_cxx_tool( target, tool )
     if target.architecture == "x86_64" then
-        return ("%s/VC/bin/amd64/%s"):format( target.settings.msvc.visual_studio_directory, tool );
+        return ("%s\\bin\\Hostx64\\x64\\%s"):format( target.settings.msvc.visual_cxx_directory, tool );
     else
-        return ("%s/VC/bin/%s"):format( target.settings.msvc.visual_studio_directory, tool );
+        return ("%s\\bin\\Hostx64\\x86\\%s"):format( target.settings.msvc.visual_cxx_directory, tool );
     end
 end
 
 function msvc.windows_sdk_tool( target, tool )
+    local settings = target.settings;
+    local directory = settings.msvc.windows_sdk_directory;
+    local version = settings.msvc.windows_sdk_version;
     if target.architecture == "x86_64" then
-        return ("%s/bin/x64/%s"):format( target.settings.msvc.windows_sdk_directory, tool );
+        return ("%s\\bin\\%s\\x64\\%s"):format( directory, version, tool );
     else
-        return ("%s/bin/x86/%s"):format( target.settings.msvc.windows_sdk_directory, tool );
+        return ("%s\\bin\\%s\\x86\\%s"):format( directory, version, tool );
     end
 end
 
@@ -184,6 +232,8 @@ function msvc.append_compile_flags( target, flags )
     table.insert( flags, "/c" );
     table.insert( flags, "/showIncludes" );
 
+    local settings = target.settings;
+
     local language = target.language or "c++";
     if language == "c" then 
         table.insert( flags, "/TC" );
@@ -210,7 +260,7 @@ function msvc.append_compile_flags( target, flags )
     end
     
     if target.settings.debug then
-        local pdb = ("%s%s"):format(obj_directory(target), pdb_name(target:working_directory():id()) );
+        local pdb = ("%s%s.pdb"):format(settings.obj_directory(target), target:working_directory():id() );
         table.insert( flags, ("/Zi /Fd%s"):format(build:native(pdb)) );
     end
 
@@ -267,9 +317,11 @@ function msvc.append_library_directories( target, flags )
 end
 
 function msvc.append_link_flags( target, flags )
+    local settings = target.settings;
+
     table.insert( flags, "/nologo" );
 
-    local intermediate_manifest = ('%s%s_intermediate.manifest'):format( obj_directory(target), target:id() );
+    local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( settings.obj_directory(target), target:id() );
     table.insert( flags, "/manifest" );
     table.insert( flags, ("/manifestfile:%s"):format(intermediate_manifest) );
     
@@ -289,7 +341,8 @@ function msvc.append_link_flags( target, flags )
     
     if target.settings.debug then
         table.insert( flags, "/debug" );
-        table.insert( flags, ("/pdb:%s"):format(build:native(obj_directory(target), pdb_name(target:id()))) );
+        local pdb = ('%s/%s.pdb'):format( settings.obj_directory(target), target:id() );
+        table.insert( flags, ("/pdb:%s"):format(build:native(pdb)) );
     end
 
     if target.settings.link_time_code_generation then
@@ -297,7 +350,8 @@ function msvc.append_link_flags( target, flags )
     end
 
     if target.settings.generate_map_file then
-        table.insert( flags, ("/map:%s.map"):format(build:native(("%s%s"):format(obj_directory(target), target:id()))) );
+        local map = ('%s/%s.map'):format( settings.obj_directory(target), target:id() );
+        table.insert( flags, ("/map:%s"):format(build:native(map)) );
     end
 
     if target.settings.optimization then
@@ -379,6 +433,7 @@ function msvc.dependencies_filter( output_directory, source_directory )
             local SOURCE_FILE_PATTERN = "^[%w_]+%.[%w_]+[\n\r]*$";
             local start, finish = line:find( SOURCE_FILE_PATTERN );
             if start and finish then 
+                local obj_name = function( name ) return ("%s.obj"):format( build:basename(name) ); end;
                 object = build:File( ("%s/%s"):format(output_directory, obj_name(line)) );
             end
             printf( line );
