@@ -6,6 +6,7 @@
 #include <string>
 #include <istream>
 #include <memory>
+#include <ctime>
 
 namespace sweet
 {

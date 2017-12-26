@@ -1,8 +1,11 @@
 #ifndef SWEET_BUILD_TOOL_GRAPHWRITER_HPP_INCLUDED
 #define SWEET_BUILD_TOOL_GRAPHWRITER_HPP_INCLUDED
 
+#include <vector>
+#include <string>
 #include <ostream>
 #include <memory>
+#include <ctime>
 
 namespace sweet
 {

@@ -14,6 +14,7 @@ using std::vector;
 using std::string;
 using std::unique_ptr;
 using std::make_pair;
+using namespace sweet;
 using namespace sweet::build_tool;
 
 GraphReader::GraphReader( std::istream* istream, error::ErrorPolicy* error_policy  )
