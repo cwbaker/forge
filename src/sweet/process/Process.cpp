@@ -282,7 +282,10 @@ void Process::run( const char* arguments )
         // working directory for the thread that is spawning a process rather than
         // the global per-process working directory changed by `fchdir()`.  See 
         // `syscall()` and `<sys/syscall.h>`.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         int result = syscall( SYS___pthread_chdir, directory_ );
+#pragma clang diagnostic pop
         if ( result != 0 )
         {
             char message [256];
