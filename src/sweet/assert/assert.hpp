@@ -11,10 +11,6 @@
 
 #include <sweet/build.hpp>
 
-#if !defined BUILD_MODULE_ASSERT && defined _MSC_VER
-#pragma comment( lib, "assert" BUILD_LIBRARY_SUFFIX )
-#endif
-
 /**
  Assertion library.
 
