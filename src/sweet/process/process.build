@@ -3,13 +3,7 @@ buildfile "process_test/process_test.build";
 
 for _, build in build:default_builds("cc_.*") do
     build:Library "process" {
-        libraries = {
-            "sweet/assert/assert",
-            "sweet/error/error"
-        };
-
         build:Cxx () {
-            precompiled_header = "stdafx.hpp";
             "Error.cpp",
             "Environment.cpp",
             "Process.cpp"

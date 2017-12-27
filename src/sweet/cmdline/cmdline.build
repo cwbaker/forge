@@ -3,11 +3,6 @@ buildfile "cmdline_test/cmdline_test.build";
 
 for _, build in build:default_builds("cc_.*") do
     build:Library "cmdline" {
-        libraries = {
-            "sweet/assert/assert",
-            "sweet/error/error"
-        };
-
         build:Cxx () {
             "AddOption.cpp",
             "Error.cpp",
