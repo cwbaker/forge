@@ -1,21 +1,26 @@
 # Sweet Build
 
-## Overview
+*Sweet Build* is a Lua scriptable build tool that tracks dependencies between files; using relative timestamps to determine which are out of date; and then carrying out actions to bring those files up to date.
 
-Sweet Build is a build tool that tracks dependencies between files; using
-relative timestamps to determine which are out of date; and then carrying 
-out actions to bring those files up to date.
+A simple, real-world example Lua script used to build the *process* library used in *Sweet Build*:
 
-Sweet Build is similar to GNU Make, Perforce Jam, SCons, Waf, Lake, and other 
-dependency based build tools.  Its main difference to these tools is that it 
-allows scripts to make arbitrary passes over the dependency graph to carry out
-actions.  For example a clean action in Sweet Build is implemented by 
-traversing the dependency graph and invoking the clean function for all 
-visited targets while in a more traditional build tool the clean action would
-be expressed by creating additional phony targets.
+~~~lua
+buildfile "process_test/process_test.build";
 
-Sweet Build handles source trees spanning multiple directories, with multiple 
-variants and compilers.
+for _, build in build:default_builds("cc_.*") do
+    build:Library "process" {
+        build:Cxx () {
+            "Error.cpp",
+            "Environment.cpp",
+            "Process.cpp"
+        };
+    };
+end
+~~~
+
+*Sweet Build* is similar to GNU Make, Perforce Jam, SCons, Waf, Lake, and other dependency based build tools.  Its main difference to these tools is that it allows scripts to make arbitrary passes over the dependency graph to carry out actions.  For example a clean action in Sweet Build is implemented by traversing the dependency graph and invoking the clean function for all visited targets while in a more traditional build tool the clean action would be expressed by creating additional phony targets.
+
+*Sweet Build* handles source trees spanning multiple directories, with multiple variants and compilers.
 
 Features:
 
@@ -24,7 +29,7 @@ Features:
   - Support for builds spread across multiple directories.
   - Platform independent path and file system operations.
   - Automatic dependency detection via tracing open files.
-  - Filtering the output of external processes.
+  - Filtering output of external processes.
   - Dependency graph save and load for faster incremental builds.
   - Parallel execution makes use of multiple processors.
   - Variant builds.
@@ -44,22 +49,72 @@ Anti-features:
       -f, --file         Set the script file to load.
       -s, --stack-trace  Enable stack traces in error messages.
 
-Sweet Build is invoked by running the build executable from the command line.
-When invoked the executable searches up from the current working directory 
-until it finds a file named *build.lua*.  Once found this file is executed to 
-initialize the build system and bring the build up to date.
+*Sweet Build* is invoked by running the build executable from the command line.  When invoked the executable searches up from the current working directory until it finds a file named `build.lua`.  Once found this file is executed to initialize the build system and bring the build up to date.
 
-## Example 
+## Examples
 
-The following buildfile builds *Sweet Build* executable:
+The main functionality of *Sweet Build* is contained in a library built by the following build script:
+
+~~~lua
+
+buildfile "build/build.build";
+buildfile "build_hooks/build_hooks.build";
+buildfile "build_tool_lua/build_tool_lua.build";
+
+for _, build in build:default_builds("cc_.*") do
+    local settings =  {
+        defines = {
+            "_CRT_SECURE_NO_DEPRECATE",
+            "_SCL_SECURE_NO_DEPRECATE",
+            "_WIN32_WINNT=0x0500",
+            "WIN32_LEAN_AND_MEAN",
+            "BOOST_ALL_NO_LIB", -- No automatic linking to Boost libraries.
+        };
+    };
+
+    -- Disable warnings on Linux to avoid unused variable warnings in Boost
+    -- System library headers.
+    if build:operating_system() == "linux" then
+        settings.warning_level = 0;
+    end
+
+    local build = build:configure( settings );
+    build:Library "build_tool" {
+        build:Cxx () {
+            "Arguments.cpp",
+            "BuildTool.cpp",
+            "BuildToolEventSink.cpp",
+            "Context.cpp",
+            "Error.cpp", 
+            "Executor.cpp",
+            "Filter.cpp",
+            "Graph.cpp",
+            "GraphReader.cpp",
+            "GraphWriter.cpp",
+            "Job.cpp",
+            "Reader.cpp", 
+            "Scheduler.cpp", 
+            "System.cpp",
+            "Target.cpp",
+            "TargetPrototype.cpp",
+            "path_functions.cpp"
+        };
+    };
+end
+~~~
+
+The *Sweet Build* executable is built by the following build script:
 
 ~~~lua
 local settings =  {
     subsystem = "CONSOLE"; 
     stack_size = 32768; 
-    architectures = { "x86_64" };
-    -- Disable automatic linking to Boost libraries.
-    defines = { "BOOST_ALL_NO_LIB" };
+    architectures = { 
+        "x86_64" 
+    };
+    defines = { 
+        "BOOST_ALL_NO_LIB", -- No automatic linking to Boost libraries.
+    };
 };
 
 -- Disable warnings on Linux to avoid unused variable warnings in Boost
@@ -86,7 +141,10 @@ build:all {
 
         system_libraries = build:switch {
             platform;
-            linux = { "pthread", "dl" };
+            linux = { 
+                "pthread", 
+                "dl" 
+            };
         };
         
         build:Cxx () {
