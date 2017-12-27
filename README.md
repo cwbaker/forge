@@ -2,26 +2,6 @@
 
 *Sweet Build* is a Lua scriptable build tool that tracks dependencies between files; using relative timestamps to determine which are out of date; and then carrying out actions to bring those files up to date.
 
-A simple, real-world example Lua script used to build the *process* library used in *Sweet Build*:
-
-~~~lua
-buildfile "process_test/process_test.build";
-
-for _, build in build:default_builds("cc_.*") do
-    build:Library "process" {
-        build:Cxx () {
-            "Error.cpp",
-            "Environment.cpp",
-            "Process.cpp"
-        };
-    };
-end
-~~~
-
-*Sweet Build* is similar to GNU Make, Perforce Jam, SCons, Waf, Lake, and other dependency based build tools.  Its main difference to these tools is that it allows scripts to make arbitrary passes over the dependency graph to carry out actions.  For example a clean action in Sweet Build is implemented by traversing the dependency graph and invoking the clean function for all visited targets while in a more traditional build tool the clean action would be expressed by creating additional phony targets.
-
-*Sweet Build* handles source trees spanning multiple directories, with multiple variants and compilers.
-
 Features:
 
   - Single executable with no external dependencies.
@@ -49,7 +29,10 @@ Anti-features:
       -f, --file         Set the script file to load.
       -s, --stack-trace  Enable stack traces in error messages.
 
-*Sweet Build* is invoked by running the build executable from the command line.  When invoked the executable searches up from the current working directory until it finds a file named `build.lua`.  Once found this file is executed to initialize the build system and bring the build up to date.
+*Sweet Build* is invoked by running the build executable from the command line.
+When invoked the executable searches up from the current working directory 
+until it finds a file named `build.lua`.  Once found this file is executed to 
+load and initialize the build system.
 
 ## Examples
 
