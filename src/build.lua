@@ -44,8 +44,7 @@ local settings = build:initialize {
 -- generating XCode projects and Visual Studio solutions.
 build:default_targets {
     "sweet/build_tool/build",
-    "sweet/build_tool/build_hooks",
-    "sweet/build_tool/build_tool_test"
+    "sweet/build_tool/build_hooks"
 };
 
 buildfile "boost/boost.build";
