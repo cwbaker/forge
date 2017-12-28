@@ -1,24 +1,76 @@
 # Sweet Build
 
-*Sweet Build* is a Lua scriptable build tool that tracks dependencies between files; using relative timestamps to determine which are out of date; and then carrying out actions to bring those files up to date.
+*Sweet Build* is a Lua scriptable build tool that tracks dependencies between files, uses relative timestamps to determine which are out of date, and carries out actions to bring those files up to date.
 
-Features:
+## Features
 
-  - Single executable with no external dependencies.
-  - Lua scripting language to specify dependency graph and actions.
-  - Support for builds spread across multiple directories.
-  - Platform independent path and file system operations.
-  - Automatic dependency detection via tracing open files.
-  - Filtering output of external processes.
-  - Dependency graph save and load for faster incremental builds.
-  - Parallel execution makes use of multiple processors.
-  - Variant builds.
+  - Single executable with no external dependencies
+  - Lua scripting language specifies dependency graph and actions
+  - Fast incremental builds
+  - Automatic implict dependency detection via tracing open files
+  - Arbitrary passes over the full or partial dependency graph
+  - Platform independent path and file system operations
+  - Modular builds spanning multiple directories
+  - Variant builds (e.g. debug, release, etc)
+  - Runs on Windows, macOS, and Linux
 
-NOTE: Automatic dependency tracking comes with some caveats!  On Windows dependencies are only automatically tracked for 64 bit processes.  On macOS dependencies are only automatically tracked for non-system executables (it is possible to disable system integrity protection (SIP) to avoid this limitation).
+## Example
 
-Anti-features:
+The Lua script used to build the process spawning library used in *Sweet Build*:
 
-  - Not in widespread use.
+~~~lua
+buildfile "process_test/process_test.build";
+
+for _, build in build:default_builds("cc_.*") do
+    build:Library "process" {
+        build:Cxx () {
+            "Error.cpp",
+            "Environment.cpp",
+            "Process.cpp"
+        };
+    };
+end
+~~~
+
+## Installation
+
+*Sweet Build* is installed by building it from source code and then copying its executables and Lua scripts into your path or project.
+
+**Linux:**
+
+From a shell with GCC installed and available on the path:
+
+- `git clone git@github.com:cwbaker/sweet_build.git sweet_build`
+- `cd sweet_build/src`
+- `sh ./bootstrap-linux.sh`
+- `../bootstrap-linux/build variant=shipping`
+- Copy `../shipping/bin/build` into your path or project
+- Copy `../shipping/bin/libbuild_hooks.so` into your path or project
+- Copy `src/build/lua/**` into your project
+
+**macOS:**
+
+From a shell with Xcode installed:
+
+- `git clone git@github.com:cwbaker/sweet_build.git sweet_build`
+- `cd sweet_build/src`
+- `sh ./bootstrap-macos.sh`
+- `../bootstrap-macos/build variant=shipping`
+- Copy `../shipping/bin/build` into your path or project
+- Copy `../shipping/bin/build_hooks.dylib` into your path or project
+- Copy `src/build/lua/**` into your project
+
+**Windows:**
+
+From a Visual C++ command prompt:
+
+- `git clone git@github.com:cwbaker/sweet_build.git sweet_build`
+- `cd sweet_build\src`
+- `bootstrap-windows.bat`
+- `..\bootstrap-windows\build.exe variant=shipping`
+- Copy `../shipping/bin/build.exe` into your path or project
+- Copy `../shipping/bin/build_hooks.dll` into your path or project
+- Copy `src/build/lua/**` into your project
 
 ## Usage
 
@@ -29,111 +81,22 @@ Anti-features:
       -f, --file         Set the script file to load.
       -s, --stack-trace  Enable stack traces in error messages.
 
-*Sweet Build* is invoked by running the build executable from the command line.
-When invoked the executable searches up from the current working directory 
-until it finds a file named `build.lua`.  Once found this file is executed to 
-load and initialize the build system.
+*Sweet Build* is invoked by running `build` from a directory within a project's directory hierarchy.  A build then proceeds through the following four steps:
 
-## Examples
+- Search up from the current working directory to find the first directory containing a file named `build.lua`.
 
-The main functionality of *Sweet Build* is contained in a library built by the following build script:
+- Assign values to global variables in Lua for all assignments (`variable=value`) passed on the command line to parameterize the build (e.g. `variant=release`, `version=2.0.x`, etc).
 
-~~~lua
+- Execute the previously found `build.lua` to configure the build and load the initial dependency graph typically by loading several modular Lua scripts (referred to as buildfiles).
 
-buildfile "build/build.build";
-buildfile "build_hooks/build_hooks.build";
-buildfile "build_tool_lua/build_tool_lua.build";
+- Call global functions for each command (`command`) passed on the command line to carry out the desired build actions (e.g. `clean`, `default`, etc).
 
-for _, build in build:default_builds("cc_.*") do
-    local settings =  {
-        defines = {
-            "_CRT_SECURE_NO_DEPRECATE",
-            "_SCL_SECURE_NO_DEPRECATE",
-            "_WIN32_WINNT=0x0500",
-            "WIN32_LEAN_AND_MEAN",
-            "BOOST_ALL_NO_LIB", -- No automatic linking to Boost libraries.
-        };
-    };
+*Sweet Build* returns the number of errors that occured on exit.  This maps to the standard practice of returning 0 to indicate success and non-zero to indicate failure.
 
-    -- Disable warnings on Linux to avoid unused variable warnings in Boost
-    -- System library headers.
-    if build:operating_system() == "linux" then
-        settings.warning_level = 0;
-    end
+## Contributions
 
-    local build = build:configure( settings );
-    build:Library "build_tool" {
-        build:Cxx () {
-            "Arguments.cpp",
-            "BuildTool.cpp",
-            "BuildToolEventSink.cpp",
-            "Context.cpp",
-            "Error.cpp", 
-            "Executor.cpp",
-            "Filter.cpp",
-            "Graph.cpp",
-            "GraphReader.cpp",
-            "GraphWriter.cpp",
-            "Job.cpp",
-            "Reader.cpp", 
-            "Scheduler.cpp", 
-            "System.cpp",
-            "Target.cpp",
-            "TargetPrototype.cpp",
-            "path_functions.cpp"
-        };
-    };
-end
-~~~
+All contributions and feedback are welcomed.  Please use the Github issue tracker and/or open a pull request.  Thanks!
 
-The *Sweet Build* executable is built by the following build script:
+## License
 
-~~~lua
-local settings =  {
-    subsystem = "CONSOLE"; 
-    stack_size = 32768; 
-    architectures = { 
-        "x86_64" 
-    };
-    defines = { 
-        "BOOST_ALL_NO_LIB", -- No automatic linking to Boost libraries.
-    };
-};
-
--- Disable warnings on Linux to avoid unused variable warnings in Boost
--- System library headers.
-if build:operating_system() == "linux" then
-    settings.warning_level = 0;
-end
-
-local build = build:configure( settings );
-build:all {
-    build:Executable "build" {
-        libraries = {    
-            "sweet/build_tool/build_tool",
-            "sweet/build_tool/build_tool_lua/build_tool_lua",
-            "sweet/process/process",
-            "sweet/luaxx/luaxx",
-            "sweet/cmdline/cmdline",
-            "sweet/error/error",
-            "sweet/assert/assert",
-            "lua/liblua",
-            "boost/libs/filesystem/src/boost_filesystem",
-            "boost/libs/system/src/boost_system"
-        };
-
-        system_libraries = build:switch {
-            platform;
-            linux = { 
-                "pthread", 
-                "dl" 
-            };
-        };
-        
-        build:Cxx () {
-            "Application.cpp", 
-            "main.cpp"
-        };    
-    };
-};
-~~~
+*Sweet Build* is licensed under the [MIT License](http://www.opensource.org/licenses/MIT)
