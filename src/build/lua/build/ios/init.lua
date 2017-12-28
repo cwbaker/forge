@@ -62,7 +62,7 @@ function ios.configure( settings )
         return xcode_version, xcode_build_version;
     end
 
-    local function autodetect_macosx_version()
+    local function autodetect_macos_version()
         local os_version = "";
 
         local sw_vers = "/usr/bin/sw_vers";
@@ -82,7 +82,7 @@ function ios.configure( settings )
     if not local_settings.ios then
         local sdk_version, sdk_build_version = autodetect_iphoneos_sdk_version();
         local xcode_version, xcode_build_version = autodetect_xcode_version();
-        local os_version = autodetect_macosx_version();
+        local os_version = autodetect_macos_version();
         local_settings.updated = true;
         local_settings.ios = {
             xcrun = "/usr/bin/xcrun";

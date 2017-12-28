@@ -12,7 +12,7 @@ local function default_identifier_filename( identifier, platform, architecture, 
         branch = build:branch( identifier );
     end
     -- The use of the global `lib_name()` here is temporary while the platform
-    -- modules (e.g. macosx/init.lua etc) install their `lib_name()` functions
+    -- modules (e.g. macos/init.lua etc) install their `lib_name()` functions
     -- into the globals table instead of the build table or somehow more 
     -- explicit.
     local filename = ("%s/%s"):format( branch, settings.lib_name(basename, architecture) );

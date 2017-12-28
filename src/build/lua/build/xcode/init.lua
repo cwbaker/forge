@@ -457,7 +457,7 @@ function xcode.generate_project( name, project )
                 end
             end
 
-            if _G.macosx or _G.windows then
+            if _G.macos or _G.windows then
                 local executables = find_targets_by_prototype( target, build.Executable );
                 for _, executable in ipairs(executables) do 
                     add_legacy_target( executable, platform );

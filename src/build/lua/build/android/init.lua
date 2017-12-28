@@ -50,7 +50,7 @@ function android.toolchain_directory( settings, architecture )
     };
     local prebuilt_by_operating_system = {
         windows = "windows";
-        macosx = "darwin-x86_64";
+        macos = "darwin-x86_64";
     };
     return ("%s/toolchains/%s-%s/prebuilt/%s"):format( 
         android.ndk_directory, 

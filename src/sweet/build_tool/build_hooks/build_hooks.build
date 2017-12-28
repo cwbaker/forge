@@ -9,13 +9,13 @@ if build:operating_system() == "linux" then
     };
 end
 
-if build:operating_system() == "macosx" then
+if build:operating_system() == "macos" then
     for _, build in build:default_builds("cc_.*") do
         build:all {
             build:Lipo "${bin}/build_hooks.dylib" { 
                 build:DynamicLibrary "build_hooks_${architecture}" {
                     build:Cxx () {
-                        "build_hooks_macosx.cpp"
+                        "build_hooks_macos.cpp"
                     };
                 };
             };

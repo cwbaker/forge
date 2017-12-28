@@ -14,7 +14,7 @@ for _, build in build:default_builds("cc_.*") do
             defines = build:switch { 
                 build:operating_system();
                 linux = { "LUA_USE_POSIX", "LUA_USE_DLOPEN" };
-                macosx = { "LUA_USE_POSIX", "LUA_USE_DLOPEN" };
+                macos = { "LUA_USE_POSIX", "LUA_USE_DLOPEN" };
                 windows = { "_CRT_SECURE_NO_DEPRECATE" };
             };
             "lapi.c",
@@ -54,7 +54,7 @@ for _, build in build:default_builds("cc_.*") do
     };
 end
 
-if build:platform_matches("macosx") or build:platform_matches("windows") then
+if build:platform_matches("macos") or build:platform_matches("windows") then
     for _, build in build:default_builds(("cc_%s_.*"):format(platform)) do
         local build = build:configure {
             warning_level = 0;

@@ -2,7 +2,7 @@
 macos = {};
 
 function macos.configure( settings )
-    local function autodetect_macosx_sdk_version()
+    local function autodetect_macos_sdk_version()
         local sdk_version = "";
         local sdk_build_version = "";
 
@@ -45,7 +45,7 @@ function macos.configure( settings )
         return xcode_version, xcode_build_version;
     end
 
-    local function autodetect_macosx_version()
+    local function autodetect_macos_version()
         local os_version = "";
 
         local sw_vers = "/usr/bin/sw_vers";
@@ -133,9 +133,9 @@ function macos.cc( target )
     clang.append_include_directories( target, flags );
     clang.append_compile_flags( target, flags );
     
-    local macosx_deployment_target = target.settings.macosx_deployment_target;
-    if macosx_deployment_target then 
-        table.insert( flags, ("-mmacosx-version-min=%s"):format(macosx_deployment_target) );
+    local macos_deployment_target = target.settings.macos_deployment_target;
+    if macos_deployment_target then 
+        table.insert( flags, ("-mmacosx-version-min=%s"):format(macos_deployment_target) );
     end
 
     local ccflags = table.concat( flags, " " );
@@ -194,9 +194,9 @@ function macos.build_executable( target )
     clang.append_link_flags( target, flags );
 
     local settings = target.settings;
-    local macosx_deployment_target = settings.macosx_deployment_target;
-    if macosx_deployment_target then 
-        table.insert( flags, ("-mmacosx-version-min=%s"):format(macosx_deployment_target) );
+    local macos_deployment_target = settings.macos_deployment_target;
+    if macos_deployment_target then 
+        table.insert( flags, ("-mmacosx-version-min=%s"):format(macos_deployment_target) );
     end
 
     local rpaths = target.rpaths;
