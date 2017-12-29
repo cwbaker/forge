@@ -8,7 +8,7 @@ function msvc.configure( settings )
         local environment = {
             ProgramData = build:getenv( 'ProgramData' );
         };
-        build:system( vswhere, 'vswhere -latest', nil, nil, function(line)
+        build:system( vswhere, 'vswhere -latest', environment, nil, function(line)
             local key, value = line:match( '([%w_]+): ([^\n\r]+)' );
             if key and value then 
                 values[key] = value;
