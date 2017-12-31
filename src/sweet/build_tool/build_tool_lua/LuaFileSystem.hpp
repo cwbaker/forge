@@ -33,7 +33,6 @@ private:
     static int ls( lua_State* lua_state );
     static int find( lua_State* lua_state );
     static int mkdir( lua_State* lua_state );
-    static int cpdir( lua_State* lua_state );
     static int rmdir( lua_State* lua_state );
     static int cp( lua_State* lua_state );
     static int rm( lua_State* lua_state );
