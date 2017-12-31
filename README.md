@@ -91,8 +91,6 @@ From a Visual C++ command prompt:
 
 - Call global functions for each command (`command`) passed on the command line to carry out the desired build actions (e.g. `clean`, `default`, etc).
 
-*Sweet Build* returns the number of errors that occured on exit.  This maps to the standard practice of returning 0 to indicate success and non-zero to indicate failure.
-
 ## Contributions
 
 All contributions and feedback are welcomed.  Please use the Github issue tracker and/or open a pull request.  Thanks!
