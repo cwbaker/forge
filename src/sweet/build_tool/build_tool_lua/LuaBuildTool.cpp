@@ -24,6 +24,7 @@
 
 using std::string;
 using std::unique_ptr;
+using boost::filesystem::path;
 using namespace sweet;
 using namespace sweet::lua;
 using namespace sweet::luaxx;
@@ -88,6 +89,7 @@ void LuaBuildTool::create( BuildTool* build_tool )
         { "stack_trace_enabled", &LuaBuildTool::stack_trace_enabled },
         { "set_build_hooks_library", &LuaBuildTool::set_build_hooks_library },
         { "build_hooks_library", &LuaBuildTool::build_hooks_library },
+        { "default_package_path", &LuaBuildTool::default_package_path },
         { "execute", &LuaBuildTool::execute },
         { "print", &LuaBuildTool::print },
         { nullptr, nullptr }
@@ -216,6 +218,17 @@ int LuaBuildTool::build_hooks_library( lua_State* lua_state )
     BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
     const string& build_hooks_library = build_tool->build_hooks_library();
     lua_pushlstring( lua_state, build_hooks_library.c_str(), build_hooks_library.size() );
+    return 1;
+}
+
+int LuaBuildTool::default_package_path( lua_State* lua_state )
+{
+    const int BUILD_TOOL = 1;
+    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    path first_path = build_tool->executable( "../lua/?.lua" );
+    path second_path = build_tool->executable( "../lua/?/init.lua" );
+    string path = first_path.generic_string() + ";" + second_path.generic_string();
+    lua_pushlstring( lua_state, path.c_str(), path.size() );
     return 1;
 }
 

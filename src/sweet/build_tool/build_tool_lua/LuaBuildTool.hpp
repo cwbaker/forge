@@ -49,6 +49,7 @@ private:
     static int stack_trace_enabled( lua_State* lua_state );
     static int set_build_hooks_library( lua_State* lua_state );
     static int build_hooks_library( lua_State* lua_state );
+    static int default_package_path( lua_State* lua_state );
     static int execute( lua_State* lua_state );
     static int print( lua_State* lua_state );
 };
