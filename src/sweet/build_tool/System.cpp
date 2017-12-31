@@ -153,9 +153,21 @@ std::string System::executable()
 #elif defined(BUILD_OS_MACOS)
     uint32_t size = 0;
     _NSGetExecutablePath( NULL, &size );
-    char path [size];
-    _NSGetExecutablePath( path, &size );
-    return boost::filesystem::path( string(path, size) ).generic_string();
+    char executable_path [size];
+    _NSGetExecutablePath( executable_path, &size );
+    char linked_path [PATH_MAX];
+    int linked_size = readlink( executable_path, linked_path, sizeof(linked_path) - 1 );
+    if ( linked_size == -1 && errno == EINVAL )
+    {
+        return boost::filesystem::path( string(executable_path, size) ).generic_string();
+    }
+    else if ( linked_size >= 0 )
+    {
+        SWEET_ASSERT( linked_size >= 0 && linked_size < int(sizeof(linked_path)) );
+        linked_path[linked_size] = 0;
+        return boost::filesystem::path( string(linked_path, linked_size) ).generic_string();
+    }
+    return std::string();
 #elif defined(BUILD_OS_LINUX)
     char path [PATH_MAX];
     ssize_t length = readlink( "/proc/self/exe", path, sizeof(path) );
