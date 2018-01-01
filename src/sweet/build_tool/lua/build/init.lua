@@ -328,7 +328,14 @@ end
 -- Provide shell like string interpolation.
 function build:interpolate( template, variables )
     local variables = variables or self:current_settings();
-    return (template:gsub('($%b{})', function(word) return variables[word:sub(3, -2)] or word end));
+    return (template:gsub('($%b{})', function(word) 
+        local identifier = word:sub( 3, -2 );
+        local substitute = variables[identifier];
+        if not substitute then 
+            substitute = _G[identifier]
+        end
+        return substitute or word;
+    end));
 end
 
 -- Dump the keys, values, and prototype of a table for debugging.
