@@ -12,3 +12,5 @@ shipping/
 bootstrap
 .vs
 bootstrap-windows
+copy-file-example.cache
+foo.out
