@@ -369,29 +369,15 @@ void BuildTool::assign_global_variables( const std::vector<std::string>& assignm
 }
 
 /**
-// Execute \e filename.
-//
-// @param filename
-//  The path to the script file to execute or an empty string to take the
-//  default action of executing the root file 'build.lua'.
+// Load `build.lua` and execute \e command.
 //
 // @param command
 //  The function to call once the root file has been loaded.
 */
-void BuildTool::execute( const std::string& filename, const std::string& command )
+void BuildTool::execute( const std::string& command )
 {
-    boost::filesystem::path path( filename );
-    if ( path.empty() )
-    {
-        path = root_directory_ / string( ROOT_FILENAME );
-    }
-    else if ( path.is_relative() )
-    {
-        path = initial_directory_ / filename;
-        path.normalize();
-    }
-    
     error_policy_.push_errors();
+    boost::filesystem::path path( root_directory_ / string(ROOT_FILENAME) );    
     scheduler_->load( path );
     int errors = error_policy_.pop_errors();
     if ( errors == 0 )
