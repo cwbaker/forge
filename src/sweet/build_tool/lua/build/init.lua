@@ -573,6 +573,23 @@ function build:walk_dependencies( target, start, finish, maximum_level )
     end );
 end
 
+-- Recursively copy files from *source* to *destination*.
+function build:cpdir( destination, source, settings )
+    local settings = settings or self:current_settings();
+    local destination = self:interpolate( destination, settings );
+    local source = self:interpolate( source, settings );
+    self:pushd( source );
+    for source_filename in self:find('') do 
+        if self:is_file(source_filename) then
+            local filename = ('%s/%s'):format( destination, self:relative(source_filename) );
+            self:mkdir( self:branch(filename) );
+            self:rm( filename );
+            self:cp( filename, source_filename );
+        end
+    end
+    self:popd();
+end
+
 require "build.commands";
 require "build.TargetPrototype";
 require "build.Target";
