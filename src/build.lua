@@ -62,3 +62,12 @@ buildfile "sweet/error/error.build";
 buildfile "sweet/luaxx/luaxx.build";
 buildfile "sweet/process/process.build";
 buildfile "unit/unit.build";
+
+function install()
+    prefix = prefix or build:home( 'sweet_build' );
+    local failures = default();
+    if failures == 0 then 
+        build:cpdir( '${prefix}/bin', '${bin}' );
+        build:cpdir( '${prefix}/lua', '${lua}' );
+    end
+end
