@@ -48,6 +48,7 @@ class BuildTool
     boost::filesystem::path initial_directory_; ///< The full path to the initial directory.
     boost::filesystem::path home_directory_; ///< The full path to the user's home directory.
     boost::filesystem::path executable_directory_; ///< The full path to the build executable directory.
+    bool stack_trace_enabled_; ///< Print stack traces on error when true.
 
     public:
         BuildTool( const std::string& initial_directory, error::ErrorPolicy& error_policy, BuildToolEventSink* event_sink );

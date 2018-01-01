@@ -50,7 +50,8 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
   root_directory_(),
   initial_directory_(),
   home_directory_(),
-  executable_directory_()
+  executable_directory_(),
+  stack_trace_enabled_( false )
 {
     SWEET_ASSERT( boost::filesystem::path(initial_directory).is_absolute() );
 
@@ -262,10 +263,9 @@ boost::filesystem::path BuildTool::relative( const boost::filesystem::path& path
 // @param
 //  True to enable stack traces or false to disable them.
 */
-void BuildTool::set_stack_trace_enabled( bool /*stack_trace_enabled*/ )
+void BuildTool::set_stack_trace_enabled( bool stack_trace_enabled )
 {
-    // SWEET_ASSERT( lua_ );
-    // lua_->set_stack_trace_enabled( stack_trace_enabled );
+    stack_trace_enabled_ = stack_trace_enabled;
 }
 
 /**
@@ -276,9 +276,7 @@ void BuildTool::set_stack_trace_enabled( bool /*stack_trace_enabled*/ )
 */
 bool BuildTool::stack_trace_enabled() const
 {
-    // SWEET_ASSERT( lua_ );
-    // return lua_->is_stack_trace_enabled();
-    return false;
+    return stack_trace_enabled_;
 }
 
 /**
