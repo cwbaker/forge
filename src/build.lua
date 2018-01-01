@@ -1,5 +1,9 @@
 
-package.path = build:root("build/lua/?.lua")..";"..build:root("build/lua/?/init.lua");
+-- Reference Lua build scripts from within the source tree rather so that they
+-- can be edited in place during development and are versioned along with the
+-- code that they are building.
+package.path = build:root('sweet/build_tool/lua/?.lua')..';'..build:root('sweet/build_tool/lua/?/init.lua');
+
 require "build";
 require "build.cc";
 require "build.parser";
@@ -18,6 +22,7 @@ local settings = build:initialize {
     variants = { "debug", "release", "shipping" };
     bin = build:root( ("../%s/bin"):format(variant) );
     lib = build:root( ("../%s/lib"):format(variant) );
+    lua = build:root( ("../%s/lua"):format(variant) );
     obj = build:root( ("../%s/obj"):format(variant) );
     include_directories = {
         build:root(),
@@ -43,6 +48,7 @@ local settings = build:initialize {
 -- Targets built when building from the root directory and as targets when
 -- generating XCode projects and Visual Studio solutions.
 build:default_targets {
+    "sweet/build_tool",
     "sweet/build_tool/build",
     "sweet/build_tool/build_hooks"
 };
