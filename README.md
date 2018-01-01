@@ -16,20 +16,22 @@
 
 ## Example
 
-The Lua script used to build the process spawning library used in *Sweet Build*:
+Copy `foo.in` to `foo.out`:
 
 ~~~lua
-buildfile "process_test/process_test.build";
+package.path = build:default_package_path();
 
-for _, build in build:default_builds("cc_.*") do
-    build:Library "process" {
-        build:Cxx () {
-            "Error.cpp",
-            "Environment.cpp",
-            "Process.cpp"
-        };
-    };
-end
+require "build";
+
+build:initialize {
+    cache = 'copy-file-example.cache';
+};
+
+build:all {
+    build:Copy 'foo.out' {
+        'foo.in'
+    };    
+};
 ~~~
 
 ## Installation
