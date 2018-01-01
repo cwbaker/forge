@@ -34,7 +34,9 @@ end
 
 ## Installation
 
-*Sweet Build* is installed by building it from source code and then copying its executables and Lua scripts into your path or project.
+*Sweet Build* is installed by building it from source code and then linking the `build` executable into your path.  The default install location is `${HOME}/sweet_build` and the `build` executable to link to is at `${HOME}/sweet_build/bin/build`.
+
+The install location is changed by passing `prefix=${install_directory}` on the command line replacing `${install_directory}` with the full path to the directory to install *Sweet Build* to.
 
 **Linux:**
 
@@ -43,10 +45,8 @@ From a shell with GCC installed and available on the path:
 - `git clone git@github.com:cwbaker/sweet_build.git sweet_build`
 - `cd sweet_build/src`
 - `sh ./bootstrap-linux.sh`
-- `../bootstrap-linux/build variant=shipping`
-- Copy `../shipping/bin/build` into your path or project
-- Copy `../shipping/bin/libbuild_hooks.so` into your path or project
-- Copy `src/build/lua/**` into your project
+- `../bootstrap-linux/build variant=shipping install`
+- Link to `${HOME}/sweet_build/bin/build` from your path
 
 **macOS:**
 
@@ -55,10 +55,8 @@ From a shell with Xcode installed:
 - `git clone git@github.com:cwbaker/sweet_build.git sweet_build`
 - `cd sweet_build/src`
 - `sh ./bootstrap-macos.sh`
-- `../bootstrap-macos/build variant=shipping`
-- Copy `../shipping/bin/build` into your path or project
-- Copy `../shipping/bin/build_hooks.dylib` into your path or project
-- Copy `src/build/lua/**` into your project
+- `../bootstrap-macos/build variant=shipping install`
+- Link to `${HOME}/sweet_build/bin/build` from your path
 
 **Windows:**
 
@@ -67,10 +65,8 @@ From a Visual C++ command prompt:
 - `git clone git@github.com:cwbaker/sweet_build.git sweet_build`
 - `cd sweet_build\src`
 - `bootstrap-windows.bat`
-- `..\bootstrap-windows\build.exe variant=shipping`
-- Copy `../shipping/bin/build.exe` into your path or project
-- Copy `../shipping/bin/build_hooks.dll` into your path or project
-- Copy `src/build/lua/**` into your project
+- `..\bootstrap-windows\build.exe variant=shipping install`
+- Link to `${USERPROFILE}/sweet_build/bin/build.exe` from your path
 
 ## Usage
 
@@ -87,7 +83,7 @@ From a Visual C++ command prompt:
 
 - Assign values to global variables in Lua for all assignments (`variable=value`) passed on the command line to parameterize the build (e.g. `variant=release`, `version=2.0.x`, etc).
 
-- Execute the previously found `build.lua` to configure the build and load the initial dependency graph typically by loading several modular Lua scripts (referred to as buildfiles).
+- Execute the previously found `build.lua` to configure the build and load the initial dependency graph.  The dependency graph is typically loaded by loading several modular Lua scripts (referred to as buildfiles).
 
 - Call global functions for each command (`command`) passed on the command line to carry out the desired build actions (e.g. `clean`, `default`, etc).
 
