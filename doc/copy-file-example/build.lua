@@ -1,6 +1,4 @@
 
-package.path = build:default_package_path();
-
 require "build";
 
 build:initialize {

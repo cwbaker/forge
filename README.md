@@ -19,8 +19,6 @@
 Copy `foo.in` to `foo.out`:
 
 ~~~lua
-package.path = build:default_package_path();
-
 require "build";
 
 build:initialize {
