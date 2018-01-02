@@ -55,17 +55,17 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
 {
     SWEET_ASSERT( boost::filesystem::path(initial_directory).is_absolute() );
 
+    root_directory_ = make_drive_uppercase( initial_directory );
+    initial_directory_ = make_drive_uppercase( initial_directory );
+    home_directory_ = make_drive_uppercase( system_->home() );
+    executable_directory_ = make_drive_uppercase( system_->executable() ).parent_path();
+
     lua_build_tool_ = new LuaBuildTool( this );
     system_ = new System;
     reader_ = new Reader( this );
     graph_ = new Graph( this );
     scheduler_ = new Scheduler( this );
     executor_ = new Executor( this );
-
-    root_directory_ = make_drive_uppercase( initial_directory );
-    initial_directory_ = make_drive_uppercase( initial_directory );
-    home_directory_ = make_drive_uppercase( system_->home() );
-    executable_directory_ = make_drive_uppercase( system_->executable() ).parent_path();
 }
 
 /**

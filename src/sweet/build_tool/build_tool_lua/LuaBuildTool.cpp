@@ -89,7 +89,6 @@ void LuaBuildTool::create( BuildTool* build_tool )
         { "stack_trace_enabled", &LuaBuildTool::stack_trace_enabled },
         { "set_build_hooks_library", &LuaBuildTool::set_build_hooks_library },
         { "build_hooks_library", &LuaBuildTool::build_hooks_library },
-        { "default_package_path", &LuaBuildTool::default_package_path },
         { "execute", &LuaBuildTool::execute },
         { "print", &LuaBuildTool::print },
         { nullptr, nullptr }
@@ -105,6 +104,17 @@ void LuaBuildTool::create( BuildTool* build_tool )
     lua_target_->create( lua_state_ );
     lua_target_prototype_->create( lua_state_, lua_target_ );
     lua_setglobal( lua_state_, "build" );
+
+    // Set `package.path` to load build scripts stored in `../lua` relative 
+    // to the `build` executable.  The value of `package.path` may be 
+    // overridden again in `build.lua` before requiring modules.
+    path first_path = build_tool_->executable( "../lua/?.lua" );
+    path second_path = build_tool_->executable( "../lua/?/init.lua" );
+    string path = first_path.generic_string() + ";" + second_path.generic_string();
+    lua_getglobal( lua_state_, "package" );
+    lua_pushlstring( lua_state_, path.c_str(), path.size() );
+    lua_setfield( lua_state_, -2, "path" );
+    lua_pop( lua_state_, 1 );
 }
 
 void LuaBuildTool::destroy()
@@ -218,17 +228,6 @@ int LuaBuildTool::build_hooks_library( lua_State* lua_state )
     BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
     const string& build_hooks_library = build_tool->build_hooks_library();
     lua_pushlstring( lua_state, build_hooks_library.c_str(), build_hooks_library.size() );
-    return 1;
-}
-
-int LuaBuildTool::default_package_path( lua_State* lua_state )
-{
-    const int BUILD_TOOL = 1;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    path first_path = build_tool->executable( "../lua/?.lua" );
-    path second_path = build_tool->executable( "../lua/?/init.lua" );
-    string path = first_path.generic_string() + ";" + second_path.generic_string();
-    lua_pushlstring( lua_state, path.c_str(), path.size() );
     return 1;
 }
 
