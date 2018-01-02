@@ -1,6 +1,6 @@
 //
 // System.cpp
-// Copyright (c) Charles Baker.` All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
 #include "System.hpp"
@@ -146,10 +146,27 @@ boost::filesystem::recursive_directory_iterator System::find( const std::string&
 std::string System::executable()
 {
 #if defined(BUILD_OS_WINDOWS)
-    char path [MAX_PATH + 1];
-    int size = ::GetModuleFileNameA( NULL, path, sizeof(path) );
-    path [sizeof(path) - 1] = 0;
-    return boost::filesystem::path( string(path, size) ).generic_string();
+    char executable_path [MAX_PATH + 1];
+    int size = ::GetModuleFileNameA( nullptr, executable_path, sizeof(executable_path) );
+    executable_path [sizeof(executable_path) - 1] = 0;
+    HANDLE file = ::CreateFileA( executable_path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr );
+    if ( file != INVALID_HANDLE_VALUE )
+    {
+        char linked_path [MAX_PATH + 1];
+        DWORD linked_size = ::GetFinalPathNameByHandleA( file, linked_path, sizeof(linked_path), VOLUME_NAME_DOS );
+        ::CloseHandle( file );
+        file = INVALID_HANDLE_VALUE;
+        if ( linked_size < sizeof(linked_path) )
+        {
+            // The path returned by `::GetFinalPathNameByHandleA()` has a 
+            // prefix of `\\?\` to indicate that it is an extended length 
+            // path.  Skipping over it works for now but is probably the wrong
+            // thing in many cases.
+            const char* linked_path_without_extended_length_prefix = linked_path + 4;
+            return boost::filesystem::path( string(linked_path_without_extended_length_prefix, linked_size - 4) ).generic_string();
+        }
+    }
+    return std::string();
 #elif defined(BUILD_OS_MACOS)
     uint32_t size = 0;
     _NSGetExecutablePath( NULL, &size );
