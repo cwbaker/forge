@@ -2,10 +2,10 @@
 local Copy = build:TargetPrototype( "Copy" );
 
 function Copy.create( build, settings, identifier )
-    local copy = build:File( identifier, Copy );
-    copy:add_ordering_dependency( build:Directory(copy:branch()) );
-    copy.settings = settings;
-    return copy;
+    local target = build:File( identifier, Copy );
+    target:add_ordering_dependency( build:Directory(target:branch()) );
+    target.settings = settings;
+    return target;
 end
 
 function Copy.build( build, target )
