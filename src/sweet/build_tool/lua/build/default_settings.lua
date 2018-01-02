@@ -150,37 +150,6 @@ return {
             warnings_as_errors = true;
         };
 
-        ["debug_dll"] = {
-            compile_as_c = false;
-            debug = true;
-            debuggable = true;
-            exceptions = true;
-            fast_floating_point = false;
-            generate_dsym_bundle = false;
-            generate_map_file = true;
-            incremental_linking = true;
-            library_type = "dynamic";
-            link_time_code_generation = false;
-            minimal_rebuild = true;
-            objc_arc = true;
-            objc_modules = true;
-            optimization = false;
-            pre_compiled_headers = true;
-            preprocess = false;
-            profiling = false;
-            run_time_checks = true;
-            runtime_library = "dynamic_debug";
-            run_time_type_info = true;
-            sse2 = true;
-            stack_size = 1048576;
-            string_pooling = false;
-            strip = false;
-            subsystem = "CONSOLE";
-            verbose_linking = false;
-            warning_level = 3;
-            warnings_as_errors = true;
-        };
-
         ["release"] = {
             compile_as_c = false;
             debug = true;
@@ -212,37 +181,6 @@ return {
             warnings_as_errors = true;
         };
 
-        ["release_dll"] = {
-            compile_as_c = false;
-            debug = true;
-            debuggable = true;
-            exceptions = true;
-            fast_floating_point = true;
-            generate_dsym_bundle = false;
-            generate_map_file = true;
-            incremental_linking = false;
-            library_type = "dynamic";
-            link_time_code_generation = true;
-            minimal_rebuild = false;
-            objc_arc = true;
-            objc_modules = true;
-            optimization = true;
-            pre_compiled_headers = true;
-            preprocess = false;
-            profiling = false;
-            run_time_checks = false;
-            runtime_library = "dynamic";
-            run_time_type_info = true;
-            sse2 = true;
-            stack_size = 1048576;        
-            string_pooling = false;
-            strip = false;
-            subsystem = "CONSOLE";
-            verbose_linking = false;
-            warning_level = 3;
-            warnings_as_errors = true;
-        };
-        
         ["shipping"] = {
             compile_as_c = false;
             debug = false;
@@ -266,37 +204,6 @@ return {
             run_time_type_info = true;
             sse2 = true;
             stack_size = 1048576;        
-            string_pooling = false;
-            strip = true;
-            subsystem = "CONSOLE";
-            verbose_linking = false;
-            warning_level = 3;
-            warnings_as_errors = true;
-        };
-        
-        ["shipping_dll"] = {
-            compile_as_c = false;
-            debug = false;
-            debuggable = false;
-            exceptions = true;
-            fast_floating_point = true;
-            generate_dsym_bundle = true;
-            generate_map_file = true;
-            incremental_linking = false;
-            library_type = "dynamic";
-            link_time_code_generation = true;
-            minimal_rebuild = false;
-            objc_arc = true;
-            objc_modules = true;
-            optimization = true;
-            pre_compiled_headers = true;
-            preprocess = false;
-            profiling = true;
-            run_time_checks = false;
-            runtime_library = "dynamic";
-            run_time_type_info = true;
-            sse2 = true;
-            stack_size = 1048576;
             string_pooling = false;
             strip = true;
             subsystem = "CONSOLE";
