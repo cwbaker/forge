@@ -52,7 +52,7 @@ Application::Application( int argc, char** argv )
         if ( version )
         {
             std::cout << "Sweet Build " << BUILD_VERSION << " \n";
-            std::cout << "Copyright (c) 2007 - 2017 Charles Baker.  All rights reserved. \n";
+            std::cout << "Copyright (c) 2007 - 2018 Charles Baker.  All rights reserved. \n";
         }
 
         if ( help )

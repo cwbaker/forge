@@ -1,8 +1,3 @@
-//
-// Application.hpp
-// Copyright (c) 2007 - 2011 Charles Baker.  All rights reserved.
-//
-
 #ifndef APPLICATION_HPP_INCLUDED
 #define APPLICATION_HPP_INCLUDED
 
