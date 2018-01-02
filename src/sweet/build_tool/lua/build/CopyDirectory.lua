@@ -1,4 +1,6 @@
 
+require 'build.Copy';
+
 local CopyDirectory = build:TargetPrototype( "CopyDirectory" );
 
 function CopyDirectory.create( build, settings, identifier )

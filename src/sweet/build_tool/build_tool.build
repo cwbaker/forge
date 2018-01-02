@@ -1,4 +1,6 @@
 
+require 'build.CopyDirectory';
+
 buildfile "build/build.build";
 buildfile "build_hooks/build_hooks.build";
 buildfile "build_tool_lua/build_tool_lua.build";

@@ -605,7 +605,4 @@ end
 require "build.commands";
 require "build.TargetPrototype";
 require "build.Target";
-require "build.Generate";
 require "build.Directory";
-require "build.Copy";
-require "build.CopyDirectory";
