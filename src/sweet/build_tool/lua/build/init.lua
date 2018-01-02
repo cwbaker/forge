@@ -163,7 +163,7 @@ function build:initialize( project_settings )
     variant = variant or "debug";
     version = version or ("%s %s %s"):format( os.date("%Y.%m.%d.%H%M"), platform, variant );
     goal = goal or "";
-    jobs = jobs or 4;
+    jobs = jobs or 8;
 
     self:set_maximum_parallel_jobs( jobs );
     if self:operating_system() == "linux" then
