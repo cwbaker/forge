@@ -210,7 +210,10 @@ function build:initialize( project_settings )
         error( string.format("The library type '%s' is not 'static' or 'dynamic'", tostring(settings.library_type)) );
     end
 
-    default_settings.cache = self:root( ("%s/%s.cache"):format(settings.obj, variant) );
+    if settings.variants and #settings.variants > 0 then 
+        default_settings.cache = self:root( ("../%s/.sweet_build"):format(variant) );
+    end
+
     _G.settings = settings;
     self.default_settings = default_settings;
     self.local_settings = local_settings;

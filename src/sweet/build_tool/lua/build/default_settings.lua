@@ -17,6 +17,7 @@ return {
     obj = build:root( ("../%s/obj"):format(variant) );
     gen = build:root( ("../%s/gen"):format(variant) );
     classes = build:root( ("../%s/classes"):format(variant) );
+    cache = build:root( '.sweet_build' );
 
     platform = platform;
 
@@ -43,18 +44,12 @@ return {
             architectures = {
                 ""
             };
-            variants = {
-                "debug", "release", "shipping"
-            };
         };
 
         ["android"] = {
             default_architecture = "armv7";
             architectures = { 
                 "armv7" 
-            };
-            variants = {
-                "debug", "release", "shipping"
             };
             runtime_library = "gnustl_shared";
         };
@@ -64,9 +59,6 @@ return {
             architectures = {
                 "i386", "x86_64"
             };
-            variants = {
-                "debug", "release", "shipping"
-            };
             framework_directories = {
             };
         };
@@ -75,9 +67,6 @@ return {
             default_architecture = "armv7";
             architectures = {
                 "armv7", "arm64"
-            };
-            variants = {
-                "debug", "release", "shipping"
             };
             framework_directories = {
             };
@@ -91,9 +80,6 @@ return {
             default_architecture = "x86_64";
             architectures = {
                 "i386", "x86_64"
-            };
-            variants = {
-                "debug", "release", "shipping"
             };
             framework_directories = {
             };
@@ -110,18 +96,12 @@ return {
             architectures = { 
                 "x86_64" 
             };
-            variants = {
-                "debug", "release", "shipping"
-            };
         };
 
         ["windows"] = {
             default_architecture = "x86_64";
             architectures = {
                 "x86_64"
-            };
-            variants = {
-                "debug", "release", "shipping"
             };
             third_party_libraries = {
                 "advapi32",
