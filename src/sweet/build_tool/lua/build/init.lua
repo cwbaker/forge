@@ -460,7 +460,7 @@ end
 -- Save the dependency graph to the file specified by /settings.cache/.
 function build:save()
     local settings = self:current_settings();
-    if self.local_settings.updated then
+    if self.local_settings and self.local_settings.updated then
         self.local_settings.updated = nil;
         self:save_settings( self.local_settings, settings.local_settings_filename );
     end
