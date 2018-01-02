@@ -1,0 +1,27 @@
+site_name: Sweet Build
+pages:
+- 'Sweet Build': 'index.md'
+- 'Getting Started': 'getting-started.md'
+- 'User Guide': 'user-guide.md'
+- Tutorials:
+    - 'C/C++ Library': 'tutorials/cxx-library.md'
+    - 'C/C++ Executable': 'tutorials/cxx-executable.md'
+    - 'Java Jar': 'tutorials/java-jar.md'
+    - 'iOS Application': 'tutorials/ios-application.md'
+    - 'Android Application': 'tutorials/android-application.md'
+- Modules:
+    - 'Files': 'modules/files.md'
+    - 'C/C++': 'modules/cc.md'
+    - 'Java': 'modules/java.md'
+    - 'Android': 'modules/android.md'
+    - 'iOS': 'modules/ios.md'
+    - 'MacOSX': 'modules/macosx.md'
+    - 'Windows': 'modules/windows.md'
+    - 'Visual Studio': 'modules/visual_studio.md'
+    - 'XCode': 'modules/xcode.md'
+- Reference:
+    - 'Command Line': 'reference/command-line.md'
+    - 'Functions': 'reference/functions.md'
+    - 'Target': 'reference/target.md'
+    - 'TargetPrototype': 'reference/target-prototype.md'
+theme: alabaster
