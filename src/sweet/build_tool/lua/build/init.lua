@@ -143,15 +143,17 @@ function build:initialize( project_settings )
     -- Merge settings from /source_settings/ into /settings/.
     local function merge_settings( settings, source_settings )
         settings = settings or {};
-        for _, v in ipairs(source_settings) do
-            table.insert( settings, v );
-        end
-        for k, v in pairs(source_settings) do
-            if type(k) == "string" then
-                if type(v) == "table" then
-                    settings[k] = merge_settings( settings[k], v );
-                else
-                    settings[k] = v;
+        if source_settings then 
+            for _, v in ipairs(source_settings) do
+                table.insert( settings, v );
+            end
+            for k, v in pairs(source_settings) do
+                if type(k) == "string" then
+                    if type(v) == "table" then
+                        settings[k] = merge_settings( settings[k], v );
+                    else
+                        settings[k] = v;
+                    end
                 end
             end
         end
