@@ -246,7 +246,7 @@ int LuaTarget::set_cleanable( lua_State* lua_state )
     luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
     if ( target )
     {
-        bool cleanable = lua_toboolean( lua_state, CLEANABLE );
+        bool cleanable = lua_toboolean( lua_state, CLEANABLE ) != 0;
         target->set_cleanable( cleanable );
     }
     return 0;
