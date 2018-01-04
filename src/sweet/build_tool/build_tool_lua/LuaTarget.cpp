@@ -273,7 +273,7 @@ int LuaTarget::set_built( lua_State* lua_state )
     luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
     if ( target )
     {
-        bool built = lua_toboolean( lua_state, BUILT );
+        bool built = lua_toboolean( lua_state, BUILT ) != 0;
         target->set_built( built );
     }
     return 0;
