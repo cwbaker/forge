@@ -3,18 +3,20 @@ msvc = {};
 
 function msvc.configure( settings )
     local function vswhere()
-        local values = {};
         local vswhere = 'C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe';
-        local environment = {
-            ProgramData = build:getenv( 'ProgramData' );
-        };
-        build:system( vswhere, 'vswhere -latest', environment, nil, function(line)
-            local key, value = line:match( '([%w_]+): ([^\n\r]+)' );
-            if key and value then 
-                values[key] = value;
-            end
-        end );
-        return values;
+        if build:exists( vswhere ) then 
+            local environment = {
+                ProgramData = build:getenv( 'ProgramData' );
+            };
+            local values = {};
+            build:system( vswhere, 'vswhere -latest', environment, nil, function(line)
+                local key, value = line:match( '([%w_]+): ([^\n\r]+)' );
+                if key and value then 
+                    values[key] = value;
+                end
+            end );
+            return values;
+        end
     end
 
     local function vc_default_version( installation_path )
@@ -39,20 +41,50 @@ function msvc.configure( settings )
         return values;
     end
 
-    local function autodetect_visual_studio_directory()
+    local function autodetect_toolset_version()
         local visual_studio_directory;
         local values = vswhere();
         if values then 
-            return values.installationPath;
+            return 15;
+        end
+        for version = 14, 10, -1 do 
+            local visual_studio_directory = os.getenv( ('VS%d0COMNTOOLS'):format(version) );
+            if visual_studio_directory then 
+                return version;
+            end
         end
     end
 
-    local function autodetect_visual_cxx_directory()
-        local values = vswhere();
-        local visual_studio_directory = values.installationPath;
-        local vc_version = vc_default_version( visual_studio_directory );
-        if visual_studio_directory and vc_version then
-            return ('%s\\VC\\Tools\\MSVC\\%s'):format( visual_studio_directory, vc_version );
+    local function autodetect_visual_studio_directory( toolset_version )
+        if toolset_version >= 15 then 
+            local visual_studio_directory;
+            local values = vswhere();
+            if values then 
+                return values.installationPath;
+            end
+        end
+        local visual_studio_directory = os.getenv( ("VS%d0COMNTOOLS"):format(toolset_version) );
+        if visual_studio_directory then
+            visual_studio_directory = string.gsub( visual_studio_directory, "\\Common7\\Tools\\", "" );
+            return visual_studio_directory;
+        end
+    end
+
+    local function autodetect_visual_cxx_directory( toolset_version )
+        if toolset_version >= 15 then 
+            local values = vswhere();
+            if values then 
+                local visual_studio_directory = values.installationPath;
+                local vc_version = vc_default_version( visual_studio_directory );
+                if visual_studio_directory and vc_version then
+                    return ('%s\\VC\\Tools\\MSVC\\%s'):format( visual_studio_directory, vc_version );
+                end
+            end
+        end
+        local visual_studio_directory = os.getenv( ("VS%d0COMNTOOLS"):format(toolset_version) );
+        if visual_studio_directory then
+            visual_studio_directory = string.gsub( visual_studio_directory, "\\Common7\\Tools\\", "" );
+            return ('%s\\VC'):format( visual_studio_directory );
         end
     end
 
@@ -60,30 +92,38 @@ function msvc.configure( settings )
         local windows_sdk = registry( [[HKLM\SOFTWARE\Microsoft\Windows Kits\Installed Roots]] );
         if windows_sdk.KitsRoot10 then 
             return windows_sdk.KitsRoot10;
-        elseif windows_sdk.KitsRoot81 then
-            return windows_sdk.KitsRoot81;
-        else 
-            return windows_sdk.KitsRoot;
         end
     end
 
     local function autodetect_windows_sdk_version()
-        return '10.0.16299.0';
+        local windows_sdk = registry( [[HKLM\SOFTWARE\Microsoft\Windows Kits\Installed Roots]] );
+        if windows_sdk.KitsRoot10 then 
+            local latest_version;
+            for filename in build:ls(('%s/bin'):format(windows_sdk.KitsRoot10)) do
+                local version = build:leaf( filename ):match('10%.%d+%.%d+%.%d+');
+                if version then
+                    latest_version = version;
+                end
+            end
+            return latest_version;
+        end
     end
 
-    if build:operating_system() == "windows" then
+    if build:operating_system() == 'windows' then
         local local_settings = build.local_settings;
         if not local_settings.msvc then
+            local toolset_version = autodetect_toolset_version();
             local_settings.updated = true;
             local_settings.msvc = {
-                visual_studio_directory = autodetect_visual_studio_directory();
-                visual_cxx_directory = autodetect_visual_cxx_directory();
+                toolset_version = toolset_version;
+                visual_studio_directory = autodetect_visual_studio_directory( toolset_version );
+                visual_cxx_directory = autodetect_visual_cxx_directory( toolset_version );
                 windows_sdk_directory = autodetect_windows_sdk_directory();
                 windows_sdk_version = autodetect_windows_sdk_version();
             };
         end
     end
-end;
+end
 
 function msvc.initialize( settings )
     if build:platform_matches("windows") then
@@ -97,35 +137,69 @@ function msvc.initialize( settings )
         -- See http://blogs.msdn.com/freik/archive/2006/04/05/569025.aspx.
         -- putenv( "VS_UNICODE_OUTPUT", "" );
 
+        local toolset_version = settings.msvc.toolset_version;
         local visual_studio_directory = settings.msvc.visual_studio_directory;
         local visual_cxx_directory = settings.msvc.visual_cxx_directory;
 
-        local path_i386 = {
-            ('%s\\bin\\Hostx64\\x86'):format( visual_cxx_directory ),
-            ('%s\\Common7\\IDE'):format( visual_studio_directory ),
-            ('%s\\Common7\\Tools'):format( visual_studio_directory ),
-        };
+        local path_i386, path_x86_64, lib_i386, lib_x86_64, include;
 
-        local path_x86_64 = {
-            ('%s\\bin\\Hostx64\\x64'):format( visual_cxx_directory ),
-            ('%s\\Common7\\IDE'):format( visual_studio_directory ),
-            ('%s\\Common7\\Tools'):format( visual_studio_directory ),
-        };
-        
-        local lib_i386 = {
-            ('%s\\atlmfc\\lib\\x86'):format( visual_cxx_directory ),
-            ('%s\\lib\\x86'):format( visual_cxx_directory )
-        };
+        if toolset_version >= 15 then 
+            path_i386 = {
+                ('%s\\bin\\Hostx64\\x86'):format( visual_cxx_directory ),
+                ('%s\\Common7\\IDE'):format( visual_studio_directory ),
+                ('%s\\Common7\\Tools'):format( visual_studio_directory ),
+            };
 
-        local lib_x86_64 = {
-            ('%s\\VC\\atlmfc\\lib\\x64'):format( visual_cxx_directory ),
-            ('%s\\lib\\x64'):format( visual_cxx_directory )
-        };
+            path_x86_64 = {
+                ('%s\\bin\\Hostx64\\x64'):format( visual_cxx_directory ),
+                ('%s\\Common7\\IDE'):format( visual_studio_directory ),
+                ('%s\\Common7\\Tools'):format( visual_studio_directory ),
+            };
+            
+            lib_i386 = {
+                ('%s\\atlmfc\\lib\\x86'):format( visual_cxx_directory ),
+                ('%s\\lib\\x86'):format( visual_cxx_directory )
+            };
 
-        local include = {
-            ('%s\\atlmfc\\include'):format( visual_cxx_directory ),
-            ('%s\\include'):format( visual_cxx_directory ),
-        };
+            lib_x86_64 = {
+                ('%s\\VC\\atlmfc\\lib\\x64'):format( visual_cxx_directory ),
+                ('%s\\lib\\x64'):format( visual_cxx_directory )
+            };
+
+            include = {
+                ('%s\\atlmfc\\include'):format( visual_cxx_directory ),
+                ('%s\\include'):format( visual_cxx_directory ),
+            };
+        else
+            path_i386 = {
+                ('%s\\VC\\bin\\amd64_x86'):format( visual_studio_directory ),
+                ('%s\\Common7\\IDE'):format( visual_studio_directory ),
+                ('%s\\Common7\\Tools'):format( visual_studio_directory ),
+                ('%s\\VC\\vcpackages'):format( visual_studio_directory ),
+            };
+
+            path_x86_64 = {
+                ('%s\\VC\\bin\\amd64'):format( visual_studio_directory ),
+                ('%s\\Common7\\IDE'):format( visual_studio_directory ),
+                ('%s\\Common7\\Tools'):format( visual_studio_directory ),
+                ('%s\\VC\\vcpackages'):format( visual_studio_directory ),
+            };
+            
+            lib_i386 = {
+                ('%s\\VC\\atlmfc\\lib'):format( visual_studio_directory ),
+                ('%s\\VC\\lib'):format( visual_studio_directory )
+            };
+
+            lib_x86_64 = {
+                ('%s\\VC\\atlmfc\\lib\\amd64'):format( visual_studio_directory ),
+                ('%s\\VC\\lib\\amd64'):format( visual_studio_directory )
+            };
+
+            include = {
+                ('%s\\VC\\atlmfc\\include'):format( visual_studio_directory ),
+                ('%s\\VC\\include'):format( visual_studio_directory ),
+            };
+        end
         
         local sdk_directory = settings.msvc.windows_sdk_directory;
         local sdk_version = settings.msvc.windows_sdk_version;
@@ -162,10 +236,19 @@ function msvc.initialize( settings )
 end;
 
 function msvc.visual_cxx_tool( target, tool )
-    if target.architecture == "x86_64" then
-        return ("%s\\bin\\Hostx64\\x64\\%s"):format( target.settings.msvc.visual_cxx_directory, tool );
+    local msvc = target.settings.msvc;
+    if msvc.toolset_version >= 15 then 
+        if target.architecture == 'x86_64' then
+            return ('%s\\bin\\Hostx64\\x64\\%s'):format( msvc.visual_cxx_directory, tool );
+        else
+            return ('%s\\bin\\Hostx64\\x86\\%s'):format( msvc.visual_cxx_directory, tool );
+        end
     else
-        return ("%s\\bin\\Hostx64\\x86\\%s"):format( target.settings.msvc.visual_cxx_directory, tool );
+        if target.architecture == 'x86_64' then
+            return ('%s/VC/bin/amd64/%s'):format( target.settings.msvc.visual_studio_directory, tool );
+        else
+            return ('%s/VC/bin/%s'):format( target.settings.msvc.visual_studio_directory, tool );
+        end
     end
 end
 
