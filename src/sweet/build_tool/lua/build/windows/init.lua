@@ -84,12 +84,20 @@ function windows.cc( target )
     for directory, sources in pairs(sources_by_directory) do
         if #sources > 0 then
             local settings = target.settings;
-            -- local output_directory = build:native( ("%s%s/%s/"):format(settings.obj_directory(target), target.architecture, directory) );
             local output_directory = build:native( ("%s/%s"):format(settings.obj_directory(target), build:relative(directory)) );
+
+            -- Make sure that the output directory has a trailing slash so
+            -- that Visual C++ doesn't interpret the output directory as a 
+            -- file as seems to happen when a single source file is compiled.
+            if output_directory:sub(-1) ~= '\\' then 
+                output_directory = ('%s\\'):format( output_directory );
+            end
+
             local ccflags = table.concat( flags, " " );
             local source = table.concat( sources, '" "' );
             local cl = msvc.visual_cxx_tool( target, "cl.exe" );
             local environment = msvc.environments_by_architecture[target.architecture];
+            build:pushd( directory );
             build:system( 
                 cl, 
                 ('cl %s /Fo%s "%s"'):format(ccflags, output_directory, source), 
@@ -97,6 +105,7 @@ function windows.cc( target )
                 nil,
                 msvc.dependencies_filter(output_directory, build:absolute(directory))
             );
+            build:popd();
         end
     end
 
