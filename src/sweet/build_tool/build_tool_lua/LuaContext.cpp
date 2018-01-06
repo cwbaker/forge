@@ -119,12 +119,14 @@ int LuaContext::absolute( lua_State* lua_state )
     if ( !lua_isnoneornil(lua_state, BASE_PATH) )
     {
         const char* base_path = luaL_tolstring( lua_state, BASE_PATH, nullptr );
-        boost::filesystem::path path = sweet::build_tool::absolute( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)), boost::filesystem::path(base_path) );
+        const char* relative_path = !lua_isnoneornil( lua_state, PATH ) ? luaL_tolstring( lua_state, PATH, nullptr ) : "";
+        boost::filesystem::path path = sweet::build_tool::absolute( boost::filesystem::path(relative_path), boost::filesystem::path(base_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
-        boost::filesystem::path path = build_tool->absolute( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
+        const char* relative_path = !lua_isnoneornil( lua_state, PATH ) ? luaL_tolstring( lua_state, PATH, nullptr ) : "";
+        boost::filesystem::path path = build_tool->absolute( boost::filesystem::path(relative_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     return 1;
@@ -140,12 +142,14 @@ int LuaContext::relative( lua_State* lua_state )
     if ( !lua_isnoneornil(lua_state, BASE_PATH) )
     {
         const char* base_path = luaL_tolstring( lua_state, BASE_PATH, nullptr );
-        boost::filesystem::path path = sweet::build_tool::relative( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)), boost::filesystem::path(base_path) );
+        const char* absolute_path = !lua_isnoneornil( lua_state, PATH ) ? luaL_tolstring( lua_state, PATH, nullptr ) : "";
+        boost::filesystem::path path = sweet::build_tool::relative( boost::filesystem::path(absolute_path), boost::filesystem::path(base_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
-        boost::filesystem::path path = build_tool->relative( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
+        const char* absolute_path = !lua_isnoneornil( lua_state, PATH ) ? luaL_tolstring( lua_state, PATH, nullptr ) : "";
+        boost::filesystem::path path = build_tool->relative( boost::filesystem::path(absolute_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     return 1;
