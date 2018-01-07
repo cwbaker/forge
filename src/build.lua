@@ -1,7 +1,7 @@
 
--- Reference Lua build scripts from within the source tree rather so that they
--- can be edited in place during development and are versioned along with the
--- code that they are building.
+-- Reference Lua build scripts from within the source tree rather than 
+-- relative to the build executable so that they can be edited in place during
+-- development and are versioned along with the code that they are building.
 package.path = build:root('sweet/build_tool/lua/?.lua')..';'..build:root('sweet/build_tool/lua/?/init.lua');
 
 require "build";
