@@ -39,7 +39,8 @@ Scheduler::Scheduler( BuildTool* build_tool )
   results_mutex_(),
   results_condition_(),
   results_(),
-  jobs_( 0 ),
+  execute_calls_( 0 ),
+  buildfile_calls_( 0 ),
   failures_( 0 )
 {
     SWEET_ASSERT( build_tool_ );
@@ -54,18 +55,15 @@ void Scheduler::load( const boost::filesystem::path& path )
     lua_State* lua_state = context->lua_state();
     dofile( lua_state, path.string().c_str() );
     process_end( context );
-
-    while ( dispatch_results() )
-    {        
-    }
+    wait();
 }
 
 void Scheduler::command( const boost::filesystem::path& path, const std::string& function )
 {
     call( path, function );
-    while ( dispatch_results() )
-    {
-    }
+    wait();
+    SWEET_ASSERT( execute_calls_ == 0 );
+    SWEET_ASSERT( buildfile_calls_ == 0 );
 }
 
 int Scheduler::buildfile( const boost::filesystem::path& path )
@@ -83,6 +81,7 @@ int Scheduler::buildfile( const boost::filesystem::path& path )
     dofile( lua_state, path.string().c_str() );
     bool yielded = lua_status( lua_state ) == LUA_YIELD;
     int errors = process_end( context );
+    buildfile_calls_ += yielded ? 1 : 0;
     return yielded ? -1 : errors;
 }
 
@@ -164,7 +163,8 @@ void Scheduler::buildfile_finished( Context* context, bool success )
         lua_State* lua_state = context->lua_state();
         lua_pushinteger( lua_state, success ? 0 : 1 );
         resume( lua_state, 1 );
-        process_end( context );    
+        process_end( context );
+        --buildfile_calls_;
     }
 }
 
@@ -215,7 +215,7 @@ void Scheduler::push_error( const std::exception& exception )
 void Scheduler::push_execute_finished( int exit_code, Context* context, process::Environment* environment )
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
-    --jobs_;
+    --execute_calls_;
     results_.push_back( std::bind(&Scheduler::execute_finished, this, exit_code, context, environment) );
     results_condition_.notify_all();
 }
@@ -231,7 +231,7 @@ void Scheduler::execute( const std::string& command, const std::string& command_
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
     build_tool_->executor()->execute( command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context );
-    ++jobs_;
+    ++execute_calls_;
 }
 
 void Scheduler::wait()
@@ -447,7 +447,7 @@ void Scheduler::destroy_context( Context* context )
 bool Scheduler::dispatch_results()
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
-    if ( jobs_ > 0 && results_.empty() )
+    if ( execute_calls_ > 0 && results_.empty() )
     {
         results_condition_.wait( lock );
     }
@@ -461,7 +461,7 @@ bool Scheduler::dispatch_results()
         lock.lock();
     }
     
-    return jobs_ > 0;                 
+    return execute_calls_ > 0;                 
 }
 
 void Scheduler::process_begin( Context* context )
@@ -496,7 +496,7 @@ int Scheduler::process_end( Context* context )
         {
             destroy_context( context );
         }
-    } 
+    }
     return errors;
 }
 
