@@ -184,7 +184,6 @@ function windows.build_executable( target )
         local msrc = msvc.windows_sdk_tool( target, "rc.exe" );
         local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( settings.obj_directory(target), target:id() );
 
-        print( build:leaf(target:filename()) );
         if target.settings.incremental_linking then
             local embedded_manifest = ("%s_embedded.manifest"):format( target:id() );
             local embedded_manifest_rc = ("%s_embedded_manifest.rc"):format( target:id() );
