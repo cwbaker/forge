@@ -509,7 +509,7 @@ function msvc.dependencies_filter( output_directory, source_directory )
             local within_source_tree = build:relative( path, build:root() ):find( "..", 1, true ) == nil;
             if within_source_tree then
                 local header = build:SourceFile( path );
-                object:add_dependency( header );
+                object:add_implicit_dependency( header );
             end
             current_directory = build:branch( path );
         else
@@ -518,6 +518,7 @@ function msvc.dependencies_filter( output_directory, source_directory )
             if start and finish then 
                 local obj_name = function( name ) return ("%s.obj"):format( build:basename(name) ); end;
                 object = build:File( ("%s/%s"):format(output_directory, obj_name(line)) );
+                object:clear_implicit_dependencies();
             end
             printf( line );
         end
