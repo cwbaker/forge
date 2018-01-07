@@ -141,7 +141,6 @@ function windows.build_library( target )
         local arobjects = table.concat( objects, '" "' );
         local msar = msvc.visual_cxx_tool( target, "lib.exe" );
         local environment = msvc.environments_by_architecture[target.architecture];
-        print( build:leaf(target:filename()) );
         build:system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, build:native(target:filename()), arobjects), environment );
     end
     build:popd();
