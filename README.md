@@ -19,30 +19,10 @@
 Copy `foo.in` to `foo.out`:
 
 ~~~lua
--- Load the build module containing defaults, initializations, utility
--- functions and targets.
 require "build";
 
--- Define the `Copy` target prototype that expresses a copied file in the
--- dependency graph.  This makes the callable `Copy` target prototype 
--- available in the Lua-based DSL used to specify dependency graphs.
-local Copy = build:TargetPrototype( 'Copy' );
-
-function Copy.create( build, settings, identifier )
-    return build:File( identifier, Copy );
-end
-
-function Copy.build( build, target )
-    build:rm( target );
-    build:cp( target, target:dependency() );
-end
-
--- Initialize the build with default settings before use.  Project
--- specific settings can be passed in to override the defaults.
 build:initialize();
 
--- Use the Lua-based DSL to create a dependency graph that copies `foo.in` to
--- `foo.out` when `foo.in` is newer or `foo.out` doesn't exist.
 build:all {
     build:Copy 'foo.out' {
         'foo.in'
@@ -50,10 +30,21 @@ build:all {
 };
 ~~~
 
-~~~bash
-charles-macbook:copy-file-example charles$ build 
-foo.out
-build: default (build)=7ms
+The Lua script that defines the `Copy` target used  in the Lua-based domain specific language above is defined as follows:
+
+~~~lua
+local Copy = build:TargetPrototype( "Copy" );
+
+function Copy.create( build, settings, identifier )
+    local target = build:File( identifier, Copy );
+    target:add_ordering_dependency( build:Directory(target:branch()) );
+    return target;
+end
+
+function Copy.build( build, target )
+    build:rm( target );
+    build:cp( target, target:dependency() );
+end
 ~~~
 
 ## Installation
@@ -100,15 +91,41 @@ From a Visual C++ command prompt:
       -v, --version      Print the version and exit.
       -s, --stack-trace  Enable stack traces in error messages.
 
-*Sweet Build* is invoked by running `build` from a directory within a project's directory hierarchy.  A build then proceeds through the following four steps:
+*Sweet Build* is invoked by running `build` from a current working directory within the project's directory hierarchy.  The current working directory is used to imply the targets to build.  Commands and variable assignments can be passed on the command line to further configure the build.
 
-- Search up from the current working directory to find the first directory containing a file named `build.lua`.
+Run a build from the project's root directory with no arguments to build using default settings:
 
-- Assign values to global variables in Lua for all assignments (`variable=value`) passed on the command line to parameterize the build (e.g. `variant=release`, `version=2.0.x`, etc).
+~~~bash
+$ build
+~~~
 
-- Execute the previously found `build.lua` to configure the build and load the initial dependency graph.  The dependency graph is typically loaded by loading several modular Lua scripts (referred to as buildfiles).
+Specify one or more commands on the command line to direct the build to perform different actions.  Commands are executed in the order that they are specified.
 
-- Call global functions for each command (`command`) passed on the command line to carry out the desired build actions (e.g. `clean`, `default`, etc).
+To remove generated files run a *clean* build:
+
+~~~bash
+$ build clean
+~~~
+
+To rebuild everything run *clean* followed by *default* (the default action being to build):
+
+~~~bash
+$ build clean default
+~~~
+
+Make assignments on the command line to assign values to global variables in Lua before the build scripts are run to configure things such as variant and platform.
+
+Build the *release* variant:
+
+~~~bash
+$ build variant=release
+~~~
+
+Build the *shipping* variant for Android instead of the host operating system:
+
+~~~bash
+$ build variant=shipping platform=android
+~~~
 
 ## Contributions
 
