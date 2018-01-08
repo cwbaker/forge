@@ -32,10 +32,10 @@ local settings = build:initialize {
         build:root( ("../%s/lib"):format(variant) ),
     };
     visual_studio = {
-        sln = build:root( "../sweet_build_tool.sln" );
+        sln = build:root( "../sweet_build.sln" );
     };
     xcode = {
-        xcodeproj = build:root( "../sweet_build_tool.xcodeproj" );
+        xcodeproj = build:root( "../sweet_build.xcodeproj" );
     };
     zero_brane_studio = {
         mobdebug = build:switch { build:operating_system();
