@@ -193,7 +193,8 @@ function linux.clean_executable( target )
 end
 
 function linux.obj_directory( target )
-    return ("%s/%s"):format( target.settings.obj, build:relative(target:working_directory():path(), build:root()) );
+    local relative_path = build:relative( target:working_directory():path(), build:root() );
+    return build:absolute( relative_path, target.settings.obj );
 end
 
 function linux.cc_name( name )

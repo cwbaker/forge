@@ -254,7 +254,8 @@ function macos.lipo_executable( target )
 end
 
 function macos.obj_directory( target )
-    return ("%s/%s"):format( target.settings.obj, build:relative(target:working_directory():path(), build:root()) );
+    local relative_path = build:relative( target:working_directory():path(), build:root() );
+    return build:absolute( relative_path, target.settings.obj );
 end
 
 function macos.cc_name( name )
