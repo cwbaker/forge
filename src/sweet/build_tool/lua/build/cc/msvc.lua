@@ -513,7 +513,7 @@ function msvc.dependencies_filter( output_directory, source_directory )
             end
             current_directory = build:branch( path );
         else
-            local SOURCE_FILE_PATTERN = "^[%w_]+%.[%w_]+[\n\r]*$";
+            local SOURCE_FILE_PATTERN = "^[^%.]*%.?[^\n\r]*[\n\r]*$";
             local start, finish = line:find( SOURCE_FILE_PATTERN );
             if start and finish then 
                 local obj_name = function( name ) return ("%s.obj"):format( build:basename(name) ); end;
