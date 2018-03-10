@@ -212,11 +212,14 @@ int LuaTarget::parent( lua_State* lua_state )
     if ( target )
     {
         Target* parent = target->parent();
-        if ( parent && !parent->referenced_by_script() )
+        if ( parent )
         {
-            LuaTarget* lua_target = (LuaTarget*) lua_touserdata( lua_state, lua_upvalueindex(1) );
-            SWEET_ASSERT( lua_target );
-            lua_target->create_target( parent );
+            if ( !parent->referenced_by_script() )
+            {
+                LuaTarget* lua_target = (LuaTarget*) lua_touserdata( lua_state, lua_upvalueindex(1) );
+                SWEET_ASSERT( lua_target );
+                lua_target->create_target( parent );
+            }
             luaxx_push( lua_state, parent );
             return 1;
         }
