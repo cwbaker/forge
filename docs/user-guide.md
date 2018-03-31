@@ -29,6 +29,16 @@ Any other identifiers on the command line are commands.  Commands specify global
 
 Assignments and commands are made and executed in the order that they appear on the command line.  This means that later assignments override earlier ones in the case of duplicate variables and that commands are executed in order.  All assignments are made *before* any commands are executed so interleaving assignments and commands is not generally useful.
 
+A build then proceeds through the following four steps:
+
+- Search up from the current working directory to find the first directory containing a file named `build.lua`.
+
+- Assign values to global variables in Lua for all assignments (`variable=value`) passed on the command line to parameterize the build (e.g. `variant=release`, `version=2.0.x`, etc).
+
+- Execute the previously found `build.lua` to configure the build and load the initial dependency graph.  The dependency graph is typically loaded by loading several modular Lua scripts (referred to as buildfiles).
+
+- Call global functions for each command (`command`) passed on the command line to carry out the desired build actions (e.g. `clean`, `default`, etc).
+
 ## Initialization
 
 The following steps are generally carried out by `build.lua` to initialize the build system:

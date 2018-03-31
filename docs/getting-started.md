@@ -1,63 +1,82 @@
 
 # Getting Started
 
-## Downloading
+## Installation
 
-Precompiled binaries packaged with build scripts for MacOSX and Windows for the latest version of Sweet Build can be downloaded from [http://www.sweetsoftware.co.nz/](http://www.sweetsoftware.co.nz/).
+*Sweet Build* is installed by building it from source code and then linking the `build` executable into your path.  The default install location is `${HOME}/sweet_build` and the `build` executable to link to is at `${HOME}/sweet_build/bin/build`.
 
-- [Windows](http://www.sweetsoftware.co.nz/sweet_build_tool-2012-08-14-win32.zip)
-- [MacOSX](http://www.sweetsoftware.co.nz/sweet_build_tool-2012-08-14-macosx.zip)
+The install location is changed by passing `prefix=${install-directory}` on the command line replacing `${install-directory}` with the full path to the directory to install *Sweet Build* to.
 
-Source code for Sweet Build is available from Bitbucket (the main development repository built from several submodules linking to other repositories) and GitHub (a mirror of the latest release of the Bitbucket repositories combined into a single repository):
+**Linux:**
 
-- [http://bitbucket.org/cwbaker/sweet_build_tool](http://bitbucket.org/cwbaker/sweet_build_tool)
-- [http://github.com/cwbaker/sweet_build_tool](http://github.com/cwbaker/sweet_build_tool)
+From a shell with GCC installed and available on the path:
 
-## Installing
+- `git clone git@github.com:cwbaker/sweet_build.git sweet_build`
+- `cd sweet_build/src`
+- `sh ./bootstrap-linux.sh`
+- `../bootstrap-linux/build variant=shipping install`
+- Link to `${HOME}/sweet_build/bin/build` from your path
 
-Sweet Build consists of a single executable and the build scripts that define how to build C/C++ programs.
+**macOS:**
 
-The executable has no external dependencies and can be installed by copying it anywhere that your build process can execute it from.  The build scripts need  to be loaded from a file named `build.lua` in each project being built.  They  can be copied anywhere your build script can locate them.
+From a shell with Xcode installed:
 
-The recommended installation method is to store the executable and build  scripts in a directory that is version controlled along with the rest of  the source code in your project.  From there the executable and the build  scripts can be easily located by the build process.  This method versions the executable and the build scripts along with the rest of the code in the  project.  Reverting back to a previous revision of the project also reverts  to the build process used to build that revision.
+- `git clone git@github.com:cwbaker/sweet_build.git sweet_build`
+- `cd sweet_build/src`
+- `sh ./bootstrap-macos.sh`
+- `../bootstrap-macos/build variant=shipping install`
+- Link to `${HOME}/sweet_build/bin/build` from your path
 
-Another installation method is to copy the executable into a directory in the executable path specified by the `PATH` environment variable and the build  scripts into a directory in the Lua search path specified by the `LUA_PATH`  environment variable.  In this scenario the executable and the build scripts  are available to all projects on the machine.  The `build.lua` file can easily load the build scripts using Lua's `require()` function.  This method allows  the executable and the build scripts to be shared across multiple projects.
+**Windows:**
 
-## Running
+From a Visual C++ command prompt:
 
-One of the design goals of Sweet Build is to allow source code to be built simply by running `build` from the root of the project.  So assuming that you have the build executable and its associated Lua scripts available building your project is as simple as:
+- `git clone git@github.com:cwbaker/sweet_build.git sweet_build`
+- `cd sweet_build\src`
+- `bootstrap-windows.bat`
+- `..\bootstrap-windows\build.exe variant=shipping install`
+- Link to `${USERPROFILE}/sweet_build/bin/build.exe` from your path
 
-```
-> build
-```
+## Usage
 
-You can specify one or more commands by identifier on the command line:
+    Usage: build [options] [variable=value] [command] ...
+    Options:
+      -h, --help         Print this message and exit.
+      -v, --version      Print the version and exit.
+      -s, --stack-trace  Enable stack traces in error messages.
 
-````
-> build clean
-````
+*Sweet Build* is invoked by running `build` from a current working directory within the project's directory hierarchy.  The current working directory is used to imply the targets to build.  Commands and variable assignments can be passed on the command line to further configure the build.
 
-You can build different variants and/or cross compile for different platforms by setting variables on the command line:
+Run a build from the project's root directory with no arguments to build using default settings:
 
-```
-> build variant=release
-> build variant=shipping platform=android
-```
+~~~bash
+$ build
+~~~
 
-## Building
+Specify one or more commands on the command line to perform different actions.  Commands are executed in the order that they are specified.
 
-To build the latest release version of Sweet Build clone the GitHub repository at `git@github.com:cwbaker/sweet_build_tool.git` and run `build/build` from the source directory:
+To remove generated files run a *clean* build:
 
-```
-> git clone git@github.com:cwbaker/sweet_build_tool.git sweet_build_tool
-> cd sweet_build_tool/src
-> build/build
-```
+~~~bash
+$ build clean
+~~~
 
-To build the latest development version of Sweet Build clone the Bitbucket repository at `git@bitbucket.org:cwbaker/sweet_build_tool.git`, making sure to also initialize and update submodules, and then run `build/build` from the source directory:
+To rebuild everything run *clean* followed by *default* (the default action being to build):
 
-```
-> git clone git@bitbucket.org:cwbaker/sweet_build_tool.git sweet_build_tool 
-> cd sweet_build_tool/src
-> build/build
-```
+~~~bash
+$ build clean default
+~~~
+
+Make assignments on the command line to assign values to global variables in Lua before the build scripts are run to configure things such as variant and platform.
+
+Build the *release* variant:
+
+~~~bash
+$ build variant=release
+~~~
+
+Build the *shipping* variant for Android instead of the host operating system:
+
+~~~bash
+$ build variant=shipping platform=android
+~~~

@@ -4,15 +4,15 @@
 
 ## Features
 
-  - Single executable with no external dependencies
-  - Lua scripting language specifies dependency graph and actions
-  - Fast incremental builds
-  - Automatic implict dependency detection via tracing open files
-  - Arbitrary passes over the full or partial dependency graph
-  - Platform independent path and file system operations
-  - Modular builds spanning multiple directories
-  - Variant builds (e.g. debug, release, etc)
-  - Runs on Windows, macOS, and Linux
+- Single executable with no external dependencies
+- Lua scripting language specifies dependency graph and actions
+- Fast incremental builds
+- Automatic implict dependency detection via tracing open files
+- Arbitrary passes over the full or partial dependency graph
+- Platform independent path and file system operations
+- Modular builds spanning multiple directories
+- Variant builds (e.g. debug, release, etc)
+- Runs on Windows, macOS, and Linux
 
 ## Example
 
@@ -51,7 +51,7 @@ end
 
 *Sweet Build* is installed by building it from source code and then linking the `build` executable into your path.  The default install location is `${HOME}/sweet_build` and the `build` executable to link to is at `${HOME}/sweet_build/bin/build`.
 
-The install location is changed by passing `prefix=${install_directory}` on the command line replacing `${install_directory}` with the full path to the directory to install *Sweet Build* to.
+The install location is changed by passing `prefix=${install-directory}` on the command line replacing `${install-directory}` with the full path to the directory to install *Sweet Build* to.
 
 **Linux:**
 
@@ -99,7 +99,7 @@ Run a build from the project's root directory with no arguments to build using d
 $ build
 ~~~
 
-Specify one or more commands on the command line to direct the build to perform different actions.  Commands are executed in the order that they are specified.
+Specify one or more commands on the command line to perform different actions.  Commands are executed in the order that they are specified.
 
 To remove generated files run a *clean* build:
 
