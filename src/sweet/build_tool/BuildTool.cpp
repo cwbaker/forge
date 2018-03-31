@@ -329,19 +329,27 @@ const std::string& BuildTool::build_hooks_library() const
 }
 
 /**
-// Find the root directory by searching up the directory hierarchy from the
-// initial directory until a directory that contains file 'build.lua' is
-// found.
+// Find the root directory and master `build.lua` script.
+//
+// Searches up directories from *directory* to the root directory to find the
+// highest directory containing a file named `build.lua`.  This directory 
+// becomes the root directory and the `build.lua` is executed to configure the
+// build.
 //
 // @param directory
 //  The directory to start the search from.
 */
 void BuildTool::search_up_for_root_directory( const std::string& directory )
 {
-    boost::filesystem::path root_directory( directory );
-    while ( !root_directory.empty() && !system_->exists((root_directory / ROOT_FILENAME).string()) )
+    boost::filesystem::path root_directory;
+    boost::filesystem::path current_directory( directory );
+    while ( !current_directory.empty() )
     {
-        root_directory = root_directory.branch_path();
+        if ( system_->exists((current_directory / ROOT_FILENAME).string()) )
+        {
+            root_directory = current_directory;
+        }
+        current_directory = current_directory.branch_path();
     }
     if ( !system_->exists((root_directory / ROOT_FILENAME).string()) )
     {
