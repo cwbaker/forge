@@ -5,16 +5,9 @@ local StaticLibrary = build:TargetPrototype( "StaticLibrary" );
 -- directory to the leaf of /filename/.
 local function default_identifier_filename( identifier, platform, architecture, settings )
     local settings = settings or build:current_settings();
-    local identifier = ("%s_%s_%s"):format( build:interpolate(identifier, settings), platform, architecture );
+    local identifier = build:absolute( build:interpolate(identifier, settings) );
     local basename = build:basename( identifier );
-    local branch = settings.lib;
-    if build:is_absolute(identifier) then 
-        branch = build:branch( identifier );
-    end
-    -- The use of the global `lib_name()` here is temporary while the platform
-    -- modules (e.g. macos/init.lua etc) install their `lib_name()` functions
-    -- into the globals table instead of the build table or somehow more 
-    -- explicit.
+    local branch = build:branch( identifier );
     local filename = ("%s/%s"):format( branch, settings.lib_name(basename, architecture) );
     return identifier, filename;
 end
@@ -32,7 +25,6 @@ function StaticLibrary.create( build, settings, identifier, architecture )
 end
 
 function StaticLibrary.build( build, target )
-    assertf( build, "Nil build for '%s'", target:path() );
     local settings = target.settings;
     settings.build_library( target );
 end
