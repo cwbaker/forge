@@ -215,7 +215,7 @@ function build:initialize( project_settings )
     end
 
     if settings.variants and #settings.variants > 0 then 
-        default_settings.cache = self:root( ("../%s/.sweet_build"):format(variant) );
+        default_settings.cache = self:root( ('%s/.sweet_build'):format(variant) );
     end
 
     _G.settings = settings;
