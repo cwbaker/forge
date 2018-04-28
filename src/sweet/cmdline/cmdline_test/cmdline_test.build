@@ -1,13 +1,11 @@
 
 build:all {
     build:Executable "${bin}/cmdline_test" {
-        libraries = {
-            "sweet/cmdline/cmdline",
-            "sweet/error/error",
-            "sweet/assert/assert",
-            "unit/libUnitTest"
-        };
-
+        '${lib}/cmdline_${architecture}';
+        '${lib}/error_${architecture}';
+        '${lib}/assert_${architecture}';
+        '${lib}/UnitTest++_${architecture}';
+        
         build:Cxx () {
             "main.cpp",
             "TestParser.cpp",

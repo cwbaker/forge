@@ -15,19 +15,17 @@ end
 
 local build = build:configure( settings );
 build:all {
-    build:Executable "build" {
-        libraries = {    
-            "sweet/build_tool/build_tool",
-            "sweet/build_tool/build_tool_lua/build_tool_lua",
-            "sweet/process/process",
-            "sweet/luaxx/luaxx",
-            "sweet/cmdline/cmdline",
-            "sweet/error/error",
-            "sweet/assert/assert",
-            "lua/liblua",
-            "boost/libs/filesystem/src/boost_filesystem",
-            "boost/libs/system/src/boost_system"
-        };
+    build:Executable '${bin}/build' {
+        '${lib}/build_tool_${architecture}';
+        '${lib}/build_tool_lua_${architecture}';
+        '${lib}/process_${architecture}';
+        '${lib}/luaxx_${architecture}';
+        '${lib}/cmdline_${architecture}';
+        '${lib}/error_${architecture}';
+        '${lib}/assert_${architecture}';
+        '${lib}/liblua_${architecture}';
+        '${lib}/boost_filesystem_${architecture}';
+        '${lib}/boost_system_${architecture}';
 
         system_libraries = build:switch {
             platform;

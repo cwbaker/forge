@@ -6,7 +6,7 @@ for _, build in build:default_builds("cc_.*") do
         warning_level = 0;
     };
 
-    local libUnitTest = build:Library "libUnitTest" {
+    local libUnitTest = build:Library '${lib}/UnitTest++_${architecture}' {
         build:Cxx () {
             "AssertException.cpp",
             "Checks.cpp",

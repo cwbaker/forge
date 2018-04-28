@@ -2,16 +2,12 @@
 buildfile "error_test/error_test.build";
 
 for _, build in build:default_builds("cc_.*") do 
-    build:Library "error" {
+    build:Library '${lib}/error_${architecture}' {
         defines = {
             -- Define POSIX_C_SOURCE=200112L to get the correct beahvior from
             -- `strerror_r()` in `Error::format()` for Linux.  See 
             -- `man strerror_r` for more details.
             "POSIX_C_SOURCE=200112L"
-        };
-
-        libraries = {
-            "sweet/assert/assert"
         };
 
         build:Cxx () {

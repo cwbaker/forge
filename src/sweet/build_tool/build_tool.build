@@ -22,18 +22,7 @@ for _, build in build:default_builds("cc_.*") do
     end
 
     local build = build:configure( settings );
-    build:Library "build_tool" {
-        libraries = {
-            "boost/libs/filesystem/src/boost_filesystem",
-            "boost/libs/system/src/boost_system",
-            "sweet/assert/assert",
-            "sweet/build_tool/build_tool_lua/build_tool_lua",
-            "sweet/error/error",
-            "lua/liblua",
-            "sweet/path/path",
-            "sweet/process/process"
-        };    
-
+    build:Library '${lib}/build_tool_${architecture}' {
         build:Cxx () {
             -- Disable automatic linking to Boost libraries.
             defines = { "BOOST_ALL_NO_LIB" };

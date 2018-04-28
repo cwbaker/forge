@@ -5,9 +5,7 @@ local build = build:configure {
 
 build:all {
     build:Executable "${bin}/unit_test" {
-        libraries = {
-            "unit/libUnitTest"
-        };
+        '${lib}/UnitTest++_${architecture}';
 
         build:Cxx () {
             "Main.cpp",

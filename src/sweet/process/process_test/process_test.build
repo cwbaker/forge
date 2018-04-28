@@ -1,12 +1,10 @@
 
 build:all {
     build:Executable "${bin}/process_test" {
-        libraries = {
-            "sweet/process/process",
-            "sweet/cmdline/cmdline",
-            "sweet/error/error",
-            "sweet/assert/assert"
-        };
+        '${lib}/process_${architecture}';
+        '${lib}/cmdline_${architecture}';
+        '${lib}/error_${architecture}';
+        '${lib}/assert_${architecture}';
 
         build:Cxx () {
             precompiled_header = "stdafx.hpp";

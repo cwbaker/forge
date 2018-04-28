@@ -8,7 +8,7 @@ for _, build in build:default_builds("cc_.*") do
         };
     };
 
-    local boost_filesystem = build:Library "boost_filesystem" {
+    local boost_filesystem = build:Library '${lib}/boost_filesystem_${architecture}' {
         build:Cxx () {
             "codecvt_error_category.cpp",
             "operations.cpp",
