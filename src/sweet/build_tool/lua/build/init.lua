@@ -81,7 +81,9 @@ function build:SourceFile( value, settings )
     local target = value;
     if type(target) == "string" then 
         target = self:Target( build:interpolate(value, settings) );
-        target:set_filename( target:path() );
+        if target:filename() == '' then 
+            target:set_filename( target:path() );
+        end
         target:set_cleanable( false );
     end
     return target;
