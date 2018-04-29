@@ -61,7 +61,7 @@ buildfile 'src/sweet/cmdline/cmdline.build';
 buildfile 'src/sweet/error/error.build';
 buildfile 'src/sweet/luaxx/luaxx.build';
 buildfile 'src/sweet/process/process.build';
-buildfile 'src/unit/unit.build';
+buildfile 'src/unittest-cpp/unittest-cpp.build';
 
 function install()
     prefix = prefix or build:home( 'sweet_build' );
