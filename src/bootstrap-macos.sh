@@ -1,7 +1,7 @@
 
-SRC=$(pwd)
-LIB=$(pwd)/../bootstrap-macos/lib
-BIN=$(pwd)/../bootstrap-macos/bin
+SRC=$(pwd)/src
+LIB=$(pwd)/bootstrap-macos/lib
+BIN=$(pwd)/bootstrap-macos/bin
 
 cc() {
     for file in $1; do
@@ -32,16 +32,16 @@ link() {
 }
 
 mkdir -p $LIB
-echo boost_system; pushd boost/libs/system/src; cxx "*.cpp"; archive $LIB/libboost_system.a; popd
-echo boost_filesystem; pushd boost/libs/filesystem/src; cxx "*.cpp"; archive $LIB/libboost_filesystem.a; popd
-echo lua; pushd lua; cc '*.c'; archive $LIB/liblua.a; popd
-echo sweet/assert; pushd sweet/assert; cxx '*.cpp'; archive $LIB/libassert.a; popd
-echo sweet/build_tool; pushd sweet/build_tool; cxx '*.cpp'; archive $LIB/libbuild_tool.a; popd
-echo sweet/build_tool/build_tool_lua; pushd sweet/build_tool/build_tool_lua; cxx '*.cpp'; archive $LIB/libbuild_tool_lua.a; popd
-echo sweet/cmdline; pushd sweet/cmdline; cxx '*.cpp'; archive $LIB/libcmdline.a; popd
-echo sweet/error; pushd sweet/error; cxx '*.cpp'; archive $LIB/liberror.a; popd
-echo sweet/luaxx; pushd sweet/luaxx; cxx '*.cpp'; archive $LIB/libluaxx.a; popd
-echo sweet/process; pushd sweet/process; cxx '*.cpp'; archive $LIB/libprocess.a; popd
+echo boost_system; pushd $SRC/boost/libs/system/src; cxx "*.cpp"; archive $LIB/libboost_system.a; popd
+echo boost_filesystem; pushd $SRC/boost/libs/filesystem/src; cxx "*.cpp"; archive $LIB/libboost_filesystem.a; popd
+echo lua; pushd $SRC/lua; cc '*.c'; archive $LIB/liblua.a; popd
+echo sweet/assert; pushd $SRC/sweet/assert; cxx '*.cpp'; archive $LIB/libassert.a; popd
+echo sweet/build_tool; pushd $SRC/sweet/build_tool; cxx '*.cpp'; archive $LIB/libbuild_tool.a; popd
+echo sweet/build_tool/build_tool_lua; pushd $SRC/sweet/build_tool/build_tool_lua; cxx '*.cpp'; archive $LIB/libbuild_tool_lua.a; popd
+echo sweet/cmdline; pushd $SRC/sweet/cmdline; cxx '*.cpp'; archive $LIB/libcmdline.a; popd
+echo sweet/error; pushd $SRC/sweet/error; cxx '*.cpp'; archive $LIB/liberror.a; popd
+echo sweet/luaxx; pushd $SRC/sweet/luaxx; cxx '*.cpp'; archive $LIB/libluaxx.a; popd
+echo sweet/process; pushd $SRC/sweet/process; cxx '*.cpp'; archive $LIB/libprocess.a; popd
 
 mkdir -p $BIN
-echo sweet/build_tool/build; pushd sweet/build_tool/build; cxx '*.cpp'; link $BIN/build; popd
+echo sweet/build_tool/build; pushd $SRC/sweet/build_tool/build; cxx '*.cpp'; link $BIN/build; popd

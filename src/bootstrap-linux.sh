@@ -1,7 +1,7 @@
 
-SRC=$(pwd)
-LIB=$(pwd)/../bootstrap/lib
-BIN=$(pwd)/../bootstrap/bin
+SRC=$(pwd)/src
+LIB=$(pwd)/bootstrap-linux/lib
+BIN=$(pwd)/bootstrap-linux/bin
 
 cc() {
     for file in $1; do
@@ -32,18 +32,18 @@ link() {
 }
 
 mkdir -p $LIB
-echo boost_system; pushd boost/libs/system/src; cxx "*.cpp"; archive $LIB/libboost_system.a; popd
-echo boost_filesystem; pushd boost/libs/filesystem/src; cxx "*.cpp"; archive $LIB/libboost_filesystem.a; popd
-echo lua; pushd lua; cc '*.c'; archive $LIB/liblua.a; popd
-echo sweet/assert; pushd sweet/assert; cxx '*.cpp'; archive $LIB/libassert.a; popd
-echo sweet/build_tool; pushd sweet/build_tool; cxx '*.cpp'; archive $LIB/libbuild_tool.a; popd
-echo sweet/build_tool/build_tool_lua; pushd sweet/build_tool/build_tool_lua; cxx '*.cpp'; archive $LIB/libbuild_tool_lua.a; popd
-echo sweet/cmdline; pushd sweet/cmdline; cxx '*.cpp'; archive $LIB/libcmdline.a; popd
-echo sweet/error; pushd sweet/error; cxx '*.cpp'; archive $LIB/liberror.a; popd
-echo sweet/lua; pushd sweet/lua; cxx '*.cpp'; archive $LIB/libsweetlua.a; popd
-echo sweet/persist; pushd sweet/persist; cxx '*.cpp'; archive $LIB/libpersist.a; popd
-echo sweet/process; pushd sweet/process; cxx '*.cpp'; archive $LIB/libprocess.a; popd
-echo sweet/rtti; pushd sweet/rtti; cxx '*.cpp'; archive $LIB/librtti.a; popd
+echo boost_system; pushd $SRC/boost/libs/system/src; cxx "*.cpp"; archive $LIB/libboost_system.a; popd
+echo boost_filesystem; pushd $SRC/boost/libs/filesystem/src; cxx "*.cpp"; archive $LIB/libboost_filesystem.a; popd
+echo lua; pushd $SRC/lua; cc '*.c'; archive $LIB/liblua.a; popd
+echo sweet/assert; pushd $SRC/sweet/assert; cxx '*.cpp'; archive $LIB/libassert.a; popd
+echo sweet/build_tool; pushd $SRC/sweet/build_tool; cxx '*.cpp'; archive $LIB/libbuild_tool.a; popd
+echo sweet/build_tool/build_tool_lua; pushd $SRC/sweet/build_tool/build_tool_lua; cxx '*.cpp'; archive $LIB/libbuild_tool_lua.a; popd
+echo sweet/cmdline; pushd $SRC/sweet/cmdline; cxx '*.cpp'; archive $LIB/libcmdline.a; popd
+echo sweet/error; pushd $SRC/sweet/error; cxx '*.cpp'; archive $LIB/liberror.a; popd
+echo sweet/lua; pushd $SRC/sweet/lua; cxx '*.cpp'; archive $LIB/libsweetlua.a; popd
+echo sweet/persist; pushd $SRC/sweet/persist; cxx '*.cpp'; archive $LIB/libpersist.a; popd
+echo sweet/process; pushd $SRC/sweet/process; cxx '*.cpp'; archive $LIB/libprocess.a; popd
+echo sweet/rtti; pushd $SRC/sweet/rtti; cxx '*.cpp'; archive $LIB/librtti.a; popd
 
 mkdir -p $BIN
-echo sweet/build_tool/build; pushd sweet/build_tool/build; cxx '*.cpp'; link $BIN/build; popd
+echo sweet/build_tool/build; pushd $SRC/sweet/build_tool/build; cxx '*.cpp'; link $BIN/build; popd
