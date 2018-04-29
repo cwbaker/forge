@@ -17,3 +17,4 @@ bootstrap-windows
 copy-file-example.cache
 foo.out
 .sweet_build
+*.o
