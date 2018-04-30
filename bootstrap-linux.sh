@@ -28,7 +28,7 @@ archive() {
 }
 
 link() {
-    g++ *.o -g -L $LIB -lbuild_tool -lbuild_tool_lua -lprocess -lcmdline -lsweetlua -lerror -llua -lassert -lpersist -lrtti -lboost_filesystem -lboost_system -lpthread -ldl -o $1
+    g++ *.o -g -L $LIB -lbuild_tool -lbuild_tool_lua -lprocess -lcmdline -lluaxx -lerror -llua -lassert -lboost_filesystem -lboost_system -lpthread -ldl -o $1
 }
 
 mkdir -p $LIB
@@ -40,10 +40,8 @@ echo sweet/build_tool; pushd $SRC/sweet/build_tool; cxx '*.cpp'; archive $LIB/li
 echo sweet/build_tool/build_tool_lua; pushd $SRC/sweet/build_tool/build_tool_lua; cxx '*.cpp'; archive $LIB/libbuild_tool_lua.a; popd
 echo sweet/cmdline; pushd $SRC/sweet/cmdline; cxx '*.cpp'; archive $LIB/libcmdline.a; popd
 echo sweet/error; pushd $SRC/sweet/error; cxx '*.cpp'; archive $LIB/liberror.a; popd
-echo sweet/lua; pushd $SRC/sweet/lua; cxx '*.cpp'; archive $LIB/libsweetlua.a; popd
-echo sweet/persist; pushd $SRC/sweet/persist; cxx '*.cpp'; archive $LIB/libpersist.a; popd
+echo sweet/luaxx; pushd $SRC/sweet/luaxx; cxx '*.cpp'; archive $LIB/libluaxx.a; popd
 echo sweet/process; pushd $SRC/sweet/process; cxx '*.cpp'; archive $LIB/libprocess.a; popd
-echo sweet/rtti; pushd $SRC/sweet/rtti; cxx '*.cpp'; archive $LIB/librtti.a; popd
 
 mkdir -p $BIN
 echo sweet/build_tool/build; pushd $SRC/sweet/build_tool/build; cxx '*.cpp'; link $BIN/build; popd
