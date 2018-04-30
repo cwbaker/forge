@@ -9,6 +9,7 @@ require "build.cc";
 require "build.parser";
 require "build.visual_studio";
 require "build.xcode";
+require "build.linux";
 require "build.macos";
 require "build.windows";
 
