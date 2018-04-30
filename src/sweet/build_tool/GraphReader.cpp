@@ -8,6 +8,7 @@
 #include <sweet/error/ErrorPolicy.hpp>
 #include <sweet/assert/assert.hpp>
 #include <memory>
+#include <string.h>
 
 using std::map;
 using std::vector;
