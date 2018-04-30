@@ -2,6 +2,7 @@
 #define SWEET_BUILD_TOOL_LUABUILDTOOL_HPP_INCLUDED
 
 #include <vector>
+#include <string>
 
 struct lua_State;
 
