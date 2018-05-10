@@ -15,7 +15,7 @@ pages:
     - 'Java': 'modules/java.md'
     - 'Android': 'modules/android.md'
     - 'iOS': 'modules/ios.md'
-    - 'MacOSX': 'modules/macosx.md'
+    - 'macOS': 'modules/macos.md'
     - 'Windows': 'modules/windows.md'
     - 'Visual Studio': 'modules/visual_studio.md'
     - 'XCode': 'modules/xcode.md'
