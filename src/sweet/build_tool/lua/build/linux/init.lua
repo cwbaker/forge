@@ -16,59 +16,61 @@ function linux.configure( settings )
 end
 
 function linux.initialize( settings )
-    local path = {
-        "/usr/bin",
-        "/bin"
-    };
-    linux.environment = {
-        PATH = table.concat( path, ":" );
-    };
+    if build:operating_system() == 'linux' then
+        local path = {
+            "/usr/bin",
+            "/bin"
+        };
+        linux.environment = {
+            PATH = table.concat( path, ":" );
+        };
 
-    for _, architecture in ipairs(settings.linux.architectures) do 
-        build:default_build( ("cc_linux_%s"):format(architecture), build:configure {
-            obj = ("%s/cc_linux_%s"):format( settings.obj, architecture );
-            platform = "linux";
-            architecture = architecture;
-            default_architecture = architecture;
-            cc = linux.cc;
-            build_library = linux.build_library;
-            clean_library = linux.clean_library;
-            build_executable = linux.build_executable;
-            clean_executable = linux.clean_executable;
-            obj_directory = linux.obj_directory;
-            cc_name = linux.cc_name;
-            cxx_name = linux.cxx_name;
-            pch_name = linux.pch_name;
-            pdb_name = linux.pdb_name;
-            obj_name = linux.obj_name;
-            lib_name = linux.lib_name;
-            exp_name = linux.exp_name;
-            dll_name = linux.dll_name;
-            exe_name = linux.exe_name;        
-            ilk_name = linux.ilk_name;
-        } );
+        for _, architecture in ipairs(settings.linux.architectures) do 
+            build:default_build( ("cc_linux_%s"):format(architecture), build:configure {
+                obj = ("%s/cc_linux_%s"):format( settings.obj, architecture );
+                platform = "linux";
+                architecture = architecture;
+                default_architecture = architecture;
+                cc = linux.cc;
+                build_library = linux.build_library;
+                clean_library = linux.clean_library;
+                build_executable = linux.build_executable;
+                clean_executable = linux.clean_executable;
+                obj_directory = linux.obj_directory;
+                cc_name = linux.cc_name;
+                cxx_name = linux.cxx_name;
+                pch_name = linux.pch_name;
+                pdb_name = linux.pdb_name;
+                obj_name = linux.obj_name;
+                lib_name = linux.lib_name;
+                exp_name = linux.exp_name;
+                dll_name = linux.dll_name;
+                exe_name = linux.exe_name;        
+                ilk_name = linux.ilk_name;
+            } );
+        end
+
+        local settings = build.settings;
+        local architecture = settings.default_architecture;
+        settings.obj = build:root( ("%s/cc_linux_%s"):format(settings.obj, architecture) );
+        settings.platform = "linux";
+        settings.architecture = architecture;
+        settings.default_architecture = architecture;
+        settings.cc = linux.cc;
+        settings.objc = linux.objc;
+        settings.build_library = linux.build_library;
+        settings.clean_library = linux.clean_library;
+        settings.build_executable = linux.build_executable;
+        settings.clean_executable = linux.clean_executable;
+        settings.lipo_executable = linux.lipo_executable;
+        settings.obj_directory = linux.obj_directory;
+        settings.cc_name = linux.cc_name;
+        settings.cxx_name = linux.cxx_name;
+        settings.obj_name = linux.obj_name;
+        settings.lib_name = linux.lib_name;
+        settings.dll_name = linux.dll_name;
+        settings.exe_name = linux.exe_name;
     end
-
-    local settings = build.settings;
-    local architecture = settings.default_architecture;
-    settings.obj = build:root( ("%s/cc_linux_%s"):format(settings.obj, architecture) );
-    settings.platform = "linux";
-    settings.architecture = architecture;
-    settings.default_architecture = architecture;
-    settings.cc = linux.cc;
-    settings.objc = linux.objc;
-    settings.build_library = linux.build_library;
-    settings.clean_library = linux.clean_library;
-    settings.build_executable = linux.build_executable;
-    settings.clean_executable = linux.clean_executable;
-    settings.lipo_executable = linux.lipo_executable;
-    settings.obj_directory = linux.obj_directory;
-    settings.cc_name = linux.cc_name;
-    settings.cxx_name = linux.cxx_name;
-    settings.obj_name = linux.obj_name;
-    settings.lib_name = linux.lib_name;
-    settings.dll_name = linux.dll_name;
-    settings.exe_name = linux.exe_name;    
 end
 
 function linux.cc( target )
