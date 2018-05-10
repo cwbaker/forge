@@ -332,14 +332,37 @@ function build:switch( values )
     return values[values[1]];
 end
 
--- Provide shell like string interpolation.
+local interpolate;
+
+-- Provide makefile like string interpolation.
 function build:interpolate( template, variables )
+    local function split( input )
+        local output = {};
+        for value in input:gmatch('%S+') do 
+            table.insert( output, value );
+        end
+        return output;
+    end
+
+    local interpolate = build.interpolate;
     local variables = variables or self:current_settings();
-    return (template:gsub('($%b{})', function(word) 
-        local identifier = word:sub( 3, -2 );
+    return (template:gsub('%$(%b{})', function(word) 
+        local parameters = split( interpolate(build, word:sub(2, -2), variables) );
+        local identifier = parameters[1];
         local substitute = variables[identifier];
         if not substitute then 
+            substitute = self[identifier];
+        end
+        if not substitute then 
             substitute = _G[identifier]
+        end
+        if not substitute then 
+            substitute = os.getenv( identifier );
+        end
+        if type(substitute) == 'function' then 
+            substitute = substitute( table.unpack(parameters, 2) );
+        elseif type(substitute) == 'table' then
+            substitute = substitute[parameters[2]];
         end
         return substitute or word;
     end));
