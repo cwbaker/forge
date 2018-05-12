@@ -6,7 +6,7 @@ build:all {
         '${lib}/assert_${architecture}';
         '${lib}/UnitTest++_${architecture}';
         
-        build:Cxx () {
+        build:Cxx '${object %1}' {
             "main.cpp",
             "TestParser.cpp",
             "TestSplitter.cpp"

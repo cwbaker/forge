@@ -1,7 +1,7 @@
 
 for _, build in build:default_builds("cc_.*") do
     build:Library '${lib}/luaxx_${architecture}' {
-        build:Cxx () {
+        build:Cxx '${object %1}' {
             "luaxx.cpp"
         };
     };

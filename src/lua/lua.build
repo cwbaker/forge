@@ -5,7 +5,7 @@ for _, build in build:default_builds("cc_.*") do
     };
 
     build:Library '${lib}/liblua_${architecture}' {
-        build:Cc () {
+        build:Cc '${object %1}' {
             defines = build:switch { 
                 build:operating_system();
                 linux = { "LUA_USE_POSIX", "LUA_USE_DLOPEN" };
@@ -59,7 +59,7 @@ if build:platform_matches("macos") or build:platform_matches("windows") then
             build:Executable '${bin}/luac_${architecture}' {
                 '${lib}/assert_${architecture}';
                 '${lib}/liblua_${architecture}';
-                build:Cc () {
+                build:Cc '${object %1}' {
                     defines = { "_CRT_SECURE_NO_DEPRECATE" };
                     "luac.c"
                 };
@@ -74,7 +74,7 @@ if build:platform_matches("macos") or build:platform_matches("windows") then
         build:Executable "${bin}/lua" {
             '${lib}/assert_${architecture}';
             '${lib}/liblua_${architecture}';
-            build:Cc () {
+            build:Cc '${object %1}' {
                 defines = { "_CRT_SECURE_NO_DEPRECATE" };
                 "lua.c"
             };

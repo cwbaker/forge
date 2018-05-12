@@ -9,7 +9,7 @@ for _, build in build:default_builds("cc_.*") do
     };
 
     build:Library '${lib}/boost_system_${architecture}' {
-        build:Cxx () {
+        build:Cxx '${object %1}' {
             "error_code.cpp"
         };
     };

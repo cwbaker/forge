@@ -2,7 +2,7 @@
 if build:operating_system() == "linux" then
     build:all {
         build:DynamicLibrary '${bin}/build_hooks' {
-            build:Cxx () {
+            build:Cxx '${object %1}' {
                 "build_hooks_linux.cpp"
             };
         };
@@ -14,7 +14,7 @@ if build:operating_system() == "macos" then
         build:all {
             build:Lipo "${bin}/build_hooks.dylib" { 
                 build:DynamicLibrary (build:object('build_hooks_${architecture}')) {
-                    build:Cxx () {
+                    build:Cxx '${object %1}' {
                         "build_hooks_macos.cpp"
                     };
                 };
@@ -27,7 +27,7 @@ if build:operating_system() == "windows" then
     build:all {
         build:DynamicLibrary '${bin}/build_hooks' {
             '${lib}/assert_${architecture}';
-            build:Cxx () {
+            build:Cxx '${object %1}' {
                 "build_hooks_windows.cpp",
                 "ImportDescriptor.cpp"
             };

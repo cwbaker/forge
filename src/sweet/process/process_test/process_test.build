@@ -6,7 +6,7 @@ build:all {
         '${lib}/error_${architecture}';
         '${lib}/assert_${architecture}';
 
-        build:Cxx () {
+        build:Cxx '${object %1}' {
             precompiled_header = "stdafx.hpp";
             "Application.cpp",
             "main.cpp"

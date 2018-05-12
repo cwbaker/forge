@@ -1,8 +1,8 @@
 
-for _, build in build:default_builds("cc_.*") do
+for _, build in build:default_builds('cc_.*') do
     build:Library '${lib}/assert_${architecture}' {
-        build:Cc () {
-            "assert.cpp"
+        build:Cc '${object %1}' {
+            'assert.cpp'
         };
     };
 end

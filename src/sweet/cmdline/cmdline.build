@@ -3,7 +3,7 @@ buildfile "cmdline_test/cmdline_test.build";
 
 for _, build in build:default_builds("cc_.*") do
     build:Library '${lib}/cmdline_${architecture}' {
-        build:Cxx () {
+        build:Cxx '${object %1}' {
             "AddOption.cpp",
             "Error.cpp",
             "Option.cpp",
