@@ -23,7 +23,6 @@ local settings = build:initialize {
     variants = { "debug", "release", "shipping" };
     bin = build:root( ('%s/bin'):format(variant) );
     lib = build:root( ('%s/lib'):format(variant) );
-    lua = build:root( ('%s/lua'):format(variant) );
     obj = build:root( ('%s/obj'):format(variant) );
     include_directories = {
         build:root( 'src' ),
@@ -69,6 +68,6 @@ function install()
     local failures = default();
     if failures == 0 then 
         build:cpdir( '${prefix}/bin', '${bin}' );
-        build:cpdir( '${prefix}/lua', '${lua}' );
+        build:cpdir( '${prefix}/lua', 'src/sweet/build_tool/lua/build' );
     end
 end

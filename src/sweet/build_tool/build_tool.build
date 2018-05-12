@@ -46,9 +46,3 @@ for _, build in build:default_builds("cc_.*") do
         };
     };
 end
-
-build:all {
-    build:CopyDirectory '${lua}/build' {
-        'lua/build';
-    };    
-};
