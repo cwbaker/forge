@@ -5,7 +5,7 @@
 
 #include "Filter.hpp"
 #include <sweet/assert/assert.hpp>
-#include <lua/lua.hpp>
+#include <lua.hpp>
 
 using namespace sweet::build_tool;
 

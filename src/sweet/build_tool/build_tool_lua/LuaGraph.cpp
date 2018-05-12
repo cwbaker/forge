@@ -14,7 +14,7 @@
 #include <sweet/build_tool/TargetPrototype.hpp>
 #include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
-#include <lua/lua.hpp>
+#include <lua.hpp>
 #include <algorithm>
 
 using std::min;

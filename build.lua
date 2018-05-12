@@ -26,7 +26,8 @@ local settings = build:initialize {
     obj = build:root( ('%s/obj'):format(variant) );
     include_directories = {
         build:root( 'src' ),
-        build:root( 'src/boost' )
+        build:root( 'src/boost' ),
+        build:root( 'src/lua/src' )
     };
     library_directories = {
         build:root( ('%s/lib'):format(variant) ),

@@ -21,7 +21,7 @@
 #include <string>
 #include <memory>
 #include <algorithm>
-#include <lua/lua.hpp>
+#include <lua.hpp>
 
 using std::sort;
 using std::list;
