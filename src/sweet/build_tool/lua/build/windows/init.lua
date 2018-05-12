@@ -6,6 +6,7 @@ function windows.initialize( settings )
         for _, architecture in ipairs(settings.architectures) do 
             build:default_build( ("cc_windows_%s"):format(architecture), build:configure {
                 obj = ("%s/cc_windows_%s"):format( settings.obj, architecture );
+                obj_extension = '.obj';
                 architecture = architecture;
                 default_architecture = architecture;
                 cc = windows.cc;
@@ -30,6 +31,7 @@ function windows.initialize( settings )
         local settings = build.settings;
         local architecture = settings.default_architecture;
         settings.obj = build:root( ('%s/cc_windows_%s'):format(settings.obj, architecture) );
+        settings.obj_extension = '.obj';
         settings.platform = "windows";
         settings.architecture = architecture;
         settings.default_architecture = architecture;
