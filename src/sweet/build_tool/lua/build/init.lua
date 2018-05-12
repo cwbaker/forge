@@ -360,7 +360,7 @@ function build:interpolate( template, variables )
             substitute = os.getenv( identifier );
         end
         if type(substitute) == 'function' then 
-            substitute = substitute( table.unpack(parameters, 2) );
+            substitute = substitute( self, table.unpack(parameters, 2) );
         elseif type(substitute) == 'table' then
             substitute = substitute[parameters[2]];
         end
