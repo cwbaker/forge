@@ -58,6 +58,7 @@ The install location is changed by passing `prefix=${install-directory}` on the 
 From a shell with GCC installed and available on the path:
 
 - `git clone git@github.com:cwbaker/sweet_build.git sweet_build`
+- `git submodule update`
 - `cd sweet_build`
 - `sh ./bootstrap-linux.sh`
 - `./bootstrap-linux/bin/build variant=shipping install`
@@ -68,6 +69,7 @@ From a shell with GCC installed and available on the path:
 From a shell with Xcode installed:
 
 - `git clone git@github.com:cwbaker/sweet_build.git sweet_build`
+- `git submodule update`
 - `cd sweet_build`
 - `sh ./bootstrap-macos.sh`
 - `./bootstrap-macos/bin/build variant=shipping install`
@@ -78,6 +80,7 @@ From a shell with Xcode installed:
 From a Visual C++ command prompt:
 
 - `git clone git@github.com:cwbaker/sweet_build.git sweet_build`
+- `git submodule update`
 - `cd sweet_build`
 - `bootstrap-windows.bat`
 - `.\bootstrap-windows\bin\build.exe variant=shipping install`
