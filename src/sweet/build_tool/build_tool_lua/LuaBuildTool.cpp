@@ -19,7 +19,7 @@
 #include <sweet/process/Environment.hpp>
 #include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
-#include <lua/lua.hpp>
+#include <lua.hpp>
 #include <string>
 
 using std::string;

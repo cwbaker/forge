@@ -10,7 +10,7 @@
 #include "path_functions.hpp"
 #include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
 #include <sweet/luaxx/luaxx.hpp>
-#include <lua/lua.hpp>
+#include <lua.hpp>
 
 using namespace sweet;
 using namespace sweet::build_tool;

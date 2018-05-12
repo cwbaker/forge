@@ -5,7 +5,7 @@
 
 #include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
-#include <lua/lua.hpp>
+#include <lua.hpp>
 #include <algorithm>
 #include <memory.h>
 

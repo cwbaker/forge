@@ -5,7 +5,7 @@
 
 #include "Arguments.hpp"
 #include <sweet/assert/assert.hpp>
-#include <lua/lua.hpp>
+#include <lua.hpp>
 
 using std::vector;
 using namespace sweet;

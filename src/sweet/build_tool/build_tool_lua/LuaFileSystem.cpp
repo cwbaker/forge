@@ -9,7 +9,7 @@
 #include <sweet/build_tool/BuildTool.hpp>
 #include <sweet/luaxx/luaxx.hpp>
 #include <sweet/assert/assert.hpp>
-#include <lua/lua.hpp>
+#include <lua.hpp>
 
 using std::string;
 using boost::filesystem::directory_iterator;

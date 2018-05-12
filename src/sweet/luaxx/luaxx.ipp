@@ -3,7 +3,7 @@
 
 #include "luaxx.hpp"
 #include <sweet/assert/assert.hpp>
-#include <lua/lua.hpp>
+#include <lua.hpp>
 
 namespace sweet
 {
