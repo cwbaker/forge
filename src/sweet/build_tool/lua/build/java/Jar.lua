@@ -1,29 +1,10 @@
 
 local Jar = build:TargetPrototype( "Jar" );
 
-local function default_filename( identifier, settings )
-    local settings = settings or build:current_settings();
-    local branch = settings.lib;
-    if build:is_absolute(identifier) then 
-        branch = build:branch( identifier );
-    end
-    return ("%s/%s.jar"):format( branch, build:basename(identifier) );
-end
-
 function Jar.create( build, settings, identifier )
-    local jar = build:Target( identifier, Jar );
-    jar:set_filename( default_filename(identifier, settings) );
+    local jar = build:File( identifier, Jar );
     jar.settings = settings;
     return jar;
-end
-
-function Jar.depend( build, target, dependencies )
-    local jars = dependencies.jars;
-    if jars then 
-        java.add_jar_dependencies( java, dependencies.jars );
-        dependencies.jars = nil;
-    end
-    return build.Target.depend( build, target, dependencies );
 end
 
 local function included( jar, filename )
