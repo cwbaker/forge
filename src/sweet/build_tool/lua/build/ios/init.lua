@@ -241,7 +241,6 @@ end
 
 function ios.clean_executable( target )
     build:rm( target:filename() );
-    build:rmdir( obj_directory(target) );
 end
 
 function ios.lipo_executable( target )
