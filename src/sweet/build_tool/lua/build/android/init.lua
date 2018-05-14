@@ -361,7 +361,6 @@ function android.deploy( apk )
 
         local device_connected = false;
         local function adb_get_state_filter( state )
-            printf( "adb_get_state_filter(), state=%s", state );
             device_connected = string.find( state, "device" ) ~= nil;
         end
         build:system( adb, ('adb get-state'), android.environment, nil, adb_get_state_filter );
