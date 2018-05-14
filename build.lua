@@ -69,6 +69,6 @@ function install()
     local failures = default();
     if failures == 0 then 
         build:cpdir( '${prefix}/bin', '${bin}' );
-        build:cpdir( '${prefix}/lua', 'src/sweet/build_tool/lua/build' );
+        build:cpdir( '${prefix}/lua', 'src/sweet/build_tool/lua' );
     end
 end
