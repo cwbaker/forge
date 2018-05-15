@@ -510,11 +510,11 @@ end
 -- Convert /filename/ into an object directory path by prepending the object 
 -- directory to the portion of /filename/ that is relative to the root 
 -- directory.
-function build:object( filename, settings )
+function build:object( filename, extension, settings )
     local settings = settings or self:current_settings();
     local prefix = settings.obj or build:root();
     local filename = self:relative( self:absolute(filename), self:root() );
-    local extension = settings.obj_extension or '.o';
+    local extension = extension or settings.obj_extension or '.o';
     return ("%s/%s%s"):format( prefix, filename, extension );
 end
 
