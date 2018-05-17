@@ -405,7 +405,9 @@ function android.android_jar( settings )
 end
 
 function android.DynamicLibrary( build, name )
-    local architecture = build.settings.architecture;
+    local settings = build:current_settings();
+    local architecture = settings.architecture;
+    assertf( architecture, 'Missing architecture for Android dynamic library "%s"', name );
     local dynamic_library = build:DynamicLibrary( ("${apk}/%s"):format(name), architecture );
     dynamic_library.architecture = architecture;
 
