@@ -364,6 +364,7 @@ function build:interpolate( template, variables )
         elseif type(substitute) == 'table' then
             substitute = substitute[parameters[2]];
         end
+        assertf( substitute, 'Missing substitute for "%s" in "%s"', identifier, template );
         return substitute or word;
     end));
 end
