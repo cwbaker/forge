@@ -49,7 +49,7 @@ return {
         ["android"] = {
             default_architecture = "armv7";
             architectures = { 
-                "armv7" 
+                'armv5', 'armv7' 
             };
             runtime_library = "gnustl_shared";
         };
