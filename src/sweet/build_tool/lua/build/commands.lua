@@ -32,14 +32,14 @@ local function build_visit( target )
 end
 
 function default()
-    local failures = build:postorder( build_visit, build:find_initial_target() );
+    local failures = build:postorder( build_visit, build:find_initial_target(goal) );
     build:save();
     printf( "build: default (build)=%dms", math.ceil(build:ticks()) );
     return failures;
 end
 
 function clean()
-    local failures = build:postorder( clean_visit, build:find_initial_target() );
+    local failures = build:postorder( clean_visit, build:find_initial_target(goal) );
     printf( "build: clean=%sms", tostring(math.ceil(build:ticks())) );
     return failures;
 end
@@ -51,11 +51,11 @@ function reconfigure()
 end
 
 function dependencies()
-    build:print_dependencies( build:find_initial_target() );
+    build:print_dependencies( build:find_initial_target(goal) );
     return 0;
 end
 
 function namespace()
-    build:print_namespace( build:find_initial_target() );
+    build:print_namespace( build:find_initial_target(goal) );
     return 0;
 end
