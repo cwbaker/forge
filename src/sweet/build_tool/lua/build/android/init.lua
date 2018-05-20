@@ -33,7 +33,7 @@ function android.configure( settings )
             sdk_directory = autodetect_sdk_directory();
             build_tools_directory = ("%s/build-tools/22.0.1"):format( autodetect_sdk_directory() );
             toolchain_version = "4.9";
-            ndk_platform = "android-19";
+            ndk_platform = "android-21";
             sdk_platform = "android-22";
             architectures = { "armv5", "armv7" };
         };
