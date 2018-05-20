@@ -174,8 +174,8 @@ function android.initialize( settings )
     end
 
     build:default_build( "java_android", build:configure {
-        classes = build:root( ("../%s/classes/java_android"):format(variant) );
-        gen = build:root( ("../%s/gen/java_android"):format(variant) );
+        classes = build:root( ('%s/classes/java_android'):format(variant) );
+        gen = build:root( ('%s/gen/java_android'):format(variant) );
         system_jars = {
             ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
         };
