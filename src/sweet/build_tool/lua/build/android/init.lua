@@ -391,8 +391,8 @@ function android.lib_name( name )
     return ("lib%s.a"):format( name );
 end
 
-function android.dll_name( name, architecture )
-    return ("lib/%s/lib%s.so"):format( directory_by_architecture[architecture], build:basename(name) );
+function android.dll_name( name )
+    return ('lib%s.so'):format( build:basename(name) );
 end
 
 function android.exe_name( name, architecture )
@@ -404,11 +404,11 @@ function android.android_jar( settings )
     return ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
 end
 
-function android.DynamicLibrary( build, name )
+function android.DynamicLibrary( build, name, architecture )
     local settings = build:current_settings();
-    local architecture = settings.architecture;
+    local architecture = architecture or settings.architecture;
     assertf( architecture, 'Missing architecture for Android dynamic library "%s"', name );
-    local dynamic_library = build:DynamicLibrary( ("${apk}/%s"):format(name), architecture );
+    local dynamic_library = build:DynamicLibrary( ("${apk}/lib/%s/%s"):format(directory_by_architecture[architecture], name), architecture );
     dynamic_library.architecture = architecture;
 
     local group = build:Target( build:anonymous() );
