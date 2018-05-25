@@ -785,7 +785,7 @@ int LuaTarget::ordering_dependency( lua_State* lua_state )
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
 
-    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
+    int index = luaL_optinteger( lua_state, INDEX, 1 );
     luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
     --index;
 
