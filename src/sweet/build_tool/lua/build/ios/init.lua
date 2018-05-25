@@ -105,6 +105,8 @@ function ios.initialize( settings )
         build:default_build( ("cc_ios_%s"):format(architecture), build:configure {
             obj = ("%s/cc_ios_%s"):format( settings.obj, architecture );
             platform = "ios";
+            sdkroot = 'iphoneos';
+            xcrun = settings.ios.xcrun;
             architecture = architecture;
             default_architecture = architecture;
             cc = ios.cc;

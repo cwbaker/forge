@@ -83,6 +83,8 @@ function macos.initialize( settings )
             build:default_build( ("cc_macos_%s"):format(architecture), build:configure {
                 obj = ("%s/cc_macos_%s"):format( settings.obj, architecture );
                 platform = "macos";
+                sdkroot = 'macosx';
+                xcrun = settings.macos.xcrun;
                 architecture = architecture;
                 default_architecture = architecture;
                 cc = macos.cc;
