@@ -534,6 +534,7 @@ function xcode_build()
     end
 end
 
+require "build.xcode.AssetCatalog";
 require "build.xcode.Plist";
 require "build.xcode.Lipo";
 require "build.xcode.Xib";
