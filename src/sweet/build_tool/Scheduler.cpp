@@ -40,7 +40,6 @@ Scheduler::Scheduler( BuildTool* build_tool )
   results_mutex_(),
   results_condition_(),
   results_(),
-  execute_calls_( 0 ),
   buildfile_calls_( 0 ),
   failures_( 0 )
 {
@@ -63,7 +62,6 @@ void Scheduler::command( const boost::filesystem::path& path, const std::string&
 {
     call( path, function );
     wait();
-    SWEET_ASSERT( execute_calls_ == 0 );
     SWEET_ASSERT( buildfile_calls_ == 0 );
 }
 
@@ -216,7 +214,6 @@ void Scheduler::push_error( const std::exception& exception )
 void Scheduler::push_execute_finished( int exit_code, Context* context, process::Environment* environment )
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
-    --execute_calls_;
     results_.push_back( std::bind(&Scheduler::execute_finished, this, exit_code, context, environment) );
     results_condition_.notify_all();
 }
@@ -232,7 +229,6 @@ void Scheduler::execute( const std::string& command, const std::string& command_
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
     build_tool_->executor()->execute( command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context );
-    ++execute_calls_;
 }
 
 void Scheduler::wait()
@@ -447,11 +443,15 @@ void Scheduler::destroy_context( Context* context )
 
 bool Scheduler::dispatch_results()
 {
+    Executor* executor = build_tool_->executor();
     Reader* reader = build_tool_->reader();
     std::unique_lock<std::mutex> lock( results_mutex_ );
-    if ( (execute_calls_ > 0 || reader->active_jobs() > 0) && results_.empty() )
+    if ( results_.empty() )
     {
-        results_condition_.wait( lock );
+        if ( executor->active_jobs() > 0 || reader->active_jobs() > 0 )
+        {
+            results_condition_.wait( lock );            
+        }
     }
 
     while ( !results_.empty() )
@@ -463,7 +463,7 @@ bool Scheduler::dispatch_results()
         lock.lock();
     }
     
-    return execute_calls_ > 0 || reader->active_jobs() > 0;
+    return executor->active_jobs() > 0 || reader->active_jobs() > 0;
 }
 
 void Scheduler::process_begin( Context* context )

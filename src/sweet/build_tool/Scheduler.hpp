@@ -42,7 +42,6 @@ class Scheduler
     std::mutex results_mutex_; ///< The mutex that ensures exclusive access to the results queue.
     std::condition_variable results_condition_; ///< The Condition that is used to wait for results.
     std::deque<std::function<void()> > results_; ///< The functions to be executed as a result of jobs processing in the thread pool.
-    int execute_calls_; ///< The number of outstanding calls made to execute external processes.
     int buildfile_calls_; ///< The number of outstanding calls made to load buildfiles.
     int failures_; ///< The number of failures in the most recent postorder traversal.
 

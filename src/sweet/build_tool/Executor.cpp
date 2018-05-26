@@ -37,6 +37,7 @@ Executor::Executor( BuildTool* build_tool )
   build_hooks_library_(),
   maximum_parallel_jobs_( 1 ),
   threads_(),
+  active_jobs_( 0 ),
   done_( false )
 {
     SWEET_ASSERT( build_tool_ );
@@ -48,25 +49,30 @@ Executor::~Executor()
     stop();
 }
 
-void Executor::set_build_hooks_library( const std::string& build_hooks_library )
-{
-    build_hooks_library_ = build_hooks_library;
-}
-
 const std::string& Executor::build_hooks_library() const
 {
     return build_hooks_library_;
+}
+
+int Executor::maximum_parallel_jobs() const
+{
+    return maximum_parallel_jobs_;
+}
+
+int Executor::active_jobs() const
+{
+    return active_jobs_;
+}
+
+void Executor::set_build_hooks_library( const std::string& build_hooks_library )
+{
+    build_hooks_library_ = build_hooks_library;
 }
 
 void Executor::set_maximum_parallel_jobs( int maximum_parallel_jobs )
 {
     stop();
     maximum_parallel_jobs_ = max( 1, maximum_parallel_jobs );
-}
-
-int Executor::maximum_parallel_jobs() const
-{
-    return maximum_parallel_jobs_;
 }
 
 void Executor::execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Context* context )
@@ -79,6 +85,7 @@ void Executor::execute( const std::string& command, const std::string& command_l
         start();
         std::unique_lock<std::mutex> lock( jobs_mutex_ );
         jobs_.push_back( std::bind(&Executor::thread_execute, this, command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context->working_directory(), context) );
+        ++active_jobs_;
         jobs_ready_condition_.notify_all();
     }
 }
@@ -109,6 +116,7 @@ void Executor::thread_process()
             lock.unlock();
             function();
             lock.lock();
+            --active_jobs_;
         }
     }
 }
