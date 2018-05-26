@@ -33,6 +33,7 @@ class Reader
 public:
     Reader( BuildTool* build_tool );
     ~Reader();
+    int active_jobs() const;
     void read( intptr_t fd_or_handle, Filter* filter, Arguments* arguments, Target* working_directory );
 
 private:

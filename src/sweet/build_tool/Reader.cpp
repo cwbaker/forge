@@ -45,6 +45,11 @@ Reader::~Reader()
     stop();
 }
 
+int Reader::active_jobs() const
+{
+    return active_jobs_;
+}
+
 void Reader::read( intptr_t fd_or_handle, Filter* filter, Arguments* arguments, Target* working_directory )
 {
     std::unique_lock<std::mutex> lock( jobs_mutex_ );

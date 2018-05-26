@@ -10,6 +10,7 @@
 #include "Job.hpp"
 #include "Context.hpp"
 #include "Executor.hpp"
+#include "Reader.hpp"
 #include "Filter.hpp"
 #include "Arguments.hpp"
 #include "Error.hpp"
@@ -446,8 +447,9 @@ void Scheduler::destroy_context( Context* context )
 
 bool Scheduler::dispatch_results()
 {
+    Reader* reader = build_tool_->reader();
     std::unique_lock<std::mutex> lock( results_mutex_ );
-    if ( execute_calls_ > 0 && results_.empty() )
+    if ( (execute_calls_ > 0 || reader->active_jobs() > 0) && results_.empty() )
     {
         results_condition_.wait( lock );
     }
@@ -461,7 +463,7 @@ bool Scheduler::dispatch_results()
         lock.lock();
     }
     
-    return execute_calls_ > 0;                 
+    return execute_calls_ > 0 || reader->active_jobs() > 0;
 }
 
 void Scheduler::process_begin( Context* context )
