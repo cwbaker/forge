@@ -50,6 +50,7 @@ void LuaFileSystem::create( BuildTool* build_tool, lua_State* lua_state )
         { "rmdir", &LuaFileSystem::rmdir },
         { "cp", &LuaFileSystem::cp },
         { "rm", &LuaFileSystem::rm },
+        { "touch", &LuaFileSystem::touch },
         { NULL, NULL }
     };
     lua_pushlightuserdata( lua_state, build_tool );
@@ -159,6 +160,14 @@ int LuaFileSystem::rm( lua_State* lua_state )
     const int PATH = 2;
     boost::filesystem::path path = absolute( lua_state, PATH );
     boost::filesystem::remove( path );
+    return 0;
+}
+
+int LuaFileSystem::touch( lua_State* lua_state )
+{
+    const int PATH = 2;
+    boost::filesystem::path path = absolute( lua_state, PATH );
+    boost::filesystem::last_write_time( path, std::time(nullptr) );
     return 0;
 }
 

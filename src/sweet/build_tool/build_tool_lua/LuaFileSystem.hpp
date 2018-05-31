@@ -36,6 +36,7 @@ private:
     static int rmdir( lua_State* lua_state );
     static int cp( lua_State* lua_state );
     static int rm( lua_State* lua_state );
+    static int touch( lua_State* lua_state );
 
     static int ls_iterator( lua_State* lua_state );
     static void push_directory_iterator( lua_State* lua_state, const boost::filesystem::directory_iterator& iterator );
