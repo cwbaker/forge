@@ -25,6 +25,10 @@ function android.configure( settings )
         end
     end
 
+    function autodetect_proguard_directory()
+        return build:home( 'proguard-6.0.3' );
+    end
+
     local local_settings = build.local_settings;
     if not local_settings.android then
         local_settings.updated = true;
@@ -32,6 +36,7 @@ function android.configure( settings )
             ndk_directory = autodetect_ndk_directory();
             sdk_directory = autodetect_sdk_directory();
             build_tools_directory = ("%s/build-tools/22.0.1"):format( autodetect_sdk_directory() );
+            proguard_directory = autodetect_proguard_directory();
             toolchain_version = "4.9";
             ndk_platform = "android-21";
             sdk_platform = "android-22";

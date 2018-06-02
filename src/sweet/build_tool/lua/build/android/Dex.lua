@@ -23,7 +23,7 @@ function Dex.build( build, target )
     local settings = target.settings;
     local proguard = target:dependency( 1 );
     if proguard and target.settings.android.proguard_enabled then 
-        local proguard_sh = ("%s/tools/proguard/bin/proguard.sh"):format( target.settings.android.sdk_directory );
+        local proguard_sh = ("%s/bin/proguard.sh"):format( target.settings.android.proguard_directory );
         build:system( proguard_sh, {
             'proguard.sh',
             ('-printmapping \"%s/%s.map\"'):format( settings.classes_directory(target), build:leaf(target) ),
