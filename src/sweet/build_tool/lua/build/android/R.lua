@@ -35,7 +35,15 @@ function R.build( build, target )
     };
 
     for _, dependency in target:dependencies( 2 ) do
-        table.insert( command_line, ('-S "%s"'):format(build:relative(dependency)) );
+        if dependency:prototype() == build.Ivy then 
+            for _, archive in dependency:implicit_dependencies() do
+                if build:extension(archive) == '' then 
+                    table.insert( command_line, ('-S "%s/res"'):format(archive:filename()) );
+                end
+            end
+        else
+            table.insert( command_line, ('-S "%s"'):format(build:relative(dependency)) );
+        end
     end
 
     local aapt = ('%s/aapt'):format( settings.android.build_tools_directory );

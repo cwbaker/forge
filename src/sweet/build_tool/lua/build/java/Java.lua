@@ -51,6 +51,14 @@ function Java.build( build, target )
             table.insert( source_files, build:relative(dependency:filename()) );
         elseif prototype == build.Jar then
             table.insert( jars, build:relative(dependency:filename()) );
+        elseif prototype == build.Ivy then 
+            for _, archive in dependency:implicit_dependencies() do 
+                if build:extension(archive) == '.jar' then 
+                    table.insert( jars, archive:filename() );
+                else
+                    table.insert( jars, ('%s/classes.jar'):format(archive:filename()) );
+                end
+            end
         end
     end
 

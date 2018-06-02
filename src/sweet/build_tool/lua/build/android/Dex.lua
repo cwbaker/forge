@@ -38,8 +38,17 @@ function Dex.build( build, target )
     add_jars( jars, settings.third_party_jars );
 
     for _, dependency in target:dependencies() do 
-        if dependency:prototype() == build.Jar then 
+        local prototype = dependency:prototype();
+        if prototype == build.Jar then 
             table.insert( jars, build:relative(dependency:filename()) );
+        elseif prototype == build.Ivy then 
+            for _, archive in dependency:implicit_dependencies() do 
+                if build:extension(archive) == '.jar' then 
+                    table.insert( jars, archive:filename() );
+                else
+                    table.insert( jars, ('%s/classes.jar'):format(archive:filename()) );
+                end
+            end
         end
     end
 
