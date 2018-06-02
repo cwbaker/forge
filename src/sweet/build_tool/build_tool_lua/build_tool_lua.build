@@ -29,5 +29,5 @@ for _, build in build:default_builds("cc_.*") do
             "LuaTargetPrototype.cpp",
             "types.cpp"
         };
-    }
+    };
 end
