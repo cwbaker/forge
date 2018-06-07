@@ -14,12 +14,12 @@ function java.configure( settings )
         if build:operating_system() == 'windows' then 
             return 'C:/Program Files/Apache Ivy/ivy-2.5.0-rc1.jar';
         else
-            return '~/temp/apache-ivy-2.5.0-rc1/ivy-2.5.0-rc1.jar';
+            return build:home( 'apache-ivy-2.5.0-rc1/ivy-2.5.0-rc1.jar' );
         end
     end
 
-    local function autodetect_ivy_cache_directory( build ) 
-        return build:home( '.ivy/cache' );
+    local function autodetect_ivy_cache_directory() 
+        return build:home( '.ivy2/cache' );
     end
 
     local function autodetect_unzip() 
