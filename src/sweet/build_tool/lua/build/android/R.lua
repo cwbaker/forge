@@ -37,8 +37,8 @@ function R.build( build, target )
     for _, dependency in target:dependencies( 2 ) do
         if dependency:prototype() == build.Ivy then 
             for _, archive in dependency:implicit_dependencies() do
-                if build:extension(archive) == '' then 
-                    table.insert( command_line, ('-S "%s/res"'):format(archive:filename()) );
+                if build:extension(archive) ~= '.jar' and build:exists(('%s/res'):format(archive)) then 
+                    table.insert( command_line, ('-S "%s/res"'):format(archive) );
                 end
             end
         else

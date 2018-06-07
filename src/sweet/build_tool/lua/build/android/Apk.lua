@@ -8,7 +8,7 @@ function Apk.build( build, target )
     for _, dependency in target:dependencies() do 
         if dependency:prototype() == build.Ivy then 
             for _, archive in dependency:implicit_dependencies() do 
-                if build:extension(archive) == '' then
+                if build:extension(archive) ~= '.jar' and build:exists(('%s/res'):format(archive)) then
                     table.insert( resources, ('-S "%s/res"'):format(archive) );
                 end
             end
