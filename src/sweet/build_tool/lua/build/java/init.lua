@@ -6,7 +6,7 @@ function java.configure( settings )
         if build:operating_system() == "windows" then
             return "C:/Program Files/Java/jdk1.6.0_39";
         else
-            return "/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home";
+            return "/Library/Java/Home";
         end
     end
 
