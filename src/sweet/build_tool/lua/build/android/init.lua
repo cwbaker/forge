@@ -9,7 +9,7 @@ local directory_by_architecture = {
 };
 
 function android.configure( settings )
-    function autodetect_ndk_directory()
+    local function autodetect_ndk_directory()
         if build:operating_system() == "windows" then
             return "C:/android/android-ndk";
         else
@@ -17,7 +17,7 @@ function android.configure( settings )
         end
     end
 
-    function autodetect_sdk_directory()
+    local function autodetect_sdk_directory()
         if build:operating_system() == "windows" then
             return "C:/Program Files (x86)/Android/android-sdk";
         else
@@ -25,8 +25,12 @@ function android.configure( settings )
         end
     end
 
-    function autodetect_proguard_directory()
+    local function autodetect_proguard_directory()
         return build:home( 'proguard-6.0.3' );
+    end
+
+    local function autodetect_manifest_merger()
+        return build:home( 'android-manifest-merger/target/manifest-merger-jar-with-dependencies.jar' );
     end
 
     local local_settings = build.local_settings;
@@ -37,6 +41,7 @@ function android.configure( settings )
             sdk_directory = autodetect_sdk_directory();
             build_tools_directory = ("%s/build-tools/22.0.1"):format( autodetect_sdk_directory() );
             proguard_directory = autodetect_proguard_directory();
+            manifest_merger = autodetect_manifest_merger();
             toolchain_version = "4.9";
             ndk_platform = "android-21";
             sdk_platform = "android-22";
@@ -441,6 +446,7 @@ function android.DynamicLibrary( build, name, architecture )
 end
 
 require "build.android.Aidl";
+require "build.android.AndroidManifest";
 require "build.android.Apk";
 require "build.android.BuildConfig";
 require "build.android.Dex";
