@@ -343,7 +343,7 @@ void BuildTool::search_up_for_root_directory( const std::string& directory )
 {
     boost::filesystem::path root_directory;
     boost::filesystem::path current_directory( directory );
-    while ( !current_directory.empty() )
+    while ( !current_directory.empty() && current_directory.has_root_directory() )
     {
         if ( system_->exists((current_directory / ROOT_FILENAME).string()) )
         {
