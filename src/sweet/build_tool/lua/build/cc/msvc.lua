@@ -506,7 +506,8 @@ function msvc.dependencies_filter( output_directory, source_directory )
                 path = ("%s/%s"):format( directory, relative_include_path(path) );
             end
 
-            local within_source_tree = build:relative( path, build:root() ):find( "..", 1, true ) == nil;
+            local relative_path = build:relative( path, build:root() );
+            local within_source_tree = build:is_relative( relative_path ) and relative_path:find( '..', 1, true ) == nil;
             if within_source_tree then
                 local header = build:SourceFile( path );
                 object:add_implicit_dependency( header );
