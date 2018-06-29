@@ -1,12 +1,12 @@
 rem @echo off
 
-set SRC=%~dp0\src
-set OBJ=%~dp0\bootstrap-windows
-set LIBS=%~dp0\bootstrap-windows\lib
-set BIN=%~dp0\bootstrap-windows\bin
+set SRC=%~dp0src
+set OBJ=%~dp0bootstrap-windows
+set LIBS=%~dp0bootstrap-windows\lib
+set BIN=%~dp0bootstrap-windows\bin
 
 set DEFINES=/DBUILD_OS_WINDOWS /DBUILD_VARIANT_DEBUG /DBUILD_VERSION=\"bootstrap\" /DBOOST_ALL_NO_LIB
-set INCLUDE_DIRS=/I %SRC% /I %SRC%lua /I %SRC%boost
+set INCLUDE_DIRS=/I %SRC% /I %SRC%\lua\src /I %SRC%\boost
 set CC_FLAGS=%DEFINES% %INCLUDE_DIRS% /c /MTd /TC /Zi
 set CXX_FLAGS=%DEFINES% %INCLUDE_DIRS% /c /MTd /TP /std:c++14 /EHsc /GR /Zi
 
@@ -14,7 +14,7 @@ if not exist "%OBJ%" mkdir %OBJ%
 if not exist "%LIBS%" mkdir %LIBS%
 echo boost_system & pushd %SRC%\boost\libs\system\src & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\boost_system.lib *.obj & popd
 echo boost_filesystem & pushd %SRC%\boost\libs\filesystem\src & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\boost_filesystem.lib *.obj & popd
-echo lua & pushd %SRC%\lua & cl.exe %CC_FLAGS% *.c & lib.exe /out:%LIBS%\lua.lib *.obj & popd
+echo lua & pushd %SRC%\lua\src & cl.exe %CC_FLAGS% *.c & lib.exe /out:%LIBS%\lua.lib *.obj & popd
 echo sweet/assert & pushd %SRC%\sweet\assert & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\assert.lib *.obj & popd
 echo sweet/build_tool & pushd %SRC%\sweet\build_tool & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\build_tool.lib *.obj & popd
 echo sweet/build_tool/build_tool_lua & pushd %SRC%\sweet\build_tool\build_tool_lua & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\build_tool_lua.lib *.obj & popd
