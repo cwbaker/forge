@@ -28,7 +28,7 @@ class Arguments
     std::vector<int> arguments_; ///< The variable arguments passed through `execute()` and `postorder()` 
 
     public:
-        Arguments( lua_State* lua_state, int begin, int end );
+        Arguments( lua_State* lua_state, lua_State* calling_lua_state, int begin, int end );
         ~Arguments();
         int push_arguments( lua_State* lua_state );
 };

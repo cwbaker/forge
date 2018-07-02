@@ -11,7 +11,7 @@ using std::vector;
 using namespace sweet;
 using namespace sweet::build_tool;
 
-Arguments::Arguments( lua_State* lua_state, int begin, int end )
+Arguments::Arguments( lua_State* lua_state, lua_State* calling_lua_state, int begin, int end )
 : lua_state_( lua_state ),
   arguments_()
 {
@@ -23,8 +23,8 @@ Arguments::Arguments( lua_State* lua_state, int begin, int end )
         arguments_.reserve( end - begin );
         for ( int i = begin; i < end; ++i )
         {
-            lua_pushvalue( lua_state_, i );
-            arguments_.push_back( luaL_ref(lua_state_, LUA_REGISTRYINDEX) );
+            lua_pushvalue( calling_lua_state, i );
+            arguments_.push_back( luaL_ref(calling_lua_state, LUA_REGISTRYINDEX) );
         }
     }
 }

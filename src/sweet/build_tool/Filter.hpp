@@ -20,7 +20,7 @@ class Filter
     
 public:
     Filter();
-    Filter( lua_State* lua_state, int position );
+    Filter( lua_State* lua_state, lua_State* calling_lua_state, int position );
     Filter( const Filter& value );
     Filter& operator=( const Filter& value );
     ~Filter();
