@@ -19,8 +19,8 @@ EndProject
     for _, project in pairs(projects) do
         local target = project.target;
         local name = target.project_name or target:id();
-        local filename = ("%s.vcxproj"):format( target:path(), name );
-        write( PROJECT, name, native(relative(filename)), project.uuid );
+        local filename = ("%s/%s.vcxproj"):format( target:working_directory():path(), target:id(), name );
+        write( PROJECT, name, build:native(build:relative(filename)), project.uuid );
     end
 end
 
@@ -172,10 +172,10 @@ local function write_function( file )
 end
 
 function sln.generate( filename, projects, directories )
-    print( leaf(filename) );
-    pushd( branch(absolute(filename)) );
-    local file = io.open( absolute(filename), "wb" );
-    assertf( file, "Opening '%s' to write solution failed", absolute(filename) );
+    print( build:leaf(filename) );
+    build:pushd( build:branch(build:absolute(filename)) );
+    local file = io.open( build:absolute(filename), "wb" );
+    assertf( file, "Opening '%s' to write solution failed", build:absolute(filename) );
     local write = write_function( file );
     generate_header( write );
     generate_projects( write, projects );
@@ -189,6 +189,7 @@ function sln.generate( filename, projects, directories )
     generate_end_global( write );
     file:close();
     file = nil;
+    build:popd();
 end
 
 return sln;

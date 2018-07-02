@@ -1,4 +1,5 @@
 *.sln
+*.vcxproj
 *.xcodeproj
 *.sublime-project
 *.sublime-workspace
@@ -6,10 +7,8 @@ local_settings.lua
 debug/
 release/
 shipping/
-/src/build.html
 *.sdf
 *.suo
-bootstrap
 .vs
 bootstrap-linux
 bootstrap-macos
@@ -18,3 +17,4 @@ copy-file-example.cache
 foo.out
 .sweet_build
 *.o
+*.obj

@@ -1,13 +1,14 @@
 
 local visual_studio = {};
 
-require "build.visual_studio.vcxproj";
-require "build.visual_studio.sln";
+local vcxproj = require "build.visual_studio.vcxproj";
+local sln = require "build.visual_studio.sln";
 
 -- Generate a UUID by calling the uuidgen tool.
 local function uuid()    
     local uuids = {};
-    local uuidgen = ("%s/bin/x64/uuidgen.exe"):format( settings.msvc.windows_sdk_directory );
+    local target_to_provide_settings_hack = {settings = build:current_settings()};
+    local uuidgen = msvc.windows_sdk_tool( target_to_provide_settings_hack, 'uuidgen.exe' );
     local arguments = "uuidgen";
     build:system( uuidgen, arguments, nil, nil, function(line)
         local uuid = line:match( "[%w-_]+" );
@@ -16,7 +17,7 @@ local function uuid()
         end
     end );
     assert( uuids[1], "UUID generation failed!" );
-    return upper( uuids[1] );
+    return build:upper( uuids[1] );
 end
 
 -- Recursively add a directory and its parents to the hierarchy to display in
@@ -90,7 +91,7 @@ local function generate_uuids( objects )
 end
 
 local function filter( filename, includes, excludes )
-    if is_directory(filename) then 
+    if build:is_directory(filename) then 
         return false;
     end
     if excludes then 
@@ -125,10 +126,7 @@ end
 -- `Executable`, `StaticLibrary`, and `DynamicLibrary` targets that are 
 -- recursively dependencies of the root directory.
 function visual_studio.solution()
-    platform = "";
-    variant = "";
-    build:load();    
-    local all = build:find_target( build:root() );
+    local all = build:find_target( build:root('all') );
     assertf( all, "Missing target at '%s' to generate Visual Studio solution from", build:root() );
     assertf( build.settings.visual_studio, "Missing Visual Studio settings in 'settings.visual_studio'" );
     assertf( build.settings.visual_studio.sln, "Missing solution filename in 'settings.visual_studio.sln'" );
@@ -138,21 +136,21 @@ function visual_studio.solution()
     find_projects( all, projects, directories );
     generate_uuids( projects );
     generate_uuids( directories );
-    prune( directories[all:path()] );
+    prune( directories[build:root()] );
 
     for _, project in pairs(projects) do 
         local target = project.target;
         target.uuid = project.uuid;
     	build:pushd( target:working_directory():path() );
 		local DEFAULT_SOURCE = { "^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java$" };
-		local files = build:ls( build:pwd(), DEFAULT_SOURCE );
-		build.visual_studio.vcxproj.generate( target, files );
+		local files = ls( build:pwd(), DEFAULT_SOURCE );
+		vcxproj.generate( target, files );
 		build:popd();
     end
 
-    build.visual_studio.sln.generate( build.settings.visual_studio.sln, projects, directories[all:path()].children );
+    sln.generate( build.settings.visual_studio.sln, projects, directories[build:root()].children );
 end
 
-_G.sln = solution;
+_G.sln = visual_studio.solution;
 
 return visual_studio;

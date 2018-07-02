@@ -90,21 +90,21 @@ local function generate_property_groups( target, write )
     <NMakeIncludeSearchPath>%s</NMakeIncludeSearchPath>
   </PropertyGroup>
 ]];
-    local build_tool = native( relative(build:executable("build.exe")) );
+    local build_tool = build:native( build:relative(build:executable("build.exe")) );
     for _, platform in ipairs(target.settings.platforms) do
         for _, variant in ipairs(target.settings.variants) do
             local variant_settings = target.settings.settings_by_variant[variant];
             
             local output = "";
             if target:prototype() == build.Executable then
-                output = native( relative(root(("../%s_%s/bin/%s.exe"):format(platform, variant, target:id()))) );
+                output = build:native( build:relative(target:filename()) );
             end
             
             local defines = {
-                ('/DBUILD_PLATFORM_%s'):format( upper(platform) );
-                ('/DBUILD_VARIANT_%s'):format( upper(variant) );
+                ('/DBUILD_PLATFORM_%s'):format( build:upper(platform) );
+                ('/DBUILD_VARIANT_%s'):format( build:upper(variant) );
                 ('/DBUILD_LIBRARY_SUFFIX="\\"_%s.lib\\""'):format( target.architecture );
-                ('/DBUILD_LIBRARY_TYPE_%s'):format( upper(variant_settings.library_type) );
+                ('/DBUILD_LIBRARY_TYPE_%s'):format( build:upper(variant_settings.library_type) );
             };
             if variant_settings.defines then
                 for _, define in ipairs(variant_settings.defines) do
@@ -120,13 +120,13 @@ local function generate_property_groups( target, write )
 
             local include_directories = {};
             for _, directory in ipairs(target.settings.include_directories) do
-                table.insert( include_directories, native(directory) );
+                table.insert( include_directories, build:native(directory) );
             end
             include_directories = table.concat( include_directories, ";" );
 
-            local output_directory = native( relative(root(("%s_%s/obj"):format(platform, variant))) );
-            local intermediate_directory = native( relative(root(("%s_%s/obj"):format(platform, variant))) );
-            local build_command = ("%s variant=%s platform=%s"):format( build_tool, variant, platform );
+            local output_directory = build:native( build:relative(build:root(("%s/obj"):format(variant))) );
+            local intermediate_directory = build:native( build:relative(build:root(("%s/obj"):format(variant))) );
+            local build_command = ("%s variant=%s"):format( build_tool, variant );
 
             write( PROPERTY_GROUP, 
                 platform, variant,
@@ -160,7 +160,7 @@ local function generate_files( target, write, files )
 
     write( START_FILES );
     for _, file in ipairs(files) do 
-        write( FILE, relative(file) );
+        write( FILE, build:relative(file) );
     end
     write( FINISH_FILES );
 end
@@ -183,9 +183,9 @@ end
 
 -- Generate a Visual Studio `.vcxproj` project file for a target and files.
 function vcxproj.generate( target, files )
-  local filename = ("%s.vcxproj"):format( target:path() );
-  print( leaf(filename) );
-    pushd( target:working_directory():path() );
+    local filename = ("%s/%s.vcxproj"):format( target:working_directory():path(), target:id() );
+    print( build:leaf(filename) );
+    build:pushd( target:working_directory():path() );
     local file = io.open( filename, "wb" )
     assertf( file, "Opening '%s' to write project failed", filename );
     local write = write_function( file );
@@ -200,7 +200,7 @@ function vcxproj.generate( target, files )
     generate_footer( target, write );
     file:close();
     file = nil;
-    popd();
+    build:popd();
 end
 
 return vcxproj;
