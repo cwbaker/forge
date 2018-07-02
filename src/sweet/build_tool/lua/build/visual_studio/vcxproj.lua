@@ -183,8 +183,8 @@ end
 
 -- Generate a Visual Studio `.vcxproj` project file for a target and files.
 function vcxproj.generate( target, files )
-  local filename = ("%s.vcxproj"):format( target:path() );
-  print( build:leaf(filename) );
+    local filename = ("%s/%s.vcxproj"):format( target:working_directory():path(), target:id() );
+    print( build:leaf(filename) );
     build:pushd( target:working_directory():path() );
     local file = io.open( filename, "wb" )
     assertf( file, "Opening '%s' to write project failed", filename );

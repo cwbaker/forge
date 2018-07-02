@@ -19,7 +19,7 @@ EndProject
     for _, project in pairs(projects) do
         local target = project.target;
         local name = target.project_name or target:id();
-        local filename = ("%s.vcxproj"):format( target:path(), name );
+        local filename = ("%s/%s.vcxproj"):format( target:working_directory():path(), target:id(), name );
         write( PROJECT, name, build:native(build:relative(filename)), project.uuid );
     end
 end
