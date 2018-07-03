@@ -6,7 +6,7 @@ local function depend( build, target, dependencies )
     local settings = target.settings;
     for _, source_filename in ipairs(dependencies) do
         local source = build:SourceFile( source_filename );
-        local filename = source_filename:gsub( pattern, replacement );
+        local filename = tostring(source_filename):gsub( pattern, replacement );
         local object = build:File( filename );
         object:add_dependency( source );
         object:add_ordering_dependency( build:Directory(object:directory()) );
