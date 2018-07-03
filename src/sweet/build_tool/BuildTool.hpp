@@ -92,8 +92,10 @@ class BuildTool
         void create_target_prototype_lua_binding( TargetPrototype* target_prototype );
         void destroy_target_prototype_lua_binding( TargetPrototype* target_prototype );
 
-        void output( const char* format, ... );
-        void error( const char* format, ... );
+        void outputf( const char* format, ... );
+        void errorf( const char* format, ... );
+        void output( const char* message );
+        void error( const char* message );
 };
 
 }
