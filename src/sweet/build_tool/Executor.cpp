@@ -209,7 +209,7 @@ void Executor::stop()
 
             catch ( const std::exception& exception )
             {
-                build_tool_->error( 0, "Failed to join thread - %s", exception.what() );
+                build_tool_->errorf( 0, "Failed to join thread - %s", exception.what() );
             }
         }
         

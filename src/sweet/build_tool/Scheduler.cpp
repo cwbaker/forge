@@ -116,14 +116,14 @@ void Scheduler::postorder_visit( int function, Job* job )
         if ( errors > 0 )
         {
             ++failures_;
-            build_tool_->error( "Postorder visit of '%s' failed", job->target()->id().c_str() );
+            build_tool_->errorf( "Postorder visit of '%s' failed", job->target()->id().c_str() );
         }
 
         job->target()->set_successful( errors == 0 );
     }
     else
     {
-        build_tool_->error( "%s", job->target()->failed_dependencies().c_str() );
+        build_tool_->error( job->target()->failed_dependencies().c_str() );
         job->target()->set_successful( false );
         job->set_state( JOB_COMPLETE );
     }    
@@ -346,7 +346,7 @@ int Scheduler::postorder( int function, Target* target )
                     }
                     else
                     {
-                        build_tool_->error( "Cyclic dependency from %s to %s in postorder traversal", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
+                        build_tool_->errorf( "Cyclic dependency from %s to %s in postorder traversal", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
                         dependency->set_successful( true );
                         ++failures_;
                     }

@@ -529,7 +529,7 @@ struct Bind
                 }
                 else
                 {
-                    build_tool_->error( "Cyclic dependency from %s to %s in bind", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
+                    build_tool_->errorf( "Cyclic dependency from %s to %s in bind", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
                     dependency->set_successful( true );
                     ++failures_;
                 }
@@ -840,7 +840,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                     {
                         BuildTool* build_tool = target->graph()->build_tool();
                         SWEET_ASSERT( build_tool );
-                        build_tool->output( "Ignoring cyclic dependency from '%s' to '%s' while printing dependencies", target->id().c_str(), dependency->id().c_str() );
+                        build_tool->outputf( "Ignoring cyclic dependency from '%s' to '%s' while printing dependencies", target->id().c_str(), dependency->id().c_str() );
                     }
                     ++i;
                     dependency = target->binding_dependency( i );
