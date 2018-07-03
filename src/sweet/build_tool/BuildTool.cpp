@@ -439,11 +439,11 @@ void BuildTool::destroy_target_prototype_lua_binding( TargetPrototype* target_pr
 // @param text
 //  The text to output.
 */
-void BuildTool::output( const char* format, ... )
+void BuildTool::outputf( const char* format, ... )
 {
     SWEET_ASSERT( format );
 
-    if ( event_sink_ )
+    if ( event_sink_ && format )
     {
         char message [1024];
         va_list args;
@@ -464,11 +464,11 @@ void BuildTool::output( const char* format, ... )
 // @param ...
 //  Parameters as specified by \e format.
 */
-void BuildTool::error( const char* format, ... )
+void BuildTool::errorf( const char* format, ... )
 {
     SWEET_ASSERT( format );
 
-    if ( event_sink_ )
+    if ( event_sink_ && format )
     {
         char message [1024];
         va_list args;
@@ -476,6 +476,22 @@ void BuildTool::error( const char* format, ... )
         vsnprintf( message, sizeof(message), format, args );
         message[sizeof(message) - 1] = 0;
         va_end( args );
+        event_sink_->build_tool_error( this, message );
+    }
+}
+
+void BuildTool::output( const char* message )
+{
+    if ( event_sink_ && message )
+    {
+        event_sink_->build_tool_output( this, message );
+    }
+}
+
+void BuildTool::error( const char* message )
+{
+    if ( event_sink_ && message )
+    {
         event_sink_->build_tool_error( this, message );
     }
 }
