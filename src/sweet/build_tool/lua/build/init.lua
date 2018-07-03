@@ -70,8 +70,8 @@ function build:platform_matches( ... )
     return false;
 end
 
-function build:File( filename, target_prototype )
-    local target = self:Target( self:interpolate(filename), target_prototype );
+function build:File( filename, target_prototype, settings )
+    local target = self:Target( self:interpolate(filename, settings), target_prototype );
     target:set_filename( target:path() );
     target:set_cleanable( true );
     return target;
