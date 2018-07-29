@@ -19,7 +19,7 @@
 Copy `foo.in` to `foo.out`:
 
 ~~~lua
-require "build";
+require 'build';
 
 build:initialize();
 
@@ -30,16 +30,10 @@ build:all {
 };
 ~~~
 
-The Lua script that defines the `Copy` target used  in the Lua-based domain specific language above is defined as follows:
+The Lua script that defines the `Copy` target used in the Lua-based domain specific language above is defined as follows:
 
 ~~~lua
-local Copy = build:TargetPrototype( "Copy" );
-
-function Copy.create( build, settings, identifier )
-    local target = build:File( identifier, Copy );
-    target:add_ordering_dependency( build:Directory(target:branch()) );
-    return target;
-end
+local Copy = build:TargetPrototype( 'Copy' );
 
 function Copy.build( build, target )
     build:rm( target );
@@ -92,6 +86,7 @@ From a Visual C++ command prompt:
     Options:
       -h, --help         Print this message and exit.
       -v, --version      Print the version and exit.
+      -r, --root         Set the root directory.
       -s, --stack-trace  Enable stack traces in error messages.
 
 *Sweet Build* is invoked by running `build` from a current working directory within the project's directory hierarchy.  The current working directory is used to imply the targets to build.  Commands and variable assignments can be passed on the command line to further configure the build.
@@ -122,12 +117,6 @@ Build the *release* variant:
 
 ~~~bash
 $ build variant=release
-~~~
-
-Build the *shipping* variant for Android instead of the host operating system:
-
-~~~bash
-$ build variant=shipping platform=android
 ~~~
 
 ## Contributions
