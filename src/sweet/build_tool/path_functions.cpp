@@ -1,5 +1,7 @@
 
 #include "path_functions.hpp"
+#include "Error.hpp"
+#include <boost/filesystem/operations.hpp>
 #include <sweet/assert/assert.hpp>
 
 namespace sweet
@@ -101,6 +103,39 @@ boost::filesystem::path make_drive_uppercase( std::string path )
 #else
     return boost::filesystem::path( path );
 #endif
+}
+
+/**
+// Search up from *directory* to find *filename* in the root directory.
+//
+// Searches up the directory hierarchy from *directory* to the root directory 
+// to find the highest directory containing a file named *filename*.  This 
+// directory is returned as the root directory.
+//
+// @param directory
+//  The directory to start the search from.
+//
+// @param filename
+//  The filename to find to indicate a possible root directory.
+*/
+boost::filesystem::path search_up_for_root_directory( const std::string& directory, const std::string& filename )
+{
+    using boost::filesystem::exists;
+    boost::filesystem::path root_directory;
+    boost::filesystem::path current_directory( directory );
+    while ( !current_directory.empty() && current_directory.has_root_directory() )
+    {
+        if ( exists((current_directory / filename).string()) )
+        {
+            root_directory = current_directory;
+        }
+        current_directory = current_directory.branch_path();
+    }
+    if ( !exists((root_directory / filename).string()) )
+    {
+        SWEET_ERROR( RootFileNotFoundError("The file '%s' could not be found to identify the root directory", filename.c_str()) );
+    }
+    return make_drive_uppercase( root_directory.generic_string() );
 }
 
 }
