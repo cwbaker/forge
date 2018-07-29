@@ -22,14 +22,7 @@ setmetatable( TargetPrototype, {
 
         local function create( build, target_prototype, identifier )
             local settings = build:current_settings();
-            local identifier = build:interpolate( identifier, settings );
-            local target = build:Target( identifier, target_prototype );
-            if build:is_relative(identifier) then 
-                target:set_filename( build:object(identifier) );
-            else
-                target:set_filename( target:path() );
-            end
-            target:set_cleanable( true );
+            local target = build:File( identifier, target_prototype, settings );
             target:add_ordering_dependency( build:Directory(build:branch(target)) );
             target.settings = settings;
             return target;
