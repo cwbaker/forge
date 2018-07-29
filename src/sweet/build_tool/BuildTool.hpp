@@ -81,7 +81,7 @@ class BuildTool
         void set_build_hooks_library( const std::string& build_hooks_library );
         const std::string& build_hooks_library() const;
 
-        void search_up_for_root_directory( const std::string& directory );
+        void set_root_directory( const std::string& root_directory );
         void assign_global_variables( const std::vector<std::string>& assignments_and_commands );
         void execute( const std::string& command );
 

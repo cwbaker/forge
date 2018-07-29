@@ -6,6 +6,7 @@
 #include "stdafx.hpp"
 #include "Application.hpp"
 #include <sweet/build_tool/BuildTool.hpp>
+#include <sweet/build_tool/path_functions.hpp>
 #include <sweet/cmdline/Parser.hpp>
 #include <sweet/error/ErrorPolicy.hpp>
 #include <sweet/assert/assert.hpp>
@@ -35,13 +36,15 @@ Application::Application( int argc, char** argv )
     bool help = false;
     bool version = false;
     std::string directory = boost::filesystem::initial_path<boost::filesystem::path>().generic_string();
-    bool stack_trace_enabled = false;
+    std::string root_directory;
+    bool stack_trace_enabled = false;    
     std::vector<std::string> assignments_and_commands;
 
     cmdline::Parser command_line_parser;
     command_line_parser.add_options()
         ( "help", "h", "Print this message and exit", &help )
         ( "version", "v", "Print the version and exit", &version )
+        ( "root", "r", "Set the root directory", &root_directory )
         ( "stack-trace", "s", "Enable stack traces in error messages", &stack_trace_enabled )
         ( &assignments_and_commands )
     ;
@@ -85,13 +88,18 @@ Application::Application( int argc, char** argv )
             commands.push_back( DEFAULT_COMMAND );
         }
     
+        if ( root_directory.empty() )
+        {
+            root_directory = build_tool::search_up_for_root_directory( directory, "build.lua" ).generic_string();
+        }
+
         error::ErrorPolicy error_policy;
         vector<string>::const_iterator command = commands.begin(); 
         while ( error_policy.errors() == 0 && command != commands.end() )
         {
             BuildTool build_tool( directory, error_policy, this );
             build_tool.set_stack_trace_enabled( stack_trace_enabled );
-            build_tool.search_up_for_root_directory( directory );
+            build_tool.set_root_directory( root_directory );
             build_tool.assign_global_variables( assignments );
             build_tool.execute( *command );
             ++command;
