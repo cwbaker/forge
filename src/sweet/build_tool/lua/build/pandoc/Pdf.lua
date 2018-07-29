@@ -3,7 +3,7 @@ local Pdf = build:TargetPrototype( "pandoc.Pdf" );
 
 function Pdf.build( build, target )
     local settings = target.settings;
-    local pandoc = "/usr/local/bin/pandoc";
+    local pandoc = target.settings.pandoc.executable;
     local arguments = {
         "pandoc",
         "--to=pdf",
