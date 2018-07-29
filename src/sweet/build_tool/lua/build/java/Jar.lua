@@ -1,12 +1,6 @@
 
 local Jar = build:TargetPrototype( "Jar" );
 
-function Jar.create( build, settings, identifier )
-    local jar = build:File( identifier, Jar );
-    jar.settings = settings;
-    return jar;
-end
-
 local function included( jar, filename )
     if build:is_directory(filename) then 
         return false;

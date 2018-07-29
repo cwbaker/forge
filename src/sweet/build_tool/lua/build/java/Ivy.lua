@@ -1,12 +1,6 @@
 
 local Ivy = build:TargetPrototype( 'Ivy' );
 
-function Ivy.create( build, settings, identifier )
-    local target = build:File( identifier, Ivy );
-    target.settings = settings;
-    return target;
-end
-
 function Ivy.build( build, target )
 	local settings = target.settings;
 	local java = ('%s/bin/java'):format( settings.java.jdk_directory );
