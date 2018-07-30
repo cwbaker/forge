@@ -1,7 +1,6 @@
 #ifndef SWEET_PROCESS_PROCESS_HPP_INCLUDED
 #define SWEET_PROCESS_PROCESS_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include <vector>
 #include <stdint.h>
 
@@ -29,7 +28,7 @@ class Environment;
 /**
 // An operating system process.
 */
-class SWEET_PROCESS_DECLSPEC Process
+class Process
 {
     struct Pipe
     {

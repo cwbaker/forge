@@ -1,12 +1,6 @@
-//
-// Error.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_PROCESS_ERROR_HPP_INCLUDED
 #define SWEET_PROCESS_ERROR_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include <sweet/error/Error.hpp>
 #include <sweet/error/ErrorTemplate.hpp>
 
@@ -33,7 +27,7 @@ enum ErrorCode
 /**
 // The base class for exceptions thrown from the %Process library.
 */
-class SWEET_PROCESS_DECLSPEC Error : public error::Error
+class Error : public error::Error
 {
     public:
         Error( int error );
