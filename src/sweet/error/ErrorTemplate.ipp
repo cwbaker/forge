@@ -1,8 +1,3 @@
-//
-// ErrorTemplate.ipp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_ERROR_ERRORTEMPLATE_IPP_INCLUDED
 #define SWEET_ERROR_ERRORTEMPLATE_IPP_INCLUDED
 

@@ -1,12 +1,6 @@
-//
-// Error.hpp
-// Copyright (c) 2001 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_ERROR_ERROR_HPP_INCLUDED
 #define SWEET_ERROR_ERROR_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include "macros.hpp"
 #include <exception>
 #include <stdarg.h>
@@ -20,7 +14,7 @@ namespace error
 /**
 // Base class for errors.
 */
-class SWEET_ERROR_DECLSPEC Error : virtual public std::exception
+class Error : virtual public std::exception
 {
     int error_;
     char text_ [1024];

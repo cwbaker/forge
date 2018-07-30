@@ -1,12 +1,5 @@
-//
-// error_functions.hpp
-// Copyright (c) 2001 - 2011 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_ERROR_FUNCTIONS_HPP_INCLUDED
 #define SWEET_ERROR_FUNCTIONS_HPP_INCLUDED
-
-#include "declspec.hpp"
 
 namespace std
 {
@@ -24,11 +17,11 @@ namespace error
 class Error;
 class ErrorPolicy;
 
-SWEET_ERROR_DECLSPEC void set_error_policy( ErrorPolicy* error_policy );
-SWEET_ERROR_DECLSPEC ErrorPolicy* get_error_policy();
-SWEET_ERROR_DECLSPEC void error( const Error& error );
-SWEET_ERROR_DECLSPEC void error( const std::exception& exception );
-SWEET_ERROR_DECLSPEC const char* format( int error, char* buffer, unsigned int length );
+void set_error_policy( ErrorPolicy* error_policy );
+ErrorPolicy* get_error_policy();
+void error( const Error& error );
+void error( const std::exception& exception );
+const char* format( int error, char* buffer, unsigned int length );
 
 }
 

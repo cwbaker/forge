@@ -1,7 +1,6 @@
 #ifndef SWEET_ERROR_ERRORPOLICY_HPP_INCLUDED
 #define SWEET_ERROR_ERRORPOLICY_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include <stdarg.h>
 
 namespace std
@@ -20,7 +19,7 @@ namespace error
 /**
 // An interface for providing runtime error handling policies.
 */
-class SWEET_ERROR_DECLSPEC ErrorPolicy
+class ErrorPolicy
 {
     static const int ERROR_STACK_SIZE = 32;
     int stack_index_;
