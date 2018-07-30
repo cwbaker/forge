@@ -1,10 +1,6 @@
 #ifndef SWEET_CMDLINE_HPP_INCLUDED
 #define SWEET_CMDLINE_HPP_INCLUDED
 
-#if defined(_MSC_VER) && !defined(BUILD_MODULE_CMDLINE)
-#pragma comment( lib, "cmdline" BUILD_LIBRARY_SUFFIX )
-#endif
-
 namespace sweet
 {
 

@@ -1,12 +1,6 @@
-//
-// AddOption.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_CMDLINE_ADDOPTION_HPP_INCLUDED
 #define SWEET_CMDLINE_ADDOPTION_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include "Option.hpp"
 #include <string>
 #include <vector>
@@ -23,7 +17,7 @@ namespace cmdline
 // A helper class that provides a convenient syntax for adding Options to a
 // Parser.
 */
-class SWEET_CMDLINE_DECLSPEC AddOption
+class AddOption
 {
     std::vector<Option>* options_; ///< The vector to add Options to.
     std::vector<std::string>** operands_; ///< The pointer to set to point to the vector of strings to store operands to.

@@ -1,12 +1,6 @@
-//
-// Option.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_CMDLINE_OPTION_HPP_INCLUDED
 #define SWEET_CMDLINE_OPTION_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include <string>
 
 namespace sweet
@@ -34,7 +28,7 @@ enum OptionType
 //
 // An option that can be parsed from the command line.
 */
-class SWEET_CMDLINE_DECLSPEC Option
+class Option
 {
     std::string name_; ///< The name of the option.
     std::string short_name_; ///< The short name of the option.

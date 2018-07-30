@@ -1,12 +1,6 @@
-//
-// Parser.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_CMDLINE_PARSER_HPP_INCLUDED
 #define SWEET_CMDLINE_PARSER_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include "Option.hpp"
 #include "AddOption.hpp"
 #include <string>
@@ -22,7 +16,7 @@ namespace cmdline
 /**
 // A command line options parser.
 */
-class SWEET_CMDLINE_DECLSPEC Parser
+class Parser
 {
     std::vector<Option> options_; ///< The Options that this Parser will parse from the command line.
     std::vector<std::string>* operands_; ///< The vector of strings that this Parser will parse operands from the command line into.

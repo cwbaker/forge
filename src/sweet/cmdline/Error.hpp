@@ -1,12 +1,6 @@
-//
-// Error.hpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
-//
-
 #ifndef SWEET_CMDLINE_ERROR_HPP_INCLUDED
 #define SWEET_CMDLINE_ERROR_HPP_INCLUDED
 
-#include "declspec.hpp"
 #include <sweet/error/Error.hpp>
 #include <sweet/error/ErrorTemplate.hpp>
 
@@ -31,7 +25,7 @@ enum ErrorCodes
 /**
 // Errors thrown from the %cmdline library.
 */
-class SWEET_CMDLINE_DECLSPEC Error : public error::Error 
+class Error : public error::Error 
 {
     public:
         Error( int error );
