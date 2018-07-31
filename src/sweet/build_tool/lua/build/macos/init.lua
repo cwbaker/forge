@@ -269,7 +269,7 @@ function macos.cxx_name( name )
 end
 
 function macos.obj_name( name )
-    return ("%s.o"):format( build:basename(name) );
+    return ("%s.o"):format( name );
 end
 
 function macos.lib_name( name )

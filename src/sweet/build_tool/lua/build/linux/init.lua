@@ -207,8 +207,8 @@ function linux.cxx_name( name )
     return ("%s.cpp"):format( build:basename(name) );
 end
 
-function linux.obj_name( name, architecture )
-    return ("%s.o"):format( build:basename(name) );
+function linux.obj_name( name )
+    return ("%s.o"):format( name );
 end
 
 function linux.lib_name( name )

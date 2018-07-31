@@ -271,7 +271,7 @@ function windows.pdb_name( name )
 end
 
 function windows.obj_name( name )
-    return ("%s.obj"):format( build:basename(name) );
+    return ("%s.obj"):format( name );
 end
 
 function windows.lib_name( name )
