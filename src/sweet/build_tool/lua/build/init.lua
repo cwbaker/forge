@@ -520,8 +520,7 @@ function build:object( filename, extension, settings )
     local settings = settings or self:current_settings();
     local prefix = settings.obj or build:root();
     local filename = self:relative( self:absolute(filename), self:root() );
-    local extension = extension or settings.obj_extension or '.o';
-    return ("%s/%s%s"):format( prefix, filename, extension );
+    return ('%s/%s'):format( prefix, filename );
 end
 
 -- Convert /path/ into a generated files directory path by prepending the 
