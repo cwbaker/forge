@@ -496,6 +496,11 @@ function build:save()
     self:save_binary( settings.cache );
 end
 
+-- Express *path* relative to the root directory.
+function build:root_relative( path )
+    return self:relative( self:absolute(path), self:root() );
+end
+
 -- Convert /name/ into a path relative to the first pattern in package.paths
 -- that expands to an existing file.
 function build:script( name )
