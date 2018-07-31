@@ -23,7 +23,7 @@ for _, build in build:default_builds("cc_.*") do
 
     local build = build:configure( settings );
     build:Library '${lib}/build_tool_${architecture}' {
-        build:Cxx '${object %1}' {
+        build:Cxx '${obj}/%1' {
             -- Disable automatic linking to Boost libraries.
             defines = { "BOOST_ALL_NO_LIB" };
             "Arguments.cpp",

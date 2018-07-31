@@ -9,7 +9,7 @@ for _, build in build:default_builds("cc_.*") do
     };
 
     local boost_filesystem = build:Library '${lib}/boost_filesystem_${architecture}' {
-        build:Cxx '${object %1}' {
+        build:Cxx '${obj}/%1' {
             "codecvt_error_category.cpp",
             "operations.cpp",
             "path.cpp",
@@ -22,7 +22,7 @@ for _, build in build:default_builds("cc_.*") do
 
     if platform == "windows" then
         boost_filesystem {
-            build:Cxx '${object %1}' {
+            build:Cxx '${obj}/%1' {
                 "windows_file_codecvt.cpp"
             };
         };

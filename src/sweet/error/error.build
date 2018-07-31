@@ -10,7 +10,7 @@ for _, build in build:default_builds("cc_.*") do
             "POSIX_C_SOURCE=200112L"
         };
 
-        build:Cxx '${object %1}' {
+        build:Cxx '${obj}/%1' {
             precompiled_header = "stdafx.hpp";
             "boost_integration.cpp",
             "dinkumware_integration.cpp",

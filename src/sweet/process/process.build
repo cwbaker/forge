@@ -3,7 +3,7 @@ buildfile "process_test/process_test.build";
 
 for _, build in build:default_builds("cc_.*") do
     build:Library '${lib}/process_${architecture}' {
-        build:Cxx '${object %1}' {
+        build:Cxx '${obj}/%1' {
             "Error.cpp",
             "Environment.cpp",
             "Process.cpp"

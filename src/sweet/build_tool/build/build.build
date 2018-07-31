@@ -32,7 +32,7 @@ build:all {
             linux = { "pthread", "dl" };
         };
         
-        build:Cxx () {
+        build:Cxx '${obj}/%1' {
             "Application.cpp", 
             "main.cpp"
         };    

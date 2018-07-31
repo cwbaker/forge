@@ -1,12 +1,12 @@
 
 build:all {
-    build:Executable "${bin}/process_test" {
+    build:Executable '${bin}/process_test' {
         '${lib}/process_${architecture}';
         '${lib}/cmdline_${architecture}';
         '${lib}/error_${architecture}';
         '${lib}/assert_${architecture}';
 
-        build:Cxx '${object %1}' {
+        build:Cxx '${obj}/%1' {
             precompiled_header = "stdafx.hpp";
             "Application.cpp",
             "main.cpp"
