@@ -1,14 +1,14 @@
 
 local function depend( build, target, dependencies )
     build:merge( target, dependencies );
-    local replacement = target.replacement or '${object %1}';
-    local pattern = target.pattern or '(.*)(%..*)$';
     local settings = target.settings;
-    for _, source_filename in ipairs(dependencies) do
-        local source = build:SourceFile( source_filename );
-        local filename = tostring(source_filename):gsub( pattern, replacement );
-        local object = build:File( filename );
-        object:add_dependency( source );
+    local replacement = settings.obj_name( target.replacement or '${obj}/%1' );
+    local pattern = target.pattern or '(.-)(%.?[^%.\\/]*)$';
+    for _, filename in ipairs(dependencies) do
+        local source_file = build:SourceFile( filename );
+        local identifier = build:root_relative( source_file ):gsub( pattern, replacement );
+        local object = build:File( identifier );
+        object:add_dependency( source_file );
         object:add_ordering_dependency( build:Directory(object:directory()) );
         target:add_dependency( object );
     end
