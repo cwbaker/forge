@@ -25,8 +25,6 @@ using std::vector;
 using namespace sweet;
 using namespace sweet::build_tool;
 
-static const char* ROOT_FILENAME = "build.lua";
-
 /**
 // Constructor.
 //
@@ -360,13 +358,16 @@ void BuildTool::assign_global_variables( const std::vector<std::string>& assignm
 /**
 // Load `build.lua` and execute \e command.
 //
+// @param filename
+//  The name of the file to execute to initialize the build system.
+//
 // @param command
 //  The function to call once the root file has been loaded.
 */
-void BuildTool::execute( const std::string& command )
+void BuildTool::execute( const std::string& filename, const std::string& command )
 {
     error_policy_.push_errors();
-    boost::filesystem::path path( root_directory_ / string(ROOT_FILENAME) );    
+    boost::filesystem::path path( root_directory_ / filename );    
     scheduler_->load( path );
     int errors = error_policy_.pop_errors();
     if ( errors == 0 )

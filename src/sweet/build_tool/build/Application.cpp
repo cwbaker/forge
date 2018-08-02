@@ -37,6 +37,7 @@ Application::Application( int argc, char** argv )
     bool version = false;
     std::string directory = boost::filesystem::initial_path<boost::filesystem::path>().generic_string();
     std::string root_directory;
+    std::string filename = "build.lua";
     bool stack_trace_enabled = false;    
     std::vector<std::string> assignments_and_commands;
 
@@ -45,6 +46,7 @@ Application::Application( int argc, char** argv )
         ( "help", "h", "Print this message and exit", &help )
         ( "version", "v", "Print the version and exit", &version )
         ( "root", "r", "Set the root directory", &root_directory )
+        ( "file", "f", "Set the name of the root build script", &filename )
         ( "stack-trace", "s", "Enable stack traces in error messages", &stack_trace_enabled )
         ( &assignments_and_commands )
     ;
@@ -90,7 +92,7 @@ Application::Application( int argc, char** argv )
     
         if ( root_directory.empty() )
         {
-            root_directory = build_tool::search_up_for_root_directory( directory, "build.lua" ).generic_string();
+            root_directory = build_tool::search_up_for_root_directory( directory, filename ).generic_string();
         }
 
         error::ErrorPolicy error_policy;
@@ -101,7 +103,7 @@ Application::Application( int argc, char** argv )
             build_tool.set_stack_trace_enabled( stack_trace_enabled );
             build_tool.set_root_directory( root_directory );
             build_tool.assign_global_variables( assignments );
-            build_tool.execute( *command );
+            build_tool.execute( filename, *command );
             ++command;
         }
     }
