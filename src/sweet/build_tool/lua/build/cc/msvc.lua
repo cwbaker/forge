@@ -521,7 +521,7 @@ function msvc.dependencies_filter( output_directory, source_directory )
                 object = build:File( ("%s/%s"):format(output_directory, obj_name(line)) );
                 object:clear_implicit_dependencies();
             end
-            printf( line );
+            printf( '%s', line );
         end
     end
     return dependencies_filter;
