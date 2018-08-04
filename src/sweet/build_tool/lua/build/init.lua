@@ -23,7 +23,7 @@ function buildfile( ... )
     table.insert( buildfiles_stack, build:file(select(1, ...)) );
     local success, errors_or_error_message = pcall( original_buildfile, build, ... );
     table.remove( buildfiles_stack );
-    assertf( success and errors_or_error_message == 0, "Loading buildfile '%s' failed - %s", tostring(select(1, ...)), errors_or_error_message );
+    assertf( success and errors_or_error_message == 0, "buildfile '%s' failed", tostring(select(1, ...)) );
 end
 
 build = _G.build or {};
