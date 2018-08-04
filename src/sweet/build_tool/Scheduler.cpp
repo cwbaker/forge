@@ -523,7 +523,7 @@ void Scheduler::dofile( lua_State* lua_state, const char* filename )
         case LUA_ERRSYNTAX:
         {
             error::ErrorPolicy* error_policy = &build_tool_->error_policy();
-            error_policy->error( true, "Syntax error loading '%s'", filename );
+            error_policy->error( true, "%s", lua_tolstring(lua_state, -1, nullptr) );
             break;
         }
 
