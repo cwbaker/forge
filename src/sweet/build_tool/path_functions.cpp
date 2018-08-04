@@ -1,6 +1,5 @@
 
 #include "path_functions.hpp"
-#include "Error.hpp"
 #include <boost/filesystem/operations.hpp>
 #include <sweet/assert/assert.hpp>
 
@@ -133,7 +132,7 @@ boost::filesystem::path search_up_for_root_directory( const std::string& directo
     }
     if ( !exists((root_directory / filename).string()) )
     {
-        SWEET_ERROR( RootFileNotFoundError("The file '%s' could not be found to identify the root directory", filename.c_str()) );
+        return boost::filesystem::path();
     }
     return make_drive_uppercase( root_directory.generic_string() );
 }

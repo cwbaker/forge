@@ -41,6 +41,7 @@ Application::Application( int argc, char** argv )
     bool stack_trace_enabled = false;    
     std::vector<std::string> assignments_and_commands;
 
+    error::ErrorPolicy error_policy;
     cmdline::Parser command_line_parser;
     command_line_parser.add_options()
         ( "help", "h", "Print this message and exit", &help )
@@ -93,9 +94,9 @@ Application::Application( int argc, char** argv )
         if ( root_directory.empty() )
         {
             root_directory = build_tool::search_up_for_root_directory( directory, filename ).generic_string();
+            error_policy.error( root_directory.empty(), "The file '%s' could not be found to identify the root directory", filename.c_str() );
         }
 
-        error::ErrorPolicy error_policy;
         vector<string>::const_iterator command = commands.begin(); 
         while ( error_policy.errors() == 0 && command != commands.end() )
         {
