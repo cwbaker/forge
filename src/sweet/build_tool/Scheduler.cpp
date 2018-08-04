@@ -13,7 +13,6 @@
 #include "Reader.hpp"
 #include "Filter.hpp"
 #include "Arguments.hpp"
-#include "Error.hpp"
 #include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
 #include <sweet/process/Environment.hpp>
 #include <sweet/luaxx/luaxx.hpp>
@@ -378,7 +377,7 @@ int Scheduler::postorder( int function, Target* target )
     Graph* graph = build_tool_->graph();
     if ( graph->traversal_in_progress() )
     {
-        SWEET_ERROR( PostorderCalledRecursivelyError("Postorder called from within another bind or postorder traversal") );
+        build_tool_->errorf( "Postorder called from within another bind or postorder traversal" );
         return 0;
     }
     
