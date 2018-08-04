@@ -311,7 +311,7 @@ Target* Graph::target( const std::string& id, TargetPrototype* target_prototype,
 
     if ( target_prototype && target->prototype() != target_prototype )
     {
-        SWEET_ERROR( PrototypeConflictError("The target '%s' has been created with prototypes '%s' and '%s'", id.c_str(), target->prototype()->id().c_str(), target_prototype ? target_prototype->id().c_str() : "none" ) );
+        build_tool_->errorf( "The target '%s' has been created with prototypes '%s' and '%s'", id.c_str(), target->prototype()->id().c_str(), target_prototype ? target_prototype->id().c_str() : "none" );
     }
 
     return target;
@@ -561,7 +561,7 @@ int Graph::bind( Target* target )
     Graph* graph = build_tool_->graph();
     if ( graph->traversal_in_progress() )
     {
-        SWEET_ERROR( PostorderCalledRecursivelyError("Bind called from within another bind or postorder traversal") );
+        build_tool_->error( "Bind called from within another bind or postorder traversal" );
         return 0;
     }
 
