@@ -30,7 +30,6 @@ for _, build in build:default_builds("cc_.*") do
             "BuildTool.cpp",
             "BuildToolEventSink.cpp",
             "Context.cpp",
-            "Error.cpp", 
             "Executor.cpp",
             "Filter.cpp",
             "Graph.cpp",
