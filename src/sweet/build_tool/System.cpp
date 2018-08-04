@@ -4,7 +4,6 @@
 //
 
 #include "System.hpp"
-#include "Error.hpp"
 #include <sweet/assert/assert.hpp>
 
 #if defined(BUILD_OS_WINDOWS)

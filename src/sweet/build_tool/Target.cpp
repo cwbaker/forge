@@ -4,7 +4,6 @@
 //
 
 #include "Target.hpp"
-#include "Error.hpp"
 #include "TargetPrototype.hpp"
 #include "Graph.hpp"
 #include "GraphWriter.hpp"

@@ -4,7 +4,6 @@
 //
 
 #include "BuildTool.hpp"
-#include "Error.hpp"
 #include "BuildToolEventSink.hpp"
 #include "System.hpp"
 #include "Scheduler.hpp"
