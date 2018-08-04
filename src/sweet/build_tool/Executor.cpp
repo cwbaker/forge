@@ -162,7 +162,7 @@ void Executor::thread_execute( const std::string& command, const std::string& co
     catch ( const std::exception& exception )
     {
         Scheduler* scheduler = build_tool_->scheduler();
-        scheduler->push_error( exception );
+        scheduler->push_errorf( "%s", exception.what() );
         scheduler->push_execute_finished( EXIT_FAILURE, context, environment );
     }
 }

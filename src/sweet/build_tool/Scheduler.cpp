@@ -204,10 +204,16 @@ void Scheduler::push_output( const std::string& output, Filter* filter, Argument
     results_condition_.notify_all();
 }
 
-void Scheduler::push_error( const std::exception& exception )
+void Scheduler::push_errorf( const char* format, ... )
 {
+    char message [1024];
+    va_list args;
+    va_start( args, format );
+    vsnprintf( message, sizeof(message), format, args );
+    va_end( args );
+    message[sizeof(message) - 1] = 0;
     std::unique_lock<std::mutex> lock( results_mutex_ );
-    results_.push_back( std::bind(&Scheduler::error, this, string(exception.what())) );
+    results_.push_back( std::bind(&Scheduler::error, this, string(message)) );
     results_condition_.notify_all();
 }
 

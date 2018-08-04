@@ -60,7 +60,7 @@ class Scheduler
         void error( const std::string& what );
 
         void push_output( const std::string& output, Filter* filter, Arguments* arguments, Target* working_directory );
-        void push_error( const std::exception& exception );
+        void push_errorf( const char* format, ... );
         void push_execute_finished( int exit_code, Context* context, process::Environment* environment );
         void push_filter_finished( Filter* filter, Arguments* arguments );
 

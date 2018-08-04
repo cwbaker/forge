@@ -6,7 +6,6 @@
 #include "Reader.hpp"
 #include "Scheduler.hpp"
 #include "BuildTool.hpp"
-#include "Error.hpp"
 #include <sweet/error/Error.hpp>
 #include <sweet/assert/assert.hpp>
 #include <stdlib.h>
@@ -98,59 +97,49 @@ void Reader::thread_read( intptr_t fd_or_handle, Filter* filter, Arguments* argu
 {
     SWEET_ASSERT( build_tool_ );
     
-    try
+    char buffer [1024];
+    char* pos = buffer;
+    char* end = buffer + sizeof(buffer) - 1;
+
+    size_t read = Reader::read( fd_or_handle, pos, end - pos );
+    while ( read > 0 )
     {
-        char buffer [1024];
-        char* pos = buffer;
-        char* end = buffer + sizeof(buffer) - 1;
+        char* start = buffer;
+        char* finish = pos + read;
 
-        size_t read = Reader::read( fd_or_handle, pos, end - pos );
-        while ( read > 0 )
-        {
-            char* start = buffer;
-            char* finish = pos + read;
-
-            pos = find( start, finish, '\n' );
-            while ( pos != finish )
-            {
-                *pos = 0;
-                build_tool_->scheduler()->push_output( string(start, pos), filter, arguments, working_directory );
-                start = pos + 1;
-                pos = std::find( start, finish, '\n' );
-            }
-
-            if ( start > buffer )
-            {
-                memcpy( buffer, start, finish - start );
-            }
-            else if ( finish >= end )
-            {
-                *finish = 0;
-                build_tool_->scheduler()->push_output( string(start, finish), filter, arguments, working_directory );
-                start = buffer;
-                finish = buffer;
-            }
-            
-            pos = buffer + (finish - start);
-            read = Reader::read( fd_or_handle, pos, end - pos );
-        }
-
-        if ( pos > buffer )
+        pos = find( start, finish, '\n' );
+        while ( pos != finish )
         {
             *pos = 0;
-            build_tool_->scheduler()->push_output( string(buffer, pos), filter, arguments, working_directory );
+            build_tool_->scheduler()->push_output( string(start, pos), filter, arguments, working_directory );
+            start = pos + 1;
+            pos = std::find( start, finish, '\n' );
         }
 
-        Reader::close( fd_or_handle );
-        build_tool_->scheduler()->push_filter_finished( filter, arguments );
+        if ( start > buffer )
+        {
+            memcpy( buffer, start, finish - start );
+        }
+        else if ( finish >= end )
+        {
+            *finish = 0;
+            build_tool_->scheduler()->push_output( string(start, finish), filter, arguments, working_directory );
+            start = buffer;
+            finish = buffer;
+        }
+        
+        pos = buffer + (finish - start);
+        read = Reader::read( fd_or_handle, pos, end - pos );
     }
 
-    catch ( const std::exception& exception )
+    if ( pos > buffer )
     {
-        Scheduler* scheduler = build_tool_->scheduler();
-        scheduler->push_error( exception );
-        Reader::close( fd_or_handle );
+        *pos = 0;
+        build_tool_->scheduler()->push_output( string(buffer, pos), filter, arguments, working_directory );
     }
+
+    Reader::close( fd_or_handle );
+    build_tool_->scheduler()->push_filter_finished( filter, arguments );
 }
 
 void Reader::stop()
@@ -219,9 +208,9 @@ size_t Reader::read( intptr_t fd_or_handle, void* buffer, size_t length ) const
     BOOL result = ::ReadFile( handle, buffer, (DWORD) length, &read, NULL );
     if ( !result && ::GetLastError() != ERROR_BROKEN_PIPE )
     {
-        char error [1024];
-        error::Error::format( ::GetLastError(), error, sizeof(error) );
-        SWEET_ERROR( ReadingPipeFailedError("Reading from a child process failed - %s", error) );
+        char message [1024];
+        Scheduler* scheduler = build_tool_->scheduler();
+        scheduler->push_errorf( "Reading from a child process failed - %s", error::Error::format(::GetLastError(), message, sizeof(message)) );
     }
     return read;
 
@@ -236,8 +225,9 @@ size_t Reader::read( intptr_t fd_or_handle, void* buffer, size_t length ) const
     }
     if ( bytes == -1 )
     {
-        char buffer [1024];
-        SWEET_ERROR( ReadingPipeFailedError("Reading from a child process failed - %s", Error::format(errno, buffer, sizeof(buffer))) );        
+        char message [1024];
+        Scheduler* scheduler = build_tool_->scheduler();
+        scheduler->push_errorf( "Reading from a child process failed - %s", error::Error::format(errno, message, sizeof(message)) );
     }
     return bytes;
 #endif
