@@ -1,0 +1,30 @@
+
+local build = build:configure {
+    -- Disable automatic linking to Boost libraries.
+    defines = { "BOOST_ALL_NO_LIB" };
+};
+
+build:all {
+    build:Executable '${bin}/build_tool_test' {
+        '${lib}/build_tool_${architecture}';
+        '${lib}/build_tool_lua_${architecture}';
+        '${lib}/process_${architecture}';
+        '${lib}/luaxx_${architecture}';
+        '${lib}/cmdline_${architecture}';
+        '${lib}/error_${architecture}';
+        '${lib}/assert_${architecture}';
+        '${lib}/liblua_${architecture}';
+        '${lib}/boost_filesystem_${architecture}';
+        '${lib}/boost_system_${architecture}';
+        '${lib}/UnitTest++_${architecture}';
+
+        build:Cxx '${obj}/%1' {
+            "main.cpp",
+            "ErrorChecker.cpp",
+            "FileChecker.cpp",
+            "TestDirectoryApi.cpp",
+            "TestGraph.cpp",
+            "TestPostorder.cpp"
+        };
+    };
+};

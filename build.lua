@@ -26,7 +26,8 @@ local settings = build:initialize {
     include_directories = {
         build:root( 'src' ),
         build:root( 'src/boost' ),
-        build:root( 'src/lua/src' )
+        build:root( 'src/lua/src' ),
+        build:root( 'src/unittest-cpp' )
     };
     library_directories = {
         build:root( ('%s/lib'):format(variant) ),
@@ -50,7 +51,8 @@ local settings = build:initialize {
 build:default_targets {
     'src/sweet/build_tool',
     'src/sweet/build_tool/build',
-    'src/sweet/build_tool/build_hooks'
+    'src/sweet/build_tool/build_hooks',
+    'src/sweet/build_tool/build_tool_test'
 };
 
 buildfile 'src/boost/boost.build';
