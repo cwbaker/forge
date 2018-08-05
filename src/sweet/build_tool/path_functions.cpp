@@ -25,6 +25,14 @@ boost::filesystem::path absolute( const boost::filesystem::path& path, const boo
     boost::filesystem::path absolute_path( base_path );
     absolute_path /= path;
     absolute_path.normalize();
+
+    // Remove trailing '.' elements that are ignored by path::normalize()
+    // but that aren't what the build tool expects in an absolute path.
+    while ( absolute_path.filename() == "." )
+    {
+        absolute_path.remove_filename();
+    }
+
     return absolute_path;
 }
 
@@ -45,7 +53,7 @@ boost::filesystem::path absolute( const boost::filesystem::path& path, const boo
 */
 boost::filesystem::path relative( const boost::filesystem::path& path, const boost::filesystem::path& base_path )
 {
-    // If the base path is empty or the path are on different drives then no 
+    // If the base path is empty or the paths are on different drives then no 
     // conversion is done.
     if ( base_path.empty() || (base_path.has_root_name() && path.has_root_name() && base_path.root_name() != path.root_name()) )
     {
