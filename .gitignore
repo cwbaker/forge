@@ -18,3 +18,5 @@ foo.out
 .sweet_build
 *.o
 *.obj
+/docs/tutorials/cxx-library-tutorial/hello_world
+/docs/tutorials/cxx-executable-tutorial/hello_world
