@@ -375,6 +375,17 @@ void BuildTool::execute( const std::string& filename, const std::string& command
     }
 }
 
+/**
+// Compile and run the Lua program contained in *script*.
+//
+// @param script
+//  The Lua program to compile and run.
+*/
+void BuildTool::script( const std::string& script )
+{
+    scheduler_->script( root_directory_, script );
+}
+
 void BuildTool::create_target_lua_binding( Target* target )
 {
     SWEET_ASSERT( lua_build_tool_ );

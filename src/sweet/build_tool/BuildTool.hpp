@@ -84,6 +84,7 @@ class BuildTool
         void set_root_directory( const std::string& root_directory );
         void assign_global_variables( const std::vector<std::string>& assignments_and_commands );
         void execute( const std::string& filename, const std::string& command );
+        void script( const std::string& script );
 
         void create_target_lua_binding( Target* target );
         void recover_target_lua_binding( Target* target );

@@ -57,6 +57,19 @@ void Scheduler::load( const boost::filesystem::path& path )
     wait();
 }
 
+void Scheduler::script( const boost::filesystem::path& path, const std::string& script )
+{
+    if ( !script.empty() )
+    {
+        Context* context = allocate_context( build_tool_->graph()->target(path.generic_string()) );
+        process_begin( context );
+        lua_State* lua_state = context->lua_state();
+        doscript( lua_state, script.c_str() );
+        process_end( context );
+        wait();
+    }
+}
+
 void Scheduler::command( const boost::filesystem::path& path, const std::string& function )
 {
     call( path, function );
@@ -552,6 +565,56 @@ void Scheduler::dofile( lua_State* lua_state, const char* filename )
         {
             error::ErrorPolicy* error_policy = &build_tool_->error_policy();
             error_policy->error( true, "Unexpected error loading '%s'", filename );
+            break;
+        }
+    }
+}
+
+void Scheduler::doscript( lua_State* lua_state, const char* script )
+{
+    SWEET_ASSERT( lua_state );
+    SWEET_ASSERT( script );
+    int result = luaL_loadstring( lua_state, script );
+    switch ( result )
+    {
+        case LUA_OK:
+        {
+            resume( lua_state, 0 );
+            break;
+        }
+
+        case LUA_ERRSYNTAX:
+        {
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "%s", lua_tolstring(lua_state, -1, nullptr) );
+            break;
+        }
+
+        case LUA_ERRMEM:
+        {
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "Out of memory loading script" );
+            break;
+        }
+
+        case LUA_ERRGCMM:
+        {
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "Error running garbage collection metamethod loading script" );
+            break;
+        }
+
+        case LUA_ERRFILE:
+        {
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "File not found loading script" );
+            break;
+        }
+
+        default:
+        {
+            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error_policy->error( true, "Unexpected error loading script" );
             break;
         }
     }

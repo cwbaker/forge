@@ -49,6 +49,7 @@ class Scheduler
         Scheduler( BuildTool* build_tool );
 
         void load( const boost::filesystem::path& path );
+        void script( const boost::filesystem::path& path, const std::string& script );
         void command( const boost::filesystem::path& path, const std::string& command );
         int buildfile( const boost::filesystem::path& path );
         void call( const boost::filesystem::path& path, const std::string& function );
@@ -81,6 +82,7 @@ class Scheduler
         void push_context( Context* context );
         int pop_context( Context* context );
         void dofile( lua_State* lua_state, const char* filename );
+        void doscript( lua_State* lua_state, const char* script );
         void resume( lua_State* lua_state, int parameters );
 };
 
