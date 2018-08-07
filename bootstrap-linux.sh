@@ -28,20 +28,20 @@ archive() {
 }
 
 link() {
-    g++ *.o -g -L $LIB -lbuild_tool -lbuild_tool_lua -lprocess -lcmdline -lluaxx -lerror -llua -lassert -lboost_filesystem -lboost_system -lpthread -ldl -o $1
+    g++ *.o -g -L $LIB -lforge -lforge_lua -lprocess -lcmdline -lluaxx -lerror -llua -lassert -lboost_filesystem -lboost_system -lpthread -ldl -o $1
 }
 
 mkdir -p $LIB
 echo boost_system; pushd $SRC/boost/libs/system/src; cxx "*.cpp"; archive $LIB/libboost_system.a; popd
 echo boost_filesystem; pushd $SRC/boost/libs/filesystem/src; cxx "*.cpp"; archive $LIB/libboost_filesystem.a; popd
 echo lua; pushd $SRC/lua; cc '*.c'; archive $LIB/liblua.a; popd
-echo sweet/assert; pushd $SRC/sweet/assert; cxx '*.cpp'; archive $LIB/libassert.a; popd
-echo sweet/build_tool; pushd $SRC/sweet/build_tool; cxx '*.cpp'; archive $LIB/libbuild_tool.a; popd
-echo sweet/build_tool/build_tool_lua; pushd $SRC/sweet/build_tool/build_tool_lua; cxx '*.cpp'; archive $LIB/libbuild_tool_lua.a; popd
-echo sweet/cmdline; pushd $SRC/sweet/cmdline; cxx '*.cpp'; archive $LIB/libcmdline.a; popd
-echo sweet/error; pushd $SRC/sweet/error; cxx '*.cpp'; archive $LIB/liberror.a; popd
-echo sweet/luaxx; pushd $SRC/sweet/luaxx; cxx '*.cpp'; archive $LIB/libluaxx.a; popd
-echo sweet/process; pushd $SRC/sweet/process; cxx '*.cpp'; archive $LIB/libprocess.a; popd
+echo assert; pushd $SRC/assert; cxx '*.cpp'; archive $LIB/libassert.a; popd
+echo forge; pushd $SRC/forge; cxx '*.cpp'; archive $LIB/libforge.a; popd
+echo forge/forge_lua; pushd $SRC/forge/forge_lua; cxx '*.cpp'; archive $LIB/libforge_lua.a; popd
+echo cmdline; pushd $SRC/cmdline; cxx '*.cpp'; archive $LIB/libcmdline.a; popd
+echo error; pushd $SRC/error; cxx '*.cpp'; archive $LIB/liberror.a; popd
+echo luaxx; pushd $SRC/luaxx; cxx '*.cpp'; archive $LIB/libluaxx.a; popd
+echo process; pushd $SRC/process; cxx '*.cpp'; archive $LIB/libprocess.a; popd
 
 mkdir -p $BIN
-echo sweet/build_tool/build; pushd $SRC/sweet/build_tool/build; cxx '*.cpp'; link $BIN/build; popd
+echo forge/forge; pushd $SRC/forge/forge; cxx '*.cpp'; link $BIN/forge; popd

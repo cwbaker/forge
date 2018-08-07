@@ -15,14 +15,14 @@ if not exist "%LIBS%" mkdir %LIBS%
 echo boost_system & pushd %SRC%\boost\libs\system\src & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\boost_system.lib *.obj & popd
 echo boost_filesystem & pushd %SRC%\boost\libs\filesystem\src & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\boost_filesystem.lib *.obj & popd
 echo lua & pushd %SRC%\lua\src & cl.exe %CC_FLAGS% *.c & lib.exe /out:%LIBS%\lua.lib *.obj & popd
-echo sweet/assert & pushd %SRC%\sweet\assert & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\assert.lib *.obj & popd
-echo sweet/build_tool & pushd %SRC%\sweet\build_tool & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\build_tool.lib *.obj & popd
-echo sweet/build_tool/build_tool_lua & pushd %SRC%\sweet\build_tool\build_tool_lua & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\build_tool_lua.lib *.obj & popd
-echo sweet/cmdline & pushd %SRC%\sweet\cmdline & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\cmdline.lib *.obj & popd
-echo sweet/error & pushd %SRC%\sweet\error & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\error.lib *.obj & popd
-echo sweet/luaxx & pushd %SRC%\sweet\luaxx & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\luaxx.lib *.obj & popd
-echo sweet/process & pushd %SRC%\sweet\process & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\process.lib *.obj & popd
+echo assert & pushd %SRC%\assert & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\assert.lib *.obj & popd
+echo forge & pushd %SRC%\forge & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\forge.lib *.obj & popd
+echo forge/forge_lua & pushd %SRC%\forge\forge_lua & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\forge_lua.lib *.obj & popd
+echo cmdline & pushd %SRC%\cmdline & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\cmdline.lib *.obj & popd
+echo error & pushd %SRC%\error & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\error.lib *.obj & popd
+echo luaxx & pushd %SRC%\luaxx & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\luaxx.lib *.obj & popd
+echo process & pushd %SRC%\process & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LIBS%\process.lib *.obj & popd
 
 if not exist "%BIN%" mkdir %BIN%
-set LIBRARIES=boost_system.lib boost_filesystem.lib lua.lib assert.lib build_tool.lib build_tool_lua.lib cmdline.lib error.lib luaxx.lib process.lib
-echo sweet/build_tool/build & pushd %SRC%\sweet\build_tool\build & cl.exe %CXX_FLAGS% *.cpp & link /out:%BIN%\build.exe /libpath:%LIBS% /debug:full /pdb:%BIN%\build.pdb *.obj %LIBRARIES% & popd
+set LIBRARIES=boost_system.lib boost_filesystem.lib lua.lib assert.lib forge.lib forge_lua.lib cmdline.lib error.lib luaxx.lib process.lib
+echo forge/forge & pushd %SRC%\forge\forge & cl.exe %CXX_FLAGS% *.cpp & link /out:%BIN%\forge.exe /libpath:%LIBS% /debug:full /pdb:%BIN%\forge.pdb *.obj %LIBRARIES% & popd
