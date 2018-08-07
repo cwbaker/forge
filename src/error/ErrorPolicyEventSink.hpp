@@ -1,8 +1,6 @@
 #ifndef SWEET_ERROR_ERRORPOLICYEVENTSINK_HPP_INCLUDED
 #define SWEET_ERROR_ERRORPOLICYEVENTSINK_HPP_INCLUDED
 
-#include "declspec.hpp"
-
 namespace sweet
 {
 
