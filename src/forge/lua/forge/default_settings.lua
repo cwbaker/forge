@@ -17,7 +17,7 @@ return {
     obj = build:root( ("../%s/obj"):format(variant) );
     gen = build:root( ("../%s/gen"):format(variant) );
     classes = build:root( ("../%s/classes"):format(variant) );
-    cache = build:root( '.sweet_build' );
+    cache = build:root( '.forge' );
 
     platform = platform;
 
