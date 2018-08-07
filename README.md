@@ -52,8 +52,8 @@ The install location is changed by passing `prefix=${install-directory}` on the 
 From a shell with GCC installed and available on the path:
 
 - `git clone git@github.com:cwbaker/forge.git forge`
-- `git submodule update`
 - `cd forge`
+- `git submodule update --init`
 - `sh ./bootstrap-linux.sh`
 - `./bootstrap-linux/bin/forge variant=shipping install`
 - Link to `${HOME}/forge/bin/forge` from your path
@@ -63,8 +63,8 @@ From a shell with GCC installed and available on the path:
 From a shell with Xcode installed:
 
 - `git clone git@github.com:cwbaker/forge.git forge`
-- `git submodule update`
 - `cd forge`
+- `git submodule update --init`
 - `sh ./bootstrap-macos.sh`
 - `./bootstrap-macos/bin/forge variant=shipping install`
 - Link to `${HOME}/forge/bin/forge` from your path
@@ -74,8 +74,8 @@ From a shell with Xcode installed:
 From a Visual C++ command prompt:
 
 - `git clone git@github.com:cwbaker/forge.git forge`
-- `git submodule update`
 - `cd forge`
+- `git submodule update --init`
 - `bootstrap-windows.bat`
 - `.\bootstrap-windows\bin\forge.exe variant=shipping install`
 - Link to `${USERPROFILE}/forge/bin/forge.exe` from your path
