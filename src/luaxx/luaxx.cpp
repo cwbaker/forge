@@ -3,8 +3,8 @@
 // Copyright (c) Charles Baker. All rights reserved.
 //
 
-#include <sweet/luaxx/luaxx.hpp>
-#include <sweet/assert/assert.hpp>
+#include <luaxx/luaxx.hpp>
+#include <assert/assert.hpp>
 #include <lua.hpp>
 #include <algorithm>
 #include <memory.h>

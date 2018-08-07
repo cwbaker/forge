@@ -1,10 +1,10 @@
 //
 // Option.cpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
 #include "Option.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 
 using namespace sweet::cmdline;
 

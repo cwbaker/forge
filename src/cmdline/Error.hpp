@@ -1,8 +1,8 @@
 #ifndef SWEET_CMDLINE_ERROR_HPP_INCLUDED
 #define SWEET_CMDLINE_ERROR_HPP_INCLUDED
 
-#include <sweet/error/Error.hpp>
-#include <sweet/error/ErrorTemplate.hpp>
+#include <error/Error.hpp>
+#include <error/ErrorTemplate.hpp>
 
 namespace sweet
 {

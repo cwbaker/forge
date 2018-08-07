@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_READER_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_READER_HPP_INCLUDED
+#ifndef FORGE_READER_HPP_INCLUDED
+#define FORGE_READER_HPP_INCLUDED
 
 #include <vector>
 #include <deque>
@@ -11,17 +11,17 @@
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
 class Target;
 class Filter;
 class Arguments;
-class BuildTool;
+class Forge;
 
 class Reader
 {
-    BuildTool* build_tool_; ///< The BuildTool that this Reader is part of.
+    Forge* forge_; ///< The Forge that this Reader is part of.
     std::mutex jobs_mutex_; ///< The mutex that ensures exclusive access to this Reader's jobs.
     std::condition_variable jobs_empty_condition_; ///< The condition attribute that notifies jobs are processed.
     std::condition_variable jobs_ready_condition_; ///< The condition attribute that notifies jobs ready.
@@ -31,7 +31,7 @@ class Reader
     bool done_; ///< Whether or not this Reader has finished processing.
 
 public:
-    Reader( BuildTool* build_tool );
+    Reader( Forge* forge );
     ~Reader();
     int active_jobs() const;
     void read( intptr_t fd_or_handle, Filter* filter, Arguments* arguments, Target* working_directory );

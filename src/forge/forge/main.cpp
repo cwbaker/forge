@@ -5,12 +5,12 @@
 
 #include "stdafx.hpp"
 #include "Application.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 #include <exception>
 #include <stdio.h>
 #include <stdlib.h>
 
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 int main( int argc, char** argv )
 {

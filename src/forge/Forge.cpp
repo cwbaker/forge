@@ -1,10 +1,10 @@
 //
-// BuildTool.cpp
+// Forge.cpp
 // Copyright (c) Charles Baker.  All rights reserved.
 //
 
-#include "BuildTool.hpp"
-#include "BuildToolEventSink.hpp"
+#include "Forge.hpp"
+#include "ForgeEventSink.hpp"
 #include "System.hpp"
 #include "Scheduler.hpp"
 #include "Executor.hpp"
@@ -13,16 +13,16 @@
 #include "Target.hpp"
 #include "Context.hpp"
 #include "path_functions.hpp"
-#include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
-#include <sweet/build_tool/build_tool_lua/LuaTarget.hpp>
-#include <sweet/build_tool/build_tool_lua/LuaTargetPrototype.hpp>
-#include <sweet/error/ErrorPolicy.hpp>
-#include <sweet/assert/assert.hpp>
+#include <forge/forge_lua/LuaForge.hpp>
+#include <forge/forge_lua/LuaTarget.hpp>
+#include <forge/forge_lua/LuaTargetPrototype.hpp>
+#include <error/ErrorPolicy.hpp>
+#include <assert/assert.hpp>
 
 using std::string;
 using std::vector;
 using namespace sweet;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 /**
 // Constructor.
@@ -32,13 +32,13 @@ using namespace sweet::build_tool;
 //  be an absolute path).
 //
 // @param event_sink
-//  The EventSink to fire events from this BuildTool at or null if events 
-//  from this BuildTool are to be ignored.
+//  The EventSink to fire events from this Forge at or null if events 
+//  from this Forge are to be ignored.
 */
-BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& error_policy, BuildToolEventSink* event_sink )
+Forge::Forge( const std::string& initial_directory, error::ErrorPolicy& error_policy, ForgeEventSink* event_sink )
 : error_policy_( error_policy ),
   event_sink_( event_sink ),
-  lua_build_tool_( NULL ),
+  lua_forge_( NULL ),
   system_( NULL ),
   reader_( NULL ),
   graph_( NULL ),
@@ -57,7 +57,7 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
     home_directory_ = make_drive_uppercase( system_->home() );
     executable_directory_ = make_drive_uppercase( system_->executable() ).parent_path();
 
-    lua_build_tool_ = new LuaBuildTool( this );
+    lua_forge_ = new LuaForge( this );
     system_ = new System;
     reader_ = new Reader( this );
     graph_ = new Graph( this );
@@ -72,112 +72,112 @@ BuildTool::BuildTool( const std::string& initial_directory, error::ErrorPolicy& 
 // code to delete the members is generated in a context in which those 
 // classes are defined.
 */
-BuildTool::~BuildTool()
+Forge::~Forge()
 {
     delete executor_;
     delete scheduler_;
     delete graph_;
     delete reader_;
     delete system_;
-    delete lua_build_tool_;
+    delete lua_forge_;
 }
 
 /**
-// Get the ErrorPolicy for this BuildTool.
+// Get the ErrorPolicy for this Forge.
 //
 // @return
 //  The ErrorPolicy;
 */
-error::ErrorPolicy& BuildTool::error_policy() const
+error::ErrorPolicy& Forge::error_policy() const
 {
     return error_policy_;
 }
 
 /**
-// Get the System for this BuildTool.
+// Get the System for this Forge.
 //
 // @return
 //  The System.
 */
-System* BuildTool::system() const
+System* Forge::system() const
 {
     SWEET_ASSERT( system_ );
     return system_;
 }
 
 /**
-// Get the Reader for this BuildTool.
+// Get the Reader for this Forge.
 //
 // @return
 //  The Reader.
 */
-Reader* BuildTool::reader() const
+Reader* Forge::reader() const
 {
     SWEET_ASSERT( reader_ );
     return reader_;
 }
 
 /**
-// Get the Graph for this BuildTool.
+// Get the Graph for this Forge.
 //
 // @return
 //  The Graph.
 */
-Graph* BuildTool::graph() const
+Graph* Forge::graph() const
 {
     SWEET_ASSERT( graph_ );
     return graph_;
 }
 
 /**
-// Get the Scheduler for this BuildTool.
+// Get the Scheduler for this Forge.
 //
 // @return
 //  The Scheduler.
 */
-Scheduler* BuildTool::scheduler() const
+Scheduler* Forge::scheduler() const
 {
     SWEET_ASSERT( scheduler_ );
     return scheduler_;
 }
 
 /**
-// Get the Executor for this BuildTool.
+// Get the Executor for this Forge.
 //
 // @return
 //  The Executor.
 */
-Executor* BuildTool::executor() const
+Executor* Forge::executor() const
 {
     SWEET_ASSERT( executor_ );
     return executor_;
 }
 
 /**
-// Get the currently active Context for this BuildTool.
+// Get the currently active Context for this Forge.
 //
 // @return
 //  The currently active Context.
 */
-Context* BuildTool::context() const
+Context* Forge::context() const
 {
     SWEET_ASSERT( scheduler_ );
     SWEET_ASSERT( scheduler_->context() );
     return scheduler_->context();
 }
 
-lua_State* BuildTool::lua_state() const
+lua_State* Forge::lua_state() const
 {
-    SWEET_ASSERT( lua_build_tool_ );
-    return lua_build_tool_->lua_state();
+    SWEET_ASSERT( lua_forge_ );
+    return lua_forge_->lua_state();
 }
 
-const boost::filesystem::path& BuildTool::root() const
+const boost::filesystem::path& Forge::root() const
 {
     return root_directory_;
 }
 
-boost::filesystem::path BuildTool::root( const boost::filesystem::path& path ) const
+boost::filesystem::path Forge::root( const boost::filesystem::path& path ) const
 {
     if ( boost::filesystem::path(path).is_absolute() )
     {
@@ -190,12 +190,12 @@ boost::filesystem::path BuildTool::root( const boost::filesystem::path& path ) c
     return absolute_path.string();
 }
 
-const boost::filesystem::path& BuildTool::initial() const
+const boost::filesystem::path& Forge::initial() const
 {
     return initial_directory_;
 }
 
-boost::filesystem::path BuildTool::initial( const boost::filesystem::path& path ) const
+boost::filesystem::path Forge::initial( const boost::filesystem::path& path ) const
 {
     if ( boost::filesystem::path(path).is_absolute() )
     {
@@ -208,12 +208,12 @@ boost::filesystem::path BuildTool::initial( const boost::filesystem::path& path 
     return absolute_path.string();
 }
 
-const boost::filesystem::path& BuildTool::home() const
+const boost::filesystem::path& Forge::home() const
 {
     return home_directory_;
 }
 
-boost::filesystem::path BuildTool::home( const boost::filesystem::path& path ) const
+boost::filesystem::path Forge::home( const boost::filesystem::path& path ) const
 {
     if ( boost::filesystem::path(path).is_absolute() )
     {
@@ -226,12 +226,12 @@ boost::filesystem::path BuildTool::home( const boost::filesystem::path& path ) c
     return absolute_path.string();
 }
 
-const boost::filesystem::path& BuildTool::executable() const
+const boost::filesystem::path& Forge::executable() const
 {
     return executable_directory_;
 }
 
-boost::filesystem::path BuildTool::executable( const boost::filesystem::path& path ) const
+boost::filesystem::path Forge::executable( const boost::filesystem::path& path ) const
 {
     if ( boost::filesystem::path(path).is_absolute() )
     {
@@ -244,12 +244,12 @@ boost::filesystem::path BuildTool::executable( const boost::filesystem::path& pa
     return absolute_path.string();
 }
 
-boost::filesystem::path BuildTool::absolute( const boost::filesystem::path& path ) const
+boost::filesystem::path Forge::absolute( const boost::filesystem::path& path ) const
 {
     return context()->absolute( path );
 }
 
-boost::filesystem::path BuildTool::relative( const boost::filesystem::path& path ) const
+boost::filesystem::path Forge::relative( const boost::filesystem::path& path ) const
 {
     return context()->relative( path );
 }
@@ -260,7 +260,7 @@ boost::filesystem::path BuildTool::relative( const boost::filesystem::path& path
 // @param
 //  True to enable stack traces or false to disable them.
 */
-void BuildTool::set_stack_trace_enabled( bool stack_trace_enabled )
+void Forge::set_stack_trace_enabled( bool stack_trace_enabled )
 {
     stack_trace_enabled_ = stack_trace_enabled;
 }
@@ -271,7 +271,7 @@ void BuildTool::set_stack_trace_enabled( bool stack_trace_enabled )
 // @return
 //  True if a stack trace is reported when an error occurs otherwise false.
 */
-bool BuildTool::stack_trace_enabled() const
+bool Forge::stack_trace_enabled() const
 {
     return stack_trace_enabled_;
 }
@@ -282,7 +282,7 @@ bool BuildTool::stack_trace_enabled() const
 // @param maximum_parallel_jobs
 //  The maximum number of parallel jobs.
 */
-void BuildTool::set_maximum_parallel_jobs( int maximum_parallel_jobs )
+void Forge::set_maximum_parallel_jobs( int maximum_parallel_jobs )
 {
     SWEET_ASSERT( executor_ );
     executor_->set_maximum_parallel_jobs( maximum_parallel_jobs );
@@ -294,7 +294,7 @@ void BuildTool::set_maximum_parallel_jobs( int maximum_parallel_jobs )
 // @return
 //  The maximum number of parallel jobs.
 */
-int BuildTool::maximum_parallel_jobs() const
+int Forge::maximum_parallel_jobs() const
 {
     SWEET_ASSERT( executor_ );
     return executor_->maximum_parallel_jobs();
@@ -307,7 +307,7 @@ int BuildTool::maximum_parallel_jobs() const
 //  The path to the build hooks library or an empty string to disable tracking
 //  dependencies via build hooks.
 */
-void BuildTool::set_build_hooks_library( const std::string& build_hooks_library )
+void Forge::set_build_hooks_library( const std::string& build_hooks_library )
 {
     SWEET_ASSERT( executor_ );
     executor_->set_build_hooks_library( build_hooks_library );
@@ -319,7 +319,7 @@ void BuildTool::set_build_hooks_library( const std::string& build_hooks_library 
 // @return 
 //  The path to the build hooks library.
 */
-const std::string& BuildTool::build_hooks_library() const
+const std::string& Forge::build_hooks_library() const
 {
     SWEET_ASSERT( executor_ );
     return executor_->build_hooks_library();
@@ -331,9 +331,9 @@ const std::string& BuildTool::build_hooks_library() const
 // @param
 //  The absolute path to the root directory.
 */
-void BuildTool::set_root_directory( const std::string& root_directory )
+void Forge::set_root_directory( const std::string& root_directory )
 {
-    root_directory_ = build_tool::absolute( root_directory, initial_directory_ );
+    root_directory_ = forge::absolute( root_directory, initial_directory_ );
 }
 
 /**
@@ -348,10 +348,10 @@ void BuildTool::set_root_directory( const std::string& root_directory )
 //  The assignments specified on the command line used to create global 
 //  variables before any scripts are loaded (e.g. 'variant=release' etc).
 */
-void BuildTool::assign_global_variables( const std::vector<std::string>& assignments )
+void Forge::assign_global_variables( const std::vector<std::string>& assignments )
 {
-    SWEET_ASSERT( lua_build_tool_ );
-    lua_build_tool_->assign_global_variables( assignments );
+    SWEET_ASSERT( lua_forge_ );
+    lua_forge_->assign_global_variables( assignments );
 }
 
 /**
@@ -363,7 +363,7 @@ void BuildTool::assign_global_variables( const std::vector<std::string>& assignm
 // @param command
 //  The function to call once the root file has been loaded.
 */
-void BuildTool::execute( const std::string& filename, const std::string& command )
+void Forge::execute( const std::string& filename, const std::string& command )
 {
     error_policy_.push_errors();
     boost::filesystem::path path( root_directory_ / filename );    
@@ -381,48 +381,48 @@ void BuildTool::execute( const std::string& filename, const std::string& command
 // @param script
 //  The Lua program to compile and run.
 */
-void BuildTool::script( const std::string& script )
+void Forge::script( const std::string& script )
 {
     scheduler_->script( root_directory_, script );
 }
 
-void BuildTool::create_target_lua_binding( Target* target )
+void Forge::create_target_lua_binding( Target* target )
 {
-    SWEET_ASSERT( lua_build_tool_ );
-    lua_build_tool_->lua_target()->create_target( target );
+    SWEET_ASSERT( lua_forge_ );
+    lua_forge_->lua_target()->create_target( target );
 }
 
-void BuildTool::recover_target_lua_binding( Target* target )
+void Forge::recover_target_lua_binding( Target* target )
 {
-    SWEET_ASSERT( lua_build_tool_ );
-    lua_build_tool_->lua_target()->recover_target( target );
+    SWEET_ASSERT( lua_forge_ );
+    lua_forge_->lua_target()->recover_target( target );
 }
 
-void BuildTool::update_target_lua_binding( Target* target )
+void Forge::update_target_lua_binding( Target* target )
 {
-    SWEET_ASSERT( lua_build_tool_ );
-    lua_build_tool_->lua_target()->update_target( target );
+    SWEET_ASSERT( lua_forge_ );
+    lua_forge_->lua_target()->update_target( target );
 }
 
-void BuildTool::destroy_target_lua_binding( Target* target )
+void Forge::destroy_target_lua_binding( Target* target )
 {
     SWEET_ASSERT( target );
     if ( target && target->referenced_by_script() )
     {
-        lua_build_tool_->lua_target()->destroy_target( target );
+        lua_forge_->lua_target()->destroy_target( target );
     }
 }
 
-void BuildTool::create_target_prototype_lua_binding( TargetPrototype* target_prototype )
+void Forge::create_target_prototype_lua_binding( TargetPrototype* target_prototype )
 {
-    SWEET_ASSERT( lua_build_tool_ );
-    lua_build_tool_->lua_target_prototype()->create_target_prototype( target_prototype );
+    SWEET_ASSERT( lua_forge_ );
+    lua_forge_->lua_target_prototype()->create_target_prototype( target_prototype );
 }
 
-void BuildTool::destroy_target_prototype_lua_binding( TargetPrototype* target_prototype )
+void Forge::destroy_target_prototype_lua_binding( TargetPrototype* target_prototype )
 {
-    SWEET_ASSERT( lua_build_tool_ );
-    lua_build_tool_->lua_target_prototype()->destroy_target_prototype( target_prototype );
+    SWEET_ASSERT( lua_forge_ );
+    lua_forge_->lua_target_prototype()->destroy_target_prototype( target_prototype );
 }
 
 /**
@@ -431,7 +431,7 @@ void BuildTool::destroy_target_prototype_lua_binding( TargetPrototype* target_pr
 // @param text
 //  The text to output.
 */
-void BuildTool::outputf( const char* format, ... )
+void Forge::outputf( const char* format, ... )
 {
     SWEET_ASSERT( format );
 
@@ -443,7 +443,7 @@ void BuildTool::outputf( const char* format, ... )
         vsnprintf( message, sizeof(message), format, args );
         message[sizeof(message) - 1] = 0;
         va_end( args );
-        event_sink_->build_tool_output( this, message );
+        event_sink_->forge_output( this, message );
     }
 }
 
@@ -456,7 +456,7 @@ void BuildTool::outputf( const char* format, ... )
 // @param ...
 //  Parameters as specified by \e format.
 */
-void BuildTool::errorf( const char* format, ... )
+void Forge::errorf( const char* format, ... )
 {
     SWEET_ASSERT( format );
 
@@ -468,22 +468,22 @@ void BuildTool::errorf( const char* format, ... )
         vsnprintf( message, sizeof(message), format, args );
         message[sizeof(message) - 1] = 0;
         va_end( args );
-        event_sink_->build_tool_error( this, message );
+        event_sink_->forge_error( this, message );
     }
 }
 
-void BuildTool::output( const char* message )
+void Forge::output( const char* message )
 {
     if ( event_sink_ && message )
     {
-        event_sink_->build_tool_output( this, message );
+        event_sink_->forge_output( this, message );
     }
 }
 
-void BuildTool::error( const char* message )
+void Forge::error( const char* message )
 {
     if ( event_sink_ && message )
     {
-        event_sink_->build_tool_error( this, message );
+        event_sink_->forge_error( this, message );
     }
 }

@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_BUILDTOOL_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_BUILDTOOL_HPP_INCLUDED
+#ifndef FORGE_FORGE_HPP_INCLUDED
+#define FORGE_FORGE_HPP_INCLUDED
 
 #include <boost/filesystem/path.hpp>
 #include <string>
@@ -17,11 +17,11 @@ class ErrorPolicy;
 
 }
 
-namespace build_tool
+namespace forge
 {
 
 class Context;
-class BuildToolEventSink;
+class ForgeEventSink;
 class Reader;
 class Executor;
 class Scheduler;
@@ -29,16 +29,16 @@ class System;
 class TargetPrototype;
 class Target;
 class Graph;
-class LuaBuildTool;
+class LuaForge;
 
 /**
-// BuildTool library main class.
+// Forge library main class.
 */
-class BuildTool
+class Forge
 {
     error::ErrorPolicy& error_policy_;
-    BuildToolEventSink* event_sink_; ///< The EventSink for this BuildTool or null if this BuildTool has no EventSink.
-    LuaBuildTool* lua_build_tool_; ///< The Lua bindings to the build tool library.
+    ForgeEventSink* event_sink_; ///< The EventSink for this Forge or null if this Forge has no EventSink.
+    LuaForge* lua_forge_; ///< The Lua bindings to the Forge library.
     System* system_; ///< The System that provides access to the operating system.
     Reader* reader_; ///< The reader that filters executable output and dependencies.
     Graph* graph_; ///< The dependency graph of targets used to determine which targets are outdated.
@@ -51,8 +51,8 @@ class BuildTool
     bool stack_trace_enabled_; ///< Print stack traces on error when true.
 
     public:
-        BuildTool( const std::string& initial_directory, error::ErrorPolicy& error_policy, BuildToolEventSink* event_sink );
-        ~BuildTool();
+        Forge( const std::string& initial_directory, error::ErrorPolicy& error_policy, ForgeEventSink* event_sink );
+        ~Forge();
 
         error::ErrorPolicy& error_policy() const;
         System* system() const;

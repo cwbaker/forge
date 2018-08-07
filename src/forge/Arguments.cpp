@@ -4,12 +4,12 @@
 //
 
 #include "Arguments.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 #include <lua.hpp>
 
 using std::vector;
 using namespace sweet;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 Arguments::Arguments( lua_State* lua_state, lua_State* calling_lua_state, int begin, int end )
 : lua_state_( lua_state ),

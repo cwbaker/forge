@@ -8,14 +8,14 @@
 #include "Process.hpp"
 #include "Environment.hpp"
 #include "Error.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 
 #if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
 #endif
 
 #if defined(BUILD_OS_MACOS) || defined(BUILD_OS_LINUX)
-#include <sweet/cmdline/Splitter.hpp>
+#include <cmdline/Splitter.hpp>
 #include <spawn.h>
 #include <unistd.h>
 #include <fcntl.h>

@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_TARGET_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_TARGET_HPP_INCLUDED
+#ifndef FORGE_TARGET_HPP_INCLUDED
+#define FORGE_TARGET_HPP_INCLUDED
 
 #include <ctime>
 #include <string>
@@ -8,14 +8,14 @@
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
 class GraphWriter;
 class GraphReader;
 class TargetPrototype;
 class Graph;
-class BuildTool;
+class Forge;
 
 /**
 // A Target.

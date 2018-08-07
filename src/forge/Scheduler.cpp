@@ -6,17 +6,17 @@
 #include "Scheduler.hpp"
 #include "Target.hpp"
 #include "Graph.hpp"
-#include "BuildTool.hpp"
+#include "Forge.hpp"
 #include "Job.hpp"
 #include "Context.hpp"
 #include "Executor.hpp"
 #include "Reader.hpp"
 #include "Filter.hpp"
 #include "Arguments.hpp"
-#include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
-#include <sweet/process/Environment.hpp>
-#include <sweet/luaxx/luaxx.hpp>
-#include <sweet/error/ErrorPolicy.hpp>
+#include <forge/forge_lua/LuaForge.hpp>
+#include <process/Environment.hpp>
+#include <luaxx/luaxx.hpp>
+#include <error/ErrorPolicy.hpp>
 #include <list>
 #include <string>
 #include <memory>
@@ -31,10 +31,10 @@ using std::unique_ptr;
 using namespace sweet;
 using namespace sweet::lua;
 using namespace sweet::luaxx;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
-Scheduler::Scheduler( BuildTool* build_tool )
-: build_tool_( build_tool ),
+Scheduler::Scheduler( Forge* forge )
+: forge_( forge ),
   active_contexts_(),
   results_mutex_(),
   results_condition_(),
@@ -42,14 +42,14 @@ Scheduler::Scheduler( BuildTool* build_tool )
   buildfile_calls_( 0 ),
   failures_( 0 )
 {
-    SWEET_ASSERT( build_tool_ );
+    SWEET_ASSERT( forge_ );
 }
 
 void Scheduler::load( const boost::filesystem::path& path )
 {
     SWEET_ASSERT( path.is_absolute() );
 
-    Context* context = allocate_context( build_tool_->graph()->target(path.parent_path().generic_string()) );
+    Context* context = allocate_context( forge_->graph()->target(path.parent_path().generic_string()) );
     process_begin( context );
     lua_State* lua_state = context->lua_state();
     dofile( lua_state, path.string().c_str() );
@@ -61,7 +61,7 @@ void Scheduler::script( const boost::filesystem::path& path, const std::string& 
 {
     if ( !script.empty() )
     {
-        Context* context = allocate_context( build_tool_->graph()->target(path.generic_string()) );
+        Context* context = allocate_context( forge_->graph()->target(path.generic_string()) );
         process_begin( context );
         lua_State* lua_state = context->lua_state();
         doscript( lua_state, script.c_str() );
@@ -83,7 +83,7 @@ int Scheduler::buildfile( const boost::filesystem::path& path )
     SWEET_ASSERT( !active_contexts_.empty() );
 
     Context* calling_context = active_contexts_.back();
-    Context* context = allocate_context( build_tool_->graph()->target(path.parent_path().generic_string()) );
+    Context* context = allocate_context( forge_->graph()->target(path.parent_path().generic_string()) );
     context->set_buildfile_calling_context( calling_context );
     process_begin( context );
 
@@ -100,7 +100,7 @@ void Scheduler::call( const boost::filesystem::path& path, const std::string& fu
 {
     if ( !function.empty() )
     {
-        Context* context = allocate_context( build_tool_->graph()->target(path.parent_path().generic_string()) );
+        Context* context = allocate_context( forge_->graph()->target(path.parent_path().generic_string()) );
         process_begin( context );
         lua_State* lua_state = context->lua_state();
         SWEET_ASSERT( lua_state );
@@ -128,14 +128,14 @@ void Scheduler::postorder_visit( int function, Job* job )
         if ( errors > 0 )
         {
             ++failures_;
-            build_tool_->errorf( "Postorder visit of '%s' failed", job->target()->id().c_str() );
+            forge_->errorf( "Postorder visit of '%s' failed", job->target()->id().c_str() );
         }
 
         job->target()->set_successful( errors == 0 );
     }
     else
     {
-        build_tool_->error( job->target()->failed_dependencies().c_str() );
+        forge_->error( job->target()->failed_dependencies().c_str() );
         job->target()->set_successful( false );
         job->set_state( JOB_COMPLETE );
     }    
@@ -181,7 +181,7 @@ void Scheduler::buildfile_finished( Context* context, bool success )
 
 void Scheduler::output( const std::string& output, Filter* filter, Arguments* arguments, Target* working_directory )
 {
-    SWEET_ASSERT( build_tool_ );
+    SWEET_ASSERT( forge_ );
     if ( filter )
     {
         Context* context = allocate_context( working_directory );
@@ -199,14 +199,14 @@ void Scheduler::output( const std::string& output, Filter* filter, Arguments* ar
     }
     else
     {    
-        build_tool_->output( output.c_str() );
+        forge_->output( output.c_str() );
     }
 }
 
 void Scheduler::error( const std::string& what )
 {
-    SWEET_ASSERT( build_tool_ );
-    build_tool_->error( what.c_str() );
+    SWEET_ASSERT( forge_ );
+    forge_->error( what.c_str() );
 }
 
 void Scheduler::push_output( const std::string& output, Filter* filter, Arguments* arguments, Target* working_directory )
@@ -246,7 +246,7 @@ void Scheduler::push_filter_finished( Filter* filter, Arguments* arguments )
 void Scheduler::execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Context* context )
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
-    build_tool_->executor()->execute( command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context );
+    forge_->executor()->execute( command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context );
 }
 
 void Scheduler::wait()
@@ -280,22 +280,22 @@ int Scheduler::postorder( int function, Target* target )
 
     struct Postorder
     {
-        BuildTool* build_tool_;
+        Forge* forge_;
         list<Job> jobs_;
         int failures_;
         
-        Postorder( BuildTool* build_tool )
-        : build_tool_( build_tool ),
+        Postorder( Forge* forge )
+        : forge_( forge ),
           jobs_(),
           failures_( 0 )
         {
-            SWEET_ASSERT( build_tool_ );
-            build_tool_->graph()->begin_traversal();
+            SWEET_ASSERT( forge_ );
+            forge_->graph()->begin_traversal();
         }
         
         ~Postorder()
         {
-            build_tool_->graph()->end_traversal();
+            forge_->graph()->end_traversal();
         }
     
         void remove_complete_jobs()
@@ -364,7 +364,7 @@ int Scheduler::postorder( int function, Target* target )
                     }
                     else
                     {
-                        build_tool_->errorf( "Cyclic dependency from %s to %s in postorder traversal", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
+                        forge_->errorf( "Cyclic dependency from %s to %s in postorder traversal", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
                         dependency->set_successful( true );
                         ++failures_;
                     }
@@ -387,14 +387,14 @@ int Scheduler::postorder( int function, Target* target )
         }
     };
 
-    Graph* graph = build_tool_->graph();
+    Graph* graph = forge_->graph();
     if ( graph->traversal_in_progress() )
     {
-        build_tool_->errorf( "Postorder called from within another bind or postorder traversal" );
+        forge_->errorf( "Postorder called from within another bind or postorder traversal" );
         return 0;
     }
     
-    Postorder postorder( build_tool_ );
+    Postorder postorder( forge_ );
     postorder.visit( target ? target : graph->root_target() );
     failures_ = postorder.failures();
     if ( failures_ == 0 )
@@ -426,7 +426,7 @@ Context* Scheduler::allocate_context( Target* working_directory, Job* job )
 {
     SWEET_ASSERT( working_directory );
     SWEET_ASSERT( !job || job->working_directory() == working_directory );    
-    Context* context = new Context( boost::filesystem::path(""), build_tool_ );
+    Context* context = new Context( boost::filesystem::path(""), forge_ );
     context->reset_directory_to_target( working_directory );
     context->set_job( job );
     return context;
@@ -461,8 +461,8 @@ void Scheduler::destroy_context( Context* context )
 
 bool Scheduler::dispatch_results()
 {
-    Executor* executor = build_tool_->executor();
-    Reader* reader = build_tool_->reader();
+    Executor* executor = forge_->executor();
+    Reader* reader = forge_->reader();
     std::unique_lock<std::mutex> lock( results_mutex_ );
     if ( results_.empty() )
     {
@@ -488,7 +488,7 @@ void Scheduler::process_begin( Context* context )
 {
     SWEET_ASSERT( context );
     active_contexts_.push_back( context );
-    build_tool_->error_policy().push_errors();
+    forge_->error_policy().push_errors();
 }
 
 int Scheduler::process_end( Context* context )
@@ -498,7 +498,7 @@ int Scheduler::process_end( Context* context )
     SWEET_ASSERT( active_contexts_.back() == context );
 
     active_contexts_.pop_back();
-    int errors = build_tool_->error_policy().pop_errors();
+    int errors = forge_->error_policy().pop_errors();
     lua_State* lua_state = context->lua_state();
     if ( lua_status(lua_state) != LUA_YIELD )
     {
@@ -535,35 +535,35 @@ void Scheduler::dofile( lua_State* lua_state, const char* filename )
 
         case LUA_ERRSYNTAX:
         {
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
             error_policy->error( true, "%s", lua_tolstring(lua_state, -1, nullptr) );
             break;
         }
 
         case LUA_ERRMEM:
         {
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
             error_policy->error( true, "Out of memory loading '%s'", filename );
             break;
         }
 
         case LUA_ERRGCMM:
         {
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
             error_policy->error( true, "Error running garbage collection metamethod loading '%s'", filename );
             break;
         }
 
         case LUA_ERRFILE:
         {
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
             error_policy->error( true, "File not found loading '%s'", filename );
             break;
         }
 
         default:
         {
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
             error_policy->error( true, "Unexpected error loading '%s'", filename );
             break;
         }
@@ -585,35 +585,35 @@ void Scheduler::doscript( lua_State* lua_state, const char* script )
 
         case LUA_ERRSYNTAX:
         {
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
             error_policy->error( true, "%s", lua_tolstring(lua_state, -1, nullptr) );
             break;
         }
 
         case LUA_ERRMEM:
         {
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
             error_policy->error( true, "Out of memory loading script" );
             break;
         }
 
         case LUA_ERRGCMM:
         {
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
             error_policy->error( true, "Error running garbage collection metamethod loading script" );
             break;
         }
 
         case LUA_ERRFILE:
         {
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
             error_policy->error( true, "File not found loading script" );
             break;
         }
 
         default:
         {
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
             error_policy->error( true, "Unexpected error loading script" );
             break;
         }
@@ -637,32 +637,32 @@ void Scheduler::resume( lua_State* lua_state, int parameters )
         case LUA_ERRRUN:
         {
             char message [1024];
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
-            error_policy->error( true, "%s", luaxx_stack_trace_for_resume(lua_state, build_tool_->stack_trace_enabled(), message, sizeof(message)) );
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
+            error_policy->error( true, "%s", luaxx_stack_trace_for_resume(lua_state, forge_->stack_trace_enabled(), message, sizeof(message)) );
             break;
         }
 
         case LUA_ERRMEM:
         {
             char message [1024];
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
-            error_policy->error( true, "Out of memory - %s", luaxx_stack_trace_for_resume(lua_state, build_tool_->stack_trace_enabled(), message, sizeof(message)) );
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
+            error_policy->error( true, "Out of memory - %s", luaxx_stack_trace_for_resume(lua_state, forge_->stack_trace_enabled(), message, sizeof(message)) );
             break;
         }
 
         case LUA_ERRERR:
         {
             char message [1024];
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
-            error_policy->error( true, "Error handler failed - %s", luaxx_stack_trace_for_resume(lua_state, build_tool_->stack_trace_enabled(), message, sizeof(message)) );
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
+            error_policy->error( true, "Error handler failed - %s", luaxx_stack_trace_for_resume(lua_state, forge_->stack_trace_enabled(), message, sizeof(message)) );
             break;
         }
         
         case -1:
         {
             char message [1024];
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
-            error_policy->error( true, "Execution failed due to an unhandled C++ exception - %s", luaxx_stack_trace_for_resume(lua_state, build_tool_->stack_trace_enabled(), message, sizeof(message)) );
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
+            error_policy->error( true, "Execution failed due to an unhandled C++ exception - %s", luaxx_stack_trace_for_resume(lua_state, forge_->stack_trace_enabled(), message, sizeof(message)) );
             break;
         }
 
@@ -670,8 +670,8 @@ void Scheduler::resume( lua_State* lua_state, int parameters )
         {
             SWEET_ASSERT( false );
             char message [1024];
-            error::ErrorPolicy* error_policy = &build_tool_->error_policy();
-            error_policy->error( true, "Execution failed in an unexpected way - %s", luaxx_stack_trace_for_resume(lua_state, build_tool_->stack_trace_enabled(), message, sizeof(message)) );
+            error::ErrorPolicy* error_policy = &forge_->error_policy();
+            error_policy->error( true, "Execution failed in an unexpected way - %s", luaxx_stack_trace_for_resume(lua_state, forge_->stack_trace_enabled(), message, sizeof(message)) );
             break;
         }
     }    

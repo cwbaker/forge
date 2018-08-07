@@ -1,7 +1,7 @@
 #ifndef SWEET_ERROR_ERROR_MACROS_HPP_INCLUDED
 #define SWEET_ERROR_ERROR_MACROS_HPP_INCLUDED
 
-#include <sweet/build.hpp>
+#include <build.hpp>
 
 #ifdef SWEET_EXCEPTIONS_ENABLED
 #define SWEET_ERROR( e ) throw e;

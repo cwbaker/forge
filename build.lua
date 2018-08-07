@@ -2,7 +2,7 @@
 -- Reference Lua build scripts from within the source tree rather than 
 -- relative to the build executable so that they can be edited in place during
 -- development and are versioned along with the code that they are building.
-package.path = build:root('src/sweet/build_tool/lua/?.lua')..';'..build:root('src/sweet/build_tool/lua/?/init.lua');
+package.path = build:root('src/forge/lua/?.lua')..';'..build:root('src/forge/lua/?/init.lua');
 
 require "forge";
 require "forge.cc";
@@ -33,10 +33,10 @@ local settings = build:initialize {
         build:root( ('%s/lib'):format(variant) ),
     };
     visual_studio = {
-        sln = build:root( "sweet_build.sln" );
+        sln = build:root( "forge.sln" );
     };
     xcode = {
-        xcodeproj = build:root( "sweet_build.xcodeproj" );
+        xcodeproj = build:root( "forge.xcodeproj" );
     };
     zero_brane_studio = {
         mobdebug = build:switch { build:operating_system();
@@ -49,27 +49,27 @@ local settings = build:initialize {
 -- Targets built when building from the root directory and as targets when
 -- generating XCode projects and Visual Studio solutions.
 build:default_targets {
-    'src/sweet/build_tool',
-    'src/sweet/build_tool/build',
-    'src/sweet/build_tool/build_hooks',
-    'src/sweet/build_tool/build_tool_test'
+    'src/forge',
+    'src/forge/forge',
+    'src/forge/forge_hooks',
+    'src/forge/forge_test'
 };
 
+buildfile 'src/assert/assert.build';
 buildfile 'src/boost/boost.build';
+buildfile 'src/cmdline/cmdline.build';
+buildfile 'src/error/error.build';
+buildfile 'src/forge/forge.build';
 buildfile 'src/lua/lua.build';
-buildfile 'src/sweet/assert/assert.build';
-buildfile 'src/sweet/build_tool/build_tool.build';
-buildfile 'src/sweet/cmdline/cmdline.build';
-buildfile 'src/sweet/error/error.build';
-buildfile 'src/sweet/luaxx/luaxx.build';
-buildfile 'src/sweet/process/process.build';
+buildfile 'src/luaxx/luaxx.build';
+buildfile 'src/process/process.build';
 buildfile 'src/unittest-cpp/unittest-cpp.build';
 
 function install()
-    prefix = prefix or build:home( 'sweet_build' );
+    prefix = prefix or build:home( 'forge' );
     local failures = default();
     if failures == 0 then 
         build:cpdir( '${prefix}/bin', '${bin}' );
-        build:cpdir( '${prefix}/lua', 'src/sweet/build_tool/lua' );
+        build:cpdir( '${prefix}/lua', 'src/forge/lua' );
     end
 end

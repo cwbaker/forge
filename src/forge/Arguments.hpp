@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_ARGUMENTS_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_ARGUMENTS_HPP_INCLUDED
+#ifndef FORGE_ARGUMENTS_HPP_INCLUDED
+#define FORGE_ARGUMENTS_HPP_INCLUDED
 
 #include <vector>
 
@@ -15,7 +15,7 @@ class AddParameter;
 
 }
 
-namespace build_tool
+namespace forge
 {
 
 /**

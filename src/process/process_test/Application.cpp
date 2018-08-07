@@ -5,8 +5,8 @@
 
 #include "stdafx.hpp"
 #include "Application.hpp"
-#include <sweet/process/Process.hpp>
-#include <sweet/cmdline/Parser.hpp>
+#include <process/Process.hpp>
+#include <cmdline/Parser.hpp>
 #include <stdlib.h>
 #include <stdio.h>
 

@@ -9,7 +9,7 @@
 #define SWEET_ASSERT_DECLSPEC
 #endif 
 
-#include <sweet/build.hpp>
+#include <build.hpp>
 
 /**
  Assertion library.

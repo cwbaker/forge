@@ -5,10 +5,10 @@
 
 #include "Job.hpp"
 #include "Target.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 
 using namespace sweet;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 Job::Job( Target* target, int height )
 : target_( target ),

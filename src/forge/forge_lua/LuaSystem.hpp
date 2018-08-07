@@ -1,22 +1,22 @@
-#ifndef SWEET_BUILD_TOOL_LUASYSTEM_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_LUASYSTEM_HPP_INCLUDED
+#ifndef FORGE_LUASYSTEM_HPP_INCLUDED
+#define FORGE_LUASYSTEM_HPP_INCLUDED
 
 struct lua_State;
 
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
-class BuildTool;
+class Forge;
 
 class LuaSystem
 {
 public:
     LuaSystem();
     ~LuaSystem();
-    void create( BuildTool* build_tool, lua_State* lua_state );
+    void create( Forge* forge, lua_State* lua_state );
     void destroy();
 
 private:

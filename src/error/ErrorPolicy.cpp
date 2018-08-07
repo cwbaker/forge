@@ -5,7 +5,7 @@
 
 #include "stdafx.hpp"
 #include "ErrorPolicy.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>

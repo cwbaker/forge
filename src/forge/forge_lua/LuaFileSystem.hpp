@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_LUAFILESYSTEM_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_LUAFILESYSTEM_HPP_INCLUDED
+#ifndef FORGE_LUAFILESYSTEM_HPP_INCLUDED
+#define FORGE_LUAFILESYSTEM_HPP_INCLUDED
 
 #include <boost/filesystem.hpp>
 
@@ -8,10 +8,10 @@ struct lua_State;
 namespace sweet
 {
     
-namespace build_tool
+namespace forge
 {
 
-class BuildTool;
+class Forge;
 
 /**
 // Provide Lua bindings to file system operations.
@@ -23,7 +23,7 @@ class LuaFileSystem
 public:
     LuaFileSystem();
     ~LuaFileSystem();
-    void create( BuildTool* build_tool, lua_State* lua_state );
+    void create( Forge* forge, lua_State* lua_state );
     void destroy();
 
 private:

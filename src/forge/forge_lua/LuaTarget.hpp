@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_LUATARGET_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_LUATARGET_HPP_INCLUDED
+#ifndef FORGE_LUATARGET_HPP_INCLUDED
+#define FORGE_LUATARGET_HPP_INCLUDED
 
 #include <ctime>
 
@@ -8,12 +8,12 @@ struct lua_State;
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
 class TargetPrototype;
 class Target;
-class BuildTool;    
+class Forge;    
 
 class LuaTarget
 {

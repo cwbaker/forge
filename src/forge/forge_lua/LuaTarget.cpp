@@ -4,19 +4,19 @@
 //
 
 #include "LuaTarget.hpp"
-#include "LuaBuildTool.hpp"
+#include "LuaForge.hpp"
 #include "types.hpp"
-#include <sweet/build_tool/Target.hpp>
-#include <sweet/build_tool/TargetPrototype.hpp>
-#include <sweet/luaxx/luaxx.hpp>
-#include <sweet/assert/assert.hpp>
+#include <forge/Target.hpp>
+#include <forge/TargetPrototype.hpp>
+#include <luaxx/luaxx.hpp>
+#include <assert/assert.hpp>
 #include <lua.hpp>
 
 using std::string;
 using std::vector;
 using namespace sweet;
 using namespace sweet::luaxx;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 static const char* TARGET_METATABLE = "build.Target";
 static const char* STRING_VECTOR_CONST_ITERATOR_METATABLE = "build.vector<string>::const_iterator";

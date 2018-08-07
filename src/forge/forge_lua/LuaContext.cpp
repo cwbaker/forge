@@ -4,19 +4,19 @@
 //
 
 #include "LuaContext.hpp"
-#include "LuaBuildTool.hpp"
+#include "LuaForge.hpp"
 #include "types.hpp"
-#include <sweet/build_tool/path_functions.hpp>
-#include <sweet/build_tool/BuildTool.hpp>
-#include <sweet/build_tool/Context.hpp>
-#include <sweet/luaxx/luaxx.hpp>
+#include <forge/path_functions.hpp>
+#include <forge/Forge.hpp>
+#include <forge/Context.hpp>
+#include <luaxx/luaxx.hpp>
 #include <boost/filesystem/path.hpp>
 #include <stdlib.h>
 
 using std::string;
 using namespace sweet;
 using namespace sweet::luaxx;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 LuaContext::LuaContext()
 {
@@ -27,9 +27,9 @@ LuaContext::~LuaContext()
     destroy();
 }
 
-void LuaContext::create( BuildTool* build_tool, lua_State* lua_state )
+void LuaContext::create( Forge* forge, lua_State* lua_state )
 {
-    SWEET_ASSERT( build_tool );
+    SWEET_ASSERT( forge );
     SWEET_ASSERT( lua_state );
     SWEET_ASSERT( lua_istable(lua_state, -1) );
 
@@ -47,7 +47,7 @@ void LuaContext::create( BuildTool* build_tool, lua_State* lua_state )
         { "home", &LuaContext::home },
         { NULL, NULL }
     };
-    lua_pushlightuserdata( lua_state, build_tool );
+    lua_pushlightuserdata( lua_state, forge );
     luaL_setfuncs( lua_state, working_directory_based_functions, 1 );
 
     static const luaL_Reg functions[] = 
@@ -72,61 +72,61 @@ void LuaContext::destroy()
 
 int LuaContext::cd( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int PATH = 2;
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, PATH, &length );
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    build_tool->context()->change_directory( boost::filesystem::path(string(path, length)) );
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    forge->context()->change_directory( boost::filesystem::path(string(path, length)) );
     return 0;
 }
 
 int LuaContext::pushd( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int PATH = 2;
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, PATH, &length );
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    build_tool->context()->push_directory( boost::filesystem::path(string(path, length)) );
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    forge->context()->push_directory( boost::filesystem::path(string(path, length)) );
     return 0;
 }
 
 int LuaContext::popd( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    build_tool->context()->pop_directory();
+    const int FORGE = 1;
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    forge->context()->pop_directory();
     return 0;
 }
 
 int LuaContext::pwd( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    const boost::filesystem::path& path = build_tool->context()->directory();
+    const int FORGE = 1;
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const boost::filesystem::path& path = forge->context()->directory();
     lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     return 1;
 }
 
 int LuaContext::absolute( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int PATH = 2;
     const int BASE_PATH = 3;
 
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     if ( !lua_isnoneornil(lua_state, BASE_PATH) )
     {
         const char* base_path = luaL_tolstring( lua_state, BASE_PATH, nullptr );
         const char* relative_path = !lua_isnoneornil( lua_state, PATH ) ? luaL_tolstring( lua_state, PATH, nullptr ) : "";
-        boost::filesystem::path path = sweet::build_tool::absolute( boost::filesystem::path(relative_path), boost::filesystem::path(base_path) );
+        boost::filesystem::path path = sweet::forge::absolute( boost::filesystem::path(relative_path), boost::filesystem::path(base_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
         const char* relative_path = !lua_isnoneornil( lua_state, PATH ) ? luaL_tolstring( lua_state, PATH, nullptr ) : "";
-        boost::filesystem::path path = build_tool->absolute( boost::filesystem::path(relative_path) );
+        boost::filesystem::path path = forge->absolute( boost::filesystem::path(relative_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     return 1;
@@ -134,22 +134,22 @@ int LuaContext::absolute( lua_State* lua_state )
 
 int LuaContext::relative( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int PATH = 2;
     const int BASE_PATH = 3;
 
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     if ( !lua_isnoneornil(lua_state, BASE_PATH) )
     {
         const char* base_path = luaL_tolstring( lua_state, BASE_PATH, nullptr );
         const char* absolute_path = !lua_isnoneornil( lua_state, PATH ) ? luaL_tolstring( lua_state, PATH, nullptr ) : "";
-        boost::filesystem::path path = sweet::build_tool::relative( boost::filesystem::path(absolute_path), boost::filesystem::path(base_path) );
+        boost::filesystem::path path = sweet::forge::relative( boost::filesystem::path(absolute_path), boost::filesystem::path(base_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
         const char* absolute_path = !lua_isnoneornil( lua_state, PATH ) ? luaL_tolstring( lua_state, PATH, nullptr ) : "";
-        boost::filesystem::path path = build_tool->relative( boost::filesystem::path(absolute_path) );
+        boost::filesystem::path path = forge->relative( boost::filesystem::path(absolute_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     return 1;
@@ -157,18 +157,18 @@ int LuaContext::relative( lua_State* lua_state )
 
 int LuaContext::root( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int PATH = 2;
 
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     if ( lua_isnoneornil(lua_state, PATH) )
     {
-        const boost::filesystem::path& path = build_tool->root();
+        const boost::filesystem::path& path = forge->root();
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
-        boost::filesystem::path path = build_tool->root( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
+        boost::filesystem::path path = forge->root( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
 
@@ -177,18 +177,18 @@ int LuaContext::root( lua_State* lua_state )
 
 int LuaContext::initial( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int PATH = 2;
 
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     if ( lua_isnoneornil(lua_state, PATH) )
     {
-        const boost::filesystem::path& path = build_tool->initial();
+        const boost::filesystem::path& path = forge->initial();
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
-        boost::filesystem::path path = build_tool->initial( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
+        boost::filesystem::path path = forge->initial( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
 
@@ -197,18 +197,18 @@ int LuaContext::initial( lua_State* lua_state )
 
 int LuaContext::executable( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int PATH = 2;
 
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     if ( lua_isnoneornil(lua_state, PATH) )
     {
-        const boost::filesystem::path& path = build_tool->executable();
+        const boost::filesystem::path& path = forge->executable();
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
-        boost::filesystem::path path = build_tool->executable( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
+        boost::filesystem::path path = forge->executable( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
 
@@ -217,19 +217,19 @@ int LuaContext::executable( lua_State* lua_state )
 
 int LuaContext::home( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int PATH = 2;
 
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
 
     if ( lua_isnoneornil(lua_state, PATH) )
     {
-        const boost::filesystem::path& path = build_tool->home();
+        const boost::filesystem::path& path = forge->home();
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
-        boost::filesystem::path path = build_tool->home( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
+        boost::filesystem::path path = forge->home( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
 

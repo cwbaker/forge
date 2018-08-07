@@ -1,25 +1,25 @@
-#ifndef SWEET_BUILD_TOOL_BUILDTOOLEVENTSINK_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_BUILDTOOLEVENTSINK_HPP_INCLUDED
+#ifndef FORGE_BUILDTOOLEVENTSINK_HPP_INCLUDED
+#define FORGE_BUILDTOOLEVENTSINK_HPP_INCLUDED
 
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
-class BuildTool;
+class Forge;
 
 /**
 // An interface for classes that wish to receive events from a 
-// BuildTool.
+// Forge.
 */
-class BuildToolEventSink
+class ForgeEventSink
 {
     public:
-        virtual ~BuildToolEventSink();
-        virtual void build_tool_output( BuildTool* build_tool, const char* message );
-        virtual void build_tool_warning( BuildTool* build_tool, const char* message );
-        virtual void build_tool_error( BuildTool* build_tool, const char* message );
+        virtual ~ForgeEventSink();
+        virtual void forge_output( Forge* forge, const char* message );
+        virtual void forge_warning( Forge* forge, const char* message );
+        virtual void forge_error( Forge* forge, const char* message );
 };
 
 }

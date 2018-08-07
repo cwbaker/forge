@@ -4,11 +4,11 @@
 //
 
 #include "LuaFileSystem.hpp"
-#include "LuaBuildTool.hpp"
+#include "LuaForge.hpp"
 #include "types.hpp"
-#include <sweet/build_tool/BuildTool.hpp>
-#include <sweet/luaxx/luaxx.hpp>
-#include <sweet/assert/assert.hpp>
+#include <forge/Forge.hpp>
+#include <luaxx/luaxx.hpp>
+#include <assert/assert.hpp>
 #include <lua.hpp>
 
 using std::string;
@@ -16,7 +16,7 @@ using boost::filesystem::directory_iterator;
 using boost::filesystem::recursive_directory_iterator;
 using namespace sweet;
 using namespace sweet::luaxx;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 static const char* DIRECTORY_ITERATOR_METATABLE = "boost::filesystem::directory_iterator";
 static const char* RECURSIVE_DIRECTORY_ITERATOR_METATABLE = "boost::filesystem::recursive_directory_iterator";
@@ -31,9 +31,9 @@ LuaFileSystem::~LuaFileSystem()
     destroy();
 }
 
-void LuaFileSystem::create( BuildTool* build_tool, lua_State* lua_state )
+void LuaFileSystem::create( Forge* forge, lua_State* lua_state )
 {
-    SWEET_ASSERT( build_tool );
+    SWEET_ASSERT( forge );
     SWEET_ASSERT( lua_state );
     SWEET_ASSERT( lua_istable(lua_state, -1) );
 
@@ -53,7 +53,7 @@ void LuaFileSystem::create( BuildTool* build_tool, lua_State* lua_state )
         { "touch", &LuaFileSystem::touch },
         { NULL, NULL }
     };
-    lua_pushlightuserdata( lua_state, build_tool );
+    lua_pushlightuserdata( lua_state, forge );
     luaL_setfuncs( lua_state, functions, 1 );
 
     luaL_newmetatable( lua_state, DIRECTORY_ITERATOR_METATABLE );
@@ -247,9 +247,9 @@ int LuaFileSystem::recursive_directory_iterator_gc( lua_State* lua_state )
 
 boost::filesystem::path LuaFileSystem::absolute( lua_State* lua_state, int index )
 {
-    const int BUILD_TOOL = 1;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    const int FORGE = 1;
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, index, &length );
-    return build_tool->absolute( string(path, length) );
+    return forge->absolute( string(path, length) );
 }

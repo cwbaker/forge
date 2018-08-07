@@ -1,6 +1,6 @@
 
 #include "Splitter.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 #include <string.h>
 
 using std::string;

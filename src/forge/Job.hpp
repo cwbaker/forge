@@ -1,12 +1,12 @@
-#ifndef SWEET_BUILD_TOOL_JOB_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_JOB_HPP_INCLUDED
+#ifndef FORGE_JOB_HPP_INCLUDED
+#define FORGE_JOB_HPP_INCLUDED
 
 #include <string>
 
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
 /**

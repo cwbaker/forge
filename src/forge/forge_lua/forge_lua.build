@@ -16,11 +16,11 @@ for _, build in build:default_builds("cc_.*") do
     end
 
     local build = build:configure( settings );
-    build:Library '${lib}/build_tool_lua_${architecture}' {
+    build:Library '${lib}/forge_lua_${architecture}' {
         build:Cxx '${obj}/%1' {
             -- Disable automatic linking to Boost libraries.
             defines = { "BOOST_ALL_NO_LIB" };
-            "LuaBuildTool.cpp",
+            "LuaForge.cpp",
             "LuaContext.cpp",
             "LuaFileSystem.cpp",
             "LuaGraph.cpp",

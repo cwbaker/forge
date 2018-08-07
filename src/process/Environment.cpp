@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "Environment.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 
 using std::vector;
 using namespace sweet::process;

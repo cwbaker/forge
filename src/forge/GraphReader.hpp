@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_GRAPHREADER_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_GRAPHREADER_HPP_INCLUDED
+#ifndef FORGE_GRAPHREADER_HPP_INCLUDED
+#define FORGE_GRAPHREADER_HPP_INCLUDED
 
 #include <map>
 #include <vector>
@@ -18,7 +18,7 @@ class ErrorPolicy;
 
 }
 
-namespace build_tool
+namespace forge
 {
 
 class Target;

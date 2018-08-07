@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_CONTEXT_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_CONTEXT_HPP_INCLUDED
+#ifndef FORGE_CONTEXT_HPP_INCLUDED
+#define FORGE_CONTEXT_HPP_INCLUDED
 
 #include <boost/filesystem/path.hpp>
 #include <vector>
@@ -9,19 +9,19 @@ struct lua_State;
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
 class Job;
 class Target;
-class BuildTool;
+class Forge;
 
 /**
 // Provides context for a script to interact with its outside environment.
 */
 class Context 
 {
-    BuildTool* build_tool_; ///< The BuildTool that this context is part of.
+    Forge* forge_; ///< The Forge that this context is part of.
     lua_State* lua_state_; ///< The Lua coroutine that this Context uses to execute scripts.
     int lua_state_reference_; ///< The Lua reference to the Lua coroutine above (see `luaL_ref()`).
     Target* working_directory_; ///< The current working directory for this context.
@@ -31,7 +31,7 @@ class Context
     Context* buildfile_calling_context_; ///< The Context that made a `buildfile()` call and yielded
 
     public:
-        Context( const boost::filesystem::path& directory, BuildTool* build_tool );
+        Context( const boost::filesystem::path& directory, Forge* forge );
         ~Context();
 
         lua_State* lua_state() const;

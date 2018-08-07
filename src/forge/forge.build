@@ -1,10 +1,10 @@
 
 require 'forge.CopyDirectory';
 
-buildfile "build/build.build";
-buildfile "build_hooks/build_hooks.build";
-buildfile "build_tool_lua/build_tool_lua.build";
-buildfile "build_tool_test/build_tool_test.build";
+buildfile 'forge/forge.build';
+buildfile 'forge_hooks/forge_hooks.build';
+buildfile 'forge_lua/forge_lua.build';
+buildfile 'forge_test/forge_test.build';
 
 for _, build in build:default_builds("cc_.*") do
     local settings =  {
@@ -23,16 +23,16 @@ for _, build in build:default_builds("cc_.*") do
     end
 
     local build = build:configure( settings );
-    build:Library '${lib}/build_tool_${architecture}' {
+    build:Library '${lib}/forge_${architecture}' {
         build:Cxx '${obj}/%1' {
             -- Disable automatic linking to Boost libraries.
             defines = { "BOOST_ALL_NO_LIB" };
             "Arguments.cpp",
-            "BuildTool.cpp",
-            "BuildToolEventSink.cpp",
             "Context.cpp",
             "Executor.cpp",
             "Filter.cpp",
+            "Forge.cpp",
+            "ForgeEventSink.cpp",
             "Graph.cpp",
             "GraphReader.cpp",
             "GraphWriter.cpp",

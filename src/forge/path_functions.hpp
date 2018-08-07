@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_PATH_FUNCTIONS_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_PATH_FUNCTIONS_HPP_INCLUDED
+#ifndef FORGE_PATH_FUNCTIONS_HPP_INCLUDED
+#define FORGE_PATH_FUNCTIONS_HPP_INCLUDED
 
 #include <boost/filesystem/path.hpp>
 #include <string>
@@ -7,7 +7,7 @@
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
 boost::filesystem::path absolute( const boost::filesystem::path& path, const boost::filesystem::path& base_path );

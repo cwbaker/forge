@@ -4,16 +4,16 @@
 //
 
 #include "LuaGraph.hpp"
-#include "LuaBuildTool.hpp"
+#include "LuaForge.hpp"
 #include "types.hpp"
-#include <sweet/build_tool/Context.hpp>
-#include <sweet/build_tool/BuildTool.hpp>
-#include <sweet/build_tool/Scheduler.hpp>
-#include <sweet/build_tool/Graph.hpp>
-#include <sweet/build_tool/Target.hpp>
-#include <sweet/build_tool/TargetPrototype.hpp>
-#include <sweet/luaxx/luaxx.hpp>
-#include <sweet/assert/assert.hpp>
+#include <forge/Context.hpp>
+#include <forge/Forge.hpp>
+#include <forge/Scheduler.hpp>
+#include <forge/Graph.hpp>
+#include <forge/Target.hpp>
+#include <forge/TargetPrototype.hpp>
+#include <luaxx/luaxx.hpp>
+#include <assert/assert.hpp>
 #include <lua.hpp>
 #include <algorithm>
 
@@ -21,7 +21,7 @@ using std::min;
 using std::string;
 using namespace sweet;
 using namespace sweet::luaxx;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 LuaGraph::LuaGraph()
 {
@@ -32,9 +32,9 @@ LuaGraph::~LuaGraph()
     destroy();
 }
 
-void LuaGraph::create( BuildTool* build_tool, lua_State* lua_state )
+void LuaGraph::create( Forge* forge, lua_State* lua_state )
 {
-    SWEET_ASSERT( build_tool );
+    SWEET_ASSERT( forge );
     SWEET_ASSERT( lua_state );
     SWEET_ASSERT( lua_istable(lua_state, -1) );
 
@@ -58,7 +58,7 @@ void LuaGraph::create( BuildTool* build_tool, lua_State* lua_state )
         { "save_binary", &LuaGraph::save_binary },
         { NULL, NULL }
     };
-    lua_pushlightuserdata( lua_state, build_tool );
+    lua_pushlightuserdata( lua_state, forge );
     luaL_setfuncs( lua_state, functions, 1 );
 }
 
@@ -68,14 +68,14 @@ void LuaGraph::destroy()
 
 Target* LuaGraph::add_target( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int ID = 2;
     const int PROTOTYPE = 3;
     const int TABLE = 4;
 
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    Context* context = build_tool->context();
-    Graph* graph = build_tool->graph();
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    Context* context = forge->context();
+    Graph* graph = forge->graph();
     Target* working_directory = context->working_directory();
 
     bool anonymous = lua_isnoneornil( lua_state, ID );
@@ -104,14 +104,14 @@ Target* LuaGraph::add_target( lua_State* lua_state )
             target->set_referenced_by_script( true );
             target->set_prototype( target_prototype );
             target->set_working_directory( working_directory );
-            build_tool->recover_target_lua_binding( target );
-            build_tool->update_target_lua_binding( target );
+            forge->recover_target_lua_binding( target );
+            forge->update_target_lua_binding( target );
         }
         else
         {
-            build_tool->create_target_lua_binding( target );
-            build_tool->recover_target_lua_binding( target );
-            build_tool->update_target_lua_binding( target );
+            forge->create_target_lua_binding( target );
+            forge->recover_target_lua_binding( target );
+            forge->update_target_lua_binding( target );
         }
     }
     return target;
@@ -121,12 +121,12 @@ int LuaGraph::target_prototype( lua_State* lua_state )
 {
     try
     {
-        const int BUILD_TOOL = 1;
+        const int FORGE = 1;
         const int ID = 2;
         string id = luaL_checkstring( lua_state, ID );        
-        BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-        TargetPrototype* target_prototype = build_tool->graph()->target_prototype( id );
-        build_tool->create_target_prototype_lua_binding( target_prototype );
+        Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+        TargetPrototype* target_prototype = forge->graph()->target_prototype( id );
+        forge->create_target_prototype_lua_binding( target_prototype );
         luaxx_push( lua_state, target_prototype );
         return 1;
     }
@@ -155,15 +155,15 @@ int LuaGraph::target( lua_State* lua_state )
 
 int LuaGraph::find_target( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int ID = 2;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    Context* context = build_tool->context();
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    Context* context = forge->context();
     const char* id = luaL_checkstring( lua_state, ID );
-    Target* target = build_tool->graph()->find_target( string(id), context->working_directory() );
+    Target* target = forge->graph()->find_target( string(id), context->working_directory() );
     if ( target && !target->referenced_by_script() )
     {
-        build_tool->create_target_lua_binding( target );
+        forge->create_target_lua_binding( target );
     }
     luaxx_push( lua_state, target );
     return 1;
@@ -171,9 +171,9 @@ int LuaGraph::find_target( lua_State* lua_state )
 
 int LuaGraph::anonymous( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    Context* context = build_tool->context();
+    const int FORGE = 1;
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    Context* context = forge->context();
     Target* working_directory = context->working_directory();
     char anonymous [256];
     size_t length = sprintf( anonymous, "$$%d", working_directory->next_anonymous_index() );
@@ -184,13 +184,13 @@ int LuaGraph::anonymous( lua_State* lua_state )
 
 int LuaGraph::working_directory( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    Context* context = build_tool->context();
+    const int FORGE = 1;
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    Context* context = forge->context();
     Target* target = context->working_directory();
     if ( target && !target->referenced_by_script() )
     {
-        build_tool->create_target_lua_binding( target );
+        forge->create_target_lua_binding( target );
     }
     luaxx_push( lua_state, target );
     return 1;
@@ -198,11 +198,11 @@ int LuaGraph::working_directory( lua_State* lua_state )
 
 int LuaGraph::buildfile( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int FILENAME = 2;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     const char* filename = luaL_checkstring( lua_state, FILENAME );
-    int errors = build_tool->graph()->buildfile( string(filename) );
+    int errors = forge->graph()->buildfile( string(filename) );
     if ( errors >= 0 )
     {
         lua_pushinteger( lua_state, errors );
@@ -213,12 +213,12 @@ int LuaGraph::buildfile( lua_State* lua_state )
 
 int LuaGraph::postorder( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int FUNCTION = 2;
     const int TARGET = 3;
 
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    Graph* graph = build_tool->graph();
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    Graph* graph = forge->graph();
     if ( graph->traversal_in_progress() )
     {
         return luaL_error( lua_state, "Postorder called from within another bind or postorder traversal" );
@@ -239,7 +239,7 @@ int LuaGraph::postorder( lua_State* lua_state )
 
     lua_pushvalue( lua_state, FUNCTION );
     int function = luaL_ref( lua_state, LUA_REGISTRYINDEX );
-    int failures = build_tool->scheduler()->postorder( function, target );
+    int failures = forge->scheduler()->postorder( function, target );
     lua_pushinteger( lua_state, failures );
     luaL_unref( lua_state, LUA_REGISTRYINDEX, function );
     return 1;
@@ -247,56 +247,56 @@ int LuaGraph::postorder( lua_State* lua_state )
 
 int LuaGraph::print_dependencies( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int TARGET = 2;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
-    build_tool->graph()->print_dependencies( target, build_tool->context()->directory().string() );
+    forge->graph()->print_dependencies( target, forge->context()->directory().string() );
     return 0;
 }
 
 int LuaGraph::print_namespace( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int TARGET = 2;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
-    build_tool->graph()->print_namespace( target );
+    forge->graph()->print_namespace( target );
     return 0;
 }
 
 int LuaGraph::wait( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    build_tool->scheduler()->wait();
+    const int FORGE = 1;
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    forge->scheduler()->wait();
     return 0;
 }
 
 int LuaGraph::clear( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    Context* context = build_tool->context();
+    const int FORGE = 1;
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    Context* context = forge->context();
     string working_directory = context->working_directory()->path();
-    build_tool->graph()->clear();
+    forge->graph()->clear();
     context->reset_directory( working_directory );
     return 0;
 }
 
 int LuaGraph::load_binary( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int FILENAME = 2;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    Context* context = build_tool->context();
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    Context* context = forge->context();
     const char* filename = luaL_checkstring( lua_state, FILENAME );
     string working_directory = context->working_directory()->path();
-    Target* cache_target = build_tool->graph()->load_binary( build_tool->absolute(string(filename)).string() );
+    Target* cache_target = forge->graph()->load_binary( forge->absolute(string(filename)).string() );
     context->reset_directory( working_directory );
     if ( cache_target )
     {
-        build_tool->create_target_lua_binding( cache_target );
+        forge->create_target_lua_binding( cache_target );
     }
     luaxx_push( lua_state, cache_target );
     return 1;
@@ -304,8 +304,8 @@ int LuaGraph::load_binary( lua_State* lua_state )
 
 int LuaGraph::save_binary( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    build_tool->graph()->save_binary();
+    const int FORGE = 1;
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    forge->graph()->save_binary();
     return 0;
 }

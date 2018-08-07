@@ -4,14 +4,14 @@
 //
 
 #include "ImportDescriptor.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 #include <windows.h>
 #include <winternl.h>
 #include <psapi.h>
 #include <stdio.h>
 
 using std::uintptr_t;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 ImportDescriptor::ImportDescriptor( std::uintptr_t base_address, const char* name )
 : base_address_( base_address ),

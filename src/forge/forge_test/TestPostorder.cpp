@@ -1,11 +1,11 @@
 
 #include "stdafx.hpp"
 #include "ErrorChecker.hpp"
-#include <sweet/build_tool/BuildTool.hpp>
-#include <sweet/build_tool/BuildToolEventSink.hpp>
+#include <forge/Forge.hpp>
+#include <forge/ForgeEventSink.hpp>
 #include <UnitTest++/UnitTest++.h>
 
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 SUITE( TestPostorder )
 {

@@ -7,7 +7,7 @@
 #include "Error.hpp"
 #include "ErrorPolicy.hpp"
 #include "functions.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 #include <exception>
 #include <stdio.h>
 #include <stdlib.h>

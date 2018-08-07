@@ -4,7 +4,7 @@
 //
 
 #include "System.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 
 #if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
@@ -19,7 +19,7 @@
 
 using std::string;
 using namespace sweet;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 /**
 // Constructor.

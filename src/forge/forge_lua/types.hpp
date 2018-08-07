@@ -1,13 +1,13 @@
-#ifndef SWEET_BUILD_TOOL_TYPES_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_TYPES_HPP_INCLUDED
+#ifndef FORGE_TYPES_HPP_INCLUDED
+#define FORGE_TYPES_HPP_INCLUDED
 
 namespace sweet
 {
     
-namespace build_tool
+namespace forge
 {
     
-extern const char* BUILD_TOOL_TYPE;
+extern const char* FORGE_TYPE;
 extern const char* TARGET_TYPE;
 extern const char* TARGET_PROTOTYPE_TYPE;
 

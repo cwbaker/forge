@@ -6,13 +6,13 @@
 #include "Graph.hpp"
 #include "TargetPrototype.hpp"
 #include "Target.hpp"
-#include "BuildTool.hpp"
+#include "Forge.hpp"
 #include "Scheduler.hpp"
 #include "System.hpp"
 #include "path_functions.hpp"
 #include "GraphReader.hpp"
 #include "GraphWriter.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 #include <memory>
 #include <fstream>
 
@@ -22,13 +22,13 @@ using std::string;
 using std::unique_ptr;
 using std::transform;
 using namespace sweet;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 /**
 // Constructor.
 */
 Graph::Graph()
-: build_tool_( nullptr ),
+: forge_( nullptr ),
   target_prototypes_(),
   filename_(),
   root_target_( nullptr ),
@@ -42,11 +42,11 @@ Graph::Graph()
 /**
 // Constructor.
 //
-// @param build_tool
-//  The BuildTool that this Graph is part of.
+// @param forge
+//  The Forge that this Graph is part of.
 */
-Graph::Graph( BuildTool* build_tool )
-: build_tool_( build_tool ),
+Graph::Graph( Forge* forge )
+: forge_( forge ),
   target_prototypes_(),
   filename_(),
   root_target_(),
@@ -55,7 +55,7 @@ Graph::Graph( BuildTool* build_tool )
   visited_revision_( 0 ),
   successful_revision_( 0 )
 {
-    SWEET_ASSERT( build_tool_ );
+    SWEET_ASSERT( forge_ );
     root_target_.reset( new Target("", this) );
 }
 
@@ -92,15 +92,15 @@ Target* Graph::cache_target() const
 }
         
 /**
-// Get the BuildTool that this Graph is part of.
+// Get the Forge that this Graph is part of.
 //
 // @return
-//  The BuildTool.
+//  The Forge.
 */
-BuildTool* Graph::build_tool() const
+Forge* Graph::forge() const
 {
-    SWEET_ASSERT( build_tool_ );
-    return build_tool_;
+    SWEET_ASSERT( forge_ );
+    return forge_;
 }
 
 /**
@@ -199,7 +199,7 @@ TargetPrototype* Graph::target_prototype( const std::string& id )
     TargetPrototype* target_prototype = NULL;
     if ( i == target_prototypes_.end() )
     {
-        unique_ptr<TargetPrototype> new_target_prototype( new TargetPrototype(id, build_tool_) );
+        unique_ptr<TargetPrototype> new_target_prototype( new TargetPrototype(id, forge_) );
         target_prototype = new_target_prototype.get();
         target_prototypes_.push_back( new_target_prototype.release() );
     }
@@ -310,7 +310,7 @@ Target* Graph::target( const std::string& id, TargetPrototype* target_prototype,
 
     if ( target_prototype && target->prototype() != target_prototype )
     {
-        build_tool_->errorf( "The target '%s' has been created with prototypes '%s' and '%s'", id.c_str(), target->prototype()->id().c_str(), target_prototype ? target_prototype->id().c_str() : "none" );
+        forge_->errorf( "The target '%s' has been created with prototypes '%s' and '%s'", id.c_str(), target->prototype()->id().c_str(), target_prototype ? target_prototype->id().c_str() : "none" );
     }
 
     return target;
@@ -456,10 +456,10 @@ Target* Graph::find_or_create_target_by_element( Target* target, const std::stri
 */
 int Graph::buildfile( const std::string& filename )
 {
-    SWEET_ASSERT( build_tool_ );
+    SWEET_ASSERT( forge_ );
     SWEET_ASSERT( root_target_ );
      
-    boost::filesystem::path path( build_tool_->absolute(filename) );
+    boost::filesystem::path path( forge_->absolute(filename) );
     SWEET_ASSERT( path.is_absolute() );
     
     Target* buildfile_target = Graph::target( path.generic_string(), NULL, NULL );
@@ -468,7 +468,7 @@ int Graph::buildfile( const std::string& filename )
     {
         cache_target_->add_explicit_dependency( buildfile_target );
     }
-    return build_tool_->scheduler()->buildfile( path );
+    return forge_->scheduler()->buildfile( path );
 }
 
 struct ScopedVisit
@@ -494,20 +494,20 @@ struct ScopedVisit
 
 struct Bind
 {
-    BuildTool* build_tool_;
+    Forge* forge_;
     int failures_;
     
-    Bind( BuildTool* build_tool )
-    : build_tool_( build_tool ),
+    Bind( Forge* forge )
+    : forge_( forge ),
       failures_( 0 )
     {
-        SWEET_ASSERT( build_tool_ );
-        build_tool_->graph()->begin_traversal();
+        SWEET_ASSERT( forge_ );
+        forge_->graph()->begin_traversal();
     }
     
     ~Bind()
     {
-        build_tool_->graph()->end_traversal();
+        forge_->graph()->end_traversal();
     }
 
     void visit( Target* target )
@@ -528,7 +528,7 @@ struct Bind
                 }
                 else
                 {
-                    build_tool_->errorf( "Cyclic dependency from %s to %s in bind", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
+                    forge_->errorf( "Cyclic dependency from %s to %s in bind", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
                     dependency->set_successful( true );
                     ++failures_;
                 }
@@ -557,14 +557,14 @@ int Graph::bind( Target* target )
 {
     SWEET_ASSERT( !target || target->graph() == this );
 
-    Graph* graph = build_tool_->graph();
+    Graph* graph = forge_->graph();
     if ( graph->traversal_in_progress() )
     {
-        build_tool_->error( "Bind called from within another bind or postorder traversal" );
+        forge_->error( "Bind called from within another bind or postorder traversal" );
         return 0;
     }
 
-    Bind bind( build_tool_ );
+    Bind bind( forge_ );
     bind.visit( target ? target : root_target_.get() );
     return bind.failures_;
 }
@@ -596,7 +596,7 @@ void Graph::swap( Graph& graph )
 */
 void Graph::clear()
 {
-    SWEET_ASSERT( build_tool_ );
+    SWEET_ASSERT( forge_ );
 
     struct RecursiveClear
     {
@@ -606,7 +606,7 @@ void Graph::clear()
             target->clear_explicit_dependencies();
             target->clear_ordering_dependencies();
             target->destroy_anonymous_targets();
-            target->graph()->build_tool()->destroy_target_lua_binding( target );
+            target->graph()->forge()->destroy_target_lua_binding( target );
 
             const vector<Target*>& targets = target->targets();
             for ( vector<Target*>::const_iterator i = targets.begin(); i != targets.end(); ++i )
@@ -651,15 +651,15 @@ Target* Graph::load_binary( const std::string& filename )
 {
     SWEET_ASSERT( !filename.empty() );
     SWEET_ASSERT( boost::filesystem::path(filename).is_absolute() );
-    SWEET_ASSERT( build_tool_ );
+    SWEET_ASSERT( forge_ );
     
     filename_ = filename;
     cache_target_ = NULL;
 
-    if ( build_tool_->system()->exists(filename) )
+    if ( forge_->system()->exists(filename) )
     {
         std::ifstream ifstream( filename, std::ios::binary );
-        GraphReader graph_reader( &ifstream, &build_tool_->error_policy() );
+        GraphReader graph_reader( &ifstream, &forge_->error_policy() );
         unique_ptr<Target> root_target = graph_reader.read( filename );
         if ( root_target )
         {
@@ -678,7 +678,7 @@ Target* Graph::load_binary( const std::string& filename )
 */
 void Graph::save_binary()
 {
-    SWEET_ASSERT( build_tool_ );
+    SWEET_ASSERT( forge_ );
 
     if ( !filename_.empty() )
     {
@@ -688,7 +688,7 @@ void Graph::save_binary()
     }
     else
     {
-        build_tool_->error( "Unable to save a dependency graph without trying to load it first" );        
+        forge_->error( "Unable to save a dependency graph without trying to load it first" );        
     }
 }
 
@@ -812,7 +812,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                 const vector<string>& filenames = target->filenames();
                 for ( vector<string>::const_iterator filename = filenames.begin(); filename != filenames.end(); ++filename )
                 {
-                    boost::filesystem::path generic_filename = sweet::build_tool::relative( boost::filesystem::path(*filename), directory );
+                    boost::filesystem::path generic_filename = sweet::forge::relative( boost::filesystem::path(*filename), directory );
                     indent( level + 1 );
                     printf( ">'%s'", generic_filename.generic_string().c_str() );
                 }
@@ -837,9 +837,9 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                     }
                     else
                     {
-                        BuildTool* build_tool = target->graph()->build_tool();
-                        SWEET_ASSERT( build_tool );
-                        build_tool->outputf( "Ignoring cyclic dependency from '%s' to '%s' while printing dependencies", target->id().c_str(), dependency->id().c_str() );
+                        Forge* forge = target->graph()->forge();
+                        SWEET_ASSERT( forge );
+                        forge->outputf( "Ignoring cyclic dependency from '%s' to '%s' while printing dependencies", target->id().c_str(), dependency->id().c_str() );
                     }
                     ++i;
                     dependency = target->binding_dependency( i );

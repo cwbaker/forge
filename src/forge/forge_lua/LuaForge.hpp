@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_LUABUILDTOOL_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_LUABUILDTOOL_HPP_INCLUDED
+#ifndef FORGE_LUAFORGE_HPP_INCLUDED
+#define FORGE_LUAFORGE_HPP_INCLUDED
 
 #include <vector>
 #include <string>
@@ -9,12 +9,12 @@ struct lua_State;
 namespace sweet
 {
     
-namespace build_tool
+namespace forge
 {
 
 class Target;
 class TargetPrototype;
-class BuildTool;
+class Forge;
 class LuaFileSystem;
 class LuaContext;
 class LuaGraph;
@@ -22,9 +22,9 @@ class LuaSystem;
 class LuaTarget;
 class LuaTargetPrototype;
 
-class LuaBuildTool
+class LuaForge
 {
-    BuildTool* build_tool_;
+    Forge* forge_;
     lua_State* lua_state_;
     LuaFileSystem* lua_file_system_;
     LuaContext* lua_context_;
@@ -34,12 +34,12 @@ class LuaBuildTool
     LuaTargetPrototype* lua_target_prototype_;
 
 public:
-    LuaBuildTool( BuildTool* build_tool );
-    ~LuaBuildTool();
+    LuaForge( Forge* forge );
+    ~LuaForge();
     lua_State* lua_state() const;
     LuaTarget* lua_target() const;
     LuaTargetPrototype* lua_target_prototype() const;
-    void create( BuildTool* build_tool );
+    void create( Forge* forge );
     void destroy();
     void assign_global_variables( const std::vector<std::string>& assignments );
 

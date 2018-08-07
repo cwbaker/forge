@@ -5,7 +5,7 @@
 #include <psapi.h>
 #include <stdio.h>
 
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 typedef HANDLE (WINAPI *CreateFileAFunction)( 
     LPCSTR filename, 

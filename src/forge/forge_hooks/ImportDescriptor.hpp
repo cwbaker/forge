@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_IMAGEIMPORTDESCRIPTOR_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_IMAGEIMPORTDESCRIPTOR_HPP_INCLUDED
+#ifndef FORGE_IMAGEIMPORTDESCRIPTOR_HPP_INCLUDED
+#define FORGE_IMAGEIMPORTDESCRIPTOR_HPP_INCLUDED
 
 #include <cstdint>
 #include <windows.h>
@@ -9,7 +9,7 @@
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
 class ImportDescriptor

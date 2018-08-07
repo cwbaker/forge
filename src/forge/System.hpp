@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_SYSTEM_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_SYSTEM_HPP_INCLUDED
+#ifndef FORGE_SYSTEM_HPP_INCLUDED
+#define FORGE_SYSTEM_HPP_INCLUDED
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/convenience.hpp>
@@ -9,7 +9,7 @@
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
 /**

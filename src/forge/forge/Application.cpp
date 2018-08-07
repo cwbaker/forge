@@ -5,11 +5,11 @@
 
 #include "stdafx.hpp"
 #include "Application.hpp"
-#include <sweet/build_tool/BuildTool.hpp>
-#include <sweet/build_tool/path_functions.hpp>
-#include <sweet/cmdline/Parser.hpp>
-#include <sweet/error/ErrorPolicy.hpp>
-#include <sweet/assert/assert.hpp>
+#include <forge/Forge.hpp>
+#include <forge/path_functions.hpp>
+#include <cmdline/Parser.hpp>
+#include <error/ErrorPolicy.hpp>
+#include <assert/assert.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <string>
 #include <vector>
@@ -22,10 +22,10 @@
 
 using std::string;
 using std::vector;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 Application::Application( int argc, char** argv )
-: BuildToolEventSink(),
+: ForgeEventSink(),
   result_( EXIT_SUCCESS )
 {
 #ifdef BUILD_OS_WINDOWS
@@ -57,13 +57,13 @@ Application::Application( int argc, char** argv )
     {
         if ( version )
         {
-            std::cout << "Sweet Build " << BUILD_VERSION << " \n";
+            std::cout << "Forge " << BUILD_VERSION << " \n";
             std::cout << "Copyright (c) 2007 - 2018 Charles Baker.  All rights reserved. \n";
         }
 
         if ( help )
         {
-            std::cout << "Usage: build [options] [variable=value] [command] ... \n";
+            std::cout << "Usage: forge [options] [variable=value] [command] ... \n";
             std::cout << "Options: \n";
             command_line_parser.print( stdout );
         }
@@ -93,18 +93,18 @@ Application::Application( int argc, char** argv )
     
         if ( root_directory.empty() )
         {
-            root_directory = build_tool::search_up_for_root_directory( directory, filename ).generic_string();
+            root_directory = forge::search_up_for_root_directory( directory, filename ).generic_string();
             error_policy.error( root_directory.empty(), "The file '%s' could not be found to identify the root directory", filename.c_str() );
         }
 
         vector<string>::const_iterator command = commands.begin(); 
         while ( error_policy.errors() == 0 && command != commands.end() )
         {
-            BuildTool build_tool( directory, error_policy, this );
-            build_tool.set_stack_trace_enabled( stack_trace_enabled );
-            build_tool.set_root_directory( root_directory );
-            build_tool.assign_global_variables( assignments );
-            build_tool.execute( filename, *command );
+            Forge forge( directory, error_policy, this );
+            forge.set_stack_trace_enabled( stack_trace_enabled );
+            forge.set_root_directory( root_directory );
+            forge.assign_global_variables( assignments );
+            forge.execute( filename, *command );
             ++command;
         }
     }
@@ -115,7 +115,7 @@ int Application::get_result() const
     return result_;
 }
 
-void Application::build_tool_output( BuildTool* /*build_tool*/, const char* message )
+void Application::forge_output( Forge* /*forge*/, const char* message )
 {
     SWEET_ASSERT( message );
 
@@ -124,7 +124,7 @@ void Application::build_tool_output( BuildTool* /*build_tool*/, const char* mess
     fflush( stdout );
 }
 
-void Application::build_tool_warning( BuildTool* /*build_tool*/, const char* message )
+void Application::forge_warning( Forge* /*forge*/, const char* message )
 {
     SWEET_ASSERT( message );
     
@@ -134,7 +134,7 @@ void Application::build_tool_warning( BuildTool* /*build_tool*/, const char* mes
     fflush( stderr );
 }
 
-void Application::build_tool_error( BuildTool* /*build_tool*/, const char* message )
+void Application::forge_error( Forge* /*forge*/, const char* message )
 {
     SWEET_ASSERT( message );
     

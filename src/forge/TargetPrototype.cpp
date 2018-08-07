@@ -4,10 +4,10 @@
 //
 
 #include "TargetPrototype.hpp"
-#include "BuildTool.hpp"
-#include <sweet/assert/assert.hpp>
+#include "Forge.hpp"
+#include <assert/assert.hpp>
 
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 /**
 // Constructor.
@@ -15,14 +15,14 @@ using namespace sweet::build_tool;
 // @param id
 //  The id for this TargetPrototype.
 //
-// @param build_tool
-//  The BuildTool that this TargetPrototype is part of.
+// @param forge
+//  The Forge that this TargetPrototype is part of.
 */
-TargetPrototype::TargetPrototype( const std::string& id, BuildTool* build_tool )
+TargetPrototype::TargetPrototype( const std::string& id, Forge* forge )
 : id_( id ),
-  build_tool_( build_tool )  
+  forge_( forge )  
 {
-    SWEET_ASSERT( build_tool_ );
+    SWEET_ASSERT( forge_ );
 }
 
 /**
@@ -30,7 +30,7 @@ TargetPrototype::TargetPrototype( const std::string& id, BuildTool* build_tool )
 */
 TargetPrototype::~TargetPrototype()
 {
-    build_tool_->destroy_target_prototype_lua_binding( this );
+    forge_->destroy_target_prototype_lua_binding( this );
 }
 
 /**

@@ -1,12 +1,12 @@
 
 #include "path_functions.hpp"
 #include <boost/filesystem/operations.hpp>
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 
 namespace sweet
 {
 	
-namespace build_tool
+namespace forge
 {
 
 /**

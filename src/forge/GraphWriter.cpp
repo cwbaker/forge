@@ -5,11 +5,11 @@
 
 #include "GraphWriter.hpp"
 #include "Target.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 
 using std::string;
 using std::vector;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 GraphWriter::GraphWriter( std::ostream* ostream )
 : ostream_( ostream )

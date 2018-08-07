@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_SCHEDULER_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_SCHEDULER_HPP_INCLUDED
+#ifndef FORGE_SCHEDULER_HPP_INCLUDED
+#define FORGE_SCHEDULER_HPP_INCLUDED
 
 #include <boost/filesystem/path.hpp>
 #include <deque>
@@ -20,7 +20,7 @@ class Environment;
 
 }
 
-namespace build_tool
+namespace forge
 {
 
 class Job;
@@ -28,7 +28,7 @@ class Context;
 class Arguments;
 class Filter;
 class Target;
-class BuildTool;
+class Forge;
 
 /**
 // Handle general processing and calls into Lua from loading buildfiles,
@@ -37,7 +37,7 @@ class BuildTool;
 */
 class Scheduler
 {
-    BuildTool* build_tool_; ///< The BuildTool that this Scheduler is part of.
+    Forge* forge_; ///< The Forge that this Scheduler is part of.
     std::vector<Context*> active_contexts_; ///< The stack of Contexts that are currently executing Lua scripts.
     std::mutex results_mutex_; ///< The mutex that ensures exclusive access to the results queue.
     std::condition_variable results_condition_; ///< The Condition that is used to wait for results.
@@ -46,7 +46,7 @@ class Scheduler
     int failures_; ///< The number of failures in the most recent postorder traversal.
 
     public:
-        Scheduler( BuildTool* build_tool );
+        Scheduler( Forge* forge );
 
         void load( const boost::filesystem::path& path );
         void script( const boost::filesystem::path& path, const std::string& script );

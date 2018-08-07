@@ -2,7 +2,7 @@
 #define SWEET_LUAXX_IPP_INCLUDED
 
 #include "luaxx.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 #include <lua.hpp>
 
 namespace sweet

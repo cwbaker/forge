@@ -1,55 +1,55 @@
 //
-// BuildToolEventSink.cpp
+// ForgeEventSink.cpp
 // Copyright (c) Charles Baker. All rights reserved.
 //
 
-#include "BuildToolEventSink.hpp"
+#include "ForgeEventSink.hpp"
 
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 /**
 // Destructor.
 */
-BuildToolEventSink::~BuildToolEventSink()
+ForgeEventSink::~ForgeEventSink()
 {
 }
 
 /**
-// Called when the BuildTool has received a line of output from a child
+// Called when the Forge has received a line of output from a child
 // process.
 //
-// @param build_tool
-//  The BuildTool that the output has been received from.
+// @param forge
+//  The Forge that the output has been received from.
 //
 // @param message
 //  The null terminated message to be output.
 */
-void BuildToolEventSink::build_tool_output( BuildTool* /*build_tool*/, const char* /*message*/ )
+void ForgeEventSink::forge_output( Forge* /*forge*/, const char* /*message*/ )
 {    
 }
 
 /**
-// Called when the BuildTool has received a warning to be output.
+// Called when the Forge has received a warning to be output.
 //
-// @param build_tool
-//  The BuildTool that the warning is generated from.
+// @param forge
+//  The Forge that the warning is generated from.
 //
 // @param message
 //  The null terminated warning message.
 */
-void BuildToolEventSink::build_tool_warning( BuildTool* /*build_tool*/, const char* /*message*/ )
+void ForgeEventSink::forge_warning( Forge* /*forge*/, const char* /*message*/ )
 {
 }
 
 /**
-// Called when the BuildTool has received an error to be output.
+// Called when the Forge has received an error to be output.
 //
-// @param build_tool
-//  The BuildTool that the error occured in.
+// @param forge
+//  The Forge that the error occured in.
 //
 // @param message
 //  The null terminated error message.
 */
-void BuildToolEventSink::build_tool_error( BuildTool* /*build_tool*/, const char* /*message*/ )
+void ForgeEventSink::forge_error( Forge* /*forge*/, const char* /*message*/ )
 {
 }

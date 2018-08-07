@@ -15,9 +15,9 @@ end
 
 local build = build:configure( settings );
 build:all {
-    build:Executable '${bin}/build' {
-        '${lib}/build_tool_${architecture}';
-        '${lib}/build_tool_lua_${architecture}';
+    build:Executable '${bin}/forge' {
+        '${lib}/forge_${architecture}';
+        '${lib}/forge_lua_${architecture}';
         '${lib}/process_${architecture}';
         '${lib}/luaxx_${architecture}';
         '${lib}/cmdline_${architecture}';

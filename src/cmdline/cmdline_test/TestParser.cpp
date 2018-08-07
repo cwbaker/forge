@@ -1,6 +1,6 @@
 
 #include <unit/UnitTest.h>
-#include <sweet/cmdline/Parser.hpp>
+#include <cmdline/Parser.hpp>
 
 using namespace sweet::cmdline;
 

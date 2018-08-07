@@ -4,18 +4,18 @@
 //
 
 #include "LuaSystem.hpp"
-#include "LuaBuildTool.hpp"
+#include "LuaForge.hpp"
 #include "types.hpp"
-#include <sweet/build_tool/BuildTool.hpp>
-#include <sweet/build_tool/System.hpp>
-#include <sweet/luaxx/luaxx.hpp>
-#include <sweet/assert/assert.hpp>
+#include <forge/Forge.hpp>
+#include <forge/System.hpp>
+#include <luaxx/luaxx.hpp>
+#include <assert/assert.hpp>
 #include <lua.hpp>
 
 using std::string;
 using namespace sweet;
 using namespace sweet::luaxx;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 LuaSystem::LuaSystem()
 {
@@ -26,7 +26,7 @@ LuaSystem::~LuaSystem()
     destroy();
 }
 
-void LuaSystem::create( BuildTool* build_tool, lua_State* lua_state )
+void LuaSystem::create( Forge* forge, lua_State* lua_state )
 {
     SWEET_ASSERT( lua_state );
     SWEET_ASSERT( lua_istable(lua_state, -1) );
@@ -41,7 +41,7 @@ void LuaSystem::create( BuildTool* build_tool, lua_State* lua_state )
         { "operating_system", &LuaSystem::operating_system },
         { NULL, NULL }
     };
-    lua_pushlightuserdata( lua_state, build_tool );
+    lua_pushlightuserdata( lua_state, forge );
     luaL_setfuncs( lua_state, functions, 1 );
 }
 
@@ -51,11 +51,11 @@ void LuaSystem::destroy()
 
 int LuaSystem::getenv( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int KEY = 2;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     const char* key = luaL_checkstring( lua_state, KEY ); 
-    const char* value = build_tool->system()->getenv( key );
+    const char* value = forge->system()->getenv( key );
     if ( value )
     {
         lua_pushstring( lua_state, value );
@@ -66,28 +66,28 @@ int LuaSystem::getenv( lua_State* lua_state )
 
 int LuaSystem::sleep( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
+    const int FORGE = 1;
     const int MILLISECONDS = 2;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     float milliseconds = static_cast<float>( luaL_checknumber(lua_state, MILLISECONDS) );
-    build_tool->system()->sleep( milliseconds );
+    forge->system()->sleep( milliseconds );
     return 0;
 }
 
 int LuaSystem::ticks( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    float ticks = build_tool->system()->ticks();
+    const int FORGE = 1;
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    float ticks = forge->system()->ticks();
     lua_pushnumber( lua_state, ticks );
     return 1;
 }
 
 int LuaSystem::operating_system( lua_State* lua_state )
 {
-    const int BUILD_TOOL = 1;
-    BuildTool* build_tool = (BuildTool*) luaxx_check( lua_state, BUILD_TOOL, BUILD_TOOL_TYPE );
-    const char* operating_system = build_tool->system()->operating_system();
+    const int FORGE = 1;
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const char* operating_system = forge->system()->operating_system();
     lua_pushstring( lua_state, operating_system );
     return 1;
 }

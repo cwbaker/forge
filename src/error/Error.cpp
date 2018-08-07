@@ -1,11 +1,11 @@
 //
 // Error.cpp
-// Copyright (c) Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
 #include "stdafx.hpp"
-#include <sweet/error/Error.hpp>
-#include <sweet/assert/assert.hpp>
+#include <error/Error.hpp>
+#include <assert/assert.hpp>
 #include <memory.h>
 #include <string.h>
 #include <stdio.h>

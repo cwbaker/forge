@@ -4,14 +4,14 @@
 //
 
 #include "Executor.hpp"
-#include "BuildTool.hpp"
+#include "Forge.hpp"
 #include "Target.hpp"
 #include "Context.hpp"
 #include "Reader.hpp"
 #include "Scheduler.hpp"
-#include <sweet/process/Process.hpp>
-#include <sweet/process/Environment.hpp>
-#include <sweet/assert/assert.hpp>
+#include <process/Process.hpp>
+#include <process/Environment.hpp>
+#include <assert/assert.hpp>
 #include <stdlib.h>
 
 #if defined BUILD_OS_WINDOWS
@@ -25,10 +25,10 @@ using std::vector;
 using std::unique_ptr;
 using namespace sweet;
 using namespace sweet::process;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
-Executor::Executor( BuildTool* build_tool )
-: build_tool_( build_tool ),
+Executor::Executor( Forge* forge )
+: forge_( forge ),
   jobs_mutex_(),
   jobs_empty_condition_(),
   jobs_ready_condition_(),
@@ -39,7 +39,7 @@ Executor::Executor( BuildTool* build_tool )
   active_jobs_( 0 ),
   done_( false )
 {
-    SWEET_ASSERT( build_tool_ );
+    SWEET_ASSERT( forge_ );
     initialize_build_hooks_windows();
 }
 
@@ -122,7 +122,7 @@ void Executor::thread_process()
 
 void Executor::thread_execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Target* working_directory, Context* context )
 {
-    SWEET_ASSERT( build_tool_ );
+    SWEET_ASSERT( forge_ );
     
     try
     {
@@ -149,18 +149,18 @@ void Executor::thread_execute( const std::string& command, const std::string& co
 
         if ( dependencies_filter && !build_hooks_library_.empty() )
         {
-            build_tool_->reader()->read( read_dependencies_pipe, dependencies_filter, arguments, working_directory );
+            forge_->reader()->read( read_dependencies_pipe, dependencies_filter, arguments, working_directory );
         }
 
-        build_tool_->reader()->read( stdout_pipe, stdout_filter, arguments, working_directory );
-        build_tool_->reader()->read( stderr_pipe, stderr_filter, arguments, working_directory );
+        forge_->reader()->read( stdout_pipe, stdout_filter, arguments, working_directory );
+        forge_->reader()->read( stderr_pipe, stderr_filter, arguments, working_directory );
         process.wait();
-        build_tool_->scheduler()->push_execute_finished( process.exit_code(), context, environment );
+        forge_->scheduler()->push_execute_finished( process.exit_code(), context, environment );
     }
 
     catch ( const std::exception& exception )
     {
-        Scheduler* scheduler = build_tool_->scheduler();
+        Scheduler* scheduler = forge_->scheduler();
         scheduler->push_errorf( "%s", exception.what() );
         scheduler->push_execute_finished( EXIT_FAILURE, context, environment );
     }
@@ -208,7 +208,7 @@ void Executor::stop()
 
             catch ( const std::exception& exception )
             {
-                build_tool_->errorf( "Failed to join thread - %s", exception.what() );
+                forge_->errorf( "Failed to join thread - %s", exception.what() );
             }
         }
         

@@ -5,15 +5,15 @@
 
 #include "Context.hpp"
 #include "Target.hpp"
-#include "BuildTool.hpp"
+#include "Forge.hpp"
 #include "Graph.hpp"
 #include "path_functions.hpp"
-#include <sweet/build_tool/build_tool_lua/LuaBuildTool.hpp>
-#include <sweet/luaxx/luaxx.hpp>
+#include <forge/forge_lua/LuaForge.hpp>
+#include <luaxx/luaxx.hpp>
 #include <lua.hpp>
 
 using namespace sweet;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 /**
 // Constructor.
@@ -22,11 +22,11 @@ using namespace sweet::build_tool;
 //  The inital working directory to set for this Context (assumed to be
 //  an absolute path).
 //
-// @param build_tool
-//  The BuildTool that this Context is part of.
+// @param forge
+//  The Forge that this Context is part of.
 */
-Context::Context( const boost::filesystem::path& directory, BuildTool* build_tool )
-: build_tool_( build_tool ),
+Context::Context( const boost::filesystem::path& directory, Forge* forge )
+: forge_( forge ),
   lua_state_( nullptr ),
   lua_state_reference_( LUA_NOREF ),
   working_directory_( NULL ), 
@@ -36,14 +36,14 @@ Context::Context( const boost::filesystem::path& directory, BuildTool* build_too
   buildfile_calling_context_( nullptr )
 {
     reset_directory( directory );
-    lua_State* lua_state = build_tool->lua_state();
+    lua_State* lua_state = forge->lua_state();
     lua_state_ = lua_newthread( lua_state );
     lua_state_reference_ = luaL_ref( lua_state, LUA_REGISTRYINDEX );
 }
 
 Context::~Context()
 {
-    lua_State* lua_state = build_tool_->lua_state();
+    lua_State* lua_state = forge_->lua_state();
     if ( lua_state )
     {
         luaL_unref( lua_state, LUA_REGISTRYINDEX, lua_state_reference_ );
@@ -117,7 +117,7 @@ int Context::exit_code() const
 */
 boost::filesystem::path Context::absolute( const boost::filesystem::path& path ) const
 {
-    return sweet::build_tool::absolute( path, directory() );
+    return sweet::forge::absolute( path, directory() );
 }
 
 /**
@@ -132,7 +132,7 @@ boost::filesystem::path Context::relative( const boost::filesystem::path& path )
     {
         return path;
     }
-    return sweet::build_tool::relative( path, directory() );        
+    return sweet::forge::relative( path, directory() );        
 }
 
 /**
@@ -163,7 +163,7 @@ void Context::reset_directory( const boost::filesystem::path& directory )
     SWEET_ASSERT( directory.empty() || directory.is_absolute() );
     directories_.clear();
     directories_.push_back( directory );
-    working_directory_ = build_tool_->graph()->target( directory.string() );
+    working_directory_ = forge_->graph()->target( directory.string() );
 }
 
 /**
@@ -190,7 +190,7 @@ void Context::change_directory( const boost::filesystem::path& directory )
         directories_.back().normalize();
     }
 
-    working_directory_ = build_tool_->graph()->target( directories_.back().string() );
+    working_directory_ = forge_->graph()->target( directories_.back().string() );
 }
 
 /**
@@ -220,7 +220,7 @@ void Context::push_directory( const boost::filesystem::path& directory )
         directories_.back().normalize();
     }
 
-    working_directory_ = build_tool_->graph()->target( directories_.back().string() );
+    working_directory_ = forge_->graph()->target( directories_.back().string() );
 }
 
 /**
@@ -235,7 +235,7 @@ void Context::pop_directory()
     if ( directories_.size() > 1 )
     {
         directories_.pop_back();
-        working_directory_ = build_tool_->graph()->target( directories_.back().string() );
+        working_directory_ = forge_->graph()->target( directories_.back().string() );
     }
 }
 

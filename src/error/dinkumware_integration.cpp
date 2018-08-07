@@ -1,11 +1,11 @@
 //
 // dinkumware_integration.cpp
-// Copyright (c) 2008 - 2012 Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
 #include "stdafx.hpp"
-#include <sweet/build.hpp>
-#include <sweet/error/functions.hpp>
+#include <build.hpp>
+#include <error/functions.hpp>
 
 #ifndef SWEET_EXCEPTIONS_ENABLED
 

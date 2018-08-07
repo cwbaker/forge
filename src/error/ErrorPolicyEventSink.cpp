@@ -5,7 +5,7 @@
 
 #include "stdafx.hpp"
 #include "ErrorPolicyEventSink.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 
 using namespace sweet::error;
 

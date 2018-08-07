@@ -1,19 +1,19 @@
 
 #include "stdafx.hpp"
 #include "ErrorChecker.hpp"
-#include <sweet/build_tool/BuildTool.hpp>
-#include <sweet/error/ErrorPolicy.hpp>
-#include <sweet/assert/assert.hpp>
+#include <forge/Forge.hpp>
+#include <error/ErrorPolicy.hpp>
+#include <assert/assert.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 
 using std::string;
 using namespace boost::filesystem;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 ErrorChecker::ErrorChecker()
 : error::ErrorPolicy(),
-  build_tool::BuildToolEventSink(),
+  forge::ForgeEventSink(),
   messages(),
   errors( 0 )
 {
@@ -23,7 +23,7 @@ ErrorChecker::~ErrorChecker()
 {
 }
 
-void ErrorChecker::build_tool_error( BuildTool* /*build_tool*/, const char* message )
+void ErrorChecker::forge_error( Forge* /*forge*/, const char* message )
 {
     messages.push_back( message );
     ++errors;
@@ -35,9 +35,9 @@ void ErrorChecker::test( const char* script )
     messages.clear();
     errors = 0;          
     path path = initial_path<boost::filesystem::path>();
-    BuildTool build_tool( path.string(), *this, this );
-    build_tool.set_root_directory( path.generic_string() );
-    build_tool.script( string(script) );
+    Forge forge( path.string(), *this, this );
+    forge.set_root_directory( path.generic_string() );
+    forge.script( string(script) );
 }
 
 void ErrorChecker::report_error( const char* message )

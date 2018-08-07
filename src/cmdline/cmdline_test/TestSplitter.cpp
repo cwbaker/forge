@@ -1,7 +1,7 @@
 
 #include <unit/UnitTest.h>
-#include <sweet/cmdline/Splitter.hpp>
-#include <sweet/assert/assert.hpp>
+#include <cmdline/Splitter.hpp>
+#include <assert/assert.hpp>
 #include <string.h>
 
 using namespace sweet::cmdline;
@@ -85,15 +85,15 @@ SUITE( TestSplitter )
     TEST( GxxCommandLineWithNonSpacedDoubleQuotesAndEscapedDoubleQuotes )
     {    
         const char* COMMAND_LINE = 
-            "g++ -I\"/Users/charles/sweet/sweet_build_tool\" -I\"C:/boost/include/boost-1_43\" -DBUILD_PLATFORM_GCC -DBUILD_VARIANT_DEBUG "
+            "g++ -I\"/Users/charles/sweet/sweet_forge\" -I\"C:/boost/include/boost-1_43\" -DBUILD_PLATFORM_GCC -DBUILD_VARIANT_DEBUG "
             "-DBUILD_LIBRARY_SUFFIX=\"\\\"_gcc_debug.lib\\\"\" -DBUILD_MODULE_ASSERT -DBUILD_LIBRARY_TYPE_STATIC -c -fpermissive "
             "-Wno-deprecated -x c++ -static-libstdc++ -g -fexceptions -frtti "
-            "-o/Users/charles/sweet/sweet_build_tool/obj/gcc_debug/assert/stdafx.o stdafx.cpp"
+            "-o/Users/charles/sweet/sweet_forge/obj/gcc_debug/assert/stdafx.o stdafx.cpp"
         ;        
         const char* ARGUMENTS[] = 
         {
             "g++",
-            "-I/Users/charles/sweet/sweet_build_tool",
+            "-I/Users/charles/sweet/sweet_forge",
             "-IC:/boost/include/boost-1_43",
             "-DBUILD_PLATFORM_GCC",
             "-DBUILD_VARIANT_DEBUG",
@@ -109,7 +109,7 @@ SUITE( TestSplitter )
             "-g",
             "-fexceptions",
             "-frtti",
-            "-o/Users/charles/sweet/sweet_build_tool/obj/gcc_debug/assert/stdafx.o",
+            "-o/Users/charles/sweet/sweet_forge/obj/gcc_debug/assert/stdafx.o",
             "stdafx.cpp",
             NULL
         };        
@@ -119,20 +119,20 @@ SUITE( TestSplitter )
     TEST( GxxCommandLineWithSpacedDoubleQuotes )
     {
         const char *COMMAND_LINE = 
-            "g++ -lbuild_tool_gcc_debug -lcmdline_gcc_debug -llua_gcc_debug -lliblua_gcc_debug "
+            "g++ -lforge_gcc_debug -lcmdline_gcc_debug -llua_gcc_debug -lliblua_gcc_debug "
             "-lprocess_gcc_debug -lrtti_gcc_debug -lthread_gcc_debug -lpersist_gcc_debug "
             "-lpath_gcc_debug -lpointer_gcc_debug -lerror_gcc_debug -lassert_gcc_debug "
             "-llibboost_filesystem.a -llibboost_regex.a -llibboost_system.a -llibboost_thread.a  "
             "stdafx.o Application.o main.o  "
-            "-o /Users/charles/sweet/sweet_build_tool/bin/build_gcc_debug "
+            "-o /Users/charles/sweet/sweet_forge/bin/build_gcc_debug "
             "-static-libstdc++ -debug "
-            "-L \"/Users/charles/sweet/sweet_build_tool/lib\" "
+            "-L \"/Users/charles/sweet/sweet_forge/lib\" "
             "-L \"/Users/charles/boost/boost_1_43_0/stage/lib\""
         ;    
         const char* ARGUMENTS[] =
         {
             "g++",
-            "-lbuild_tool_gcc_debug",
+            "-lforge_gcc_debug",
             "-lcmdline_gcc_debug",
             "-llua_gcc_debug",
             "-lliblua_gcc_debug",
@@ -152,11 +152,11 @@ SUITE( TestSplitter )
             "Application.o",
             "main.o",
             "-o",
-            "/Users/charles/sweet/sweet_build_tool/bin/build_gcc_debug",
+            "/Users/charles/sweet/sweet_forge/bin/build_gcc_debug",
             "-static-libstdc++",
             "-debug",
             "-L",
-            "/Users/charles/sweet/sweet_build_tool/lib",
+            "/Users/charles/sweet/sweet_forge/lib",
             "-L",
             "/Users/charles/boost/boost_1_43_0/stage/lib",
             NULL

@@ -5,9 +5,9 @@
 
 #include "Reader.hpp"
 #include "Scheduler.hpp"
-#include "BuildTool.hpp"
-#include <sweet/error/Error.hpp>
-#include <sweet/assert/assert.hpp>
+#include "Forge.hpp"
+#include <error/Error.hpp>
+#include <assert/assert.hpp>
 #include <stdlib.h>
 #include <memory>
 
@@ -25,10 +25,10 @@ using std::string;
 using std::vector;
 using std::unique_ptr;
 using namespace sweet;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
-Reader::Reader( BuildTool* build_tool )
-: build_tool_( build_tool ),
+Reader::Reader( Forge* forge )
+: forge_( forge ),
   jobs_mutex_(),
   jobs_empty_condition_(),
   jobs_ready_condition_(),
@@ -95,7 +95,7 @@ void Reader::thread_process()
 
 void Reader::thread_read( intptr_t fd_or_handle, Filter* filter, Arguments* arguments, Target* working_directory )
 {
-    SWEET_ASSERT( build_tool_ );
+    SWEET_ASSERT( forge_ );
     
     char buffer [1024];
     char* pos = buffer;
@@ -111,7 +111,7 @@ void Reader::thread_read( intptr_t fd_or_handle, Filter* filter, Arguments* argu
         while ( pos != finish )
         {
             *pos = 0;
-            build_tool_->scheduler()->push_output( string(start, pos), filter, arguments, working_directory );
+            forge_->scheduler()->push_output( string(start, pos), filter, arguments, working_directory );
             start = pos + 1;
             pos = std::find( start, finish, '\n' );
         }
@@ -123,7 +123,7 @@ void Reader::thread_read( intptr_t fd_or_handle, Filter* filter, Arguments* argu
         else if ( finish >= end )
         {
             *finish = 0;
-            build_tool_->scheduler()->push_output( string(start, finish), filter, arguments, working_directory );
+            forge_->scheduler()->push_output( string(start, finish), filter, arguments, working_directory );
             start = buffer;
             finish = buffer;
         }
@@ -135,11 +135,11 @@ void Reader::thread_read( intptr_t fd_or_handle, Filter* filter, Arguments* argu
     if ( pos > buffer )
     {
         *pos = 0;
-        build_tool_->scheduler()->push_output( string(buffer, pos), filter, arguments, working_directory );
+        forge_->scheduler()->push_output( string(buffer, pos), filter, arguments, working_directory );
     }
 
     Reader::close( fd_or_handle );
-    build_tool_->scheduler()->push_filter_finished( filter, arguments );
+    forge_->scheduler()->push_filter_finished( filter, arguments );
 }
 
 void Reader::stop()
@@ -167,7 +167,7 @@ void Reader::stop()
 
             catch ( const std::exception& exception )
             {
-                build_tool_->errorf( 0, "Failed to join thread - %s", exception.what() );
+                forge_->errorf( 0, "Failed to join thread - %s", exception.what() );
             }
         }
         
@@ -209,7 +209,7 @@ size_t Reader::read( intptr_t fd_or_handle, void* buffer, size_t length ) const
     if ( !result && ::GetLastError() != ERROR_BROKEN_PIPE )
     {
         char message [1024];
-        Scheduler* scheduler = build_tool_->scheduler();
+        Scheduler* scheduler = forge_->scheduler();
         scheduler->push_errorf( "Reading from a child process failed - %s", error::Error::format(::GetLastError(), message, sizeof(message)) );
     }
     return read;
@@ -226,7 +226,7 @@ size_t Reader::read( intptr_t fd_or_handle, void* buffer, size_t length ) const
     if ( bytes == -1 )
     {
         char message [1024];
-        Scheduler* scheduler = build_tool_->scheduler();
+        Scheduler* scheduler = forge_->scheduler();
         scheduler->push_errorf( "Reading from a child process failed - %s", error::Error::format(errno, message, sizeof(message)) );
     }
     return bytes;

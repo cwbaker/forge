@@ -1,11 +1,11 @@
 //
 // Parser.cpp
-// Copyright (c) Charles Baker.  All rights reserved.
+// Copyright (c) Charles Baker. All rights reserved.
 //
 
 #include "Parser.hpp"
 #include "Error.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 

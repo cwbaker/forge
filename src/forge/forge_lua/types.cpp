@@ -5,6 +5,6 @@
 
 #include "types.hpp"
 
-const char* sweet::build_tool::BUILD_TOOL_TYPE = "build.BuildTool";
-const char* sweet::build_tool::TARGET_TYPE = "build.Target";
-const char* sweet::build_tool::TARGET_PROTOTYPE_TYPE = "build.TargetPrototype";
+const char* sweet::forge::FORGE_TYPE = "build.Forge";
+const char* sweet::forge::TARGET_TYPE = "build.Target";
+const char* sweet::forge::TARGET_PROTOTYPE_TYPE = "build.TargetPrototype";

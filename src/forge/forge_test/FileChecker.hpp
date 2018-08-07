@@ -9,7 +9,7 @@
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
 struct FileChecker : public ErrorChecker

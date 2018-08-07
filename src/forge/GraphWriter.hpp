@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_GRAPHWRITER_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_GRAPHWRITER_HPP_INCLUDED
+#ifndef FORGE_GRAPHWRITER_HPP_INCLUDED
+#define FORGE_GRAPHWRITER_HPP_INCLUDED
 
 #include <vector>
 #include <string>
@@ -10,7 +10,7 @@
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
 class Target;

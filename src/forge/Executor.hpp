@@ -1,5 +1,5 @@
-#ifndef SWEET_BUILD_TOOL_EXECUTOR_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_EXECUTOR_HPP_INCLUDED
+#ifndef FORGE_EXECUTOR_HPP_INCLUDED
+#define FORGE_EXECUTOR_HPP_INCLUDED
 
 #include <vector>
 #include <deque>
@@ -20,14 +20,14 @@ class Process;
 
 }
 
-namespace build_tool
+namespace forge
 {
 
 class Arguments;
 class Context;
 class Target;
 class Filter;
-class BuildTool;
+class Forge;
 
 /**
 // A thread pool and queue of scan and execute calls to be executed in that
@@ -35,7 +35,7 @@ class BuildTool;
 */
 class Executor
 {
-    BuildTool* build_tool_; ///< The BuildTool that this Executor is part of.
+    Forge* forge_; ///< The Forge that this Executor is part of.
     std::mutex jobs_mutex_; ///< The mutex that ensures exclusive access to this Executor.
     std::condition_variable jobs_empty_condition_; ///< The condition attribute that is used to notify threads that there are jobs ready to be processed.
     std::condition_variable jobs_ready_condition_; ///< The condition attribute that is used to notify threads that there are jobs ready to be processed.
@@ -47,7 +47,7 @@ class Executor
     bool done_; ///< Whether or not this Executor has finished processing (indicates to the threads in the thread pool that they should return).
 
     public:
-        Executor( BuildTool* build_tool );
+        Executor( Forge* forge );
         ~Executor();
         const std::string& build_hooks_library() const;
         int maximum_parallel_jobs() const;

@@ -1,17 +1,17 @@
 #ifndef APPLICATION_HPP_INCLUDED
 #define APPLICATION_HPP_INCLUDED
 
-#include <sweet/build_tool/BuildToolEventSink.hpp>
+#include <forge/ForgeEventSink.hpp>
 
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
-class BuildTool;
+class Forge;
 
-class Application : public BuildToolEventSink
+class Application : public ForgeEventSink
 {
     int result_;
 
@@ -20,9 +20,9 @@ class Application : public BuildToolEventSink
         int get_result() const;
 
     private:
-        void build_tool_output( BuildTool* build_tool, const char* message );
-        void build_tool_warning( BuildTool* build_tool, const char* message );
-        void build_tool_error( BuildTool* build_tool, const char* message );
+        void forge_output( Forge* forge, const char* message );
+        void forge_warning( Forge* forge, const char* message );
+        void forge_error( Forge* forge, const char* message );
 };
 
 }

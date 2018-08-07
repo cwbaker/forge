@@ -4,10 +4,10 @@
 //
 
 #include "Filter.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 #include <lua.hpp>
 
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 Filter::Filter()
 : lua_state_( nullptr ),

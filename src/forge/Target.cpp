@@ -8,9 +8,9 @@
 #include "Graph.hpp"
 #include "GraphWriter.hpp"
 #include "GraphReader.hpp"
-#include "BuildTool.hpp"
+#include "Forge.hpp"
 #include "System.hpp"
-#include <sweet/assert/assert.hpp>
+#include <assert/assert.hpp>
 #include <algorithm>
 
 using std::min;
@@ -21,7 +21,7 @@ using std::vector;
 using std::string;
 using std::time_t;
 using namespace sweet;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 /**
 // Constructor.
@@ -106,7 +106,7 @@ Target::~Target()
 
     if ( graph_ )
     {
-        graph_->build_tool()->destroy_target_lua_binding( this );
+        graph_->forge()->destroy_target_lua_binding( this );
     }
 }
 
@@ -252,7 +252,7 @@ void Target::set_prototype( TargetPrototype* target_prototype )
         prototype_ = target_prototype;
         if ( referenced_by_script() )
         {
-            graph_->build_tool()->update_target_lua_binding( this );
+            graph_->forge()->update_target_lua_binding( this );
         }
     }
 }
@@ -313,7 +313,7 @@ void Target::bind_to_file()
 
             for ( vector<string>::const_iterator filename = filenames_.begin(); filename != filenames_.end(); ++filename )
             {
-                System* system = graph_->build_tool()->system();
+                System* system = graph_->forge()->system();
                 if ( system->exists(*filename) )
                 {
                     time_t last_write_time = system->last_write_time( *filename );

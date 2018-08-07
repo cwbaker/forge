@@ -5,8 +5,8 @@
 
 #include "GraphReader.hpp"
 #include "Target.hpp"
-#include <sweet/error/ErrorPolicy.hpp>
-#include <sweet/assert/assert.hpp>
+#include <error/ErrorPolicy.hpp>
+#include <assert/assert.hpp>
 #include <memory>
 #include <string.h>
 
@@ -16,7 +16,7 @@ using std::string;
 using std::unique_ptr;
 using std::make_pair;
 using namespace sweet;
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 GraphReader::GraphReader( std::istream* istream, error::ErrorPolicy* error_policy  )
 : istream_( istream ),

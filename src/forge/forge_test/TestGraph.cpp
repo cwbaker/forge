@@ -8,7 +8,7 @@
 #include "FileChecker.hpp"
 #include <UnitTest++/UnitTest++.h>
 
-using namespace sweet::build_tool;
+using namespace sweet::forge;
 
 SUITE( TestGraph )
 {

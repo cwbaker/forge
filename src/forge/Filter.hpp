@@ -1,12 +1,12 @@
-#ifndef SWEET_BUILD_TOOL_FILTER_HPP_INCLUDED
-#define SWEET_BUILD_TOOL_FILTER_HPP_INCLUDED
+#ifndef FORGE_FILTER_HPP_INCLUDED
+#define FORGE_FILTER_HPP_INCLUDED
 
 struct lua_State;
 
 namespace sweet
 {
 
-namespace build_tool
+namespace forge
 {
 
 /**
