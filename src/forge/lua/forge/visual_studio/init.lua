@@ -1,8 +1,8 @@
 
 local visual_studio = {};
 
-local vcxproj = require "build.visual_studio.vcxproj";
-local sln = require "build.visual_studio.sln";
+local vcxproj = require "forge.visual_studio.vcxproj";
+local sln = require "forge.visual_studio.sln";
 
 -- Generate a UUID by calling the uuidgen tool.
 local function uuid()    

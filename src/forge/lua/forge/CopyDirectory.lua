@@ -1,5 +1,5 @@
 
-require 'build.Copy';
+require 'forge.Copy';
 
 local CopyDirectory = build:TargetPrototype( "CopyDirectory" );
 

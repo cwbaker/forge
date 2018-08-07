@@ -445,11 +445,11 @@ function android.DynamicLibrary( build, name, architecture )
     return group;
 end
 
-require "build.android.Aidl";
-require "build.android.AndroidManifest";
-require "build.android.Apk";
-require "build.android.BuildConfig";
-require "build.android.Dex";
-require "build.android.R";
+require "forge.android.Aidl";
+require "forge.android.AndroidManifest";
+require "forge.android.Apk";
+require "forge.android.BuildConfig";
+require "forge.android.Dex";
+require "forge.android.R";
 
 build:register_module( android );

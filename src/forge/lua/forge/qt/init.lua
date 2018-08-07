@@ -25,6 +25,6 @@ function qt.initialize( settings )
     qt.configure( settings );
 end
 
-require "build.qt.QtMoc";
+require "forge.qt.QtMoc";
 
 build:register_module( qt );

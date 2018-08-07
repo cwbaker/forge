@@ -4,13 +4,13 @@
 -- development and are versioned along with the code that they are building.
 package.path = build:root('src/sweet/build_tool/lua/?.lua')..';'..build:root('src/sweet/build_tool/lua/?/init.lua');
 
-require "build";
-require "build.cc";
-require "build.visual_studio";
-require "build.xcode";
-require "build.linux";
-require "build.macos";
-require "build.windows";
+require "forge";
+require "forge.cc";
+require "forge.visual_studio";
+require "forge.xcode";
+require "forge.linux";
+require "forge.macos";
+require "forge.windows";
 
 platform = platform or build:operating_system();
 variant = build:lower( variant or "debug" );

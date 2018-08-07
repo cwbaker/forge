@@ -1,5 +1,5 @@
 
-require 'build.CopyDirectory';
+require 'forge.CopyDirectory';
 
 buildfile "build/build.build";
 buildfile "build_hooks/build_hooks.build";

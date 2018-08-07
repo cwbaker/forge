@@ -64,8 +64,8 @@ function java.classes_directory( target )
     return string.format( "%s/%s", target.settings.classes, build:relative(target:working_directory():path(), build:root()) );
 end
 
-require "build.java.Ivy";
-require "build.java.Jar";
-require "build.java.Java";
+require "forge.java.Ivy";
+require "forge.java.Jar";
+require "forge.java.Java";
 
 build:register_module( java );

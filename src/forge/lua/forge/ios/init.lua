@@ -310,6 +310,6 @@ function ios.exe_name( name )
     return ("%s"):format( name );
 end
 
-require "build.ios.App";
+require "forge.ios.App";
 
 build:register_module( ios );

@@ -12,7 +12,7 @@ end
 function pandoc.initialize( settings )
 end
 
-require "build.pandoc.Html";
-require "build.pandoc.Pdf";
+require "forge.pandoc.Html";
+require "forge.pandoc.Pdf";
 
 build:register_module( pandoc );

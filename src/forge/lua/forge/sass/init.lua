@@ -14,6 +14,6 @@ end
 function sass.initialize( settings )
 end
 
-require "build.sass.Css";
+require "forge.sass.Css";
 
 build:register_module( sass );

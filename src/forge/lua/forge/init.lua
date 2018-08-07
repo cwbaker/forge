@@ -171,15 +171,15 @@ function build:initialize( project_settings )
 
     self:set_maximum_parallel_jobs( jobs );
     if self:operating_system() == "linux" then
-        self:set_build_hooks_library( self:executable("libbuild_hooks.so") );
+        self:set_build_hooks_library( self:executable("libforge_hooks.so") );
     elseif self:operating_system() == "macos" then
-        self:set_build_hooks_library( self:executable("build_hooks.dylib") );
+        self:set_build_hooks_library( self:executable("forge_hooks.dylib") );
     elseif self:operating_system() == "windows" then 
-        self:set_build_hooks_library( self:executable("build_hooks.dll") );
+        self:set_build_hooks_library( self:executable("forge_hooks.dll") );
     end    
 
     -- Set default settings (all other settings inherit from this table).
-    local default_settings = dofile( self:script("build/default_settings") );
+    local default_settings = dofile( self:script('forge/default_settings') );
 
     local local_settings = {};
     setmetatable( local_settings, {__index = default_settings}  );
@@ -631,7 +631,7 @@ function build:cpdir( destination, source, settings )
     self:popd();
 end
 
-require "build.commands";
-require "build.TargetPrototype";
-require "build.Target";
-require "build.Directory";
+require "forge.commands";
+require "forge.TargetPrototype";
+require "forge.Target";
+require "forge.Directory";

@@ -534,9 +534,9 @@ function xcode_build()
     end
 end
 
-require "build.xcode.AssetCatalog";
-require "build.xcode.Plist";
-require "build.xcode.Lipo";
-require "build.xcode.Xib";
+require "forge.xcode.AssetCatalog";
+require "forge.xcode.Plist";
+require "forge.xcode.Lipo";
+require "forge.xcode.Xib";
 
 build:register_module( xcode );
