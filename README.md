@@ -80,6 +80,8 @@ From a Visual C++ command prompt:
 - `.\bootstrap-windows\bin\forge.exe variant=shipping install`
 - Link to `${USERPROFILE}/forge/bin/forge.exe` from your path
 
+NOTE: *Forge* uses [*vswhere*](https://github.com/Microsoft/vswhere/wiki) to find the Visual C++ compiler for Visual Studio 2015 and later and so requires Visual Studio 15.2 (26418.1 Preview) or later that install *vswhere* to a known location to work out of the box.  Visual Studio 2013, 2012, and 2010 may work but aren't tested.
+
 ## Usage
 
     Usage: forge [options] [variable=value] [command] ... 
