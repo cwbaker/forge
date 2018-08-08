@@ -7,6 +7,7 @@ function msvc.configure( settings )
         if build:exists( vswhere ) then 
             local environment = {
                 ProgramData = build:getenv( 'ProgramData' );
+                SystemRoot = build:getenv( 'SystemRoot' );
             };
             local values = {};
             build:system( vswhere, 'vswhere -latest', environment, nil, function(line)
