@@ -1,12 +1,12 @@
 
-local QtMoc = build:TargetPrototype( "qt.QtMoc" );
+local QtMoc = forge:TargetPrototype( "qt.QtMoc" );
 
-function QtMoc.build( build, target )
+function QtMoc.build( forge, target )
     local moc = target.settings.qt.moc;
     local command_line = {
         'moc',
-        ('-o "%s"'):format( build:relative(target) ),
+        ('-o "%s"'):format( forge:relative(target) ),
         ('"%s"'):format( target:dependency() )
     };
-    build:system( moc, command_line );
+    forge:system( moc, command_line );
 end

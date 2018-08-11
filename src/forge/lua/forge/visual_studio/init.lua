@@ -7,17 +7,17 @@ local sln = require "forge.visual_studio.sln";
 -- Generate a UUID by calling the uuidgen tool.
 local function uuid()    
     local uuids = {};
-    local target_to_provide_settings_hack = {settings = build:current_settings()};
+    local target_to_provide_settings_hack = {settings = forge:current_settings()};
     local uuidgen = msvc.windows_sdk_tool( target_to_provide_settings_hack, 'uuidgen.exe' );
     local arguments = "uuidgen";
-    build:system( uuidgen, arguments, nil, nil, function(line)
+    forge:system( uuidgen, arguments, nil, nil, function(line)
         local uuid = line:match( "[%w-_]+" );
         if uuid then 
             table.insert( uuids, uuid );
         end
     end );
     assert( uuids[1], "UUID generation failed!" );
-    return build:upper( uuids[1] );
+    return forge:upper( uuids[1] );
 end
 
 -- Recursively add a directory and its parents to the hierarchy to display in
@@ -58,7 +58,7 @@ end
 -- generate projects and a directory hierarchy for.
 local function find_projects( target, projects, directories )
 	local prototype = target:prototype();
-	if prototype == build.Executable or prototype == build.StaticLibrary or prototype == build.DynamicLibrary then 
+	if prototype == forge.Executable or prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then 
         add_project( projects, directories, target );
 	end
 	for _, dependency in target:dependencies() do 
@@ -91,7 +91,7 @@ local function generate_uuids( objects )
 end
 
 local function filter( filename, includes, excludes )
-    if build:is_directory(filename) then 
+    if forge:is_directory(filename) then 
         return false;
     end
     if excludes then 
@@ -114,7 +114,7 @@ end
 
 local function ls( path, includes, excludes )
     local files = {};
-    for filename in build:ls(path or pwd()) do 
+    for filename in forge:ls(path or pwd()) do 
         if filter(filename, includes, excludes) then
             table.insert( files, filename );
         end
@@ -126,29 +126,29 @@ end
 -- `Executable`, `StaticLibrary`, and `DynamicLibrary` targets that are 
 -- recursively dependencies of the root directory.
 function visual_studio.solution()
-    local all = build:find_target( build:root('all') );
-    assertf( all, "Missing target at '%s' to generate Visual Studio solution from", build:root() );
-    assertf( build.settings.visual_studio, "Missing Visual Studio settings in 'settings.visual_studio'" );
-    assertf( build.settings.visual_studio.sln, "Missing solution filename in 'settings.visual_studio.sln'" );
+    local all = forge:find_target( forge:root('all') );
+    assertf( all, "Missing target at '%s' to generate Visual Studio solution from", forge:root() );
+    assertf( forge.settings.visual_studio, "Missing Visual Studio settings in 'settings.visual_studio'" );
+    assertf( forge.settings.visual_studio.sln, "Missing solution filename in 'settings.visual_studio.sln'" );
 
     local directories = {};
     local projects = {};
     find_projects( all, projects, directories );
     generate_uuids( projects );
     generate_uuids( directories );
-    prune( directories[build:root()] );
+    prune( directories[forge:root()] );
 
     for _, project in pairs(projects) do 
         local target = project.target;
         target.uuid = project.uuid;
-    	build:pushd( target:working_directory():path() );
+    	forge:pushd( target:working_directory():path() );
 		local DEFAULT_SOURCE = { "^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java$" };
-		local files = ls( build:pwd(), DEFAULT_SOURCE );
+		local files = ls( forge:pwd(), DEFAULT_SOURCE );
 		vcxproj.generate( target, files );
-		build:popd();
+		forge:popd();
     end
 
-    sln.generate( build.settings.visual_studio.sln, projects, directories[build:root()].children );
+    sln.generate( forge.settings.visual_studio.sln, projects, directories[forge:root()].children );
 end
 
 _G.sln = visual_studio.solution;

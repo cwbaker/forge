@@ -1,7 +1,7 @@
 
-local Pdf = build:TargetPrototype( "pandoc.Pdf" );
+local Pdf = forge:TargetPrototype( "pandoc.Pdf" );
 
-function Pdf.build( build, target )
+function Pdf.build( forge, target )
     local settings = target.settings;
     local pandoc = target.settings.pandoc.executable;
     local arguments = {
@@ -13,5 +13,5 @@ function Pdf.build( build, target )
     local environment = {
         PATH = os.getenv( "PATH" );
     };
-    build:system( pandoc, arguments, environment, build:dependencies_filter(target) );
+    forge:system( pandoc, arguments, environment, forge:dependencies_filter(target) );
 end

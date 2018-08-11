@@ -24,8 +24,8 @@ local function add_group( path )
         };
         groups[path] = group;
 
-        local directory = build:branch( path );
-        if directory ~= "" and not string.find(build:relative(directory, build:root()), "..", 1, true) then
+        local directory = forge:branch( path );
+        if directory ~= "" and not string.find(forge:relative(directory, forge:root()), "..", 1, true) then
             local parent = add_group( directory );
             table.insert( parent.children, group );
             group.parent = parent;
@@ -35,8 +35,8 @@ local function add_group( path )
 end
 
 local function add_file( filename )
-    local directory = build:branch( filename );
-    if directory ~= "" and not string.find(build:relative(filename, build:root()), "..", 1, true) then
+    local directory = forge:branch( filename );
+    if directory ~= "" and not string.find(forge:relative(filename, forge:root()), "..", 1, true) then
         local file = files[path];
         if not file then
             file = { 
@@ -75,11 +75,11 @@ local function add_legacy_target( target, platform, architectures )
     if not legacy_target then
         legacy_target = {
             uuid = uuid();
-            name = build:leaf( filename );
+            name = forge:leaf( filename );
             working_directory = working_directory;
             configuration_list = uuid();
             platform = platform;
-            build = build:executable( "build" );
+            build = forge:executable( "build" );
             path = filename;
             settings = settings;
             configurations = add_configurations( architectures, settings.variants );
@@ -104,7 +104,7 @@ end;
 
 local function generate_files( xcodeproj, files )
     for path, file in pairs(files) do
-        local filename = build:leaf( file.path );
+        local filename = forge:leaf( file.path );
         xcodeproj:write(([[
         %s /* %s */ = { isa = PBXFileReference; lastKnownFileType = text; path = "%s"; sourceTree = "<group>"; };
 ]]):format(file.uuid, filename, filename)
@@ -129,11 +129,11 @@ local function generate_groups( xcodeproj, groups )
 
         table.sort( group.children, function(lhs, rhs) 
             local lhs_file = 0;
-            if build:is_file(lhs.path) then
+            if forge:is_file(lhs.path) then
                 lhs_file = 1;
             end
             local rhs_file = 0;
-            if build:is_file(rhs.path) then
+            if forge:is_file(rhs.path) then
                 rhs_file = 1;
             end
             return 
@@ -159,7 +159,7 @@ local function generate_groups( xcodeproj, groups )
             path = "%s";
             sourceTree = "<group>";
         };
-]]):format(build:leaf(group.path), build:relative(group.path, base))
+]]):format(forge:leaf(group.path), forge:relative(group.path, base))
         );
     end
 end
@@ -172,7 +172,7 @@ local function generate_legacy_targets( xcodeproj, legacy_targets )
     table.sort( sorted_targets, function(lhs, rhs) return lhs.path < rhs.path end );
 
     for _, legacy_target in ipairs(sorted_targets) do 
-        local name = build:leaf( legacy_target.path );
+        local name = forge:leaf( legacy_target.path );
         local template = [[
         ${uuid} /* ${name} */ = {
             isa = PBXLegacyTarget;
@@ -189,12 +189,12 @@ local function generate_legacy_targets( xcodeproj, legacy_targets )
             productName = "${name}";
         };
 ]];
-        xcodeproj:write( build:interpolate(template, legacy_target) );
+        xcodeproj:write( forge:interpolate(template, legacy_target) );
     end
 end
 
 local function generate_project( xcodeproj, groups )
-    local main_group = groups[build:root()];
+    local main_group = groups[forge:root()];
     assert( main_group, "The main group for the Xcode project wasn't found" );
 
     project_uuid = uuid();
@@ -228,7 +228,7 @@ local function generate_project( xcodeproj, groups )
     for _, target in ipairs(sorted_targets) do
         xcodeproj:write(([[
             %s /* %s */,
-]]):format(target.uuid, build:leaf(target.path))
+]]):format(target.uuid, forge:leaf(target.path))
         );
     end
     xcodeproj:write([[
@@ -282,7 +282,7 @@ end
 local function generate_configurations( xcodeproj, legacy_targets )
     table.sort( project_configurations, function(lhs, rhs) return lhs.variant < rhs.variant end );
     for _, configuration in ipairs(project_configurations) do
-        generate_configuration( xcodeproj, configuration, project_id, build.settings );
+        generate_configuration( xcodeproj, configuration, project_id, forge.settings );
     end
 
     local sorted_targets = {};
@@ -329,7 +329,7 @@ local function generate_configuration_lists( xcodeproj, legacy_targets )
 
     generate_configuration_list( xcodeproj, project_configuration_list_uuid, project_id, project_configurations );
     for _, target in pairs(sorted_targets) do
-        generate_configuration_list( xcodeproj, target.configuration_list, build:leaf(target.path), target.configurations );
+        generate_configuration_list( xcodeproj, target.configuration_list, forge:leaf(target.path), target.configurations );
     end
 end
 
@@ -350,7 +350,7 @@ local function generate_build_phases( xcodeproj, build_phases )
         shellScript = "${command_line}";
     };
 ]];
-    xcodeproj:write( build:interpolate(template, build_phase) );
+    xcodeproj:write( forge:interpolate(template, build_phase) );
     end
 end
 
@@ -391,7 +391,7 @@ local function find_architectures_by_prototype( target, prototype, architectures
 end
 
 local function included( filename, includes, excludes )
-    if build:is_directory(filename) then 
+    if forge:is_directory(filename) then 
         return false;
     end
 
@@ -416,7 +416,7 @@ local function included( filename, includes, excludes )
 end
 
 local function populate_source( source, includes, excludes )
-    for filename in build:find( source ) do 
+    for filename in forge:find( source ) do 
         if included(filename, includes, excludes) then 
             add_file( filename );
         end
@@ -433,42 +433,42 @@ function xcode.initialize( settings )
 end
 
 function xcode.generate_project( name, project )
-    project_root = build:branch( name );
-    project_id = build:leaf( build:basename(name) );
+    project_root = forge:branch( name );
+    project_id = forge:leaf( forge:basename(name) );
     project_configuration_list_uuid = uuid();
-    project_configurations = add_configurations( nil, build.settings.variants );
+    project_configurations = add_configurations( nil, forge.settings.variants );
 
-    populate_source( build:root(), {"^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java"}, {"^.*%.framework"} );
+    populate_source( forge:root(), {"^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java"}, {"^.*%.framework"} );
 
     for _, target in project:dependencies() do 
         if target then 
             if _G.ios then
-                local ios_apps = find_targets_by_prototype( target, build.ios.App );
+                local ios_apps = find_targets_by_prototype( target, forge.ios.App );
                 for _, ios_app in ipairs(ios_apps) do 
-                    local architectures = find_architectures_by_prototype( target, build.Executable );
+                    local architectures = find_architectures_by_prototype( target, forge.Executable );
                     add_legacy_target( ios_app, platform, architectures );
                 end
             end
 
             if _G.android then
-                local android_apks = find_targets_by_prototype( target, build.android.Apk );
+                local android_apks = find_targets_by_prototype( target, forge.android.Apk );
                 for _, android_apk in ipairs(android_apks) do 
                     add_legacy_target( android_apk, platform );
                 end
             end
 
             if _G.macos or _G.windows then
-                local executables = find_targets_by_prototype( target, build.Executable );
+                local executables = find_targets_by_prototype( target, forge.Executable );
                 for _, executable in ipairs(executables) do 
                     add_legacy_target( executable, platform );
                 end
 
-                local dynamic_libraries = find_targets_by_prototype( target, build.DynamicLibrary );
+                local dynamic_libraries = find_targets_by_prototype( target, forge.DynamicLibrary );
                 for _, dynamic_library in ipairs(dynamic_libraries) do 
                     add_legacy_target( dynamic_library, platform );
                 end
 
-                local binaries = find_targets_by_prototype( target, build.xcode.Lipo );
+                local binaries = find_targets_by_prototype( target, forge.xcode.Lipo );
                 for _, binary in ipairs(binaries) do 
                     add_legacy_target( binary, platform );
                 end
@@ -477,12 +477,12 @@ function xcode.generate_project( name, project )
     end
 
     local xcodeproj_directory = name;
-    if build:exists( xcodeproj_directory ) then
-        build:rmdir( xcodeproj_directory );
+    if forge:exists( xcodeproj_directory ) then
+        forge:rmdir( xcodeproj_directory );
     end
-    build:mkdir( xcodeproj_directory );
+    forge:mkdir( xcodeproj_directory );
 
-    local filename = build:absolute( "project.pbxproj", xcodeproj_directory );
+    local filename = forge:absolute( "project.pbxproj", xcodeproj_directory );
     local xcodeproj = io.open( filename, "wb" );
     assertf( xcodeproj, "Opening '%s' to write Xcode project file failed", filename );
     header( xcodeproj, project );
@@ -498,29 +498,29 @@ end
 
 -- The "xcodeproj" command entry point (global).
 function xcodeproj()
-    local all = all or build:find_target( build:root("all") );
-    assertf( all, "Missing target at '%s' to generate Xcode project from", build:root() );
-    assertf( build.settings.xcode, "Missing Xcode settings in 'settings.xcode'" );
-    assertf( build.settings.xcode.xcodeproj, "Missing Xcode project filename in 'settings.xcode.xcodeproj'" );
+    local all = all or forge:find_target( forge:root("all") );
+    assertf( all, "Missing target at '%s' to generate Xcode project from", forge:root() );
+    assertf( forge.settings.xcode, "Missing Xcode settings in 'settings.xcode'" );
+    assertf( forge.settings.xcode.xcodeproj, "Missing Xcode project filename in 'settings.xcode.xcodeproj'" );
     xcode.generate_project( settings.xcode.xcodeproj, all );
 end
 
 -- The "xcode_build" command entry point (global) this is used by generated
 -- Xcode projects to trigger a build or clean.
 function xcode_build()
-    build:set_stack_trace_enabled( true );    
+    forge:set_stack_trace_enabled( true );    
     action = action or "build";
     if action == "" or action == "build" then
         local failures = default();
         assertf( failures == 0, "%d failures", failures );
         if failures == 0 then 
-            if build.ios then 
+            if forge.ios then 
                 local app = ios.find_app();
                 if app then 
                     ios.deploy( app );
                 end
             end
-            if build.android then 
+            if forge.android then 
                 local apk = android.find_apk();
                 if apk then 
                     android.deploy( apk );
@@ -539,4 +539,4 @@ require "forge.xcode.Plist";
 require "forge.xcode.Lipo";
 require "forge.xcode.Xib";
 
-build:register_module( xcode );
+forge:register_module( xcode );

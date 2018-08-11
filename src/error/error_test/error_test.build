@@ -1,12 +1,12 @@
 
-for _, build in build:default_builds("cc_.*") do 
-    build:all {
-        build:Executable '${bin}/error_test_${architecture}' {
+for _, forge in forge:default_builds("cc_.*") do 
+    forge:all {
+        forge:Executable '${bin}/error_test_${architecture}' {
             '${lib}/error_${architecture}';
             '${lib}/assert_${architecture}';
             '${lib}/UnitTest++_${architecture}';
 
-            build:Cxx '${obj}/%1' {
+            forge:Cxx '${obj}/%1' {
                 precompiled_header = "stdafx.hpp";
                 "main.cpp"
             };

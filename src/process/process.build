@@ -1,9 +1,9 @@
 
 buildfile "process_test/process_test.build";
 
-for _, build in build:default_builds("cc_.*") do
-    build:Library '${lib}/process_${architecture}' {
-        build:Cxx '${obj}/%1' {
+for _, forge in forge:default_builds("cc_.*") do
+    forge:Library '${lib}/process_${architecture}' {
+        forge:Cxx '${obj}/%1' {
             "Error.cpp",
             "Environment.cpp",
             "Process.cpp"

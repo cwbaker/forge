@@ -1,36 +1,36 @@
 
-require 'build';
-require 'build.cc';
-require 'build.linux';
-require 'build.macos';
-require 'build.windows';
+require 'forge';
+require 'forge.cc';
+require 'forge.linux';
+require 'forge.macos';
+require 'forge.windows';
 
-variant = build:lower( variant or 'debug' );
+variant = forge:lower( variant or 'debug' );
 
-build:initialize {
+forge:initialize {
     variants = { "debug", "release", "shipping" };
-    bin = build:root( ('%s/bin'):format(variant) );
-    lib = build:root( ('%s/lib'):format(variant) );
-    obj = build:root( ('%s/obj'):format(variant) );
+    bin = forge:root( ('%s/bin'):format(variant) );
+    lib = forge:root( ('%s/lib'):format(variant) );
+    obj = forge:root( ('%s/obj'):format(variant) );
     include_directories = {
-        build:root( 'src' )
+        forge:root( 'src' )
     };
     library_directories = {
-        build:root( ('%s/lib'):format(variant) ),
+        forge:root( ('%s/lib'):format(variant) ),
     };
 };
 
-build:all {
-    build:Executable 'hello_world' {
+forge:all {
+    forge:Executable 'hello_world' {
         '${lib}/hello_world';
-        build:Cxx '${obj}/%1' {
+        forge:Cxx '${obj}/%1' {
             "executable.cpp"
         };
     };
 };
 
-build:Library '${lib}/hello_world' {
-    build:Cxx '${obj}/%1' {
+forge:Library '${lib}/hello_world' {
+    forge:Cxx '${obj}/%1' {
         "library.cpp"
     };
 };

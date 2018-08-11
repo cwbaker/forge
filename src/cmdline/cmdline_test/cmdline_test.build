@@ -1,12 +1,12 @@
 
-build:all {
-    build:Executable "${bin}/cmdline_test" {
+forge:all {
+    forge:Executable "${bin}/cmdline_test" {
         '${lib}/cmdline_${architecture}';
         '${lib}/error_${architecture}';
         '${lib}/assert_${architecture}';
         '${lib}/UnitTest++_${architecture}';
         
-        build:Cxx '${obj}/%1' {
+        forge:Cxx '${obj}/%1' {
             "main.cpp",
             "TestParser.cpp",
             "TestSplitter.cpp"

@@ -2,9 +2,9 @@
 windows = {};
 
 function windows.initialize( settings )
-    if build:operating_system() == "windows" then
+    if forge:operating_system() == "windows" then
         for _, architecture in ipairs(settings.architectures) do 
-            build:default_build( ("cc_windows_%s"):format(architecture), build:configure {
+            forge:default_build( ("cc_windows_%s"):format(architecture), forge:configure {
                 obj = ("%s/cc_windows_%s"):format( settings.obj, architecture );
                 obj_extension = '.obj';
                 architecture = architecture;
@@ -28,9 +28,9 @@ function windows.initialize( settings )
             } );
         end
 
-        local settings = build.settings;
+        local settings = forge.settings;
         local architecture = settings.default_architecture;
-        settings.obj = build:root( ('%s/cc_windows_%s'):format(settings.obj, architecture) );
+        settings.obj = forge:root( ('%s/cc_windows_%s'):format(settings.obj, architecture) );
         settings.obj_extension = '.obj';
         settings.platform = "windows";
         settings.architecture = architecture;
@@ -68,7 +68,7 @@ function windows.cc( target )
     for _, object in target:dependencies() do
         if object:outdated() then
             local source = object:dependency();
-            local directory = build:branch( source:filename() );
+            local directory = forge:branch( source:filename() );
             local sources = sources_by_directory[directory];
             if not sources then 
                 sources = {};
@@ -76,7 +76,7 @@ function windows.cc( target )
             end
             local source = object:dependency();
             table.insert( sources, source:id() );
-            objects_by_source[build:leaf(source:id())] = object;
+            objects_by_source[forge:leaf(source:id())] = object;
             object:clear_implicit_dependencies();
         end    
     end
@@ -86,7 +86,7 @@ function windows.cc( target )
     for directory, sources in pairs(sources_by_directory) do
         if #sources > 0 then
             local settings = target.settings;
-            local output_directory = build:native( ("%s/%s"):format(settings.obj_directory(target), build:relative(directory)) );
+            local output_directory = forge:native( ("%s/%s"):format(settings.obj_directory(target), forge:relative(directory)) );
 
             -- Make sure that the output directory has a trailing slash so
             -- that Visual C++ doesn't interpret the output directory as a 
@@ -99,15 +99,15 @@ function windows.cc( target )
             local source = table.concat( sources, '" "' );
             local cl = msvc.visual_cxx_tool( target, "cl.exe" );
             local environment = msvc.environments_by_architecture[target.architecture];
-            build:pushd( directory );
-            build:system( 
+            forge:pushd( directory );
+            forge:system( 
                 cl, 
                 ('cl %s /Fo%s "%s"'):format(ccflags, output_directory, source), 
                 environment, 
                 nil,
-                msvc.dependencies_filter(output_directory, build:absolute(directory))
+                msvc.dependencies_filter(output_directory, forge:absolute(directory))
             );
-            build:popd();
+            forge:popd();
         end
     end
 
@@ -126,14 +126,14 @@ function windows.build_library( target )
     end
     
     local settings = target.settings;
-    build:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(target) );
 
     local objects = {};
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == build.Cc or prototype == build.Cxx then
+        if prototype == forge.Cc or prototype == forge.Cxx then
             for _, object in dependency:dependencies() do
-                table.insert( objects, build:relative(object:filename()) );
+                table.insert( objects, forge:relative(object:filename()) );
             end
         end
     end
@@ -143,14 +143,14 @@ function windows.build_library( target )
         local arobjects = table.concat( objects, '" "' );
         local msar = msvc.visual_cxx_tool( target, "lib.exe" );
         local environment = msvc.environments_by_architecture[target.architecture];
-        build:system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, build:native(target:filename()), arobjects), environment );
+        forge:system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, forge:native(target:filename()), arobjects), environment );
     end
-    build:popd();
+    forge:popd();
 end;
 
 function windows.clean_library( target )
-    build:rm( target:filename() );
-    build:rmdir( obj_directory(target) );
+    forge:rm( target:filename() );
+    forge:rmdir( obj_directory(target) );
 end
 
 function windows.build_executable( target )
@@ -162,19 +162,19 @@ function windows.build_executable( target )
     local libraries = {};
 
     local settings = target.settings;
-    build:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(target) );
 
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == build.Cc or prototype == build.Cxx then
+        if prototype == forge.Cc or prototype == forge.Cxx then
             assertf( target.architecture == dependency.architecture, "Architectures for '%s' (%s) and '%s' (%s) don't match", target:path(), tostring(target.architecture), dependency:path(), tostring(dependency.architecture) );
             for _, object in dependency:dependencies() do
                 if object:prototype() == nil then
-                    table.insert( objects, build:relative(object:filename()) );
+                    table.insert( objects, forge:relative(object:filename()) );
                 end
             end
-        elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
-            table.insert( libraries, ('%s.lib'):format(build:basename(dependency:filename())) );
+        elseif prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
+            table.insert( libraries, ('%s.lib'):format(forge:basename(dependency:filename())) );
         end
     end
 
@@ -191,9 +191,9 @@ function windows.build_executable( target )
             local embedded_manifest_rc = ("%s_embedded_manifest.rc"):format( target:id() );
             local embedded_manifest_res = ("%s_embedded_manifest.res"):format( target:id() );
 
-            if not build:exists(embedded_manifest_rc) then        
-                local rc = io.open( build:absolute(embedded_manifest_rc), "wb" );
-                assertf( rc, "Opening '%s' to write manifest failed", build:absolute(embedded_manifest_rc) );
+            if not forge:exists(embedded_manifest_rc) then        
+                local rc = io.open( forge:absolute(embedded_manifest_rc), "wb" );
+                assertf( rc, "Opening '%s' to write manifest failed", forge:absolute(embedded_manifest_rc) );
                 if target:prototype() == Executable then
                     rc:write( ('1 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "%s_embedded.manifest"'):format(target:id()) );
                 else
@@ -208,10 +208,10 @@ function windows.build_executable( target )
             local ldobjects = table.concat( objects, '" "' );
             local environment = msvc.environments_by_architecture[target.architecture];
 
-            if build:exists(embedded_manifest) ~= true then
-                build:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
-                build:system( msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest), environment );
-                build:system( msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
+            if forge:exists(embedded_manifest) ~= true then
+                forge:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+                forge:system( msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest), environment );
+                forge:system( msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
             end
 
             table.insert( objects, embedded_manifest_res );
@@ -219,10 +219,10 @@ function windows.build_executable( target )
             local ldflags = table.concat( flags, ' ' );
             local ldobjects = table.concat( objects, '" "' );
 
-            build:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
-            build:system( msmt, ('mt /nologo /out:"%s" /manifest %s'):format(embedded_manifest, intermediate_manifest), environment );
-            build:system( msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
-            build:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+            forge:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+            forge:system( msmt, ('mt /nologo /out:"%s" /manifest %s'):format(embedded_manifest, intermediate_manifest), environment );
+            forge:system( msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
+            forge:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
         else
             table.insert( flags, "/incremental:no" );
 
@@ -231,43 +231,43 @@ function windows.build_executable( target )
             local ldobjects = table.concat( objects, '" "' );
             local environment = msvc.environments_by_architecture[target.architecture];
 
-            build:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
-            build:sleep( 100 );
-            build:system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(build:native(target:filename()), intermediate_manifest), environment );
+            forge:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+            forge:sleep( 100 );
+            forge:system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(forge:native(target:filename()), intermediate_manifest), environment );
         end
     end
-    build:popd();
+    forge:popd();
 end
 
 function windows.clean_executable( target )
     local filename = target:filename();
-    build:rm( filename );
-    build:rm( ("%s/%s.ilk"):format(build:branch(filename), build:basename(filename)) );
-    build:rmdir( obj_directory(target) );
+    forge:rm( filename );
+    forge:rm( ("%s/%s.ilk"):format(forge:branch(filename), forge:basename(filename)) );
+    forge:rmdir( obj_directory(target) );
 end
 
 function windows.lipo_executable( target )
 end
 
 function windows.obj_directory( target )
-    local relative_path = build:relative( target:working_directory():path(), build:root() );
-    return build:absolute( relative_path, target.settings.obj );
+    local relative_path = forge:relative( target:working_directory():path(), forge:root() );
+    return forge:absolute( relative_path, target.settings.obj );
 end
 
 function windows.cc_name( name )
-    return ("%s.c"):format( build:basename(name) );
+    return ("%s.c"):format( forge:basename(name) );
 end
 
 function windows.cxx_name( name )
-    return ("%s.cpp"):format( build:basename(name) );
+    return ("%s.cpp"):format( forge:basename(name) );
 end
 
 function windows.pch_name( name )
-    return ("%s.pch"):format( build:basename(name) );
+    return ("%s.pch"):format( forge:basename(name) );
 end
 
 function windows.pdb_name( name )
-    return ("%s.pdb"):format( build:basename(name) );
+    return ("%s.pdb"):format( forge:basename(name) );
 end
 
 function windows.obj_name( name )
@@ -294,4 +294,4 @@ function windows.ilk_name( name )
     return ("%s.ilk"):format( name );
 end
 
-build:register_module( windows );
+forge:register_module( windows );

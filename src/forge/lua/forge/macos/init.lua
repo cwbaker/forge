@@ -8,7 +8,7 @@ function macos.configure( settings )
 
         local xcodebuild = "/usr/bin/xcodebuild";
         local arguments = "xcodebuild -sdk macosx -version";
-        local result = build:execute( xcodebuild, arguments, nil, nil, function(line)
+        local result = forge:execute( xcodebuild, arguments, nil, nil, function(line)
             local key, value = line:match( "(%w+): ([^\n]+)" );
             if key and value then 
                 if key == "ProductBuildVersion" then 
@@ -29,7 +29,7 @@ function macos.configure( settings )
 
         local xcodebuild = "/usr/bin/xcodebuild";
         local arguments = "xcodebuild -version";
-        local result = build:execute( xcodebuild, arguments, nil, nil, function(line)
+        local result = forge:execute( xcodebuild, arguments, nil, nil, function(line)
             local major, minor = line:match( "Xcode (%d+)%.(%d+)" );
             if major and minor then 
                 xcode_version = ("%02d%02d"):format( tonumber(major), tonumber(minor) );
@@ -50,7 +50,7 @@ function macos.configure( settings )
 
         local sw_vers = "/usr/bin/sw_vers";
         local arguments = "sw_vers -buildVersion";
-        local result = build:execute( sw_vers, arguments, nil, nil, function(line)
+        local result = forge:execute( sw_vers, arguments, nil, nil, function(line)
             local version = line:match( "%w+" );
             if version then 
                 os_version = version;
@@ -61,8 +61,8 @@ function macos.configure( settings )
         return os_version;
     end
 
-    if build:operating_system() == "macos" then
-        local local_settings = build.local_settings;
+    if forge:operating_system() == "macos" then
+        local local_settings = forge.local_settings;
         if not local_settings.macos then
             local_settings.updated = true;
             local_settings.macos = {
@@ -78,9 +78,9 @@ function macos.configure( settings )
 end
 
 function macos.initialize( settings )
-    if build:operating_system() == "macos" then
+    if forge:operating_system() == "macos" then
         for _, architecture in ipairs(settings.architectures) do 
-            build:default_build( ("cc_macos_%s"):format(architecture), build:configure {
+            forge:default_build( ("cc_macos_%s"):format(architecture), forge:configure {
                 obj = ("%s/cc_macos_%s"):format( settings.obj, architecture );
                 platform = "macos";
                 sdkroot = 'macosx';
@@ -104,9 +104,9 @@ function macos.initialize( settings )
             } );
         end
 
-        local settings = build.settings;
+        local settings = forge.settings;
         local architecture = settings.default_architecture;
-        settings.obj = build:root( ("%s/cc_macos_%s"):format(settings.obj, architecture) );
+        settings.obj = forge:root( ("%s/cc_macos_%s"):format(settings.obj, architecture) );
         settings.platform = "macos";
         settings.architecture = architecture;
         settings.default_architecture = architecture;
@@ -147,11 +147,11 @@ function macos.cc( target )
         if object:outdated() then
             object:set_built( false );
             local source = object:dependency();
-            print( build:leaf(source:id()) );
+            print( forge:leaf(source:id()) );
             local dependencies = ("%s.d"):format( object:filename() );
             local output = object:filename();
-            local input = build:absolute( source:filename() );
-            build:system( 
+            local input = forge:absolute( source:filename() );
+            forge:system( 
                 xcrun, 
                 ('xcrun --sdk macosx clang %s -MMD -MF "%s" -o "%s" "%s"'):format(ccflags, dependencies, output, input)
             );
@@ -167,13 +167,13 @@ function macos.build_library( target )
     };
 
     local settings = target.settings;
-    build:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(target) );
     local objects =  {};
     for _, compile in target:dependencies() do
         local prototype = compile:prototype();
-        if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
+        if prototype == forge.Cc or prototype == forge.Cxx or prototype == forge.ObjC or prototype == forge.ObjCxx then
             for _, object in compile:dependencies() do
-                table.insert( objects, build:relative(object:filename()) );
+                table.insert( objects, forge:relative(object:filename()) );
             end
         end
     end
@@ -182,13 +182,13 @@ function macos.build_library( target )
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
         local xcrun = target.settings.macos.xcrun;
-        build:system( xcrun, ('xcrun --sdk macosx libtool %s -o "%s" "%s"'):format(arflags, build:native(target:filename()), arobjects) );
+        forge:system( xcrun, ('xcrun --sdk macosx libtool %s -o "%s" "%s"'):format(arflags, forge:native(target:filename()), arobjects) );
     end
-    build:popd();
+    forge:popd();
 end
 
 function macos.clean_library( target )
-    build:rm( target:filename() );
+    forge:rm( target:filename() );
 end
 
 function macos.build_executable( target )
@@ -214,17 +214,17 @@ function macos.build_executable( target )
     local libraries = {};
 
     local settings = target.settings;
-    build:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(target) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
+        if prototype == forge.Cc or prototype == forge.Cxx or prototype == forge.ObjC or prototype == forge.ObjCxx then
             assertf( target.architecture == dependency.architecture, "Architectures for '%s' (%s) and '%s' (%s) don't match", target:path(), tostring(target.architecture), dependency:path(), tostring(dependency.architecture) );
             for _, object in dependency:dependencies() do
                 if object:prototype() == nil then
-                    table.insert( objects, build:relative(object:filename()) );
+                    table.insert( objects, forge:relative(object:filename()) );
                 end
             end
-        elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
+        elseif prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
             table.insert( libraries, ("-l%s"):format(dependency:id()) );
         end
     end
@@ -236,13 +236,13 @@ function macos.build_executable( target )
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, " " );
         local xcrun = settings.macos.xcrun;
-        build:system( xcrun, ('xcrun --sdk macosx clang++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
+        forge:system( xcrun, ('xcrun --sdk macosx clang++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
     end
-    build:popd();
+    forge:popd();
 end
 
 function macos.clean_executable( target )
-    build:rm( target:filename() );
+    forge:rm( target:filename() );
 end
 
 function macos.lipo_executable( target )
@@ -252,20 +252,20 @@ function macos.lipo_executable( target )
     end
     executables = table.concat( executables, [[" "]] );
     local xcrun = target.settings.macos.xcrun;
-    build:system( xcrun, ('xcrun --sdk macosx lipo -create -output "%s" "%s"'):format(target:filename(), executables) );
+    forge:system( xcrun, ('xcrun --sdk macosx lipo -create -output "%s" "%s"'):format(target:filename(), executables) );
 end
 
 function macos.obj_directory( target )
-    local relative_path = build:relative( target:working_directory():path(), build:root() );
-    return build:absolute( relative_path, target.settings.obj );
+    local relative_path = forge:relative( target:working_directory():path(), forge:root() );
+    return forge:absolute( relative_path, target.settings.obj );
 end
 
 function macos.cc_name( name )
-    return ("%s.c"):format( build:basename(name) );
+    return ("%s.c"):format( forge:basename(name) );
 end
 
 function macos.cxx_name( name )
-    return ("%s.cpp"):format( build:basename(name) );
+    return ("%s.cpp"):format( forge:basename(name) );
 end
 
 function macos.obj_name( name )
@@ -284,4 +284,4 @@ function macos.exe_name( name, architecture )
     return name;
 end
 
-build:register_module( macos );
+forge:register_module( macos );

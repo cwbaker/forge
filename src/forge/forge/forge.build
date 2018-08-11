@@ -9,13 +9,13 @@ local settings =  {
 
 -- Disable warnings on Linux to avoid unused variable warnings in Boost
 -- System library headers.
-if build:operating_system() == "linux" then
+if forge:operating_system() == "linux" then
     settings.warning_level = 0;
 end
 
-local build = build:configure( settings );
-build:all {
-    build:Executable '${bin}/forge' {
+local forge = forge:configure( settings );
+forge:all {
+    forge:Executable '${bin}/forge' {
         '${lib}/forge_${architecture}';
         '${lib}/forge_lua_${architecture}';
         '${lib}/process_${architecture}';
@@ -27,12 +27,12 @@ build:all {
         '${lib}/boost_filesystem_${architecture}';
         '${lib}/boost_system_${architecture}';
 
-        system_libraries = build:switch {
+        system_libraries = forge:switch {
             platform;
             linux = { "pthread", "dl" };
         };
         
-        build:Cxx '${obj}/%1' {
+        forge:Cxx '${obj}/%1' {
             "Application.cpp", 
             "main.cpp"
         };    

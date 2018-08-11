@@ -1,8 +1,8 @@
 
-local Jar = build:TargetPrototype( "Jar" );
+local Jar = forge:TargetPrototype( "Jar" );
 
 local function included( jar, filename )
-    if build:is_directory(filename) then 
+    if forge:is_directory(filename) then 
         return false;
     end
 
@@ -26,21 +26,21 @@ local function included( jar, filename )
     return true;
 end
 
-function Jar.build( build, target )
+function Jar.build( forge, target )
     local settings = target.settings;
-    local jar = build:native( ("%s/bin/jar"):format(settings.java.jdk_directory) );
+    local jar = forge:native( ("%s/bin/jar"):format(settings.java.jdk_directory) );
     local directory = settings.classes_directory( target );
-    build:pushd( directory );
+    forge:pushd( directory );
 
     local classes = {};
-    for filename in build:find(".") do 
+    for filename in forge:find(".") do 
         if included(target, filename) then
-            table.insert( classes, build:relative(filename) );
+            table.insert( classes, forge:relative(filename) );
         end
     end
 
-    build:system( jar, ('jar cvf "%s" "%s"'):format(target:filename(), table.concat(classes, [[" "]])) );
-    build:popd();
+    forge:system( jar, ('jar cvf "%s" "%s"'):format(target:filename(), table.concat(classes, [[" "]])) );
+    forge:popd();
 end
 
 java.Jar = Jar;

@@ -1,7 +1,7 @@
 
-local Xib = build:TargetPrototype( "xcode.Xib" );
+local Xib = forge:TargetPrototype( "xcode.Xib" );
 
-function Xib.build( build, xib )
+function Xib.build( forge, xib )
     local command_line = {
         'xcrun';
         ('--sdk %s'):format( ios.sdkroot_by_target_and_platform(xib, platform) );
@@ -10,7 +10,7 @@ function Xib.build( build, xib )
         ('--compile "%s"'):format( xib );
         ('"%s"'):format( xib:dependency() );
     };
-    build:system( 
+    forge:system( 
         xib.settings.ios.xcrun, 
         command_line
     );

@@ -457,12 +457,10 @@ Target* Graph::find_or_create_target_by_element( Target* target, const std::stri
 int Graph::buildfile( const std::string& filename )
 {
     SWEET_ASSERT( forge_ );
-    SWEET_ASSERT( root_target_ );
-     
+    SWEET_ASSERT( root_target_ );     
     boost::filesystem::path path( forge_->absolute(filename) );
-    SWEET_ASSERT( path.is_absolute() );
-    
-    Target* buildfile_target = Graph::target( path.generic_string(), NULL, NULL );
+    SWEET_ASSERT( path.is_absolute() );   
+    Target* buildfile_target = Graph::target( path.generic_string(), nullptr, nullptr );
     buildfile_target->set_filename( path.generic_string() );
     if ( cache_target_ )
     {

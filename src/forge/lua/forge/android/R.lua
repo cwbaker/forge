@@ -1,26 +1,26 @@
 
-local R = build:TargetPrototype( "android.R" );
+local R = forge:TargetPrototype( "android.R" );
 
-function R.create( build, settings, packages )
-    local r = build:Target( build:anonymous(), R );
+function R.create( forge, settings, packages )
+    local r = forge:Target( forge:anonymous(), R );
     r.settings = settings;
     r.packages = packages;
     for index, package in ipairs(packages) do 
-        local filename = build:generated( ("%s/R.java"):format(package:gsub("%.", "/")), nil, settings );
+        local filename = forge:generated( ("%s/R.java"):format(package:gsub("%.", "/")), nil, settings );
         r:set_filename( filename, index );
-        r:add_ordering_dependency( build:Directory(build:branch(filename)) );
+        r:add_ordering_dependency( forge:Directory(forge:branch(filename)) );
     end
-    r:add_implicit_dependency( build:current_buildfile() );
+    r:add_implicit_dependency( forge:current_buildfile() );
     return r;
 end
 
-function R.build( build, target )
+function R.build( forge, target )
     local android_manifest = target:dependency( 1 );
-    assertf( android_manifest and build:leaf(android_manifest) == "AndroidManifest.xml", "Android R '%s' does not specify 'AndroidManifest.xml' as its first dependency", target:path() );
+    assertf( android_manifest and forge:leaf(android_manifest) == "AndroidManifest.xml", "Android R '%s' does not specify 'AndroidManifest.xml' as its first dependency", target:path() );
 
     local settings = target.settings;
     local working_directory = target:working_directory();
-    local gen_directory = ("%s/%s"):format( settings.gen, build:relative(working_directory:path(), build:root()) );
+    local gen_directory = ("%s/%s"):format( settings.gen, forge:relative(working_directory:path(), forge:root()) );
 
     local command_line = {
         'aapt',
@@ -35,19 +35,19 @@ function R.build( build, target )
     };
 
     for _, dependency in target:dependencies( 2 ) do
-        if dependency:prototype() == build.Ivy then 
+        if dependency:prototype() == forge.Ivy then 
             for _, archive in dependency:implicit_dependencies() do
-                if build:extension(archive) ~= '.jar' and build:exists(('%s/res'):format(archive)) then 
+                if forge:extension(archive) ~= '.jar' and forge:exists(('%s/res'):format(archive)) then 
                     table.insert( command_line, ('-S "%s/res"'):format(archive) );
                 end
             end
         else
-            table.insert( command_line, ('-S "%s"'):format(build:relative(dependency)) );
+            table.insert( command_line, ('-S "%s"'):format(forge:relative(dependency)) );
         end
     end
 
     local aapt = ('%s/aapt'):format( settings.android.build_tools_directory );
-    build:system( aapt, command_line );
+    forge:system( aapt, command_line );
 end
 
 android.R = R;

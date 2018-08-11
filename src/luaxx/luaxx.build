@@ -1,7 +1,7 @@
 
-for _, build in build:default_builds("cc_.*") do
-    build:Library '${lib}/luaxx_${architecture}' {
-        build:Cxx '${obj}/%1' {
+for _, forge in forge:default_builds("cc_.*") do
+    forge:Library '${lib}/luaxx_${architecture}' {
+        forge:Cxx '${obj}/%1' {
             "luaxx.cpp"
         };
     };

@@ -17,26 +17,26 @@ function errorf( format, ... )
 end
 
 -- Provide buildfile() that restores the settings stack position.
-local original_buildfile = build.buildfile;
+local original_buildfile = forge.buildfile;
 function buildfile( ... )
-    local buildfiles_stack = build.buildfiles_stack_;
-    table.insert( buildfiles_stack, build:file(select(1, ...)) );
-    local success, errors_or_error_message = pcall( original_buildfile, build, ... );
+    local buildfiles_stack = forge.buildfiles_stack_;
+    table.insert( buildfiles_stack, forge:file(select(1, ...)) );
+    local success, errors_or_error_message = pcall( original_buildfile, forge, ... );
     table.remove( buildfiles_stack );
-    assertf( success and errors_or_error_message == 0, "buildfile '%s' failed", tostring(select(1, ...)) );
+    assertf( success and errors_or_error_message == 0, "buildfile '%s' failed - %s", tostring(select(1, ...)), errors_or_error_message );
 end
 
-build = _G.build or {};
-build.settings = {};
-build.buildfiles_stack_ = {};
-build.modules_ = {};
-build.default_builds_ = {};
+forge = _G.forge or {};
+forge.settings = {};
+forge.buildfiles_stack_ = {};
+forge.modules_ = {};
+forge.default_builds_ = {};
 
-function build:default_build( identifier, build )
+function forge:default_build( identifier, build )
     table.insert( self.default_builds_, {identifier, build} );
 end
 
-function build:default_builds( pattern )
+function forge:default_builds( pattern )
     return coroutine.wrap( function() 
         local index = 1;
         for _, default_build in ipairs(self.default_builds_) do 
@@ -49,7 +49,7 @@ function build:default_builds( pattern )
     end );
 end
 
-function build:current_buildfile()
+function forge:current_buildfile()
     local buildfiles_stack = self.buildfiles_stack_;
     local back = #buildfiles_stack;
     if back > 0 then 
@@ -57,7 +57,7 @@ function build:current_buildfile()
     end
 end
 
-function build:platform_matches( ... )
+function forge:platform_matches( ... )
     local platform = self.settings.platform;
     if platform == "" then 
         return true;
@@ -70,17 +70,17 @@ function build:platform_matches( ... )
     return false;
 end
 
-function build:File( identifier, target_prototype, settings )
+function forge:File( identifier, target_prototype, settings )
     local target = self:Target( self:interpolate(identifier, settings), target_prototype );
     target:set_filename( target:path() );
     target:set_cleanable( true );
     return target;
 end
 
-function build:SourceFile( value, settings )
+function forge:SourceFile( value, settings )
     local target = value;
     if type(target) == "string" then 
-        target = self:Target( build:interpolate(value, settings) );
+        target = self:Target( forge:interpolate(value, settings) );
         if target:filename() == '' then 
             target:set_filename( target:path() );
         end
@@ -89,18 +89,18 @@ function build:SourceFile( value, settings )
     return target;
 end
 
-function build:SourceDirectory( value, settings )
+function forge:SourceDirectory( value, settings )
     return self:SourceFile( value, settings );
 end
 
-function build:map( target_prototype, replacement, pattern, filenames )
+function forge:map( target_prototype, replacement, pattern, filenames )
     local targets = {};
     local settings = settings or self:current_settings();
     for _, source_filename in ipairs(filenames) do 
-        local source = build:relative( source_filename );
+        local source = forge:relative( source_filename );
         local filename, substitutions = source:gsub( pattern, replacement );
         if substitutions > 0 then 
-            local destination = build:interpolate( filename, settings );
+            local destination = forge:interpolate( filename, settings );
             local target = target_prototype (self, destination) (source);
             table.insert( targets, target );
         end
@@ -108,14 +108,14 @@ function build:map( target_prototype, replacement, pattern, filenames )
     return table.unpack( targets );
 end
 
-function build:map_ls( target_prototype, replacement, pattern, settings )
+function forge:map_ls( target_prototype, replacement, pattern, settings )
     local targets = {};
     local settings = settings or self:current_settings();
-    for source_filename in build:ls("") do
-        local source = build:relative( source_filename );
+    for source_filename in forge:ls("") do
+        local source = forge:relative( source_filename );
         local filename, substitutions = source:gsub( pattern, replacement );
         if substitutions > 0 then    
-            local destination = build:interpolate( filename, settings );
+            local destination = forge:interpolate( filename, settings );
             local target = target_prototype (self, destination) (source);
             table.insert( targets, target );
         end
@@ -123,15 +123,15 @@ function build:map_ls( target_prototype, replacement, pattern, settings )
     return table.unpack( targets );
 end
 
-function build:map_find( target_prototype, replacement, pattern, settings )
+function forge:map_find( target_prototype, replacement, pattern, settings )
     local targets = {};
     local settings = settings or self:current_settings();
-    for source_filename in build:find("") do
-        if build:is_file(source_filename) then
-            local source = build:relative( source_filename );
+    for source_filename in forge:find("") do
+        if forge:is_file(source_filename) then
+            local source = forge:relative( source_filename );
             local filename, substitutions = source:gsub( pattern, replacement );
             if substitutions > 0 then
-                local destination = build:interpolate( filename, settings );
+                local destination = forge:interpolate( filename, settings );
                 local target = target_prototype (self, destination) (source);
                 table.insert( targets, target );
             end
@@ -141,7 +141,7 @@ function build:map_find( target_prototype, replacement, pattern, settings )
 end
 
 -- Perform per run initialization of the build system.
-function build:initialize( project_settings )
+function forge:initialize( project_settings )
     -- Merge settings from /source_settings/ into /settings/.
     local function merge_settings( settings, source_settings )
         settings = settings or {};
@@ -171,11 +171,11 @@ function build:initialize( project_settings )
 
     self:set_maximum_parallel_jobs( jobs );
     if self:operating_system() == "linux" then
-        self:set_build_hooks_library( self:executable("libforge_hooks.so") );
+        self:set_forge_hooks_library( self:executable("libforge_hooks.so") );
     elseif self:operating_system() == "macos" then
-        self:set_build_hooks_library( self:executable("forge_hooks.dylib") );
+        self:set_forge_hooks_library( self:executable("forge_hooks.dylib") );
     elseif self:operating_system() == "windows" then 
-        self:set_build_hooks_library( self:executable("forge_hooks.dll") );
+        self:set_forge_hooks_library( self:executable("forge_hooks.dll") );
     end    
 
     -- Set default settings (all other settings inherit from this table).
@@ -231,12 +231,12 @@ end
 
 -- Register *module* to be configured and initialized when the build sysetm 
 -- is initialized.
-function build:register_module( module )
+function forge:register_module( module )
     table.insert( self.modules_, module ); 
 end
 
 -- Call `configure` for each registered module that provides it.
-function build:configure_modules( settings )
+function forge:configure_modules( settings )
     local modules = self.modules_;
     for _, module in ipairs(modules) do 
         local configure = module.configure;
@@ -247,7 +247,7 @@ function build:configure_modules( settings )
 end
 
 -- Call `initialize` for each registered module that provides it.
-function build:initialize_modules( settings )
+function forge:initialize_modules( settings )
     local modules = self.modules_;
     for _, module in ipairs(modules) do 
         local initialize = module.initialize;
@@ -259,7 +259,7 @@ end
 
 -- Convert a version string into a date table (assuming that the version 
 -- string is of the form '%Y.%m.%d.%H%M').
-function build:version_date( version )
+function forge:version_date( version )
     version = version or _G.version;
     local _, _, year, month, day, hour, minute = string.find( version, "(%d%d%d%d)%.(%d%d)%.(%d%d)%.(%d%d)(%d%d)" );
     return {
@@ -274,14 +274,14 @@ end
 
 -- Convert a version string into a time (assuming that the version string is
 -- of the form '%Y.%m.%d.%H%M').
-function build:version_time( version )
+function forge:version_time( version )
     return os.time( self:version_date(version) );
 end
 
 -- Convert a version string into the number of half days passed since 
 -- *reference_time* or since 2012/01/01 00:00 if *reference_time* is not 
 -- provided (assuming that the version string is of the form '%Y.%m.%d.%H%M').
-function build:version_code( version, reference_time )
+function forge:version_code( version, reference_time )
     reference_time = reference_time or os.time( {year = 2012; month = 1; day = 1; hour = 0; min = 0; sec = 0} );
     local SECONDS_PER_HALF_DAY = 12 * 60 * 60;
     local version_time = self:version_time( version );
@@ -290,17 +290,17 @@ end
 
 -- Add targets to the current directory's target so that they will be built 
 -- when a build is invoked from that directory.
-function build:default_targets( targets )
-    local all = build:all();
+function forge:default_targets( targets )
+    local all = forge:all();
     for _, default_target in ipairs(targets) do
-        local target = build:target( ("%s/all"):format(default_target) );
+        local target = forge:target( ("%s/all"):format(default_target) );
         all:add_dependency( target );
     end
 end
 
 -- Execute command with arguments and optional filter and raise an error if 
 -- it doesn't return 0.
-function build:system( command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... )
+function forge:system( command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... )
     if type(arguments) == "table" then
         arguments = table.concat( arguments, " " );
     end
@@ -311,7 +311,7 @@ end
 
 -- Execute a command through the host system's native shell - either 
 -- "C:/windows/system32/cmd.exe" on Windows system or "/bin/sh" anywhere else.
-function build:shell( arguments, dependencies_filter, stdout_filter, stderr_filter, ... )
+function forge:shell( arguments, dependencies_filter, stdout_filter, stderr_filter, ... )
     if type(arguments) == "table" then 
         arguments = table.concat( arguments, " " );
     end
@@ -327,15 +327,15 @@ function build:shell( arguments, dependencies_filter, stdout_filter, stderr_filt
 end
 
 -- Return a value from a table using the first key as a lookup.
-function build:switch( values )
-    assert( values[1] ~= nil, "No value passed to `build:switch()`" );
+function forge:switch( values )
+    assert( values[1] ~= nil, "No value passed to `forge:switch()`" );
     return values[values[1]];
 end
 
 local interpolate;
 
 -- Provide makefile like string interpolation.
-function build:interpolate( template, variables )
+function forge:interpolate( template, variables )
     local function split( input )
         local output = {};
         for value in input:gmatch('%S+') do 
@@ -344,10 +344,10 @@ function build:interpolate( template, variables )
         return output;
     end
 
-    local interpolate = build.interpolate;
+    local interpolate = forge.interpolate;
     local variables = variables or self:current_settings();
     return (template:gsub('%$(%b{})', function(word) 
-        local parameters = split( interpolate(build, word:sub(2, -2), variables) );
+        local parameters = split( interpolate(forge, word:sub(2, -2), variables) );
         local identifier = parameters[1];
         local substitute = variables[identifier];
         if not substitute then 
@@ -370,7 +370,7 @@ function build:interpolate( template, variables )
 end
 
 -- Dump the keys, values, and prototype of a table for debugging.
-function build:dump( t )
+function forge:dump( t )
     print( tostring(t) );
     if t ~= nil then
         if getmetatable(t) ~= nil then
@@ -383,7 +383,7 @@ function build:dump( t )
 end
 
 -- Save a settings table to a file.
-function build:save_settings( settings, filename )
+function forge:save_settings( settings, filename )
     -- Serialize values to to a Lua file (typically the local settings table).
     local function serialize( file, value, level )
         local function indent( level )
@@ -427,12 +427,12 @@ function build:save_settings( settings, filename )
 end
 
 -- Merge fields with string keys from /source/ to /destination/.
-function build:merge( destination, source )
+function forge:merge( destination, source )
     local destination = destination or {};
     for k, v in pairs(source) do
         if type(k) == "string" then
             if type(v) == "table" then
-                destination[k] = build:append( destination[k], v );
+                destination[k] = forge:append( destination[k], v );
             else
                 destination[k] = v;
             end
@@ -443,7 +443,7 @@ end
 
 -- Get the *all* target for the current working directory adding any 
 -- targets that are passed in as dependencies.
-function build:all( dependencies )
+function forge:all( dependencies )
     local all = self:target( "all" );
     if dependencies then 
         all.depend( self, all, dependencies );
@@ -451,7 +451,7 @@ function build:all( dependencies )
     return all;
 end
 
--- Find and return the initial target to build.
+-- Find and return the initial target to forge.
 -- 
 -- If *goal* is nil or empty then the initial target is the first all target
 -- that is found in a search up from the current working directory to the
@@ -461,7 +461,7 @@ end
 -- exactly and has at least one dependency or the target that matches 
 -- `${*goal*}/all` is returned.  If neither of those targets exists then nil 
 -- is returned.
-function build:find_initial_target( goal )
+function forge:find_initial_target( goal )
     if not goal or goal == "" then 
         local goal = self:initial();
         local all = self:find_target( ("%s/all"):format(goal) );
@@ -486,7 +486,7 @@ function build:find_initial_target( goal )
 end
 
 -- Save the dependency graph to the file specified by /settings.cache/.
-function build:save()
+function forge:save()
     local settings = self:current_settings();
     if self.local_settings and self.local_settings.updated then
         self.local_settings.updated = nil;
@@ -497,13 +497,13 @@ function build:save()
 end
 
 -- Express *path* relative to the root directory.
-function build:root_relative( path )
+function forge:root_relative( path )
     return self:relative( self:absolute(path), self:root() );
 end
 
 -- Convert /name/ into a path relative to the first pattern in package.paths
 -- that expands to an existing file.
-function build:script( name )
+function forge:script( name )
     for path in string.gmatch(package.path, "([^;]*);?") do
         local filename = string.gsub( path, "?", name );
         if self:exists(filename) then
@@ -516,9 +516,9 @@ end
 -- Convert /filename/ into an object directory path by prepending the object 
 -- directory to the portion of /filename/ that is relative to the root 
 -- directory.
-function build:object( filename, extension, settings )
+function forge:object( filename, extension, settings )
     local settings = settings or self:current_settings();
-    local prefix = settings.obj or build:root();
+    local prefix = settings.obj or forge:root();
     local filename = self:relative( self:absolute(filename), self:root() );
     return ('%s/%s'):format( prefix, filename );
 end
@@ -526,7 +526,7 @@ end
 -- Convert /path/ into a generated files directory path by prepending the 
 -- generated directory to the portion of /path/ that is relative to the root
 -- directory.
-function build:generated( filename, architecture, settings )
+function forge:generated( filename, architecture, settings )
     settings = settings or self:current_settings();
     filename = self:relative( self:absolute(filename), self:root() );
     if architecture then 
@@ -535,27 +535,27 @@ function build:generated( filename, architecture, settings )
     return ("%s/%s"):format( settings.gen, filename );
 end
 
-function build:configure( settings )
-    local build = { 
+function forge:configure( settings )
+    local forge = { 
         __this = self.__this;
         settings = settings;
     };
     setmetatable( settings, {
         __index = self.settings;
     } );
-    setmetatable( build, {
+    setmetatable( forge, {
         __index = self;
     } );
-    return build, settings;
+    return forge, settings;
 end
 
-function build:current_settings()
+function forge:current_settings()
     return self.settings;
 end
 
 -- Add dependencies detected by the injected build hooks library to the 
 -- target /target/.
-function build:dependencies_filter( target )
+function forge:dependencies_filter( target )
     return function( line )
         if line:match("^==") then 
             local READ_PATTERN = "^== read '([^']*)'";
@@ -574,7 +574,7 @@ function build:dependencies_filter( target )
 end
 
 -- Append values from /value/ to /values/.
-function build:append( values, value )
+function forge:append( values, value )
     local values = values or {};
     if type(value) == "table" then 
         for _, other_value in ipairs(value) do 
@@ -588,7 +588,7 @@ end
 
 -- Recursively walk the dependencies of *target* until a target with a 
 -- filename or the maximum level limit is reached.
-function build:walk_dependencies( target, start, finish, maximum_level )
+function forge:walk_dependencies( target, start, finish, maximum_level )
     local maximum_level = maximum_level or math.maxinteger;
     local function walk_dependencies_recursively( target, level )
         for _, dependency in target:dependencies() do 
@@ -615,7 +615,7 @@ function build:walk_dependencies( target, start, finish, maximum_level )
 end
 
 -- Recursively copy files from *source* to *destination*.
-function build:cpdir( destination, source, settings )
+function forge:cpdir( destination, source, settings )
     local settings = settings or self:current_settings();
     local destination = self:interpolate( destination, settings );
     local source = self:interpolate( source, settings );

@@ -6,7 +6,7 @@ buildfile 'forge_hooks/forge_hooks.build';
 buildfile 'forge_lua/forge_lua.build';
 buildfile 'forge_test/forge_test.build';
 
-for _, build in build:default_builds("cc_.*") do
+for _, forge in forge:default_builds("cc_.*") do
     local settings =  {
         defines = {
             "_CRT_SECURE_NO_DEPRECATE", -- Disable CRT security warnings
@@ -18,13 +18,13 @@ for _, build in build:default_builds("cc_.*") do
 
     -- Disable warnings on Linux to avoid unused variable warnings in Boost
     -- System library headers.
-    if build:operating_system() == "linux" then
+    if forge:operating_system() == "linux" then
         settings.warning_level = 0;
     end
 
-    local build = build:configure( settings );
-    build:Library '${lib}/forge_${architecture}' {
-        build:Cxx '${obj}/%1' {
+    local forge = forge:configure( settings );
+    forge:Library '${lib}/forge_${architecture}' {
+        forge:Cxx '${obj}/%1' {
             -- Disable automatic linking to Boost libraries.
             defines = { "BOOST_ALL_NO_LIB" };
             "Arguments.cpp",

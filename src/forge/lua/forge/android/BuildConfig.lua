@@ -1,20 +1,20 @@
 
-local BuildConfig = build:TargetPrototype( "android.BuildConfig" );
+local BuildConfig = forge:TargetPrototype( "android.BuildConfig" );
 
-function BuildConfig.create( build, settings, packages )
-    local build_config = build:Target( build:anonymous(), BuildConfig );
+function BuildConfig.create( forge, settings, packages )
+    local build_config = forge:Target( forge:anonymous(), BuildConfig );
     build_config.settings = settings;
     build_config.packages = packages;
     for index, package in ipairs(packages) do 
-        local filename = build:generated( ("%s/BuildConfig.java"):format(package:gsub("%.", "/")), nil, settings );
+        local filename = forge:generated( ("%s/BuildConfig.java"):format(package:gsub("%.", "/")), nil, settings );
         build_config:set_filename( filename, index );
-        build_config:add_ordering_dependency( build:Directory(build:branch(filename)) );
+        build_config:add_ordering_dependency( forge:Directory(forge:branch(filename)) );
     end
-    build_config:add_implicit_dependency( build:current_buildfile() );
+    build_config:add_implicit_dependency( forge:current_buildfile() );
     return build_config;
 end
 
-function BuildConfig.build( build, target )
+function BuildConfig.build( forge, target )
     local HEADER = [[
 /** Automatically generated file. DO NOT MODIFY */
 package %s;

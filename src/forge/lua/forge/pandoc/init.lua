@@ -2,7 +2,7 @@
 pandoc = {};
 
 function pandoc.configure( settings )
-    local local_settings = build.local_settings;
+    local local_settings = forge.local_settings;
     if not local_settings.pandoc then
         local_settings.updated = true;
         local_settings.pandoc = {};
@@ -15,4 +15,4 @@ end
 require "forge.pandoc.Html";
 require "forge.pandoc.Pdf";
 
-build:register_module( pandoc );
+forge:register_module( pandoc );

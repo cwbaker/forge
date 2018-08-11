@@ -2,7 +2,7 @@
 linux = {};
 
 function linux.configure( settings )
-    local local_settings = build.local_settings;
+    local local_settings = forge.local_settings;
 
     if not local_settings.linux then
         local_settings.updated = true;
@@ -16,7 +16,7 @@ function linux.configure( settings )
 end
 
 function linux.initialize( settings )
-    if build:operating_system() == 'linux' then
+    if forge:operating_system() == 'linux' then
         local path = {
             "/usr/bin",
             "/bin"
@@ -26,7 +26,7 @@ function linux.initialize( settings )
         };
 
         for _, architecture in ipairs(settings.linux.architectures) do 
-            build:default_build( ("cc_linux_%s"):format(architecture), build:configure {
+            forge:default_build( ("cc_linux_%s"):format(architecture), forge:configure {
                 obj = ("%s/cc_linux_%s"):format( settings.obj, architecture );
                 platform = "linux";
                 architecture = architecture;
@@ -50,9 +50,9 @@ function linux.initialize( settings )
             } );
         end
 
-        local settings = build.settings;
+        local settings = forge.settings;
         local architecture = settings.default_architecture;
-        settings.obj = build:root( ("%s/cc_linux_%s"):format(settings.obj, architecture) );
+        settings.obj = forge:root( ("%s/cc_linux_%s"):format(settings.obj, architecture) );
         settings.platform = "linux";
         settings.architecture = architecture;
         settings.default_architecture = architecture;
@@ -91,14 +91,14 @@ function linux.cc( target )
         if object:outdated() then
             object:set_built( false );
             local source = object:dependency();
-            print( build:leaf(source:id()) );
+            print( forge:leaf(source:id()) );
             local output = object:filename();
-            local input = build:relative( source:filename() );
-            build:system( 
+            local input = forge:relative( source:filename() );
+            forge:system( 
                 gcc_, 
                 ('gcc %s -o "%s" "%s"'):format(ccflags, output, input), 
                 linux.environment,
-                build:dependencies_filter(object)
+                forge:dependencies_filter(object)
             );
             object:set_built( true );
         end
@@ -111,13 +111,13 @@ function linux.build_library( target )
     };
     
     local settings = target.settings;
-    build:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(target) );
     local objects = {};
     for _, compile in target:dependencies() do
         local prototype = compile:prototype();
-        if prototype == build.Cc or prototype == build.Cxx then
+        if prototype == forge.Cc or prototype == forge.Cxx then
             for _, object in compile:dependencies() do
-                table.insert( objects, build:relative(object:filename()) )
+                table.insert( objects, forge:relative(object:filename()) )
             end
         end
     end
@@ -126,27 +126,27 @@ function linux.build_library( target )
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
         local ar = target.settings.linux.ar;
-        build:system( ar, ('ar %s "%s" "%s"'):format(arflags, build:native(target:filename()), arobjects), linux.environment );
+        forge:system( ar, ('ar %s "%s" "%s"'):format(arflags, forge:native(target:filename()), arobjects), linux.environment );
     end
-    build:popd();
+    forge:popd();
 end
 
 function linux.clean_library( target )
-    build:rm( target );
+    forge:rm( target );
     local settings = target.settings;
-    build:rmdir( settings.obj_directory(target) );
+    forge:rmdir( settings.obj_directory(target) );
 end
 
 function linux.build_executable( target )
     local flags = { 
-        -- ("-Wl,-soname,%s"):format( build:leaf(target:filename()) ),
+        -- ("-Wl,-soname,%s"):format( forge:leaf(target:filename()) ),
         -- "-shared",
         -- "-no-canonical-prefixes",
         -- "-Wl,--no-undefined",
         -- "-Wl,-z,noexecstack",
         -- "-Wl,-z,relro",
         -- "-Wl,-z,now",
-        -- ('-o "%s"'):format( build:native(target:filename()) )
+        -- ('-o "%s"'):format( forge:native(target:filename()) )
     };
 
     gcc.append_link_flags( target, flags );
@@ -156,16 +156,16 @@ function linux.build_executable( target )
     local libraries = {};
 
     local settings = target.settings;
-    build:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(target) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == build.Cc or prototype == build.Cxx then
+        if prototype == forge.Cc or prototype == forge.Cxx then
             for _, object in dependency:dependencies() do
                 if object:prototype() == nil then
-                    table.insert( objects, build:relative(object:filename()) );
+                    table.insert( objects, forge:relative(object:filename()) );
                 end
             end
-        elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
+        elseif prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
             if dependency.whole_archive then
                 table.insert( libraries, ("-Wl,--whole-archive") );
             end
@@ -183,28 +183,28 @@ function linux.build_executable( target )
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, " " );
         local gxx = settings.linux.gxx;
-        build:system( gxx, ('g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), linux.environment );
+        forge:system( gxx, ('g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), linux.environment );
     end
-    build:popd();
+    forge:popd();
 end 
 
 function linux.clean_executable( target )
-    build:rm( target );
+    forge:rm( target );
     local settings = target.settings;
-    build:rmdir( settings.obj_directory(target) );
+    forge:rmdir( settings.obj_directory(target) );
 end
 
 function linux.obj_directory( target )
-    local relative_path = build:relative( target:working_directory():path(), build:root() );
-    return build:absolute( relative_path, target.settings.obj );
+    local relative_path = forge:relative( target:working_directory():path(), forge:root() );
+    return forge:absolute( relative_path, target.settings.obj );
 end
 
 function linux.cc_name( name )
-    return ("%s.c"):format( build:basename(name) );
+    return ("%s.c"):format( forge:basename(name) );
 end
 
 function linux.cxx_name( name )
-    return ("%s.cpp"):format( build:basename(name) );
+    return ("%s.cpp"):format( forge:basename(name) );
 end
 
 function linux.obj_name( name )
@@ -223,4 +223,4 @@ function linux.exe_name( name )
     return ("%s"):format( name );
 end
 
-build:register_module( linux );
+forge:register_module( linux );

@@ -25,7 +25,7 @@ function ios.configure( settings )
 
         local xcodebuild = "/usr/bin/xcodebuild";
         local arguments = "xcodebuild -sdk iphoneos -version";
-        local result = build:execute( xcodebuild, arguments, nil, nil, function(line)
+        local result = forge:execute( xcodebuild, arguments, nil, nil, function(line)
             local key, value = line:match( "(%w+): ([^\n]+)" );
             if key and value then 
                 if key == "ProductBuildVersion" then 
@@ -46,7 +46,7 @@ function ios.configure( settings )
 
         local xcodebuild = "/usr/bin/xcodebuild";
         local arguments = "xcodebuild -version";
-        local result = build:execute( xcodebuild, arguments, nil, nil, function(line)
+        local result = forge:execute( xcodebuild, arguments, nil, nil, function(line)
             local major, minor = line:match( "Xcode (%d+)%.(%d+)" );
             if major and minor then 
                 xcode_version = ("%02d%02d"):format( tonumber(major), tonumber(minor) );
@@ -67,7 +67,7 @@ function ios.configure( settings )
 
         local sw_vers = "/usr/bin/sw_vers";
         local arguments = "sw_vers -buildVersion";
-        local result = build:execute( sw_vers, arguments, nil, nil, function(line)
+        local result = forge:execute( sw_vers, arguments, nil, nil, function(line)
             local version = line:match( "%w+" );
             if version then 
                 os_version = version;
@@ -78,7 +78,7 @@ function ios.configure( settings )
         return os_version;
     end
 
-    local local_settings = build.local_settings;
+    local local_settings = forge.local_settings;
     if not local_settings.ios then
         local sdk_version, sdk_build_version = autodetect_iphoneos_sdk_version();
         local xcode_version, xcode_build_version = autodetect_xcode_version();
@@ -102,7 +102,7 @@ end;
 
 function ios.initialize( settings )
     for _, architecture in ipairs(settings.ios.architectures) do 
-        build:default_build( ("cc_ios_%s"):format(architecture), build:configure {
+        forge:default_build( ("cc_ios_%s"):format(architecture), forge:configure {
             obj = ("%s/cc_ios_%s"):format( settings.obj, architecture );
             platform = "ios";
             sdkroot = 'iphoneos';
@@ -149,11 +149,11 @@ function ios.cc( target )
         if object:outdated() then
             object:set_built( false );
             local source = object:dependency();
-            print( build:leaf(source) );
+            print( forge:leaf(source) );
             local dependencies = ("%s.d"):format( object );
             local output = object:filename();
-            local input = build:absolute( source );
-            build:system( 
+            local input = forge:absolute( source );
+            forge:system( 
                 xcrun, 
                 ('xcrun --sdk %s clang %s -MMD -MF "%s" -o "%s" "%s"'):format(sdkroot, ccflags, dependencies, output, input)
             );
@@ -169,13 +169,13 @@ function ios.build_library( target )
     };
 
     local settings = target.settings;
-    build:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(target) );
     local objects =  {};
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
+        if prototype == forge.Cc or prototype == forge.Cxx or prototype == forge.ObjC or prototype == forge.ObjCxx then
             for _, object in dependency:dependencies() do
-                table.insert( objects, build:relative(object:filename()) );
+                table.insert( objects, forge:relative(object:filename()) );
             end
         end
     end
@@ -185,14 +185,14 @@ function ios.build_library( target )
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, [[" "]] );
         local xcrun = target.settings.ios.xcrun;
-        build:system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, build:native(target:filename()), arobjects) );
+        forge:system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, forge:native(target:filename()), arobjects) );
     end
-    build:popd();
+    forge:popd();
 end;
 
 function ios.clean_library( target )
-    build:rm( target:filename() );
-    build:rmdir( obj_directory(target) );
+    forge:rm( target:filename() );
+    forge:rmdir( obj_directory(target) );
 end;
 
 function ios.build_executable( target )
@@ -216,14 +216,14 @@ function ios.build_executable( target )
     local objects = {};
     local libraries = {};
 
-    build:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(target) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == build.Cc or prototype == build.Cxx or prototype == build.ObjC or prototype == build.ObjCxx then
+        if prototype == forge.Cc or prototype == forge.Cxx or prototype == forge.ObjC or prototype == forge.ObjCxx then
             for _, object in dependency:dependencies() do
-                table.insert( objects, build:relative(object:filename()) );
+                table.insert( objects, forge:relative(object:filename()) );
             end
-        elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
+        elseif prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
             table.insert( libraries, ("-l%s"):format(dependency:id()) );
         end
     end
@@ -236,13 +236,13 @@ function ios.build_executable( target )
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, " " );
         local xcrun = settings.ios.xcrun;
-        build:system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
+        forge:system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
     end
-    build:popd();
+    forge:popd();
 end
 
 function ios.clean_executable( target )
-    build:rm( target:filename() );
+    forge:rm( target:filename() );
 end
 
 function ios.lipo_executable( target )
@@ -254,13 +254,13 @@ function ios.lipo_executable( target )
     local sdk = ios.sdkroot_by_target_and_platform( target, settings.platform );
     executables = table.concat( executables, '" "' );
     local xcrun = target.settings.ios.xcrun;
-    build:system( xcrun, ('xcrun --sdk %s lipo -create -output "%s" "%s"'):format(sdk, target:filename(), executables) );
+    forge:system( xcrun, ('xcrun --sdk %s lipo -create -output "%s" "%s"'):format(sdk, target:filename(), executables) );
 end
 
 -- Find the first iOS .app bundle found in the dependencies of the
 -- passed in directory.
 function ios.find_app( directory )
-    local directory = directory or build:find_target( build:initial("all") );
+    local directory = directory or forge:find_target( forge:initial("all") );
     for _, dependency in directory:dependencies() do
         if dependency:prototype() == ios.App then 
             return dependency;
@@ -271,27 +271,27 @@ end
 -- Deploy the fist iOS .app bundle found in the dependencies of the current
 -- working directory.
 function ios.deploy( app )
-    local ios_deploy = build.settings.ios.ios_deploy;
+    local ios_deploy = forge.settings.ios.ios_deploy;
     if ios_deploy then 
         assertf( app, "No ios.App target to deploy" );
-        assertf( build:is_file(ios_deploy), "No 'ios-deploy' executable found at '%s'", ios_deploy );
-        build:system( ios_deploy, ('ios-deploy --timeout 1 --bundle "%s"'):format(app:filename()) );
+        assertf( forge:is_file(ios_deploy), "No 'ios-deploy' executable found at '%s'", ios_deploy );
+        forge:system( ios_deploy, ('ios-deploy --timeout 1 --bundle "%s"'):format(app:filename()) );
     else
         printf( "No 'ios-deploy' executable specified by 'settings.ios.ios_deploy'" );
     end
 end
 
 function ios.obj_directory( target )
-    local relative_path = build:relative( target:working_directory():path(), build:root() );
-    return build:absolute( relative_path, target.settings.obj );
+    local relative_path = forge:relative( target:working_directory():path(), forge:root() );
+    return forge:absolute( relative_path, target.settings.obj );
 end
 
 function ios.cc_name( name )
-    return ("%s.c"):format( build:basename(name) );
+    return ("%s.c"):format( forge:basename(name) );
 end
 
 function ios.cxx_name( name )
-    return ("%s.cpp"):format( build:basename(name) );
+    return ("%s.cpp"):format( forge:basename(name) );
 end
 
 function ios.obj_name( name )
@@ -312,4 +312,4 @@ end
 
 require "forge.ios.App";
 
-build:register_module( ios );
+forge:register_module( ios );

@@ -10,30 +10,30 @@ local directory_by_architecture = {
 
 function android.configure( settings )
     local function autodetect_ndk_directory()
-        if build:operating_system() == "windows" then
+        if forge:operating_system() == "windows" then
             return "C:/android/android-ndk";
         else
-            return build:home( "Library/Android/ndk" );
+            return forge:home( "Library/Android/ndk" );
         end
     end
 
     local function autodetect_sdk_directory()
-        if build:operating_system() == "windows" then
+        if forge:operating_system() == "windows" then
             return "C:/Program Files (x86)/Android/android-sdk";
         else
-            return build:home( "Library/Android/sdk" );
+            return forge:home( "Library/Android/sdk" );
         end
     end
 
     local function autodetect_proguard_directory()
-        return build:home( 'proguard-6.0.3' );
+        return forge:home( 'proguard-6.0.3' );
     end
 
     local function autodetect_manifest_merger()
-        return build:home( 'android-manifest-merger/target/manifest-merger-jar-with-dependencies.jar' );
+        return forge:home( 'android-manifest-merger/target/manifest-merger-jar-with-dependencies.jar' );
     end
 
-    local local_settings = build.local_settings;
+    local local_settings = forge.local_settings;
     if not local_settings.android then
         local_settings.updated = true;
         local_settings.android = {
@@ -66,7 +66,7 @@ function android.toolchain_directory( settings, architecture )
         android.ndk_directory, 
         toolchain_by_architecture [architecture], 
         android.toolchain_version, 
-        prebuilt_by_operating_system [build:operating_system()]
+        prebuilt_by_operating_system [forge:operating_system()]
     );
 end
 
@@ -135,7 +135,7 @@ function android.library_directories( settings, architecture )
 end
 
 function android.initialize( settings )
-    if build:operating_system() == "windows" then
+    if forge:operating_system() == "windows" then
         local path = {
             ("%s/bin"):format( android.toolchain_directory(settings, "armv5") )
         };
@@ -156,7 +156,7 @@ function android.initialize( settings )
     settings.android.proguard_enabled = settings.android.proguard_enabled or variant == "shipping";
     
     for _, architecture in ipairs(settings.android.architectures) do 
-        build:default_build( ("cc_android_%s"):format(architecture), build:configure {
+        forge:default_build( ("cc_android_%s"):format(architecture), forge:configure {
             obj = ("%s/cc_android_%s"):format( settings.obj, architecture );
             platform = "android";
             architecture = architecture;
@@ -183,9 +183,9 @@ function android.initialize( settings )
         } );
     end
 
-    build:default_build( "java_android", build:configure {
-        classes = build:root( ('%s/classes/java_android'):format(variant) );
-        gen = build:root( ('%s/gen/java_android'):format(variant) );
+    forge:default_build( "java_android", forge:configure {
+        classes = forge:root( ('%s/classes/java_android'):format(variant) );
+        gen = forge:root( ('%s/gen/java_android'):format(variant) );
         system_jars = {
             ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
         };
@@ -209,7 +209,7 @@ function android.cc( target )
 
     gcc.append_include_directories( target, flags );
     for _, directory in ipairs(android.include_directories(target.settings, target.architecture)) do
-        assert( build:exists(directory), ("The include directory '%s' does not exist"):format(directory) );
+        assert( forge:exists(directory), ("The include directory '%s' does not exist"):format(directory) );
         table.insert( flags, ([[-I"%s"]]):format(directory) );
     end
 
@@ -238,14 +238,14 @@ function android.cc( target )
         if object:outdated() then
             object:set_built( false );
             local source = object:dependency();
-            print( build:leaf(source:id()) );
+            print( forge:leaf(source:id()) );
             local output = object:filename();
-            local input = build:relative( source:filename() );
-            build:system( 
+            local input = forge:relative( source:filename() );
+            forge:system( 
                 gcc_, 
                 ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, output, input), 
                 android.environment,
-                build:dependencies_filter(object)
+                forge:dependencies_filter(object)
             );
             object:set_built( true );
         end
@@ -258,13 +258,13 @@ function android.build_library( target )
     };
     
     local settings = target.settings;
-    build:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(target) );
     local objects = {};
     for _, compile in target:dependencies() do
         local prototype = compile:prototype();
-        if prototype == build.Cc or prototype == build.Cxx then
+        if prototype == forge.Cc or prototype == forge.Cxx then
             for _, object in compile:dependencies() do
-                table.insert( objects, build:relative(object:filename()) )
+                table.insert( objects, forge:relative(object:filename()) )
             end
         end
     end
@@ -273,28 +273,28 @@ function android.build_library( target )
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
         local ar = ("%s/bin/arm-linux-androideabi-ar"):format( android.toolchain_directory(target.settings, target.architecture) );
-        build:system( ar, ('ar %s "%s" "%s"'):format(arflags, build:native(target:filename()), arobjects), android.environment );
+        forge:system( ar, ('ar %s "%s" "%s"'):format(arflags, forge:native(target:filename()), arobjects), android.environment );
     end
-    build:popd();
+    forge:popd();
 end
 
 function android.clean_library( target )
-    build:rm( target );
+    forge:rm( target );
     local settings = target.settings;
-    build:rmdir( settings.obj_directory(target) );
+    forge:rmdir( settings.obj_directory(target) );
 end
 
 function android.build_executable( target )
     local flags = { 
         ("--sysroot=%s"):format( android.platform_directory(target.settings, target.architecture) ),
-        ("-Wl,-soname,%s"):format( build:leaf(target:filename()) ),
+        ("-Wl,-soname,%s"):format( forge:leaf(target:filename()) ),
         "-shared",
         "-no-canonical-prefixes",
         "-Wl,--no-undefined",
         "-Wl,-z,noexecstack",
         "-Wl,-z,relro",
         "-Wl,-z,now",
-        ('-o "%s"'):format( build:native(target:filename()) )
+        ('-o "%s"'):format( forge:native(target:filename()) )
     };
 
     gcc.append_link_flags( target, flags );
@@ -307,16 +307,16 @@ function android.build_executable( target )
     local libraries = {};
 
     local settings = target.settings;
-    build:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(target) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == build.Cc or prototype == build.Cxx then
+        if prototype == forge.Cc or prototype == forge.Cxx then
             for _, object in dependency:dependencies() do
                 if object:prototype() == nil then
-                    table.insert( objects, build:relative(object:filename()) );
+                    table.insert( objects, forge:relative(object:filename()) );
                 end
             end
-        elseif prototype == build.StaticLibrary or prototype == build.DynamicLibrary then
+        elseif prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
             if dependency.whole_archive then
                 table.insert( libraries, ("-Wl,--whole-archive") );
             end
@@ -338,21 +338,21 @@ function android.build_executable( target )
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, " " );
         local gxx = ("%s/bin/arm-linux-androideabi-g++"):format( android.toolchain_directory(target.settings, target.architecture) );
-        build:system( gxx, ('arm-linux-androideabi-g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), android.environment );
+        forge:system( gxx, ('arm-linux-androideabi-g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), android.environment );
     end
-    build:popd();
+    forge:popd();
 end 
 
 function android.clean_executable( target )
-    build:rm( target );
+    forge:rm( target );
     local settings = target.settings;
-    build:rmdir( settings.obj_directory(target) );
+    forge:rmdir( settings.obj_directory(target) );
 end
 
 -- Find the first Android .apk package found in the dependencies of the
 -- passed in directory.
 function android.find_apk( directory )
-    local directory = directory or build:find_target( build:initial("all") );
+    local directory = directory or forge:find_target( forge:initial("all") );
     for _, dependency in directory:dependencies() do
         if dependency:prototype() == android.Apk then 
             return dependency;
@@ -363,34 +363,34 @@ end
 -- Deploy the fist Android .apk package found in the dependencies of the 
 -- current working directory.
 function android.deploy( apk )
-    local sdk_directory = build.settings.android.sdk_directory;
+    local sdk_directory = forge.settings.android.sdk_directory;
     if sdk_directory then 
         assertf( apk, "No android.Apk target to deploy" );
         local adb = ("%s/platform-tools/adb"):format( sdk_directory );
-        assertf( build:is_file(adb), "No 'adb' executable found at '%s'", adb );
+        assertf( forge:is_file(adb), "No 'adb' executable found at '%s'", adb );
 
         local device_connected = false;
         local function adb_get_state_filter( state )
             device_connected = string.find( state, "device" ) ~= nil;
         end
-        build:system( adb, ('adb get-state'), android.environment, nil, adb_get_state_filter );
+        forge:system( adb, ('adb get-state'), android.environment, nil, adb_get_state_filter );
         if device_connected then
-            build:system( adb, ('adb install -r "%s"'):format(apk:filename()), android.environment );
+            forge:system( adb, ('adb install -r "%s"'):format(apk:filename()), android.environment );
         end
     end
 end
 
 function android.obj_directory( target )
-    local relative_path = build:relative( target:working_directory():path(), build:root() );
-    return build:absolute( relative_path, target.settings.obj );
+    local relative_path = forge:relative( target:working_directory():path(), forge:root() );
+    return forge:absolute( relative_path, target.settings.obj );
 end
 
 function android.cc_name( name )
-    return ("%s.c"):format( build:basename(name) );
+    return ("%s.c"):format( forge:basename(name) );
 end
 
 function android.cxx_name( name )
-    return ("%s.cpp"):format( build:basename(name) );
+    return ("%s.cpp"):format( forge:basename(name) );
 end
 
 function android.obj_name( name )
@@ -402,7 +402,7 @@ function android.lib_name( name )
 end
 
 function android.dll_name( name )
-    return ('lib%s.so'):format( build:basename(name) );
+    return ('lib%s.so'):format( forge:basename(name) );
 end
 
 function android.exe_name( name, architecture )
@@ -410,31 +410,31 @@ function android.exe_name( name, architecture )
 end
 
 function android.android_jar( settings )
-    local settings = settings or build:current_settings();
+    local settings = settings or forge:current_settings();
     return ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
 end
 
 function android.DynamicLibrary( build, name, architecture )
-    local settings = build:current_settings();
+    local settings = forge:current_settings();
     local architecture = architecture or settings.architecture;
     assertf( architecture, 'Missing architecture for Android dynamic library "%s"', name );
-    local dynamic_library = build:DynamicLibrary( ("${apk}/lib/%s/%s"):format(directory_by_architecture[architecture], name), architecture );
+    local dynamic_library = forge:DynamicLibrary( ("${apk}/lib/%s/%s"):format(directory_by_architecture[architecture], name), architecture );
     dynamic_library.architecture = architecture;
 
-    local group = build:Target( build:anonymous() );
+    local group = forge:Target( forge:anonymous() );
     group:add_dependency( dynamic_library );
     group.depend = function( build, group, ... )
-        return dynamic_library.depend( dynamic_library.build_, dynamic_library, ... );
+        return dynamic_library.depend( dynamic_library.forge_, dynamic_library, ... );
     end
 
     local runtime_library = dynamic_library.settings.runtime_library;
     if runtime_library then 
         if runtime_library:match(".*_shared") then 
-            local destination = ("%s/lib%s.so"):format( build:branch(dynamic_library:filename()), runtime_library );
+            local destination = ("%s/lib%s.so"):format( forge:branch(dynamic_library:filename()), runtime_library );
             for _, directory in ipairs(android.library_directories(dynamic_library.settings, dynamic_library.architecture)) do
                 local source = ("%s/lib%s.so"):format( directory, runtime_library );
-                if build:exists(source) then
-                    local copy = build:Copy (destination) (source);
+                if forge:exists(source) then
+                    local copy = forge:Copy (destination) (source);
                     group:add_dependency( copy );
                     break;
                 end
@@ -452,4 +452,4 @@ require "forge.android.BuildConfig";
 require "forge.android.Dex";
 require "forge.android.R";
 
-build:register_module( android );
+forge:register_module( android );

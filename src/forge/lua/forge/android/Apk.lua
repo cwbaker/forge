@@ -1,14 +1,14 @@
 
-local Apk = build:TargetPrototype( "android.Apk" );
+local Apk = forge:TargetPrototype( "android.Apk" );
 
-function Apk.build( build, target )
+function Apk.build( forge, target )
     local files = {};
     local resources = {};
     local android_manifest;
     for _, dependency in target:dependencies() do 
-        if dependency:prototype() == build.Ivy then 
+        if dependency:prototype() == forge.Ivy then 
             for _, archive in dependency:implicit_dependencies() do 
-                if build:extension(archive) ~= '.jar' and build:exists(('%s/res'):format(archive)) then
+                if forge:extension(archive) ~= '.jar' and forge:exists(('%s/res'):format(archive)) then
                     table.insert( resources, ('-S "%s/res"'):format(archive) );
                 end
             end
@@ -24,12 +24,12 @@ function Apk.build( build, target )
             end
         end
     end
-    assertf( android_manifest and build:leaf(android_manifest:filename()) == "AndroidManifest.xml", "Android APK '%s' does not specify a manifest named 'AndroidManifest.xml'", target:path() );
+    assertf( android_manifest and forge:leaf(android_manifest:filename()) == "AndroidManifest.xml", "Android APK '%s' does not specify a manifest named 'AndroidManifest.xml'", target:path() );
 
     local settings = target.settings;
     local aapt = ("%s/aapt"):format( settings.android.build_tools_directory );
     local android_jar = ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
-    build:system( aapt, {
+    forge:system( aapt, {
         'aapt',
         'package',
         '--auto-add-overlay',
@@ -40,43 +40,43 @@ function Apk.build( build, target )
         ('-F "%s.unaligned"'):format( target )
     } );
 
-    build:pushd( ("%s/%s"):format(build:branch(target), build:basename(target)) );
+    forge:pushd( ("%s/%s"):format(forge:branch(target), forge:basename(target)) );
     for _, dependency in ipairs(files) do 
-        build:system( aapt, {
+        forge:system( aapt, {
             "aapt",
             'add',
-            ('-f "%s.unaligned"'):format( build:relative(target) ),
-            ('"%s"'):format( build:relative(dependency) )
+            ('-f "%s.unaligned"'):format( forge:relative(target) ),
+            ('"%s"'):format( forge:relative(dependency) )
         } );
     end
 
     local jarsigner = ("%s/bin/jarsigner"):format( settings.java.jdk_directory );
     local key = _G.key or "androiddebugkey";
     local keypass = _G.keypass or "android";
-    local keystore = _G.keystore or build:relative( ("%s/debug.keystore"):format(target:working_directory():path()) );
-    build:system( jarsigner, {
+    local keystore = _G.keystore or forge:relative( ("%s/debug.keystore"):format(target:working_directory():path()) );
+    forge:system( jarsigner, {
         'jarsigner',
         '-sigalg MD5withRSA',
         '-digestalg SHA1',
         ('-keystore %s'):format( keystore ),
         ('-storepass %s'):format( keypass ),
-        ('%s.unaligned'):format( build:relative(target) ),
+        ('%s.unaligned'):format( forge:relative(target) ),
         ('%s'):format( key )
     } );
 
     local zipalign = ("%s/zipalign"):format( settings.android.build_tools_directory );
-    build:system( zipalign, {
+    forge:system( zipalign, {
         'zipalign',
         '-f 4',
-        ('%s.unaligned'):format( build:relative(target) ),
-        ('%s'):format( build:relative(target) )
+        ('%s.unaligned'):format( forge:relative(target) ),
+        ('%s'):format( forge:relative(target) )
     } );
-    build:popd();
+    forge:popd();
 end
 
-function Apk.clean( build, target )
-    build:rm( ("%s.unaligned"):format(target:filename()) );
-    build:rm( target );
+function Apk.clean( forge, target )
+    forge:rm( ("%s.unaligned"):format(target:filename()) );
+    forge:rm( target );
 end
 
 android.Apk = Apk;

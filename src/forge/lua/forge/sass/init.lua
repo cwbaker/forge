@@ -2,7 +2,7 @@
 sass = {};
 
 function sass.configure( settings )
-    local local_settings = build.local_settings;
+    local local_settings = forge.local_settings;
     if not local_settings.sass then
         local_settings.updated = true;
         local_settings.sass = {
@@ -16,4 +16,4 @@ end
 
 require "forge.sass.Css";
 
-build:register_module( sass );
+forge:register_module( sass );

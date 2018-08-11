@@ -1,12 +1,12 @@
 
-local Ivy = build:TargetPrototype( 'Ivy' );
+local Ivy = forge:TargetPrototype( 'Ivy' );
 
-function Ivy.build( build, target )
+function Ivy.build( forge, target )
 	local settings = target.settings;
 	local java = ('%s/bin/java'):format( settings.java.jdk_directory );
 	local ivy = settings.java.ivy;
 	local unzip = settings.java.unzip or '/usr/bin/unzip';
-	local pattern = ('^%s/([^/]*)/.*/[aj]ars/(.*)(%%.[^%%.]*)$'):format( settings.ivy_cache_directory or build:home('.ivy2/cache') );
+	local pattern = ('^%s/([^/]*)/.*/[aj]ars/(.*)(%%.[^%%.]*)$'):format( settings.ivy_cache_directory or forge:home('.ivy2/cache') );
 	local args = {
 		'java';
 		('-jar "%s"'):format( settings.java.ivy );
@@ -15,7 +15,7 @@ function Ivy.build( build, target )
 		('-retrieve "%s/[organisation]/[artifact]-[revision].[ext]"'):format( target:directory() );
 		('-cachepath "%s"'):format( target );
 	};
-	build:system( java, args );
+	forge:system( java, args );
 
 	local file, error_message = io.open( target:filename(), 'rb' );
 	assertf( file, 'Opening "%s" to read Apache Ivy classpath failed - %s', error_message );
@@ -34,18 +34,18 @@ function Ivy.build( build, target )
 				('"%s"'):format( aar );
 				('-d "%s"'):format( aar_directory );
 			};
-			build:rmdir( aar_directory );
-			build:system( unzip, args );
+			forge:rmdir( aar_directory );
+			forge:system( unzip, args );
 			path = ('%s/%s/%s'):format( directory, organisation, artifact );
-			target:add_implicit_dependency( build:Directory(path) );
+			target:add_implicit_dependency( forge:Directory(path) );
 		else
 			path = ('%s/%s/%s%s'):format( directory, organisation, artifact, extension );
-			target:add_implicit_dependency( build:File(path) );
+			target:add_implicit_dependency( forge:File(path) );
 		end
 	end
 
 	-- Touch the generated classpath file so that its timestamp is later than
 	-- that of the *.aar* and *.jar* files added as implicit dependencies so
 	-- that this `Ivy` target isn't outdated after being built.
-	build:touch( target );
+	forge:touch( target );
 end

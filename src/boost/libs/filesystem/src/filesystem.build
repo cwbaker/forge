@@ -1,6 +1,6 @@
 
-for _, build in build:default_builds("cc_.*") do 
-    local build = build:configure {
+for _, forge in forge:default_builds("cc_.*") do 
+    local forge, settings = forge:configure {
         warning_level = 0;
         defines = { 
             -- Disable automatic linking to Boost libraries.
@@ -8,8 +8,8 @@ for _, build in build:default_builds("cc_.*") do
         };
     };
 
-    local boost_filesystem = build:Library '${lib}/boost_filesystem_${architecture}' {
-        build:Cxx '${obj}/%1' {
+    local boost_filesystem = forge:Library '${lib}/boost_filesystem_${architecture}' {
+        forge:Cxx '${obj}/%1' {
             "codecvt_error_category.cpp",
             "operations.cpp",
             "path.cpp",
@@ -22,7 +22,7 @@ for _, build in build:default_builds("cc_.*") do
 
     if platform == "windows" then
         boost_filesystem {
-            build:Cxx '${obj}/%1' {
+            forge:Cxx '${obj}/%1' {
                 "windows_file_codecvt.cpp"
             };
         };

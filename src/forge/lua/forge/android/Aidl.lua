@@ -1,11 +1,11 @@
 
-local Aidl = build:TargetPrototype( "android.Aidl" );
+local Aidl = forge:TargetPrototype( "android.Aidl" );
 
-function Aidl.build( build, target )
+function Aidl.build( forge, target )
     local settings = target.settings;
     local aidl = ("%s/aidl"):format( settings.android.build_tools_directory );
     local platform = ("%s/platforms/%s/framework.aidl"):format( settings.android.sdk_directory, settings.android.sdk_platform );
-    local output = build:generated(target:working_directory(), nil, settings);
+    local output = forge:generated(target:working_directory(), nil, settings);
     local command_line = {
         'aidl',
         ('-p%s'):format( platform ),
@@ -13,7 +13,7 @@ function Aidl.build( build, target )
         ('"%s"'):format( target:dependency() )
     };
 
-    build:system( 
+    forge:system( 
         aidl, 
         command_line
     );

@@ -7,7 +7,7 @@ function mingw.configure( settings )
         return mingw_directory;
     end
 
-    local local_settings = build.local_settings;
+    local local_settings = forge.local_settings;
     if not local_settings.mingw then
         local_settings.updated = true;
         local_settings.mingw = {
@@ -160,12 +160,12 @@ function mingw.cc( target )
         if dependency:is_outdated() and dependency ~= target.precompiled_header then
             if dependency:prototype() == nil then
                 print( leaf(dependency.source) );
-                build:system( gcc, ([[gcc %s %s %s -o "%s" "%s"]]):format(cppdirs, cppdefines, ccflags, relative(dependency:filename()), dependency.source), GccScanner );
+                forge:system( gcc, ([[gcc %s %s %s -o "%s" "%s"]]):format(cppdirs, cppdefines, ccflags, relative(dependency:filename()), dependency.source), GccScanner );
             elseif dependency.results then
                 for _, result in ipairs(dependency.results) do
                     if result:is_outdated() then
                         print( leaf(result.source) );
-                        build:system( gcc, ([[gcc %s %s %s -o "%s" "%s"]]):format(cppdirs, cppdefines, ccflags, relative(dependency:filename()), result.source), GccScanner );
+                        forge:system( gcc, ([[gcc %s %s %s -o "%s" "%s"]]):format(cppdirs, cppdefines, ccflags, relative(dependency:filename()), result.source), GccScanner );
                     end
                 end
             end
@@ -196,7 +196,7 @@ function mingw.build_library( target )
         local ar = ("%s/bin/ar.exe"):format( target.settings.mingw.mingw_directory );
         local arflags = table.concat( flags, " " );
         local arobjects = table.concat( objects, '" "' );
-        build:system( ar, ('ar %s "%s" "%s"'):format(arflags, native(target:filename()), arobjects) );
+        forge:system( ar, ('ar %s "%s" "%s"'):format(arflags, native(target:filename()), arobjects) );
     end
     popd();
 end
@@ -289,7 +289,7 @@ function mingw.build_executable( target )
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, " " );
         print( leaf(target:filename()) );
-        build:system( gxx, ('g++ %s %s "%s" %s'):format(ldflags, lddirs, ldobjects, ldlibs) );
+        forge:system( gxx, ('g++ %s %s "%s" %s'):format(ldflags, lddirs, ldobjects, ldlibs) );
     end
     popd();
 end 
@@ -335,4 +335,4 @@ function mingw.ilk_name( name )
     return ("%s_%s.ilk"):format( name, architecture );
 end
 
-build:register_module( mingw );
+forge:register_module( mingw );

@@ -12,29 +12,29 @@ local path_separator_by_operating_system = {
 };
 
 return {
-    bin = build:root( ("../%s/bin"):format(variant) );
-    lib = build:root( ("../%s/lib"):format(variant) );
-    obj = build:root( ("../%s/obj"):format(variant) );
-    gen = build:root( ("../%s/gen"):format(variant) );
-    classes = build:root( ("../%s/classes"):format(variant) );
-    cache = build:root( '.forge' );
+    bin = forge:root( ("../%s/bin"):format(variant) );
+    lib = forge:root( ("../%s/lib"):format(variant) );
+    obj = forge:root( ("../%s/obj"):format(variant) );
+    gen = forge:root( ("../%s/gen"):format(variant) );
+    classes = forge:root( ("../%s/classes"):format(variant) );
+    cache = forge:root( '.forge' );
 
     platform = platform;
 
-    path_separator = path_separator_by_operating_system [build:operating_system()];
+    path_separator = path_separator_by_operating_system [forge:operating_system()];
 
-    user_settings_filename = build:home( "user_settings.lua" );
+    user_settings_filename = forge:home( "user_settings.lua" );
 
-    local_settings_filename = build:root( "local_settings.lua" );
+    local_settings_filename = forge:root( "local_settings.lua" );
 
     include_directories = {
-        build:root();
+        forge:root();
     };
     
     library_directories = {
     };
 
-    platforms = platforms_by_operating_system [build:operating_system()];
+    platforms = platforms_by_operating_system [forge:operating_system()];
 
     variants = {};
 
@@ -73,7 +73,7 @@ return {
             sdkroot = "iphoneos";
             iphoneos_deployment_target = "8.0";
             targeted_device_family = "1,2";
-            provisioning_profile = build:home( "sweet/sweet_software/dev.mobileprovision" );
+            provisioning_profile = forge:home( "sweet/sweet_software/dev.mobileprovision" );
         };
 
         ["ios_simulator"] = {
@@ -88,7 +88,7 @@ return {
             sdkroot = "iphoneos"; 
             iphoneos_deployment_target = "7.0";
             targeted_device_family = "1,2";
-            provisioning_profile = build:home( "sweet/sweet_software/dev.mobileprovision" );
+            provisioning_profile = forge:home( "sweet/sweet_software/dev.mobileprovision" );
         };
 
         ["linux"] = {

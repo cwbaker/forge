@@ -1,7 +1,7 @@
 
-local Plist = build:TargetPrototype( "xcode.Plist" );
+local Plist = forge:TargetPrototype( "xcode.Plist" );
 
-function Plist.build( build, plist )
+function Plist.build( forge, plist )
     local command_line = {
         'plutil';
         '-convert binary1';
@@ -9,7 +9,7 @@ function Plist.build( build, plist )
         ('"%s"'):format( plist:dependency() );
     };
     local plutil = plist.settings.ios.plutil;
-    build:system( plutil, table.concat(command_line, " ") );
+    forge:system( plutil, table.concat(command_line, " ") );
 end
 
 xcode.Plist = Plist;

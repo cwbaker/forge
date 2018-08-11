@@ -2,10 +2,10 @@
 qt = {};
 
 function qt.configure( settings )
-    local local_settings = build.local_settings;
+    local local_settings = forge.local_settings;
     if not local_settings.qt then
         local_settings.updated = true;
-        if build:operating_system() == "windows" then
+        if forge:operating_system() == "windows" then
             local_settings.qt = {
                 moc = "C:/Qt/5.5/bin/moc.exe";
                 qt_directory = "C:/Qt/5.5";
@@ -13,8 +13,8 @@ function qt.configure( settings )
             };
         else
             local_settings.qt = {
-                moc = build:home( "Qt/5.5/clang_64/bin/moc" );
-                qt_directory = build:home( "Qt" );
+                moc = forge:home( "Qt/5.5/clang_64/bin/moc" );
+                qt_directory = forge:home( "Qt" );
                 version = "5.5";
             };
         end
@@ -27,4 +27,4 @@ end
 
 require "forge.qt.QtMoc";
 
-build:register_module( qt );
+forge:register_module( qt );

@@ -1,7 +1,7 @@
 
-local Html = build:TargetPrototype( "pandoc.Html" );
+local Html = forge:TargetPrototype( "pandoc.Html" );
 
-function Html.build( build, target )
+function Html.build( forge, target )
     local append_arguments = function( arguments, prefix, other_arguments )
         if other_arguments then 
             for _, argument in ipairs(other_arguments) do 
@@ -33,15 +33,15 @@ function Html.build( build, target )
     append_arguments( arguments, "-c ", target.stylesheets );
     append_arguments( arguments, "-c ", settings.stylesheets );
 
-    local output = build:relative( target );
+    local output = forge:relative( target );
     table.insert( arguments, ('-o "%s"'):format(output) );
 
-    local input = build:relative( target:dependency() );
+    local input = forge:relative( target:dependency() );
     table.insert( arguments, ('"%s"'):format(input) );
 
     local environment = {
         PATH = os.getenv( "PATH" );
     };
 
-    build:system( pandoc, arguments, environment, build:dependencies_filter(target) );
+    forge:system( pandoc, arguments, environment, forge:dependencies_filter(target) );
 end

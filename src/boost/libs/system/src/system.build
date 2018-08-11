@@ -1,6 +1,6 @@
 
-for _, build in build:default_builds("cc_.*") do 
-    local build = build:configure {
+for _, forge in forge:default_builds("cc_.*") do 
+    local forge = forge:configure {
         warning_level = 0;
         defines = { 
             -- Disable automatic linking to Boost libraries.
@@ -8,8 +8,8 @@ for _, build in build:default_builds("cc_.*") do
         };
     };
 
-    build:Library '${lib}/boost_system_${architecture}' {
-        build:Cxx '${obj}/%1' {
+    forge:Library '${lib}/boost_system_${architecture}' {
+        forge:Cxx '${obj}/%1' {
             "error_code.cpp"
         };
     };

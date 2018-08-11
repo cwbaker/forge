@@ -1,22 +1,22 @@
 
-local Java = build:TargetPrototype( "Java" );
+local Java = forge:TargetPrototype( "Java" );
 
-function Java.create( build, settings )
-    local java_ = build:Target( build:anonymous(), Java );
+function Java.create( forge, settings )
+    local java_ = forge:Target( forge:anonymous(), Java );
     java_.settings = settings;
     java_:set_filename( ("%s/Java.%s.timestamp"):format(settings.classes_directory(java_), java_:id()) );
-    java_:add_ordering_dependency( build:Directory(settings.classes_directory(java_)) );
+    java_:add_ordering_dependency( forge:Directory(settings.classes_directory(java_)) );
     java.add_jar_dependencies( java_, settings.jars );
     return java_;
 end
 
-function Java.depend( build, target, dependencies )
-    build:pushd( dependencies.sourcepath or "." );
+function Java.depend( forge, target, dependencies )
+    forge:pushd( dependencies.sourcepath or "." );
     for _, value in ipairs(dependencies) do
-        local source = build:SourceFile( value, settings );
+        local source = forge:SourceFile( value, settings );
         target:add_dependency( source );
     end
-    build:popd();
+    forge:popd();
 
     local jars = dependencies.jars;
     if jars then 
@@ -24,11 +24,11 @@ function Java.depend( build, target, dependencies )
         dependencies.jars = nil;
     end
 
-    build:merge( target, dependencies );
+    forge:merge( target, dependencies );
     return target
 end
 
-function Java.build( build, target )
+function Java.build( forge, target )
     local function add_jars( jars, other_jars )
         if other_jars then 
             for _, jar in ipairs(other_jars) do 
@@ -48,12 +48,12 @@ function Java.build( build, target )
     for _, dependency in target:dependencies() do 
         local prototype = dependency:prototype();
         if prototype == nil then
-            table.insert( source_files, build:relative(dependency:filename()) );
-        elseif prototype == build.Jar then
-            table.insert( jars, build:relative(dependency:filename()) );
-        elseif prototype == build.Ivy then 
+            table.insert( source_files, forge:relative(dependency:filename()) );
+        elseif prototype == forge.Jar then
+            table.insert( jars, forge:relative(dependency:filename()) );
+        elseif prototype == forge.Ivy then 
             for _, archive in dependency:implicit_dependencies() do 
-                if build:extension(archive) == '.jar' then 
+                if forge:extension(archive) == '.jar' then 
                     table.insert( jars, archive:filename() );
                 else
                     table.insert( jars, ('%s/classes.jar'):format(archive:filename()) );
@@ -94,7 +94,7 @@ function Java.build( build, target )
             '-source 1.7',
             ('%s'):format(table.concat(source_files, ' '))
         };
-        build:system( javac, command_line );
+        forge:system( javac, command_line );
 
         local timestamp_file = io.open( target:filename(), "wb" );
         assertf( timestamp_file, "Opening '%s' to write generated text failed", target:filename() );
@@ -104,9 +104,9 @@ function Java.build( build, target )
     end
 end
 
-function Java.clean( build, target )
-    build:rm( target:filename() );
-    build:rmdir( settings.classes_directory(target) )
+function Java.clean( forge, target )
+    forge:rm( target:filename() );
+    forge:rmdir( settings.classes_directory(target) )
 end
 
 java.Java = Java;

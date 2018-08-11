@@ -1,17 +1,17 @@
 
-local build = build:configure {
+local forge = forge:configure {
     -- Disable automatic linking to Boost libraries.
     defines = { "BOOST_ALL_NO_LIB" };
 };
 
 -- Disable warnings on Linux to avoid unused variable warnings in Boost
 -- System library headers.
-if build:operating_system() == "linux" then
+if forge:operating_system() == "linux" then
     settings.warning_level = 0;
 end
 
-build:all {
-    build:Executable '${bin}/forge_test' {
+forge:all {
+    forge:Executable '${bin}/forge_test' {
         '${lib}/forge_${architecture}';
         '${lib}/forge_lua_${architecture}';
         '${lib}/process_${architecture}';
@@ -24,12 +24,12 @@ build:all {
         '${lib}/boost_system_${architecture}';
         '${lib}/UnitTest++_${architecture}';
 
-        system_libraries = build:switch {
+        system_libraries = forge:switch {
             platform;
             linux = { 'pthread', 'dl' };
         };
         
-        build:Cxx '${obj}/%1' {
+        forge:Cxx '${obj}/%1' {
             "main.cpp",
             "ErrorChecker.cpp",
             "FileChecker.cpp",

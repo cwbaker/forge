@@ -1,16 +1,16 @@
 
-local Dex = build:TargetPrototype( "android.Dex" );
+local Dex = forge:TargetPrototype( "android.Dex" );
 
-function Dex.depend( build, target, dependencies )
+function Dex.depend( forge, target, dependencies )
     local jars = dependencies.jars;
     if jars then 
         java.add_jar_dependencies( target, dependencies.jars );
         dependencies.jars = nil;
     end
-    return build.Target.depend( build, target, dependencies );
+    return forge.Target.depend( forge, target, dependencies );
 end
 
-function Dex.build( build, target )
+function Dex.build( forge, target )
     local function add_jars( jars, other_jars )
         if other_jars then 
             for _, jar in ipairs(other_jars) do 
@@ -24,9 +24,9 @@ function Dex.build( build, target )
     local proguard = target:dependency( 1 );
     if proguard and target.settings.android.proguard_enabled then 
         local proguard_sh = ("%s/bin/proguard.sh"):format( target.settings.android.proguard_directory );
-        build:system( proguard_sh, {
+        forge:system( proguard_sh, {
             'proguard.sh',
-            ('-printmapping \"%s/%s.map\"'):format( settings.classes_directory(target), build:leaf(target) ),
+            ('-printmapping \"%s/%s.map\"'):format( settings.classes_directory(target), forge:leaf(target) ),
             ('"@%s"'):format( proguard ) 
         } );
         table.insert( jars, ('\"%s/classes.jar\"'):format(settings.classes_directory(target)) );
@@ -39,11 +39,11 @@ function Dex.build( build, target )
 
     for _, dependency in target:dependencies() do 
         local prototype = dependency:prototype();
-        if prototype == build.Jar then 
-            table.insert( jars, build:relative(dependency:filename()) );
-        elseif prototype == build.Ivy then 
+        if prototype == forge.Jar then 
+            table.insert( jars, forge:relative(dependency:filename()) );
+        elseif prototype == forge.Ivy then 
             for _, archive in dependency:implicit_dependencies() do 
-                if build:extension(archive) == '.jar' then 
+                if forge:extension(archive) == '.jar' then 
                     table.insert( jars, archive:filename() );
                 else
                     table.insert( jars, ('%s/classes.jar'):format(archive:filename()) );
@@ -52,11 +52,11 @@ function Dex.build( build, target )
         end
     end
 
-    local dx = build:native( ("%s/dx"):format(target.settings.android.build_tools_directory) );
-    if build:operating_system() == "windows" then
+    local dx = forge:native( ("%s/dx"):format(target.settings.android.build_tools_directory) );
+    if forge:operating_system() == "windows" then
         dx = ("%s.bat"):format( dx );
     end
-    build:shell( {
+    forge:shell( {
         ('\"%s\"'):format( dx ),
         '--dex',
         '--verbose',

@@ -5,9 +5,9 @@
 local function clean_visit( target )
     local clean_function = target.clean;
     if clean_function then 
-        clean_function( target.build_, target );
+        clean_function( target.forge_, target );
     elseif target:cleanable() and target:filename() ~= "" then 
-        build:rm( target:filename() );
+        forge:rm( target:filename() );
     end
 end
 
@@ -19,10 +19,10 @@ local function build_visit( target )
     if build_function and target:outdated() then 
         local filename = target:filename();
         if filename ~= "" then
-            printf( build:leaf(filename) );
+            printf( forge:leaf(filename) );
         end
         target:clear_implicit_dependencies();
-        local success, error_message = pcall( build_function, target.build_, target );
+        local success, error_message = pcall( build_function, target.forge_, target );
         target:set_built( success );
         if not success then 
             clean_visit( target );
@@ -32,30 +32,30 @@ local function build_visit( target )
 end
 
 function default()
-    local failures = build:postorder( build_visit, build:find_initial_target(goal) );
-    build:save();
-    printf( "build: default (build)=%dms", math.ceil(build:ticks()) );
+    local failures = forge:postorder( build_visit, forge:find_initial_target(goal) );
+    forge:save();
+    printf( "forge: default (build)=%dms", math.ceil(forge:ticks()) );
     return failures;
 end
 
 function clean()
-    local failures = build:postorder( clean_visit, build:find_initial_target(goal) );
-    printf( "build: clean=%sms", tostring(math.ceil(build:ticks())) );
+    local failures = forge:postorder( clean_visit, forge:find_initial_target(goal) );
+    printf( "forge: clean=%sms", tostring(math.ceil(forge:ticks())) );
     return failures;
 end
 
 function reconfigure()
-    rm( build.settings.local_settings_filename );
-    build:find_initial_target();
+    rm( forge.settings.local_settings_filename );
+    forge:find_initial_target();
     return 0;
 end
 
 function dependencies()
-    build:print_dependencies( build:find_initial_target(goal) );
+    forge:print_dependencies( forge:find_initial_target(goal) );
     return 0;
 end
 
 function namespace()
-    build:print_namespace( build:find_initial_target(goal) );
+    forge:print_namespace( forge:find_initial_target(goal) );
     return 0;
 end

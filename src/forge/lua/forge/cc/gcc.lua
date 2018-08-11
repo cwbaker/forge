@@ -10,9 +10,9 @@ gcc.flags_by_architecture = {
 
 function gcc.append_defines( target, flags )
     local settings = target.settings;
-    table.insert( flags, ('-DBUILD_PLATFORM_%s'):format(build:upper(settings.platform)) );
-    table.insert( flags, ('-DBUILD_VARIANT_%s'):format(build:upper(variant)) );
-    table.insert( flags, ('-DBUILD_LIBRARY_TYPE_%s'):format(build:upper(settings.library_type)) );
+    table.insert( flags, ('-DBUILD_PLATFORM_%s'):format(forge:upper(settings.platform)) );
+    table.insert( flags, ('-DBUILD_VARIANT_%s'):format(forge:upper(variant)) );
+    table.insert( flags, ('-DBUILD_LIBRARY_TYPE_%s'):format(forge:upper(settings.library_type)) );
     table.insert( flags, ('-DBUILD_BIN_DIRECTORY="\\"%s\\""'):format(settings.bin) );
     table.insert( flags, ('-DBUILD_MODULE_DIRECTORY="\\"%s\\""'):format(target:working_directory():path()) );
 
@@ -45,7 +45,7 @@ end
 function gcc.append_include_directories( target, flags )
     if target.include_directories then
         for _, directory in ipairs(target.include_directories) do
-            table.insert( flags, ('-I "%s"'):format(build:relative(directory)) );
+            table.insert( flags, ('-I "%s"'):format(forge:relative(directory)) );
         end
     end
 
@@ -127,7 +127,7 @@ function gcc.append_link_flags( target, flags )
     table.insert( flags, gcc.flags_by_architecture[target.architecture] );
     table.insert( flags, "-std=c++11" );
 
-    if target:prototype() == build.DynamicLibrary then
+    if target:prototype() == forge.DynamicLibrary then
         table.insert( flags, "-shared" );
     end
     
@@ -142,7 +142,7 @@ function gcc.append_link_flags( target, flags )
     -- The latest GCC with Android (or clang with iOS) doesn't recognize 
     -- '-Wl,map' to specify the path to output a mapfile.
     -- if target.settings.generate_map_file then
-    --     table.insert( flags, ('-Wl,-Map,"%s"'):format(build:native(("%s.map"):format(target:filename()))) );
+    --     table.insert( flags, ('-Wl,-Map,"%s"'):format(forge:native(("%s.map"):format(target:filename()))) );
     -- end
 
     if target.settings.strip and not target.settings.generate_dsym_bundle then
@@ -150,10 +150,10 @@ function gcc.append_link_flags( target, flags )
     end
 
     if target.settings.exported_symbols_list then
-        table.insert( flags, ('-exported_symbols_list "%s"'):format(build:absolute(target.settings.exported_symbols_list)) );
+        table.insert( flags, ('-exported_symbols_list "%s"'):format(forge:absolute(target.settings.exported_symbols_list)) );
     end
 
-    table.insert( flags, ('-o "%s"'):format(build:native(target:filename())) );
+    table.insert( flags, ('-o "%s"'):format(forge:native(target:filename())) );
 end
 
 function gcc.append_link_libraries( target, libraries )
@@ -176,4 +176,4 @@ function gcc.append_link_libraries( target, libraries )
     end
 end
 
-build:register_module( gcc );
+forge:register_module( gcc );

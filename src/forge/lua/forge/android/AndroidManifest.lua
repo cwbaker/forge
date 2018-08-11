@@ -1,12 +1,12 @@
 
-local AndroidManifest = build:TargetPrototype( 'android.AndroidManifest' );
+local AndroidManifest = forge:TargetPrototype( 'android.AndroidManifest' );
 
-function AndroidManifest.build( build, target )
+function AndroidManifest.build( forge, target )
     local manifests = {};
     for _, dependency in target:dependencies() do 
-        if dependency:prototype() == build.Ivy then 
+        if dependency:prototype() == forge.Ivy then 
             for _, archive in dependency:implicit_dependencies() do 
-                if build:extension(archive) ~= '.jar' then
+                if forge:extension(archive) ~= '.jar' then
                     table.insert( manifests, ('%s/AndroidManifest.xml'):format(archive) );
                 end
             end
@@ -34,5 +34,5 @@ function AndroidManifest.build( build, target )
 	end
 
 	printf( '%s', table.concat(args, ' ') );
-    build:system( java, args );
+    forge:system( java, args );
 end

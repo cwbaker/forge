@@ -1,17 +1,17 @@
 
-local AssetCatalog = build:TargetPrototype( 'xcode.AssetCatalog' );
+local AssetCatalog = forge:TargetPrototype( 'xcode.AssetCatalog' );
 
-function AssetCatalog.create( build, settings, identifier, partial_info_plist )
-	local assets = build:File( ('%s/Assets.car'):format(identifier), AssetCatalog );
+function AssetCatalog.create( forge, settings, identifier, partial_info_plist )
+	local assets = forge:File( ('%s/Assets.car'):format(identifier), AssetCatalog );
 	if partial_info_plist then 
-		assets:set_filename( build:absolute(partial_info_plist), 2 );
+		assets:set_filename( forge:absolute(partial_info_plist), 2 );
 	end
-    assets:add_ordering_dependency( build:Directory(assets:directory()) );
+    assets:add_ordering_dependency( forge:Directory(assets:directory()) );
 	return assets;
 end
 
-function AssetCatalog.build( build, assets )
-	local settings = assets.settings or build:current_settings();
+function AssetCatalog.build( forge, assets )
+	local settings = assets.settings or forge:current_settings();
 	local platform = settings.platform or 'ios';
     local sdkroot = settings.sdkroot or 'iphoneos';
     local xcrun = settings.xcrun or settings.ios.xcrun or settings.macos.xcrun;
@@ -48,7 +48,7 @@ function AssetCatalog.build( build, assets )
 
 	table.insert( args, assets:dependency():filename() );
 
-    build:system( xcrun, args );
+    forge:system( xcrun, args );
 end
 
 xcode.AssetCatalog = AssetCatalog;

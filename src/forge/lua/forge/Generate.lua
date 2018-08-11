@@ -1,10 +1,10 @@
 
-local Generate = build:TargetPrototype( "Generate" );
+local Generate = forge:TargetPrototype( "Generate" );
 
-function Generate.build( build, target )
+function Generate.build( forge, target )
     local outputs = {};
     for _, dependency in target:dependencies() do 
-        local template = assert( loadfile(build:native(build:absolute(dependency))) );
+        local template = assert( loadfile(forge:native(forge:absolute(dependency))) );
         local success, output_or_error_message = pcall( template, target );
         assert( success, output_or_error_message );
         table.insert( outputs, output_or_error_message );

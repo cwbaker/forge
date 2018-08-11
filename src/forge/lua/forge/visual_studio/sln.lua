@@ -20,7 +20,7 @@ EndProject
         local target = project.target;
         local name = target.project_name or target:id();
         local filename = ("%s/%s.vcxproj"):format( target:working_directory():path(), target:id(), name );
-        write( PROJECT, name, build:native(build:relative(filename)), project.uuid );
+        write( PROJECT, name, forge:native(forge:relative(filename)), project.uuid );
     end
 end
 
@@ -78,8 +78,8 @@ local function generate_solution_configuration_platforms( write )
 ]];
 
     write( START_SOLUTION_CONFIGURATION_PLATFORMS );
-    for _, platform in ipairs(build.settings.platforms) do
-        for _, variant in ipairs(build.settings.variants) do
+    for _, platform in ipairs(forge.settings.platforms) do
+        for _, variant in ipairs(forge.settings.variants) do
             write( SOLUTION_CONFIGURATION_PLATFORM, platform, variant, platform, variant );
         end
     end
@@ -172,10 +172,10 @@ local function write_function( file )
 end
 
 function sln.generate( filename, projects, directories )
-    print( build:leaf(filename) );
-    build:pushd( build:branch(build:absolute(filename)) );
-    local file = io.open( build:absolute(filename), "wb" );
-    assertf( file, "Opening '%s' to write solution failed", build:absolute(filename) );
+    print( forge:leaf(filename) );
+    forge:pushd( forge:branch(forge:absolute(filename)) );
+    local file = io.open( forge:absolute(filename), "wb" );
+    assertf( file, "Opening '%s' to write solution failed", forge:absolute(filename) );
     local write = write_function( file );
     generate_header( write );
     generate_projects( write, projects );
@@ -189,7 +189,7 @@ function sln.generate( filename, projects, directories )
     generate_end_global( write );
     file:close();
     file = nil;
-    build:popd();
+    forge:popd();
 end
 
 return sln;

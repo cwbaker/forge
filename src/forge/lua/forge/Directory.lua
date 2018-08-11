@@ -1,13 +1,13 @@
 
-local Directory = build:TargetPrototype( "Directory" );
+local Directory = forge:TargetPrototype( "Directory" );
 
-function Directory.create( build, settings, identifier )
-	return build:File( identifier, Directory );
+function Directory.create( forge, settings, identifier )
+	return forge:File( identifier, Directory );
 end
 
-function Directory.build( build, target )
-    build:mkdir( target );
+function Directory.build( forge, target )
+    forge:mkdir( target );
 end
 
-function Directory.clean( build, target )
+function Directory.clean( forge, target )
 end
