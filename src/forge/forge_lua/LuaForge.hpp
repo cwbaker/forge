@@ -48,8 +48,8 @@ private:
     static int maximum_parallel_jobs( lua_State* lua_state );
     static int set_stack_trace_enabled( lua_State* lua_state );
     static int stack_trace_enabled( lua_State* lua_state );
-    static int set_build_hooks_library( lua_State* lua_state );
-    static int build_hooks_library( lua_State* lua_state );
+    static int set_forge_hooks_library( lua_State* lua_state );
+    static int forge_hooks_library( lua_State* lua_state );
     static int execute( lua_State* lua_state );
     static int print( lua_State* lua_state );
 };

@@ -16,7 +16,7 @@ using namespace sweet;
 using namespace sweet::luaxx;
 using namespace sweet::forge;
 
-static const char* TARGET_PROTOTYPE_METATABLE = "build.TargetPrototype";
+static const char* TARGET_PROTOTYPE_METATABLE = "forge.TargetPrototype";
 
 LuaTargetPrototype::LuaTargetPrototype()
 : lua_state_( nullptr )

@@ -87,8 +87,8 @@ void LuaForge::create( Forge* forge )
         { "maximum_parallel_jobs", &LuaForge::maximum_parallel_jobs },
         { "set_stack_trace_enabled", &LuaForge::set_stack_trace_enabled },
         { "stack_trace_enabled", &LuaForge::stack_trace_enabled },
-        { "set_build_hooks_library", &LuaForge::set_build_hooks_library },
-        { "build_hooks_library", &LuaForge::build_hooks_library },
+        { "set_forge_hooks_library", &LuaForge::set_forge_hooks_library },
+        { "forge_hooks_library", &LuaForge::forge_hooks_library },
         { "execute", &LuaForge::execute },
         { "print", &LuaForge::print },
         { nullptr, nullptr }
@@ -103,7 +103,7 @@ void LuaForge::create( Forge* forge )
     lua_system_->create( forge, lua_state_ );
     lua_target_->create( lua_state_ );
     lua_target_prototype_->create( lua_state_, lua_target_ );
-    lua_setglobal( lua_state_, "build" );
+    lua_setglobal( lua_state_, "forge" );
 
     // Set `package.path` to load build scripts stored in `../lua` relative 
     // to the `build` executable.  The value of `package.path` may be 
@@ -212,22 +212,22 @@ int LuaForge::stack_trace_enabled( lua_State* lua_state )
     return 1;
 }
 
-int LuaForge::set_build_hooks_library( lua_State* lua_state )
+int LuaForge::set_forge_hooks_library( lua_State* lua_state )
 {
     const int FORGE = 1;
-    const int BUILD_HOOKS_LIBRARY = 2;
+    const int FORGE_HOOKS_LIBRARY = 2;
     Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
-    const char* build_hooks_library = luaL_checkstring( lua_state, BUILD_HOOKS_LIBRARY );
-    forge->set_build_hooks_library( string(build_hooks_library) );
+    const char* forge_hooks_library = luaL_checkstring( lua_state, FORGE_HOOKS_LIBRARY );
+    forge->set_forge_hooks_library( string(forge_hooks_library) );
     return 0;
 }
 
-int LuaForge::build_hooks_library( lua_State* lua_state )
+int LuaForge::forge_hooks_library( lua_State* lua_state )
 {
     const int FORGE = 1;
     Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
-    const string& build_hooks_library = forge->build_hooks_library();
-    lua_pushlstring( lua_state, build_hooks_library.c_str(), build_hooks_library.size() );
+    const string& forge_hooks_library = forge->forge_hooks_library();
+    lua_pushlstring( lua_state, forge_hooks_library.c_str(), forge_hooks_library.size() );
     return 1;
 }
 

@@ -78,8 +78,8 @@ class Forge
         bool stack_trace_enabled() const;
         void set_maximum_parallel_jobs( int maximum_parallel_jobs );
         int maximum_parallel_jobs() const;
-        void set_build_hooks_library( const std::string& build_hooks_library );
-        const std::string& build_hooks_library() const;
+        void set_forge_hooks_library( const std::string& forge_hooks_library );
+        const std::string& forge_hooks_library() const;
 
         void set_root_directory( const std::string& root_directory );
         void assign_global_variables( const std::vector<std::string>& assignments_and_commands );

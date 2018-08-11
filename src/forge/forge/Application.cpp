@@ -128,7 +128,7 @@ void Application::forge_warning( Forge* /*forge*/, const char* message )
 {
     SWEET_ASSERT( message );
     
-    fputs( "build: ", stderr );
+    fputs( "forge: ", stderr );
     fputs( message, stderr );
     fputs( ".\n", stderr );
     fflush( stderr );
@@ -138,7 +138,7 @@ void Application::forge_error( Forge* /*forge*/, const char* message )
 {
     SWEET_ASSERT( message );
     
-    fputs( "build: ", stderr );
+    fputs( "forge: ", stderr );
     fputs( message, stderr );
     fputs( ".\n", stderr );
     fflush( stderr );

@@ -24,13 +24,13 @@ int main( int argc, char** argv )
 
     catch ( const std::exception& exception )
     {
-        fprintf( stderr, "build: %s.\n", exception.what() );
+        fprintf( stderr, "forge: %s.\n", exception.what() );
         result = EXIT_FAILURE;
     }
 
     catch ( ... )
     {
-        fprintf( stderr, "build: An unexpected error occured.\n" );
+        fprintf( stderr, "forge: An unexpected error occured.\n" );
         result = EXIT_FAILURE;
     }
 

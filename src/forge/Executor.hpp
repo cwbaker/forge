@@ -40,7 +40,7 @@ class Executor
     std::condition_variable jobs_empty_condition_; ///< The condition attribute that is used to notify threads that there are jobs ready to be processed.
     std::condition_variable jobs_ready_condition_; ///< The condition attribute that is used to notify threads that there are jobs ready to be processed.
     std::deque<std::function<void ()> > jobs_; ///< The functions to be executed in the thread pool.
-    std::string build_hooks_library_; ///< The full path to the build hooks library.
+    std::string forge_hooks_library_; ///< The full path to the build hooks library.
     int maximum_parallel_jobs_; ///< The maximum number of parallel jobs to allow.
     std::vector<std::thread*> threads_; ///< The thread pool of threads used to process Jobs.
     int active_jobs_; ///< The number of active jobs.
@@ -49,10 +49,10 @@ class Executor
     public:
         Executor( Forge* forge );
         ~Executor();
-        const std::string& build_hooks_library() const;
+        const std::string& forge_hooks_library() const;
         int maximum_parallel_jobs() const;
         int active_jobs() const;
-        void set_build_hooks_library( const std::string& build_hook_library );
+        void set_forge_hooks_library( const std::string& forge_hook_library );
         void set_maximum_parallel_jobs( int maximum_parallel_jobs );
         void execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Context* context );
 

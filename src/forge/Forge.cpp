@@ -303,14 +303,14 @@ int Forge::maximum_parallel_jobs() const
 /**
 // Set the path to the build hooks library.
 //
-// @param build_hooks_library
+// @param forge_hooks_library
 //  The path to the build hooks library or an empty string to disable tracking
 //  dependencies via build hooks.
 */
-void Forge::set_build_hooks_library( const std::string& build_hooks_library )
+void Forge::set_forge_hooks_library( const std::string& forge_hooks_library )
 {
     SWEET_ASSERT( executor_ );
-    executor_->set_build_hooks_library( build_hooks_library );
+    executor_->set_forge_hooks_library( forge_hooks_library );
 }
 
 /**
@@ -319,10 +319,10 @@ void Forge::set_build_hooks_library( const std::string& build_hooks_library )
 // @return 
 //  The path to the build hooks library.
 */
-const std::string& Forge::build_hooks_library() const
+const std::string& Forge::forge_hooks_library() const
 {
     SWEET_ASSERT( executor_ );
-    return executor_->build_hooks_library();
+    return executor_->forge_hooks_library();
 }
 
 /**

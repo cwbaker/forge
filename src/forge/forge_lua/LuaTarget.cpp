@@ -18,8 +18,8 @@ using namespace sweet;
 using namespace sweet::luaxx;
 using namespace sweet::forge;
 
-static const char* TARGET_METATABLE = "build.Target";
-static const char* STRING_VECTOR_CONST_ITERATOR_METATABLE = "build.vector<string>::const_iterator";
+static const char* TARGET_METATABLE = "forge.Target";
+static const char* STRING_VECTOR_CONST_ITERATOR_METATABLE = "forge.vector<string>::const_iterator";
 
 LuaTarget::LuaTarget()
 : lua_state_( nullptr )

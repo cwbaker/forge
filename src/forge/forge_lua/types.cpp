@@ -5,6 +5,6 @@
 
 #include "types.hpp"
 
-const char* sweet::forge::FORGE_TYPE = "build.Forge";
-const char* sweet::forge::TARGET_TYPE = "build.Target";
-const char* sweet::forge::TARGET_PROTOTYPE_TYPE = "build.TargetPrototype";
+const char* sweet::forge::FORGE_TYPE = "forge.Forge";
+const char* sweet::forge::TARGET_TYPE = "forge.Target";
+const char* sweet::forge::TARGET_PROTOTYPE_TYPE = "forge.TargetPrototype";

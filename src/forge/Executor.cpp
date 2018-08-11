@@ -33,7 +33,7 @@ Executor::Executor( Forge* forge )
   jobs_empty_condition_(),
   jobs_ready_condition_(),
   jobs_(),
-  build_hooks_library_(),
+  forge_hooks_library_(),
   maximum_parallel_jobs_( 1 ),
   threads_(),
   active_jobs_( 0 ),
@@ -48,9 +48,9 @@ Executor::~Executor()
     stop();
 }
 
-const std::string& Executor::build_hooks_library() const
+const std::string& Executor::forge_hooks_library() const
 {
-    return build_hooks_library_;
+    return forge_hooks_library_;
 }
 
 int Executor::maximum_parallel_jobs() const
@@ -63,9 +63,9 @@ int Executor::active_jobs() const
     return active_jobs_;
 }
 
-void Executor::set_build_hooks_library( const std::string& build_hooks_library )
+void Executor::set_forge_hooks_library( const std::string& forge_hooks_library )
 {
-    build_hooks_library_ = build_hooks_library;
+    forge_hooks_library_ = forge_hooks_library;
 }
 
 void Executor::set_maximum_parallel_jobs( int maximum_parallel_jobs )
@@ -139,7 +139,7 @@ void Executor::thread_execute( const std::string& command, const std::string& co
         process.environment( environment );
         process.start_suspended( true );
 
-        intptr_t read_dependencies_pipe = dependencies_filter && !build_hooks_library_.empty() ? process.pipe( PIPE_USER_0 ) : -1;
+        intptr_t read_dependencies_pipe = dependencies_filter && !forge_hooks_library_.empty() ? process.pipe( PIPE_USER_0 ) : -1;
         intptr_t write_dependencies_pipe = (intptr_t) process.write_pipe( 0 );
         intptr_t stdout_pipe = process.pipe( PIPE_STDOUT );
         intptr_t stderr_pipe = process.pipe( PIPE_STDERR );
@@ -147,7 +147,7 @@ void Executor::thread_execute( const std::string& command, const std::string& co
         inject_build_hooks_windows( &process, write_dependencies_pipe );
         process.resume();
 
-        if ( dependencies_filter && !build_hooks_library_.empty() )
+        if ( dependencies_filter && !forge_hooks_library_.empty() )
         {
             forge_->reader()->read( read_dependencies_pipe, dependencies_filter, arguments, working_directory );
         }
@@ -223,13 +223,13 @@ void Executor::stop()
 process::Environment* Executor::inject_build_hooks_linux( process::Environment* environment, bool dependencies_filter_exists ) const
 {
 #if defined(BUILD_OS_LINUX)
-    if ( !build_hooks_library_.empty() && dependencies_filter_exists )
+    if ( !forge_hooks_library_.empty() && dependencies_filter_exists )
     {
         if ( !environment )
         {
             environment = new process::Environment;
         }
-        environment->append( "LD_PRELOAD", build_hooks_library_.c_str() );
+        environment->append( "LD_PRELOAD", forge_hooks_library_.c_str() );
     }
 #else
     (void) environment;
@@ -241,14 +241,14 @@ process::Environment* Executor::inject_build_hooks_linux( process::Environment* 
 process::Environment* Executor::inject_build_hooks_macosx( process::Environment* environment, bool dependencies_filter_exists ) const
 {
 #if defined(BUILD_OS_MACOS)
-    if ( !build_hooks_library_.empty() && dependencies_filter_exists )
+    if ( !forge_hooks_library_.empty() && dependencies_filter_exists )
     {
         if ( !environment )
         {
             environment = new process::Environment;
         }
         environment->append( "DYLD_FORCE_FLAT_NAMESPACE", "1" );
-        environment->append( "DYLD_INSERT_LIBRARIES", build_hooks_library_.c_str() );
+        environment->append( "DYLD_INSERT_LIBRARIES", forge_hooks_library_.c_str() );
     }
 #else
     (void) environment;
@@ -261,7 +261,7 @@ void Executor::inject_build_hooks_windows( process::Process* pprocess, intptr_t 
 {
 #if defined(BUILD_OS_WINDOWS)
     bool inject_build_hooks =
-        !build_hooks_library_.empty() &&
+        !forge_hooks_library_.empty() &&
         write_dependencies_pipe != (intptr_t) INVALID_HANDLE_VALUE &&
         is_64_bit_process_windows( pprocess )
     ;
@@ -291,11 +291,11 @@ void Executor::inject_build_hooks_windows( process::Process* pprocess, intptr_t 
             0x48, 0x83, 0xEC, 0x28, // sub rsp, 32 + 8 to realign the stack to a 16 byte boundary.
             0x48, 0xB9, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, // mov rcx, 1122334411223344h (0x31 + 2)
             0x48, 0xB8, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, // mov rax, 1122334411223344h (0x3b + 2)
-            0xFF, 0xD0, // call rax (LoadLibraryA("build_hooks.dll")).
+            0xFF, 0xD0, // call rax (LoadLibraryA("forge_hooks.dll")).
             0x48, 0x8B, 0xC8, // mov rcx,rax
             0x48, 0xBA, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, // mov rdx,1122334455667788h (0x4a + 2)                    
             0x48, 0xB8, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, // mov rax, 1122334455667788h (0x54 + 2)
-            0xFF, 0xD0, // call rax (GetProcAddress(build_hooks_dll, "initialize"))
+            0xFF, 0xD0, // call rax (GetProcAddress(forge_hooks_dll, "initialize"))
             0x48, 0xB9, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11,  // mov rcx,1122334455667788h (0x60 + 2)                    
             0xFF, 0xD0, // call rax (initialize(write_dependencies_pipe))
             0x48, 0x83, 0xC4, 0x28, // add rsp, 32 + 8
@@ -318,9 +318,9 @@ void Executor::inject_build_hooks_windows( process::Process* pprocess, intptr_t 
         };
         const char* initialize = "initialize";
         int inject_build_hooks_size = (sizeof(inject_build_hooks) + 0xf) & ~0xf;
-        int build_hooks_library_size = int(build_hooks_library_.size()) + 1;
+        int forge_hooks_library_size = int(forge_hooks_library_.size()) + 1;
         int initialize_size = int(strlen(initialize)) + 1;
-        int total_size = inject_build_hooks_size + build_hooks_library_size + initialize_size;
+        int total_size = inject_build_hooks_size + forge_hooks_library_size + initialize_size;
 
         HANDLE process = (HANDLE) pprocess->process();
         HANDLE thread = (HANDLE) pprocess->thread();
@@ -333,13 +333,13 @@ void Executor::inject_build_hooks_windows( process::Process* pprocess, intptr_t 
         char* buffer = (char*) ::VirtualAllocEx( process, NULL, total_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE );
         SWEET_ASSERT( buffer );
 
-        uintptr_t build_hooks_library_address = ((uintptr_t) buffer + inject_build_hooks_size);
-        uintptr_t initialize_address = build_hooks_library_address + build_hooks_library_size;
+        uintptr_t forge_hooks_library_address = ((uintptr_t) buffer + inject_build_hooks_size);
+        uintptr_t initialize_address = forge_hooks_library_address + forge_hooks_library_size;
 
         HMODULE kernel32 = GetModuleHandle( "kernel32.dll" );
 		*((unsigned int*) &inject_build_hooks[11]) = (unsigned int) (context.Rip & 0xffffffff);
         *((unsigned int*) &inject_build_hooks[19]) = (unsigned int) (context.Rip >> 32);
-        *((void**) &inject_build_hooks[51]) = (void*) build_hooks_library_address;
+        *((void**) &inject_build_hooks[51]) = (void*) forge_hooks_library_address;
         *((void**) &inject_build_hooks[61]) = (void*) ::GetProcAddress( kernel32, "LoadLibraryA" );
         *((void**) &inject_build_hooks[76]) = (void*) initialize_address;
         *((void**) &inject_build_hooks[86]) = (void*) ::GetProcAddress( kernel32, "GetProcAddress" );
@@ -350,9 +350,9 @@ void Executor::inject_build_hooks_windows( process::Process* pprocess, intptr_t 
         SWEET_ASSERT( written );
         position += inject_build_hooks_size;
 
-        written = ::WriteProcessMemory( process, position, build_hooks_library_.c_str(), build_hooks_library_size, NULL );
+        written = ::WriteProcessMemory( process, position, forge_hooks_library_.c_str(), forge_hooks_library_size, NULL );
         SWEET_ASSERT( written );
-        position += build_hooks_library_size;
+        position += forge_hooks_library_size;
 
         written = ::WriteProcessMemory( process, position, initialize, initialize_size, NULL );
         SWEET_ASSERT( written );
