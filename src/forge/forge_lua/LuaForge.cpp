@@ -105,9 +105,9 @@ void LuaForge::create( Forge* forge )
     lua_target_prototype_->create( lua_state_, lua_target_ );
     lua_setglobal( lua_state_, "forge" );
 
-    // Set `package.path` to load build scripts stored in `../lua` relative 
-    // to the `build` executable.  The value of `package.path` may be 
-    // overridden again in `build.lua` before requiring modules.
+    // Set `package.path` to load forge scripts stored in `../lua` relative 
+    // to the `forge` executable.  The value of `package.path` may be 
+    // overridden again in `forge.lua` before requiring modules.
     path first_path = forge_->executable( "../lua/?.lua" );
     path second_path = forge_->executable( "../lua/?/init.lua" );
     string path = first_path.generic_string() + ";" + second_path.generic_string();

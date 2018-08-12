@@ -355,7 +355,7 @@ void Forge::assign_global_variables( const std::vector<std::string>& assignments
 }
 
 /**
-// Load `build.lua` and execute \e command.
+// Load *filename* and execute *command*.
 //
 // @param filename
 //  The name of the file to execute to initialize the build system.

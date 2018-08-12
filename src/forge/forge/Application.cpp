@@ -37,7 +37,7 @@ Application::Application( int argc, char** argv )
     bool version = false;
     std::string directory = boost::filesystem::initial_path<boost::filesystem::path>().generic_string();
     std::string root_directory;
-    std::string filename = "build.lua";
+    std::string filename = "forge.lua";
     bool stack_trace_enabled = false;    
     std::vector<std::string> assignments_and_commands;
 
