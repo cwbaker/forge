@@ -55,15 +55,15 @@ forge:default_targets {
     'src/forge/forge_test'
 };
 
-buildfile 'src/assert/assert.build';
-buildfile 'src/boost/boost.build';
-buildfile 'src/cmdline/cmdline.build';
-buildfile 'src/error/error.build';
-buildfile 'src/forge/forge.build';
-buildfile 'src/lua/lua.build';
-buildfile 'src/luaxx/luaxx.build';
-buildfile 'src/process/process.build';
-buildfile 'src/unittest-cpp/unittest-cpp.build';
+buildfile 'src/assert/assert.forge';
+buildfile 'src/boost/boost.forge';
+buildfile 'src/cmdline/cmdline.forge';
+buildfile 'src/error/error.forge';
+buildfile 'src/forge/forge.forge';
+buildfile 'src/lua/lua.forge';
+buildfile 'src/luaxx/luaxx.forge';
+buildfile 'src/process/process.forge';
+buildfile 'src/unittest-cpp/unittest-cpp.forge';
 
 function install()
     prefix = prefix or forge:home( 'forge' );

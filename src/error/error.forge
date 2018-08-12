@@ -1,5 +1,5 @@
 
-buildfile "error_test/error_test.build";
+buildfile "error_test/error_test.forge";
 
 for _, forge in forge:default_builds("cc_.*") do 
     forge:Library '${lib}/error_${architecture}' {

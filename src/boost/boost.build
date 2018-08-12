@@ -1,3 +1,0 @@
-
-buildfile "libs/filesystem/src/filesystem.build";
-buildfile "libs/system/src/system.build";

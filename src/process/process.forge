@@ -1,5 +1,5 @@
 
-buildfile "process_test/process_test.build";
+buildfile "process_test/process_test.forge";
 
 for _, forge in forge:default_builds("cc_.*") do
     forge:Library '${lib}/process_${architecture}' {

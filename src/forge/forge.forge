@@ -1,10 +1,10 @@
 
 require 'forge.CopyDirectory';
 
-buildfile 'forge/forge.build';
-buildfile 'forge_hooks/forge_hooks.build';
-buildfile 'forge_lua/forge_lua.build';
-buildfile 'forge_test/forge_test.build';
+buildfile 'forge/forge.forge';
+buildfile 'forge_hooks/forge_hooks.forge';
+buildfile 'forge_lua/forge_lua.forge';
+buildfile 'forge_test/forge_test.forge';
 
 for _, forge in forge:default_builds("cc_.*") do
     local settings =  {
