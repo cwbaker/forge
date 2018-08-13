@@ -27,8 +27,12 @@ archive() {
     ar -rcs $1 *.o    
 }
 
-link() {
-    clang++ *.o -g -L $LIB -lassert -lcmdline -lforge -lforge_lua -lprocess -lluaxx -lerror -llua -lboost_filesystem -lboost_system -o $1
+link_forge() {
+    clang++ *.o -g -L $LIB -lassert -lcmdline -lforge -lforge_lua -lprocess -lluaxx -lerror -llua -lboost_filesystem -lboost_system -o $BIN/forge
+}
+
+link_forge_hooks() {
+    clang++ *.o -Xlinker -dylib -g -o $BIN/forge_hooks.dylib
 }
 
 mkdir -p $LIB
@@ -44,4 +48,5 @@ echo luaxx; pushd $SRC/luaxx; cxx '*.cpp'; archive $LIB/libluaxx.a; popd
 echo process; pushd $SRC/process; cxx '*.cpp'; archive $LIB/libprocess.a; popd
 
 mkdir -p $BIN
-echo forge/forge; pushd $SRC/forge/forge; cxx '*.cpp'; link $BIN/forge; popd
+echo forge/forge; pushd $SRC/forge/forge; cxx '*.cpp'; link_forge; popd
+echo forge/forge_hooks; pushd $SRC/forge/forge_hooks; cxx 'forge_hooks_macos.cpp'; link_forge_hooks; popd

@@ -26,3 +26,4 @@ echo process & pushd %SRC%\process & cl.exe %CXX_FLAGS% *.cpp & lib.exe /out:%LI
 if not exist "%BIN%" mkdir %BIN%
 set LIBRARIES=boost_system.lib boost_filesystem.lib lua.lib assert.lib forge.lib forge_lua.lib cmdline.lib error.lib luaxx.lib process.lib
 echo forge/forge & pushd %SRC%\forge\forge & cl.exe %CXX_FLAGS% *.cpp & link /out:%BIN%\forge.exe /libpath:%LIBS% /debug:full /pdb:%BIN%\forge.pdb *.obj %LIBRARIES% & popd
+echo forge/forge_hooks & pushd %SRC%\forge\forge_hooks & cl.exe %CXX_FLAGS% forge_hooks_windows.cpp ImportDescriptor.cpp & link /dll /out:%BIN%\forge_hooks.dll /libpath:%LIBS% /debug:full /pdb:%BIN%\forge_hooks.pdb *.obj assert.lib & popd
