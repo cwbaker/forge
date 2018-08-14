@@ -16,19 +16,13 @@ function errorf( format, ... )
     error( string.format(format, ...) );
 end
 
--- Provide buildfile() that restores the settings stack position.
-local original_buildfile = forge.buildfile;
+-- Provide global buildfile().
 function buildfile( ... )
-    local buildfiles_stack = forge.buildfiles_stack_;
-    table.insert( buildfiles_stack, forge:file(select(1, ...)) );
-    local success, errors_or_error_message = pcall( original_buildfile, forge, ... );
-    table.remove( buildfiles_stack );
-    assertf( success and errors_or_error_message == 0, "buildfile '%s' failed - %s", tostring(select(1, ...)), errors_or_error_message );
+    return forge:buildfile( ... );
 end
 
 forge = _G.forge or {};
 forge.settings = {};
-forge.buildfiles_stack_ = {};
 forge.modules_ = {};
 forge.default_builds_ = {};
 
@@ -47,14 +41,6 @@ function forge:default_builds( pattern )
             end
         end        
     end );
-end
-
-function forge:current_buildfile()
-    local buildfiles_stack = self.buildfiles_stack_;
-    local back = #buildfiles_stack;
-    if back > 0 then 
-        return buildfiles_stack[back];
-    end
 end
 
 function forge:platform_matches( ... )
