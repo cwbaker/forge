@@ -47,6 +47,7 @@ void LuaGraph::create( Forge* forge, lua_State* lua_state )
         { "target", &LuaGraph::target },
         { "find_target", &LuaGraph::find_target },
         { "anonymous", &LuaGraph::anonymous },
+        { "current_buildfile", &LuaGraph::current_buildfile },
         { "working_directory", &LuaGraph::working_directory },
         { "buildfile", &LuaGraph::buildfile },
         { "postorder", &LuaGraph::postorder },
@@ -179,6 +180,20 @@ int LuaGraph::anonymous( lua_State* lua_state )
     size_t length = sprintf( anonymous, "$$%d", working_directory->next_anonymous_index() );
     anonymous[min(length, sizeof(anonymous) - 1)] = 0;
     lua_pushlstring( lua_state, anonymous, length );
+    return 1;
+}
+
+int LuaGraph::current_buildfile( lua_State* lua_state )
+{
+    const int FORGE = 1;
+    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    Context* context = forge->context();
+    Target* target = context->current_buildfile();
+    if ( target && !target->referenced_by_script() )
+    {
+        forge->create_target_lua_binding( target );
+    }
+    luaxx_push( lua_state, target );
     return 1;
 }
 

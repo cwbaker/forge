@@ -27,6 +27,7 @@ private:
     static int target( lua_State* lua_state );
     static int find_target( lua_State* lua_state );
     static int anonymous( lua_State* lua_state );
+    static int current_buildfile( lua_State* lua_state );
     static int working_directory( lua_State* lua_state );
     static int buildfile( lua_State* lua_state );
     static int postorder( lua_State* lua_state );

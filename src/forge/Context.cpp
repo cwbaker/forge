@@ -29,6 +29,7 @@ Context::Context( const boost::filesystem::path& directory, Forge* forge )
 : forge_( forge ),
   lua_state_( nullptr ),
   lua_state_reference_( LUA_NOREF ),
+  current_buildfile_( nullptr) ,
   working_directory_( NULL ), 
   directories_(), 
   job_( NULL ),
@@ -73,6 +74,19 @@ const boost::filesystem::path& Context::directory() const
 {
     SWEET_ASSERT( !directories_.empty() );
     return directories_.back();
+}
+
+/**
+// Get the target that represents the currently loading buildfile.
+//
+// @return
+//  The target for the currently loading buildfile or null if there is no 
+//  buildfile currently loading (e.g. scripts are executing in the context
+//  of a postorder traversal). 
+*/
+Target* Context::current_buildfile() const
+{
+    return current_buildfile_;
 }
 
 /**
@@ -237,6 +251,18 @@ void Context::pop_directory()
         directories_.pop_back();
         working_directory_ = forge_->graph()->target( directories_.back().string() );
     }
+}
+
+/**
+// Set the target that represents the currently loading buildfile.
+//
+// @param current_buildfile
+//  The target to set as the currently loading buildfile or null to reset
+//  this context to not having a buildfile loading.
+*/
+void Context::set_current_buildfile( Target* current_buildfile )
+{
+    current_buildfile_ = current_buildfile;
 }
 
 /**

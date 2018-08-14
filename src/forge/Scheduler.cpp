@@ -82,8 +82,13 @@ int Scheduler::buildfile( const boost::filesystem::path& path )
     SWEET_ASSERT( path.is_absolute() );
     SWEET_ASSERT( !active_contexts_.empty() );
 
+    Target* buildfile = forge_->graph()->target( path.generic_string() );
+    Target* working_directory = buildfile->parent();
+    SWEET_ASSERT( forge_->graph()->target(path.parent_path().generic_string()) == working_directory );
+
     Context* calling_context = active_contexts_.back();
-    Context* context = allocate_context( forge_->graph()->target(path.parent_path().generic_string()) );
+    Context* context = allocate_context( working_directory );
+    context->set_current_buildfile( buildfile );
     context->set_buildfile_calling_context( calling_context );
     process_begin( context );
 
