@@ -32,7 +32,7 @@ SUITE( TestPostorder )
         test( script );
         if ( messages.size() == 2 )
         {
-            CHECK_EQUAL( "[string \"local UnexpectedErrorInPostorderVisit = build...\"]:3: attempt to index a nil value (global 'foo')", messages[0] );
+            CHECK_EQUAL( "[string \"local UnexpectedErrorInPostorderVisit = forge...\"]:3: attempt to index a nil value (global 'foo')", messages[0] );
             CHECK_EQUAL( "Postorder visit of 'unexpected_error_in_postorder_visit' failed", messages[1] );
         }
         CHECK( errors == 2 );
