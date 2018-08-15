@@ -261,7 +261,7 @@ void Scheduler::wait()
     }
 }
 
-int Scheduler::postorder( int function, Target* target )
+int Scheduler::postorder( Target* target, int function )
 {
     struct ScopedVisit
     {

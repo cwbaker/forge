@@ -229,8 +229,8 @@ int LuaGraph::buildfile( lua_State* lua_state )
 int LuaGraph::postorder( lua_State* lua_state )
 {
     const int FORGE = 1;
-    const int FUNCTION = 2;
-    const int TARGET = 3;
+    const int TARGET = 2;
+    const int FUNCTION = 3;
 
     Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     Graph* graph = forge->graph();
@@ -239,7 +239,7 @@ int LuaGraph::postorder( lua_State* lua_state )
         return luaL_error( lua_state, "Postorder called from within another bind or postorder traversal" );
     }
      
-    Target* target = NULL;
+    Target* target = nullptr;
     if ( !lua_isnoneornil(lua_state, TARGET) )
     {
         target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
@@ -254,7 +254,7 @@ int LuaGraph::postorder( lua_State* lua_state )
 
     lua_pushvalue( lua_state, FUNCTION );
     int function = luaL_ref( lua_state, LUA_REGISTRYINDEX );
-    int failures = forge->scheduler()->postorder( function, target );
+    int failures = forge->scheduler()->postorder( target, function );
     lua_pushinteger( lua_state, failures );
     luaL_unref( lua_state, LUA_REGISTRYINDEX, function );
     return 1;
