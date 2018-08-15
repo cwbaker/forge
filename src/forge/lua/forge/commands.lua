@@ -32,14 +32,14 @@ local function build_visit( target )
 end
 
 function default()
-    local failures = forge:postorder( build_visit, forge:find_initial_target(goal) );
+    local failures = forge:postorder( forge:find_initial_target(goal), build_visit );
     forge:save();
     printf( "forge: default (build)=%dms", math.ceil(forge:ticks()) );
     return failures;
 end
 
 function clean()
-    local failures = forge:postorder( clean_visit, forge:find_initial_target(goal) );
+    local failures = forge:postorder( forge:find_initial_target(goal), clean_visit );
     printf( "forge: clean=%sms", tostring(math.ceil(forge:ticks())) );
     return failures;
 end
