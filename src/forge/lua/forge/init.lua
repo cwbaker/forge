@@ -21,6 +21,61 @@ function buildfile( ... )
     return forge:buildfile( ... );
 end
 
+-- Provide global default command that calls through to `build()`.
+function default()
+    return build();
+end
+
+-- Provide global build command.
+function build()
+    local failures = forge:postorder( forge:find_initial_target(goal), forge:build_visit() );
+    forge:save();
+    printf( "forge: default (build)=%dms", math.ceil(forge:ticks()) );
+    return failures;
+end
+
+-- Provide global clean command.
+function clean()
+    local failures = forge:postorder( forge:find_initial_target(goal), forge:clean_visit() );
+    printf( "forge: clean=%sms", tostring(math.ceil(forge:ticks())) );
+    return failures;
+end
+
+-- Provide global reconfigure command.
+function reconfigure()
+    rm( forge.settings.local_settings_filename );
+    forge:find_initial_target();
+    return 0;
+end
+
+-- Provide global dependencies command.
+function dependencies()
+    forge:print_dependencies( forge:find_initial_target(goal) );
+    return 0;
+end
+
+-- Provide global namespace command.
+function namespace()
+    forge:print_namespace( forge:find_initial_target(goal) );
+    return 0;
+end
+
+-- Provide global help command.
+function help()
+    printf [[
+Variables:
+  goal               Target to build (relative to current working directory).
+  variant            Variant built (debug, release, or shipping).
+  version            Version used through build scripts and code.
+Commands:
+  build              Build outdated targets.
+  clean              Clean all targets.
+  reconfigure        Regenerate per-machine configuration settings.
+  dependencies       Print targets by dependency hierarchy.
+  namespace          Print targets by namespace hierarchy.
+    ]];
+end
+
 forge = _G.forge or {};
 forge.settings = {};
 forge.modules_ = {};
@@ -537,6 +592,44 @@ function forge:current_settings()
     return self.settings;
 end
 
+-- Visit a target by calling a member function "clean" if it exists or if
+-- there is no "clean" function and the target is not marked as a source file
+-- that must exist then its associated file is deleted.
+function forge:clean_visit( ... )
+    local args = {...};
+    return function ( target )
+        local clean_function = target.clean;
+        if clean_function then 
+            clean_function( target.forge_, target, table.unpack(args) );
+        elseif target:cleanable() and target:filename() ~= "" then 
+            forge:rm( target:filename() );
+        end
+    end
+end
+
+-- Visit a target by calling a member function "build" if it exists and 
+-- setting that Target's built flag to true if the function returns with
+-- no errors.
+function forge:build_visit( ... )
+    local args = {...};
+    return function ( target )
+        local build_function = target.build;
+        if build_function and target:outdated() then 
+            local filename = target:filename();
+            if filename ~= "" then
+                printf( self:leaf(filename) );
+            end
+            target:clear_implicit_dependencies();
+            local success, error_message = pcall( build_function, target.forge_, target, table.unpack(args) );
+            target:set_built( success );
+            if not success then 
+                clean_visit( target );
+                assert( success, error_message );
+            end
+        end
+    end
+end
+
 -- Add dependencies detected by the injected build hooks library to the 
 -- target /target/.
 function forge:dependencies_filter( target )
@@ -615,7 +708,6 @@ function forge:cpdir( destination, source, settings )
     self:popd();
 end
 
-require "forge.commands";
 require "forge.TargetPrototype";
 require "forge.Target";
 require "forge.Directory";
