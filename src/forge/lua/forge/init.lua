@@ -318,9 +318,7 @@ function forge:switch( values )
     return values[values[1]];
 end
 
-local interpolate;
-
--- Provide makefile like string interpolation.
+-- Provide GNU Make like string interpolation.
 function forge:interpolate( template, variables )
     local function split( input )
         local output = {};
