@@ -53,60 +53,57 @@ Application::Application( int argc, char** argv )
     ;
     command_line_parser.parse( argc, argv );
 
-    if ( version || help )
-    {
-        if ( version )
-        {
-            std::cout << "Forge " << BUILD_VERSION << " \n";
-            std::cout << "Copyright (c) 2007 - 2018 Charles Baker.  All rights reserved. \n";
-        }
+    vector<string> assignments;
+    vector<string> commands;
 
-        if ( help )
+    if ( version )
+    {
+        std::cout << "Forge " << BUILD_VERSION << " \n";
+        std::cout << "Copyright (c) 2007 - 2018 Charles Baker.  All rights reserved. \n";
+    }
+
+    if ( help )
+    {
+        std::cout << "Usage: forge [options] [variable=value] [command] ... \n";
+        std::cout << "Options: \n";
+        command_line_parser.print( stdout );
+        commands.push_back( "help" );
+    }
+
+    for ( std::vector<std::string>::const_iterator i = assignments_and_commands.begin(); i != assignments_and_commands.end(); ++i )
+    {
+        std::string::size_type position = i->find( "=" );
+        if ( position == std::string::npos )
         {
-            std::cout << "Usage: forge [options] [variable=value] [command] ... \n";
-            std::cout << "Options: \n";
-            command_line_parser.print( stdout );
+            commands.push_back( *i );
+        }
+        else
+        {
+            assignments.push_back( *i );
         }
     }
-    else
-    {
-        vector<string> assignments;
-        vector<string> commands;
-        for ( std::vector<std::string>::const_iterator i = assignments_and_commands.begin(); i != assignments_and_commands.end(); ++i )
-        {
-            std::string::size_type position = i->find( "=" );
-            if ( position == std::string::npos )
-            {
-                commands.push_back( *i );
-            }
-            else
-            {
-                assignments.push_back( *i );
-            }
-        }
-        
-        if ( commands.empty() )
-        {
-            const char* DEFAULT_COMMAND = "default";
-            commands.push_back( DEFAULT_COMMAND );
-        }
     
-        if ( root_directory.empty() )
-        {
-            root_directory = forge::search_up_for_root_directory( directory, filename ).generic_string();
-            error_policy.error( root_directory.empty(), "The file '%s' could not be found to identify the root directory", filename.c_str() );
-        }
+    if ( commands.empty() && !version )
+    {
+        const char* DEFAULT_COMMAND = "default";
+        commands.push_back( DEFAULT_COMMAND );
+    }
 
-        vector<string>::const_iterator command = commands.begin(); 
-        while ( error_policy.errors() == 0 && command != commands.end() )
-        {
-            Forge forge( directory, error_policy, this );
-            forge.set_stack_trace_enabled( stack_trace_enabled );
-            forge.set_root_directory( root_directory );
-            forge.assign_global_variables( assignments );
-            forge.execute( filename, *command );
-            ++command;
-        }
+    if ( root_directory.empty() )
+    {
+        root_directory = forge::search_up_for_root_directory( directory, filename ).generic_string();
+        error_policy.error( root_directory.empty(), "The file '%s' could not be found to identify the root directory", filename.c_str() );
+    }
+
+    vector<string>::const_iterator command = commands.begin(); 
+    while ( error_policy.errors() == 0 && command != commands.end() )
+    {
+        Forge forge( directory, error_policy, this );
+        forge.set_stack_trace_enabled( stack_trace_enabled );
+        forge.set_root_directory( root_directory );
+        forge.assign_global_variables( assignments );
+        forge.execute( filename, *command );
+        ++command;
     }
 }
 
