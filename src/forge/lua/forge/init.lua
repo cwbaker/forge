@@ -612,6 +612,7 @@ end
 -- no errors.
 function forge:build_visit( ... )
     local args = {...};
+    local clean_visit = self:clean_visit( table.unpack(args) );
     return function ( target )
         local build_function = target.build;
         if build_function and target:outdated() then 
@@ -620,7 +621,7 @@ function forge:build_visit( ... )
                 printf( self:leaf(filename) );
             end
             target:clear_implicit_dependencies();
-            local success, error_message = pcall( build_function, target.forge_, target, table.unpack(args) );
+            local success, error_message = pcall( build_function, target.forge, target, table.unpack(args) );
             target:set_built( success );
             if not success then 
                 clean_visit( target );
