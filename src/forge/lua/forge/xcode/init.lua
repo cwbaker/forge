@@ -79,7 +79,7 @@ local function add_legacy_target( target, platform, architectures )
             working_directory = working_directory;
             configuration_list = uuid();
             platform = platform;
-            build = forge:executable( "build" );
+            forge = forge:executable( "forge" );
             path = filename;
             settings = settings;
             configurations = add_configurations( architectures, settings.variants );
@@ -180,7 +180,7 @@ local function generate_legacy_targets( xcodeproj, legacy_targets )
             buildConfigurationList = ${configuration_list} /* Build configuration list for PBXLegacyTarget "${name}" */;
             buildPhases = (
             );
-            buildToolPath = "${build}";
+            buildToolPath = "${forge}";
             buildWorkingDirectory = "${working_directory}";
             dependencies = (
             );
@@ -511,7 +511,7 @@ function xcode_build()
     forge:set_stack_trace_enabled( true );    
     action = action or "build";
     if action == "" or action == "build" then
-        local failures = default();
+        local failures = build();
         assertf( failures == 0, "%d failures", failures );
         if failures == 0 then 
             if forge.ios then 
