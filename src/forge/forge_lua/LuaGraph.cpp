@@ -70,20 +70,20 @@ void LuaGraph::destroy()
 Target* LuaGraph::add_target( lua_State* lua_state )
 {
     const int FORGE = 1;
-    const int ID = 2;
-    const int PROTOTYPE = 3;
     const int TABLE = 4;
+    const int IDENTIFIER = 2;
+    const int TARGET_PROTOTYPE = 3;
 
     Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     Context* context = forge->context();
     Graph* graph = forge->graph();
     Target* working_directory = context->working_directory();
 
-    bool anonymous = lua_isnoneornil( lua_state, ID );
+    bool anonymous = lua_isnoneornil( lua_state, IDENTIFIER );
     string id;
     if ( !anonymous ) 
     {
-        id = luaL_checkstring( lua_state, ID );
+        id = luaL_checkstring( lua_state, IDENTIFIER );
     }
     else
     {
@@ -93,7 +93,7 @@ Target* LuaGraph::add_target( lua_State* lua_state )
         anonymous = true;
     }
 
-    TargetPrototype* target_prototype = (TargetPrototype*) luaxx_to( lua_state, PROTOTYPE, TARGET_PROTOTYPE_TYPE );
+    TargetPrototype* target_prototype = (TargetPrototype*) luaxx_to( lua_state, TARGET_PROTOTYPE, TARGET_PROTOTYPE_TYPE );
     Target* target = graph->target( id, target_prototype, working_directory );
     if ( !target->referenced_by_script() )
     {
@@ -123,8 +123,8 @@ int LuaGraph::target_prototype( lua_State* lua_state )
     try
     {
         const int FORGE = 1;
-        const int ID = 2;
-        string id = luaL_checkstring( lua_state, ID );        
+        const int IDENTIFIER = 2;
+        string id = luaL_checkstring( lua_state, IDENTIFIER );        
         Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
         TargetPrototype* target_prototype = forge->graph()->target_prototype( id );
         forge->create_target_prototype_lua_binding( target_prototype );
@@ -157,10 +157,10 @@ int LuaGraph::target( lua_State* lua_state )
 int LuaGraph::find_target( lua_State* lua_state )
 {
     const int FORGE = 1;
-    const int ID = 2;
+    const int IDENTIFIER = 2;
     Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     Context* context = forge->context();
-    const char* id = luaL_checkstring( lua_state, ID );
+    const char* id = luaL_checkstring( lua_state, IDENTIFIER );
     Target* target = forge->graph()->find_target( string(id), context->working_directory() );
     if ( target && !target->referenced_by_script() )
     {
