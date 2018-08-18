@@ -14,7 +14,7 @@ SUITE( TestPostorder )
         const char* script = 
             "local ErrorInPostorderVisit = forge:target_prototype( 'ErrorInPostorderVisit' ); \n"
             "local error_in_postorder_visit = forge:target( 'error_in_postorder_visit', ErrorInPostorderVisit ); \n"
-            "forge:postorder( function(target) error('Error in postorder visit') end, error_in_postorder_visit ); \n"
+            "forge:postorder( error_in_postorder_visit, function(target) error('Error in postorder visit') end ); \n"
         ;        
         test( script );
         CHECK_EQUAL( "[string \"local ErrorInPostorderVisit = forge:target_pr...\"]:3: Error in postorder visit", messages[0] );
@@ -27,7 +27,7 @@ SUITE( TestPostorder )
         const char* script = 
             "local UnexpectedErrorInPostorderVisit = forge:target_prototype( 'UnexpectedErrorInPostorderVisit' ); \n"
             "local unexpected_error_in_postorder_visit = forge:target( 'unexpected_error_in_postorder_visit', UnexpectedErrorInPostorderVisit ); \n"
-            "forge:postorder( function(target) foo.bar = 2; end, unexpected_error_in_postorder_visit ); \n"
+            "forge:postorder( unexpected_error_in_postorder_visit, function(target) foo.bar = 2; end ); \n"
         ;        
         test( script );
         if ( messages.size() == 2 )
@@ -43,7 +43,7 @@ SUITE( TestPostorder )
         const char* script = 
             "local RecursivePostorderError = forge:target_prototype( 'RecursivePostorderError' ); \n"
             "local recursive_postorder_error = forge:target( 'recursive_postorder_error', RecursivePostorderError ); \n"
-            "forge:postorder( function(target) forge:postorder(function(target) end, recursive_postorder_error) end, recursive_postorder_error ); \n"
+            "forge:postorder( recursive_postorder_error, function(target) forge:postorder(function(target) end, recursive_postorder_error) end ); \n"
         ;
         test( script );
         if ( messages.size() == 2 )
@@ -59,7 +59,7 @@ SUITE( TestPostorder )
         const char* script = 
             "local RecursivePostorderError = forge:target_prototype( 'RecursivePostorderError' ); \n"
             "local recursive_postorder_error = forge:target( 'recursive_postorder_error', RecursivePostorderError ); \n"
-            "forge:postorder( function(target) forge:postorder(function(target) end, recursive_postorder_error) end, recursive_postorder_error ); \n"
+            "forge:postorder( recursive_postorder_error, function(target) forge:postorder(function(target) end, recursive_postorder_error) end ); \n"
         ;
         test( script );
         if ( messages.size() == 2 )

@@ -18,7 +18,7 @@ SUITE( TestGraph )
             "local foo_cpp = forge:file( 'foo.cpp' ); \n"
             "local foo_obj = forge:file( 'foo.obj' ); \n"
             "foo_obj:add_dependency( foo_cpp ); \n"
-            "forge:postorder( function() end, foo_obj ); \n"
+            "forge:postorder( foo_obj, function() end ); \n"
             "assert( foo_obj:outdated() ); \n"
         ;
         create( "foo.cpp", "" );
@@ -34,7 +34,7 @@ SUITE( TestGraph )
             "local foo_cpp = forge:target( 'foo.cpp', SourceFile ); \n"
             "local foo_obj = forge:target( 'foo.obj', File ); \n"
             "foo_obj:add_dependency( foo_cpp ); \n"
-            "forge:postorder( function() end, foo_obj ); \n"
+            "forge:postorder( foo_obj, function() end ); \n"
             "assert( foo_obj:outdated() == false ); \n"
         ;
         create( "foo.cpp", "" );
@@ -51,7 +51,7 @@ SUITE( TestGraph )
             "local foo_obj = forge:file( 'foo.obj' ); \n"
             "foo_cpp:add_dependency( foo_hpp ); \n"
             "foo_obj:add_dependency( foo_cpp ); \n"
-            "forge:postorder( function() end, foo_obj ); \n"
+            "forge:postorder( foo_obj, function() end ); \n"
             "assert( foo_obj:outdated() ); \n"
         ;
         create( "foo.cpp", "", 1 );
