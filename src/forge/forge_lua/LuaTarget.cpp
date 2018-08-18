@@ -5,6 +5,7 @@
 
 #include "LuaTarget.hpp"
 #include "LuaForge.hpp"
+#include "LuaGraph.hpp"
 #include "types.hpp"
 #include <forge/Target.hpp>
 #include <forge/TargetPrototype.hpp>
@@ -88,21 +89,38 @@ void LuaTarget::create( lua_State* lua_state )
     luaL_setfuncs( lua_state_, implicit_creation_functions, 1 );    
     lua_pop( lua_state_, 1 );
 
+    // Set the metatable for `Target` to redirect calls to create new targets 
+    // in `LuaGraph::target()` via `LuaTarget::target_call_metamethod()`.
+    luaxx_push( lua_state_, this );
+    lua_newtable( lua_state_ );
+    lua_pushcfunction( lua_state_, &LuaTarget::target_call_metamethod );
+    lua_setfield( lua_state_, -2, "__call" );
+    lua_setmetatable( lua_state_, -2 );
+    lua_pop( lua_state_, 1 );
+
+    // Create a metatable for targets to redirect index operations to 
+    // `forge.Target`, string conversions to `LuaTarget::filename()`, and
+    // calls to `Target.depend()` via `LuaTarget::depend_call_metamethod()`.
     luaL_newmetatable( lua_state_, TARGET_METATABLE );
     luaxx_push( lua_state_, this );
     lua_setfield( lua_state_, -2, "__index" );
     lua_pushcfunction( lua_state_, &LuaTarget::filename );
     lua_setfield( lua_state_, -2, "__tostring" );
+    lua_pushcfunction( lua_state_, &LuaTarget::depend_call_metamethod );
+    lua_setfield( lua_state_, -2, "__call" );
     lua_pop( lua_state_, 1 );
 
+    // Create a metatable to garbage collect the string vector iterator used
+    // to implement `Target.filenames()` via `LuaTarget::filenames()`.
     luaL_newmetatable( lua_state_, STRING_VECTOR_CONST_ITERATOR_METATABLE );
     lua_pushcfunction( lua_state_, &vector_string_const_iterator_gc );
     lua_setfield( lua_state_, -2, "__gc" );
     lua_pop( lua_state_, 1 );
 
-    const int BUILD = 1;
+    // Set `forge.Target` to this object.
+    const int FORGE = 1;
     luaxx_push( lua_state_, this );
-    lua_setfield( lua_state_, BUILD, "Target" );
+    lua_setfield( lua_state_, FORGE, "Target" );
 }
 
 void LuaTarget::destroy()
@@ -861,4 +879,57 @@ int LuaTarget::ordering_dependencies( lua_State* lua_state )
 int LuaTarget::vector_string_const_iterator_gc( lua_State* lua_state )
 {
     return luaxx_gc<vector<string>::const_iterator>( lua_state );
+}
+
+/**
+// Redirect calls made on `forge.Target` to create a new target.
+//
+// Removes the `Target` table, passed as part of the metamethod call, from
+// the stack and call through to `LuaGraph::add_target()` passing through 
+// the identifier, target prototype, and any other arguments by simply 
+// leaving them on the stack.
+//
+// ~~~lua
+// function target_call_metamethod( _, forge, identifier, target_prototype, ... )
+//     return forge:target( identifier, target_prototype, ... );
+// end
+// ~~~
+*/
+int LuaTarget::target_call_metamethod( lua_State* lua_state )
+{
+    const int TARGET  = 1;
+    lua_remove( lua_state, TARGET );
+    Target* target = LuaGraph::add_target( lua_state );
+    luaxx_push( lua_state, target );
+    return 1;
+}
+
+/**
+// Redirect calls made on target objects to `Target.depend()`.
+//
+// The call to `Target.depend()` may be overridden by providing `depend()`
+// methods on `forge.Target`, individual target prototypes, and even 
+// individual targets if necessary.
+//
+// ~~~lua
+// function depend_call_metamethod( target, ... )
+//     local depend_function = target.depend;
+//     depend_function( target.forge, target, ... );
+//     return target;
+// end
+// ~~~
+*/
+int LuaTarget::depend_call_metamethod( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    int args = lua_gettop( lua_state );
+    lua_getfield( lua_state, TARGET, "depend" );
+    lua_getfield( lua_state, TARGET, "forge" );
+    for ( int i = TARGET; i <= args; ++i )
+    {
+        lua_pushvalue( lua_state, i );
+    }
+    lua_call( lua_state, args + 1, 0 );
+    lua_settop( lua_state, TARGET );
+    return 1;
 }

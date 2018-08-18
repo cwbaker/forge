@@ -69,6 +69,8 @@ void LuaTargetPrototype::create_target_prototype( TargetPrototype* target_protot
     lua_setfield( lua_state_, -2, "__index" );
     lua_pushcfunction( lua_state_, &LuaTarget::filename );
     lua_setfield( lua_state_, -2, "__tostring" );
+    lua_pushcfunction( lua_state_, &LuaTarget::depend_call_metamethod );
+    lua_setfield( lua_state_, -2, "__call" );
     lua_pop( lua_state_, 1 );
 }
 

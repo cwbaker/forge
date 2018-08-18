@@ -66,6 +66,8 @@ public:
     static int ordering_dependencies_iterator( lua_State* lua_state );
     static int ordering_dependencies( lua_State* lua_state );
     static int vector_string_const_iterator_gc( lua_State* lua_state );
+    static int target_call_metamethod( lua_State* lua_state );
+    static int depend_call_metamethod( lua_State* lua_state );
 };
 
 }
