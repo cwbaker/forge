@@ -99,6 +99,15 @@ Target* LuaGraph::add_target( lua_State* lua_state )
         forge->create_target_lua_binding( target );
         forge->recover_target_lua_binding( target );
         forge->update_target_lua_binding( target );
+
+        // Set `target.forge` to the value of the Forge object that created 
+        // this target.  The Forge object is used later on to provide the 
+        // correct Forge object and settings when visiting targets in a 
+        // postorder traversal.
+        luaxx_push( lua_state, target );
+        lua_pushvalue( lua_state, FORGE );
+        lua_setfield( lua_state, -2, "forge" );
+        lua_pop( lua_state, 1 );
     }
     return target;
 }
