@@ -70,7 +70,6 @@ void LuaGraph::destroy()
 Target* LuaGraph::add_target( lua_State* lua_state )
 {
     const int FORGE = 1;
-    const int TABLE = 4;
     const int IDENTIFIER = 2;
     const int TARGET_PROTOTYPE = 3;
 
@@ -97,23 +96,9 @@ Target* LuaGraph::add_target( lua_State* lua_state )
     Target* target = graph->target( id, target_prototype, working_directory );
     if ( !target->referenced_by_script() )
     {
-        if ( !lua_isnoneornil(lua_state, TABLE) )
-        {        
-            luaL_argcheck( lua_state, lua_istable(lua_state, TABLE), TABLE, "Table or nothing expected as third parameter when creating a target" );            
-            lua_pushvalue( lua_state, TABLE );
-            luaxx_attach( lua_state, target, TARGET_TYPE );
-            target->set_referenced_by_script( true );
-            target->set_prototype( target_prototype );
-            target->set_working_directory( working_directory );
-            forge->recover_target_lua_binding( target );
-            forge->update_target_lua_binding( target );
-        }
-        else
-        {
-            forge->create_target_lua_binding( target );
-            forge->recover_target_lua_binding( target );
-            forge->update_target_lua_binding( target );
-        }
+        forge->create_target_lua_binding( target );
+        forge->recover_target_lua_binding( target );
+        forge->update_target_lua_binding( target );
     }
     return target;
 }
