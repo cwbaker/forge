@@ -6,20 +6,20 @@ setmetatable( Target, {
         local target = forge:target( identifier, target_prototype );
         getmetatable( target ).__call = function( target, ... )
             local depend_function = target.depend;
-            depend_function( target.forge_, target, ... );
+            depend_function( target.forge, target, ... );
             return target;
         end;
-        target.forge_ = forge;
+        target.forge = forge;
         return target;
     end
 } );
 
 function Target.depend( forge, target, dependencies )
     local settings = target.settings;
-    if type(dependencies) == "string" then
+    if type(dependencies) == 'string' then
         local source_file = forge:SourceFile( dependencies, settings );
         target:add_dependency( source_file );
-    elseif type(dependencies) == "table" then
+    elseif type(dependencies) == 'table' then
         forge:merge( target, dependencies );
         for _, value in ipairs(dependencies) do 
             local source_file = forge:SourceFile( value, settings );

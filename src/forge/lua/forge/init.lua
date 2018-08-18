@@ -600,7 +600,7 @@ function forge:clean_visit( ... )
     return function ( target )
         local clean_function = target.clean;
         if clean_function then 
-            clean_function( target.forge_, target, table.unpack(args) );
+            clean_function( target.forge, target, table.unpack(args) );
         elseif target:cleanable() and target:filename() ~= "" then 
             forge:rm( target:filename() );
         end

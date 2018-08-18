@@ -424,7 +424,7 @@ function android.DynamicLibrary( build, name, architecture )
     local group = forge:Target( forge:anonymous() );
     group:add_dependency( dynamic_library );
     group.depend = function( build, group, ... )
-        return dynamic_library.depend( dynamic_library.forge_, dynamic_library, ... );
+        return dynamic_library.depend( dynamic_library.forge, dynamic_library, ... );
     end
 
     local runtime_library = dynamic_library.settings.runtime_library;
