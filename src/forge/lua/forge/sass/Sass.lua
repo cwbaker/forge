@@ -1,7 +1,7 @@
 
-local Css = forge:TargetPrototype( "sass.Css" );
+local Sass = forge:TargetPrototype( 'Sass' );
 
-function Css.build( forge, target )
+function Sass.build( forge, target )
     local settings = target.settings;
 
     local load_paths = {};
