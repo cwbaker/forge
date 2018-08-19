@@ -20,8 +20,7 @@ local function build_( forge, target )
 end
 
 local function create_target_prototype( id, language )
-    local target_prototype = forge:TargetPrototype( id );
-    local function create( forge, replacement, pattern )
+    local function create( forge, replacement, target_prototype, pattern )
         local cc = forge:Target( forge:anonymous(), target_prototype );
         cc.architecture = forge.settings.default_architecture;
         cc.replacement = replacement;
@@ -30,6 +29,7 @@ local function create_target_prototype( id, language )
         return cc;
     end
     
+    local target_prototype = forge:TargetPrototype( id );
     target_prototype.create = create;
     target_prototype.depend = depend;
     target_prototype.build = build_;

@@ -1,7 +1,7 @@
 
 local AssetCatalog = forge:TargetPrototype( 'AssetCatalog' );
 
-function AssetCatalog.create( forge, identifier, partial_info_plist )
+function AssetCatalog.create( forge, identifier, target_prototype, partial_info_plist )
 	local assets = forge:File( ('%s/Assets.car'):format(identifier), AssetCatalog );
 	if partial_info_plist then 
 		assets:set_filename( forge:absolute(partial_info_plist), 2 );

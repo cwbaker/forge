@@ -9,7 +9,7 @@ local function default_identifier_filename( settings, identifier, architecture )
     return identifier, filename;
 end
 
-function DynamicLibrary.create( forge, identifier, architecture )
+function DynamicLibrary.create( forge, identifier, target_prototype, architecture )
     local settings = forge.settings;
     local architecture = architecture or settings.architecture or settings.default_architecture;
     local identifier, filename = default_identifier_filename( settings, identifier, architecture );
