@@ -21,10 +21,6 @@ setmetatable( TargetPrototype, {
             else
                 target = create( forge, target_prototype, ... );
             end
-            local annotate_function = target.annotate;
-            if annotate_function then 
-                annotate_function( forge, target, ... );
-            end
             return target;
         end;
 
