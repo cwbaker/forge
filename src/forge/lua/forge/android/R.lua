@@ -1,5 +1,5 @@
 
-local R = forge:TargetPrototype( "android.R" );
+local R = forge:TargetPrototype( 'R' );
 
 function R.create( forge, settings, packages )
     local r = forge:Target( forge:anonymous(), R );

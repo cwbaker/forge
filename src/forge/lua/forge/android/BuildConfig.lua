@@ -1,5 +1,5 @@
 
-local BuildConfig = forge:TargetPrototype( "android.BuildConfig" );
+local BuildConfig = forge:TargetPrototype( 'BuildConfig' );
 
 function BuildConfig.create( forge, settings, packages )
     local build_config = forge:Target( forge:anonymous(), BuildConfig );

@@ -1,5 +1,5 @@
 
-local Dex = forge:TargetPrototype( "android.Dex" );
+local Dex = forge:TargetPrototype( 'Dex' );
 
 function Dex.depend( forge, target, dependencies )
     local jars = dependencies.jars;

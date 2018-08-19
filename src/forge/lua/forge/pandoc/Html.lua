@@ -1,5 +1,5 @@
 
-local Html = forge:TargetPrototype( "pandoc.Html" );
+local Html = forge:TargetPrototype( 'Html' );
 
 function Html.build( forge, target )
     local append_arguments = function( arguments, prefix, other_arguments )

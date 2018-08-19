@@ -1,5 +1,5 @@
 
-local Xib = forge:TargetPrototype( "xcode.Xib" );
+local Xib = forge:TargetPrototype( 'Xib' );
 
 function Xib.build( forge, xib )
     local command_line = {

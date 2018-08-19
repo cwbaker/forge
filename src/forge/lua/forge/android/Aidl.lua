@@ -1,5 +1,5 @@
 
-local Aidl = forge:TargetPrototype( "android.Aidl" );
+local Aidl = forge:TargetPrototype( 'Aidl' );
 
 function Aidl.build( forge, target )
     local settings = target.settings;

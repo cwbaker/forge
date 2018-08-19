@@ -1,5 +1,5 @@
 
-local App = forge:TargetPrototype( "ios.App" );
+local App = forge:TargetPrototype( 'App' );
 
 local function default_identifier_filename( identifier, architecture, settings )
     local settings = settings or forge:current_settings();

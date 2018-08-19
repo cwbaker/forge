@@ -1,5 +1,5 @@
 
-local QtMoc = forge:TargetPrototype( "qt.QtMoc" );
+local QtMoc = forge:TargetPrototype( 'QtMoc' );
 
 function QtMoc.build( forge, target )
     local moc = target.settings.qt.moc;

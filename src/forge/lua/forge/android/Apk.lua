@@ -1,5 +1,5 @@
 
-local Apk = forge:TargetPrototype( "android.Apk" );
+local Apk = forge:TargetPrototype( 'Apk' );
 
 function Apk.build( forge, target )
     local files = {};

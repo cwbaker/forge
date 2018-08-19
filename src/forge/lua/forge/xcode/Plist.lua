@@ -1,5 +1,5 @@
 
-local Plist = forge:TargetPrototype( "xcode.Plist" );
+local Plist = forge:TargetPrototype( 'Plist' );
 
 function Plist.build( forge, plist )
     local command_line = {

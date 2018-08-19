@@ -1,5 +1,5 @@
 
-local Pdf = forge:TargetPrototype( "pandoc.Pdf" );
+local Pdf = forge:TargetPrototype( 'Pdf' );
 
 function Pdf.build( forge, target )
     local settings = target.settings;

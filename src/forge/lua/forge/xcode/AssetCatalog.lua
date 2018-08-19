@@ -1,5 +1,5 @@
 
-local AssetCatalog = forge:TargetPrototype( 'xcode.AssetCatalog' );
+local AssetCatalog = forge:TargetPrototype( 'AssetCatalog' );
 
 function AssetCatalog.create( forge, settings, identifier, partial_info_plist )
 	local assets = forge:File( ('%s/Assets.car'):format(identifier), AssetCatalog );
