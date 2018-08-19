@@ -72,26 +72,11 @@ Target* LuaGraph::add_target( lua_State* lua_state )
     const int FORGE = 1;
     const int IDENTIFIER = 2;
     const int TARGET_PROTOTYPE = 3;
-
     Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     Context* context = forge->context();
     Graph* graph = forge->graph();
     Target* working_directory = context->working_directory();
-
-    bool anonymous = lua_isnoneornil( lua_state, IDENTIFIER );
-    string identifier;
-    if ( !anonymous ) 
-    {
-        identifier = luaL_checkstring( lua_state, IDENTIFIER );
-    }
-    else
-    {
-        char anonymous_id [256];
-        unsigned int length = sprintf( anonymous_id, "$$%d", working_directory->next_anonymous_index() );
-        identifier = string( anonymous_id, length );
-        anonymous = true;
-    }
-
+    string identifier = luaL_checkstring( lua_state, IDENTIFIER );
     TargetPrototype* target_prototype = (TargetPrototype*) luaxx_to( lua_state, TARGET_PROTOTYPE, TARGET_PROTOTYPE_TYPE );
     Target* target = graph->target( identifier, target_prototype, working_directory );
     if ( !target->referenced_by_script() )
