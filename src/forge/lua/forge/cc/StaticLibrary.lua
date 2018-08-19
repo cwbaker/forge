@@ -9,15 +9,14 @@ local function default_identifier_filename( settings, identifier, architecture )
     return identifier, filename;
 end
 
-function StaticLibrary.create( forge, settings, identifier, architecture )
-    local settings = settings or forge:current_settings();
+function StaticLibrary.create( forge, identifier, architecture )
+    local settings = forge.settings;
     local architecture = architecture or settings.architecture or settings.default_architecture;
     local identifier, filename = default_identifier_filename( settings, identifier, architecture );
     local static_library = forge:Target( identifier, StaticLibrary );
     static_library:set_filename( filename );
     static_library:set_cleanable( true );
     static_library:add_ordering_dependency( forge:Directory(forge:branch(static_library)) );
-    static_library.settings = settings;
     static_library.architecture = architecture;
     return static_library;
 end

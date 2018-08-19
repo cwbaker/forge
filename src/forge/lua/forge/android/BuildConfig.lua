@@ -1,12 +1,11 @@
 
 local BuildConfig = forge:TargetPrototype( 'BuildConfig' );
 
-function BuildConfig.create( forge, settings, packages )
+function BuildConfig.create( forge, packages )
     local build_config = forge:Target( forge:anonymous(), BuildConfig );
-    build_config.settings = settings;
     build_config.packages = packages;
     for index, package in ipairs(packages) do 
-        local filename = forge:generated( ("%s/BuildConfig.java"):format(package:gsub("%.", "/")), nil, settings );
+        local filename = forge:generated( ("%s/BuildConfig.java"):format(package:gsub("%.", "/")), nil, forge.settings );
         build_config:set_filename( filename, index );
         build_config:add_ordering_dependency( forge:Directory(forge:branch(filename)) );
     end

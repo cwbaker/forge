@@ -21,10 +21,9 @@ end
 
 local function create_target_prototype( id, language )
     local target_prototype = forge:TargetPrototype( id );
-    local function create( forge, settings, replacement, pattern )
+    local function create( forge, replacement, pattern )
         local cc = forge:Target( forge:anonymous(), target_prototype );
-        cc.settings = settings;
-        cc.architecture = settings.default_architecture;
+        cc.architecture = forge.settings.default_architecture;
         cc.replacement = replacement;
         cc.pattern = pattern;
         cc.language = language;

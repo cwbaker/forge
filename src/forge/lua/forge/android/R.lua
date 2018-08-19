@@ -1,12 +1,11 @@
 
 local R = forge:TargetPrototype( 'R' );
 
-function R.create( forge, settings, packages )
+function R.create( forge, packages )
     local r = forge:Target( forge:anonymous(), R );
-    r.settings = settings;
     r.packages = packages;
     for index, package in ipairs(packages) do 
-        local filename = forge:generated( ("%s/R.java"):format(package:gsub("%.", "/")), nil, settings );
+        local filename = forge:generated( ("%s/R.java"):format(package:gsub("%.", "/")), nil, forge.settings );
         r:set_filename( filename, index );
         r:add_ordering_dependency( forge:Directory(forge:branch(filename)) );
     end

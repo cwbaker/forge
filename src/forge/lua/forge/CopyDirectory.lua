@@ -3,7 +3,8 @@ require 'forge.Copy';
 
 local CopyDirectory = forge:TargetPrototype( "CopyDirectory" );
 
-function CopyDirectory.create( forge, settings, identifier )
+function CopyDirectory.create( forge, identifier )
+    local settings = forge.settings;
     local identifier = forge:interpolate( identifier, settings );
     local copy_directory = forge:Target( forge:anonymous(), CopyDirectory );
     copy_directory:add_ordering_dependency( forge:Directory(forge:absolute(identifier)) );

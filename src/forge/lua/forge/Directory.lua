@@ -1,8 +1,8 @@
 
 local Directory = forge:TargetPrototype( "Directory" );
 
-function Directory.create( forge, settings, identifier )
-    local target = forge:Target( forge:interpolate(identifier, settings), Directory );
+function Directory.create( forge, identifier )
+    local target = forge:Target( forge:interpolate(identifier), Directory );
     target:set_filename( target:path() );
     target:set_cleanable( true );
     return target;

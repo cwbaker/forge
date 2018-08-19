@@ -8,8 +8,7 @@ setmetatable( TargetPrototype, {
             local target;
             local create_function = target_prototype.create;
             if create_function then 
-                local settings = forge:current_settings();
-                target = create_function( forge, settings, identifier, ... );
+                target = create_function( forge, identifier, ... );
             else
                 target = forge:File( identifier, target_prototype );
             end

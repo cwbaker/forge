@@ -14,13 +14,13 @@ local function default_identifier_filename( identifier, architecture, settings )
     return identifier, filename;
 end
 
-function App.create( forge, settings, identifier )
+function App.create( forge, identifier )
+    local settings = forge.settings;
     local identifier, filename = default_identifier_filename( identifier, architecture, settings );
     local app = forge:Target( identifier, App );
     app:set_filename( filename );
     app:set_cleanable( true );
     app:add_ordering_dependency( forge:Directory(forge:branch(app)) );
-    app.settings = settings;
     app.architecture = architecture or settings.default_architecture;
     return app;
 end

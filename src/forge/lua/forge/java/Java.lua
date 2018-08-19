@@ -1,9 +1,9 @@
 
 local Java = forge:TargetPrototype( "Java" );
 
-function Java.create( forge, settings )
+function Java.create( forge )
+    local settings = forge.settings;
     local java_ = forge:Target( forge:anonymous(), Java );
-    java_.settings = settings;
     java_:set_filename( ("%s/Java.%s.timestamp"):format(settings.classes_directory(java_), java_:id()) );
     java_:add_ordering_dependency( forge:Directory(settings.classes_directory(java_)) );
     java.add_jar_dependencies( java_, settings.jars );
@@ -11,6 +11,7 @@ function Java.create( forge, settings )
 end
 
 function Java.depend( forge, target, dependencies )
+    local settings = forge.settings;
     forge:pushd( dependencies.sourcepath or "." );
     for _, value in ipairs(dependencies) do
         local source = forge:SourceFile( value, settings );
