@@ -113,6 +113,7 @@ end
 
 function forge:File( identifier, target_prototype, settings )
     local target = self:Target( self:interpolate(identifier, settings), target_prototype );
+    target:add_ordering_dependency( forge:Directory(forge:branch(target)) );
     target:set_filename( target:path() );
     target:set_cleanable( true );
     return target;
