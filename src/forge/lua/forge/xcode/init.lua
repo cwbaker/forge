@@ -443,7 +443,7 @@ function xcode.generate_project( name, project )
     for _, target in project:dependencies() do 
         if target then 
             if _G.ios then
-                local ios_apps = find_targets_by_prototype( target, forge.ios.App );
+                local ios_apps = find_targets_by_prototype( target, forge.App );
                 for _, ios_app in ipairs(ios_apps) do 
                     local architectures = find_architectures_by_prototype( target, forge.Executable );
                     add_legacy_target( ios_app, platform, architectures );
@@ -451,7 +451,7 @@ function xcode.generate_project( name, project )
             end
 
             if _G.android then
-                local android_apks = find_targets_by_prototype( target, forge.android.Apk );
+                local android_apks = find_targets_by_prototype( target, forge.Apk );
                 for _, android_apk in ipairs(android_apks) do 
                     add_legacy_target( android_apk, platform );
                 end
@@ -468,7 +468,7 @@ function xcode.generate_project( name, project )
                     add_legacy_target( dynamic_library, platform );
                 end
 
-                local binaries = find_targets_by_prototype( target, forge.xcode.Lipo );
+                local binaries = find_targets_by_prototype( target, forge.Lipo );
                 for _, binary in ipairs(binaries) do 
                     add_legacy_target( binary, platform );
                 end
