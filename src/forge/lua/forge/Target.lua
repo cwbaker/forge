@@ -16,7 +16,3 @@ function Target.depend( forge, target, dependencies )
         target:add_dependency( source_file );
     end
 end
-
-getmetatable( Target ).__call = function( _, forge, identifier, target_prototype, ... )
-    return Target.create( forge, identifier, target_prototype, ... );
-end
