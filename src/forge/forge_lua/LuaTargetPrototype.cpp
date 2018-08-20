@@ -38,6 +38,8 @@ void LuaTargetPrototype::create( lua_State* lua_state, LuaTarget* lua_target )
     luaL_newmetatable( lua_state_, TARGET_PROTOTYPE_METATABLE );
     luaxx_push( lua_state_, lua_target );
     lua_setfield( lua_state_, -2, "__index" );
+    lua_pushcfunction( lua_state_, &LuaTargetPrototype::create_call_metamethod );
+    lua_setfield( lua_state_, -2, "__call" );
     lua_pop( lua_state_, 1 );
 }
 
@@ -72,4 +74,33 @@ void LuaTargetPrototype::destroy_target_prototype( TargetPrototype* target_proto
     SWEET_ASSERT( lua_state_ );
     SWEET_ASSERT( target_prototype );
     luaxx_destroy( lua_state_, target_prototype );
+}
+
+/**
+// Redirect calls made on target prototype objects to create functions.
+//
+// ~~~lua
+// function create_call_metamethod( target_prototype, forge, identifier, ... )
+//     local create = target_prototype.create;
+//     return create( forge, identifier, target_prototype, ... );
+// end
+// ~~~
+*/
+int LuaTargetPrototype::create_call_metamethod( lua_State* lua_state )
+{
+    const int TARGET_PROTOTYPE = 1;
+    const int FORGE = 2;
+    const int IDENTIFIER = 3;
+    const int VARARGS = 4;
+    int args = lua_gettop( lua_state );
+    lua_getfield( lua_state, TARGET_PROTOTYPE, "create" );
+    lua_pushvalue( lua_state, FORGE );
+    lua_pushvalue( lua_state, IDENTIFIER );
+    lua_pushvalue( lua_state, TARGET_PROTOTYPE );
+    for ( int i = VARARGS; i <= args; ++i )
+    {
+        lua_pushvalue( lua_state, i );
+    }
+    lua_call( lua_state, args, 1 );
+    return 1;
 }
