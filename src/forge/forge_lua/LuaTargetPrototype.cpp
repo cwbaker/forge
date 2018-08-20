@@ -34,18 +34,11 @@ void LuaTargetPrototype::create( lua_State* lua_state, LuaTarget* lua_target )
     SWEET_ASSERT( lua_target );
 
     destroy();
-
     lua_state_ = lua_state;
-    luaxx_create( lua_state_, this, TARGET_PROTOTYPE_TYPE );
-
     luaL_newmetatable( lua_state_, TARGET_PROTOTYPE_METATABLE );
     luaxx_push( lua_state_, lua_target );
     lua_setfield( lua_state_, -2, "__index" );
     lua_pop( lua_state_, 1 );
-
-    const int BUILD = 1;
-    luaxx_push( lua_state_, this );
-    lua_setfield( lua_state_, BUILD, "TargetPrototype" );
 }
 
 void LuaTargetPrototype::destroy()
