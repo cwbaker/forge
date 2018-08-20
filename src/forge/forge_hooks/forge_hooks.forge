@@ -13,7 +13,7 @@ if forge:operating_system() == "macos" then
     for _, forge in forge:default_builds("cc_.*") do
         forge:all {
             forge:Lipo "${bin}/forge_hooks.dylib" { 
-                forge:DynamicLibrary (forge:object('forge_hooks_${architecture}')) {
+                forge:DynamicLibrary '${obj}/forge_hooks_${architecture}' {
                     forge:Cxx '${obj}/%1' {
                         "forge_hooks_macos.cpp"
                     };
