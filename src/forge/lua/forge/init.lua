@@ -117,11 +117,70 @@ function forge:TargetPrototype( identifier )
     return target_prototype;
 end
 
+function forge:FilePrototype( identifier, filename_modifier )
+    local filename_modifier = filename_modifier or forge.interpolate;
+    local file_prototype = self:TargetPrototype( identifier );
+    file_prototype.create = function( forge, identifier, target_prototype )
+        local identifier, filename = filename_modifier( forge, identifier );
+        local target = forge:Target( identifier, target_prototype );
+        target:set_filename( filename or target:path() );
+        target:set_cleanable( true );
+        target:add_ordering_dependency( forge:Directory(forge:branch(target)) );
+        return target;
+    end;
+    return file_prototype;
+end
+
+function forge:PatternPrototype( identifier, default_replacement, default_pattern )
+    local pattern_prototype = self:TargetPrototype( identifier );
+    pattern_prototype.create = function( forge, identifier )
+        local target = forge:Target( forge:anonymous() );
+        target.replacement = forge:interpolate( identifier or default_replacement or '${obj}/%1' );
+        target.depend = function( forge, target, dependencies )
+            local replacement = target.replacement;
+            local pattern = target.pattern or default_pattern or '(.-([^\\/]-))(%.?[^%.\\/]*)$';
+            local attributes = forge:merge( {}, dependencies );
+            for _, filename in ipairs(dependencies) do
+                local source_file = forge:SourceFile( filename );
+                local identifier = forge:root_relative( source_file ):gsub( pattern, replacement );
+                local file = forge:File( identifier, pattern_prototype );
+                forge:merge( file, attributes );
+                file:add_dependency( source_file );
+                target:add_dependency( file );
+            end
+        end     
+        return target;
+    end;
+    return pattern_prototype;
+end
+
+function forge:GroupPrototype( identifier, default_replacement, default_pattern )
+    local group_prototype = self:TargetPrototype( identifier );
+    group_prototype.create = function( forge, identifier, target_prototype )
+        local target = forge:Target( forge:anonymous(), target_prototype );
+        target.replacement = forge:interpolate( identifier );
+        return target;
+    end;
+    group_prototype.depend = function( forge, target, dependencies )
+        forge:merge( target, dependencies );
+        local replacement = target.replacement or default_replacement or '${obj}/%1';
+        local pattern = target.pattern or default_pattern or '(.-([^\\/]-))(%.?[^%.\\/]*)$';
+        for _, filename in ipairs(dependencies) do
+            local source_file = forge:SourceFile( filename );
+            local identifier = forge:root_relative( source_file ):gsub( pattern, replacement );
+            local file = forge:File( identifier );
+            file:add_dependency( source_file );
+            target:add_dependency( file );
+        end
+    end     
+    return group_prototype;
+end
+
 function forge:File( identifier, target_prototype )
     local target = self:Target( self:interpolate(identifier), target_prototype );
-    target:add_ordering_dependency( forge:Directory(forge:branch(target)) );
     target:set_filename( target:path() );
     target:set_cleanable( true );
+    target:add_ordering_dependency( forge:Directory(forge:branch(target)) );
     return target;
 end
 
@@ -137,8 +196,8 @@ function forge:SourceFile( identifier )
     return target;
 end
 
-function forge:SourceDirectory( value, settings )
-    return self:SourceFile( value, settings );
+function forge:SourceDirectory( identifier, settings )
+    return self:SourceFile( identifier, settings );
 end
 
 function forge:map( target_prototype, replacement, pattern, filenames )
