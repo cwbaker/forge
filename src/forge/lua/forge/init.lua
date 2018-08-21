@@ -111,18 +111,24 @@ function forge:platform_matches( ... )
     return false;
 end
 
-function forge:File( identifier, target_prototype, settings )
-    local target = self:Target( self:interpolate(identifier, settings), target_prototype );
+function forge:TargetPrototype( identifier )
+    local target_prototype = self:target_prototype( identifier );
+    self[identifier] = target_prototype;
+    return target_prototype;
+end
+
+function forge:File( identifier, target_prototype )
+    local target = self:Target( self:interpolate(identifier), target_prototype );
     target:add_ordering_dependency( forge:Directory(forge:branch(target)) );
     target:set_filename( target:path() );
     target:set_cleanable( true );
     return target;
 end
 
-function forge:SourceFile( value, settings )
-    local target = value;
-    if type(target) == "string" then 
-        target = self:Target( forge:interpolate(value, settings) );
+function forge:SourceFile( identifier )
+    local target = identifier;
+    if type(target) == 'string' then 
+        target = self:Target( self:interpolate(identifier) );
         if target:filename() == '' then 
             target:set_filename( target:path() );
         end
