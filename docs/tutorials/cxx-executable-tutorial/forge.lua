@@ -1,5 +1,5 @@
 
-require 'build';
+require 'forge';
 require 'forge.cc';
 require 'forge.linux';
 require 'forge.macos';
