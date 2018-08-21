@@ -472,15 +472,28 @@ function forge:save_settings( settings, filename )
     file:close();
 end
 
+-- Append values from /value/ to /values/.
+function forge:append( values, value )
+    local values = values or {};
+    if type(value) == "table" then 
+        for _, other_value in ipairs(value) do 
+            table.insert( values, other_value );
+        end
+    else
+        table.insert( values, value );
+    end
+    return values;
+end
+
 -- Merge fields with string keys from /source/ to /destination/.
 function forge:merge( destination, source )
     local destination = destination or {};
-    for k, v in pairs(source) do
-        if type(k) == "string" then
-            if type(v) == "table" then
-                destination[k] = forge:append( destination[k], v );
+    for key, value in pairs(source) do
+        if type(key) == 'string' then
+            if type(value) == 'table' then
+                destination[key] = forge:append( destination[key], value );
             else
-                destination[k] = v;
+                destination[key] = value;
             end
         end
     end
@@ -656,19 +669,6 @@ function forge:dependencies_filter( target )
             print( line );
         end
     end
-end
-
--- Append values from /value/ to /values/.
-function forge:append( values, value )
-    local values = values or {};
-    if type(value) == "table" then 
-        for _, other_value in ipairs(value) do 
-            table.insert( values, other_value );
-        end
-    else
-        table.insert( values, value );
-    end
-    return values;
 end
 
 -- Recursively walk the dependencies of *target* until a target with a 
