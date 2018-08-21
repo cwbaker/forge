@@ -716,6 +716,5 @@ function forge:cpdir( destination, source, settings )
     self:popd();
 end
 
-require "forge.TargetPrototype";
 require "forge.Target";
 require "forge.Directory";
