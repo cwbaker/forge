@@ -16,7 +16,7 @@ bootstrap-macos
 bootstrap-windows
 copy-file-example.cache
 foo.out
-.sweet_build
+.forge
 *.o
 *.obj
 /docs/tutorials/cxx-library-tutorial/hello_world
