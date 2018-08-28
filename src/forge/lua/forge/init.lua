@@ -747,7 +747,7 @@ function forge:walk_dependencies( target, start, finish, maximum_level )
     end
     return coroutine.wrap( function() 
         for index, dependency in target:dependencies(start, finish) do 
-            local phony = dependency:filename() == "";
+            local phony = dependency:filename() == '';
             if not phony then
                 coroutine.yield( dependency, level );
             end
