@@ -23,7 +23,7 @@ for _, forge in forge:default_builds("cc_.*") do
     end
 
     local forge = forge:configure( settings );
-    forge:Library '${lib}/forge_${architecture}' {
+    forge:StaticLibrary '${lib}/forge_${architecture}' {
         forge:Cxx '${obj}/%1' {
             -- Disable automatic linking to Boost libraries.
             defines = { "BOOST_ALL_NO_LIB" };

@@ -8,7 +8,7 @@ for _, forge in forge:default_builds("cc_.*") do
         };
     };
 
-    local boost_filesystem = forge:Library '${lib}/boost_filesystem_${architecture}' {
+    local boost_filesystem = forge:StaticLibrary '${lib}/boost_filesystem_${architecture}' {
         forge:Cxx '${obj}/%1' {
             "codecvt_error_category.cpp",
             "operations.cpp",

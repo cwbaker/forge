@@ -2,7 +2,7 @@
 buildfile "cmdline_test/cmdline_test.forge";
 
 for _, forge in forge:default_builds("cc_.*") do
-    forge:Library '${lib}/cmdline_${architecture}' {
+    forge:StaticLibrary '${lib}/cmdline_${architecture}' {
         forge:Cxx '${obj}/%1' {
             "AddOption.cpp",
             "Error.cpp",

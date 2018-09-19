@@ -8,7 +8,7 @@ for _, forge in forge:default_builds("cc_.*") do
         };
     };
 
-    forge:Library '${lib}/boost_system_${architecture}' {
+    forge:StaticLibrary '${lib}/boost_system_${architecture}' {
         forge:Cxx '${obj}/%1' {
             "error_code.cpp"
         };
