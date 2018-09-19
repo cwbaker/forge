@@ -156,7 +156,7 @@ function android.initialize( settings )
     settings.android.proguard_enabled = settings.android.proguard_enabled or variant == "shipping";
     
     for _, architecture in ipairs(settings.android.architectures) do 
-        forge:default_build( ("cc_android_%s"):format(architecture), forge:configure {
+        forge:add_default_build( ("cc_android_%s"):format(architecture), forge:configure {
             obj = ("%s/cc_android_%s"):format( settings.obj, architecture );
             platform = "android";
             architecture = architecture;
@@ -183,7 +183,7 @@ function android.initialize( settings )
         } );
     end
 
-    forge:default_build( "java_android", forge:configure {
+    forge:add_default_build( "java_android", forge:configure {
         classes = forge:root( ('%s/classes/java_android'):format(variant) );
         gen = forge:root( ('%s/gen/java_android'):format(variant) );
         system_jars = {

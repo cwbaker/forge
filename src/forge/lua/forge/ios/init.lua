@@ -102,7 +102,7 @@ end;
 
 function ios.initialize( settings )
     for _, architecture in ipairs(settings.ios.architectures) do 
-        forge:default_build( ("cc_ios_%s"):format(architecture), forge:configure {
+        forge:add_default_build( ("cc_ios_%s"):format(architecture), forge:configure {
             obj = ("%s/cc_ios_%s"):format( settings.obj, architecture );
             platform = "ios";
             sdkroot = 'iphoneos';

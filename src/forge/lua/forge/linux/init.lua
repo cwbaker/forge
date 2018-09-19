@@ -26,7 +26,7 @@ function linux.initialize( settings )
         };
 
         for _, architecture in ipairs(settings.linux.architectures) do 
-            forge:default_build( ("cc_linux_%s"):format(architecture), forge:configure {
+            forge:add_default_build( ("cc_linux_%s"):format(architecture), forge:configure {
                 obj = ("%s/cc_linux_%s"):format( settings.obj, architecture );
                 platform = "linux";
                 architecture = architecture;

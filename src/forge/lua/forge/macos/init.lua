@@ -80,7 +80,7 @@ end
 function macos.initialize( settings )
     if forge:operating_system() == "macos" then
         for _, architecture in ipairs(settings.architectures) do 
-            forge:default_build( ("cc_macos_%s"):format(architecture), forge:configure {
+            forge:add_default_build( ("cc_macos_%s"):format(architecture), forge:configure {
                 obj = ("%s/cc_macos_%s"):format( settings.obj, architecture );
                 platform = "macos";
                 sdkroot = 'macosx';

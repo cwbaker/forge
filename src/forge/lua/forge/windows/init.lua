@@ -4,7 +4,7 @@ windows = {};
 function windows.initialize( settings )
     if forge:operating_system() == "windows" then
         for _, architecture in ipairs(settings.architectures) do 
-            forge:default_build( ("cc_windows_%s"):format(architecture), forge:configure {
+            forge:add_default_build( ("cc_windows_%s"):format(architecture), forge:configure {
                 obj = ("%s/cc_windows_%s"):format( settings.obj, architecture );
                 obj_extension = '.obj';
                 architecture = architecture;

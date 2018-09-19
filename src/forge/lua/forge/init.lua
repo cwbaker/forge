@@ -81,8 +81,17 @@ forge.settings = {};
 forge.modules_ = {};
 forge.default_builds_ = {};
 
-function forge:default_build( identifier, build )
+function forge:add_default_build( identifier, build )
     table.insert( self.default_builds_, {identifier, build} );
+end
+
+function forge:default_build( pattern )
+    for _, default_build in ipairs(self.default_builds_) do 
+        local identifier = default_build[1];
+        if pattern == nil or pattern == "" or identifier:find(pattern) then 
+            return default_build[2];
+        end
+    end        
 end
 
 function forge:default_builds( pattern )
