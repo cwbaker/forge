@@ -3,8 +3,6 @@ local settings =  {
     subsystem = "CONSOLE"; 
     stack_size = 32768; 
     architectures = { "x86_64" };
-    -- Disable automatic linking to Boost libraries.
-    defines = { "BOOST_ALL_NO_LIB" };
 };
 
 -- Disable warnings on Linux to avoid unused variable warnings in Boost
@@ -27,12 +25,17 @@ forge:all {
         '${lib}/boost_filesystem_${architecture}';
         '${lib}/boost_system_${architecture}';
 
-        system_libraries = forge:switch {
+        libraries = forge:switch {
             platform;
-            linux = { "pthread", "dl" };
+            linux = { 'pthread', 'dl' };
         };
         
         forge:Cxx '${obj}/%1' {
+            defines = {    
+                'BOOST_ALL_NO_LIB'; -- Disable automatic linking to Boost libraries.
+                ('BUILD_VERSION="\\"%s\\""'):format( version );
+            };
+
             "Application.cpp", 
             "main.cpp"
         };    

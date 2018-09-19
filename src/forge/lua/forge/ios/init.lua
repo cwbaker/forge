@@ -8,7 +8,7 @@ if platform and platform == "ios" and sdkroot and sdkroot:find("iPhoneSimulator"
     platform = "ios_simulator";
 end
 
-ios = {};
+local ios = {};
 
 function ios.sdkroot_by_target_and_platform( target, platform )
     local sdkroot = target.settings.sdkroot or "iphoneos";
@@ -102,28 +102,22 @@ end;
 
 function ios.initialize( settings )
     for _, architecture in ipairs(settings.ios.architectures) do 
-        forge:add_default_build( ("cc_ios_%s"):format(architecture), forge:configure {
-            obj = ("%s/cc_ios_%s"):format( settings.obj, architecture );
-            platform = "ios";
+        local clang_forge = forge:configure {
+            obj = ('%s/cc_ios_%s'):format( settings.obj, architecture );
+            platform = 'ios';
             sdkroot = 'iphoneos';
             xcrun = settings.ios.xcrun;
             architecture = architecture;
             default_architecture = architecture;
-            cc = ios.cc;
-            objc = ios.objc;
-            build_library = ios.build_library;
-            clean_library = ios.clean_library;
-            build_executable = ios.build_executable;
-            clean_executable = ios.clean_executable;
+            iphoneos_deployment_target = '8.0';
+            targeted_device_family = '1,2';
+            provisioning_profile = forge:home( 'sweet/sweet_software/dev.mobileprovision' );
             lipo_executable = ios.lipo_executable;
             obj_directory = ios.obj_directory;
-            cc_name = ios.cc_name;
-            cxx_name = ios.cxx_name;
-            obj_name = ios.obj_name;
-            lib_name = ios.lib_name;
-            dll_name = ios.dll_name;
-            exe_name = ios.exe_name;
-        } );
+        };
+        local clang = require 'forge.cc.clang';
+        clang.register( clang_forge );
+        forge:add_default_build( ('cc_ios_%s'):format(architecture), clang_forge );
     end
 end;
 
@@ -313,3 +307,4 @@ end
 require "forge.ios.App";
 
 forge:register_module( ios );
+return ios;

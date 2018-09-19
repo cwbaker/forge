@@ -1,5 +1,5 @@
 
-msvc = {};
+local msvc = {};
 
 function msvc.configure( settings )
     local function vswhere()
@@ -236,232 +236,456 @@ function msvc.initialize( settings )
     end
 end;
 
-function msvc.visual_cxx_tool( target, tool )
-    local msvc = target.settings.msvc;
+function msvc.object_filename( forge, identifier )
+    return ('%s.obj'):format( identifier );
+end
+
+function msvc.static_library_filename( forge, identifier )
+    local identifier = forge:absolute( forge:interpolate(identifier) );
+    local filename = ('%s.lib'):format( identifier );
+    return identifier, filename;
+end
+
+function msvc.dynamic_library_filename( forge, identifier )
+    local identifier = forge:absolute( forge:interpolate(identifier) );
+    local filename = ('%s.dll'):format( identifier );
+    return identifier, filename;
+end
+
+function msvc.executable_filename( forge, identifier )
+    local identifier = forge:interpolate( identifier );
+    local filename = ('%s.exe'):format( identifier );
+    return identifier, filename;
+end
+
+-- Compile C and C++.
+function msvc.compile( forge, target ) 
+    local settings = forge.settings;    
+
+    local flags = {};
+    msvc.append_defines( forge, target, flags );
+    msvc.append_include_directories( forge, target, flags );
+    msvc.append_compile_flags( forge, target, flags );
+
+    local objects_by_source = {};
+    local sources_by_directory = {};
+    for _, object in target:dependencies() do
+        if object:outdated() then
+            local source = object:dependency();
+            local directory = forge:branch( source:filename() );
+            local sources = sources_by_directory[directory];
+            if not sources then 
+                sources = {};
+                sources_by_directory[directory] = sources;
+            end
+            local source = object:dependency();
+            table.insert( sources, source:id() );
+            objects_by_source[forge:leaf(source:id())] = object;
+            object:clear_implicit_dependencies();
+        end    
+    end
+
+    for directory, sources in pairs(sources_by_directory) do
+        if #sources > 0 then
+            -- Make sure that the output directory has a trailing slash so
+            -- that Visual C++ doesn't interpret it as a file when a single
+            -- source file is compiled.
+            local output_directory = forge:native( ('%s/%s'):format(settings.obj_directory(target), forge:relative(directory)) );
+            if output_directory:sub(-1) ~= '\\' then 
+                output_directory = ('%s\\'):format( output_directory );
+            end
+
+            local ccflags = table.concat( flags, ' ' );
+            local source = table.concat( sources, '" "' );
+            local cl = msvc.visual_cxx_tool( forge, 'cl.exe' );
+            local environment = msvc.environments_by_architecture[settings.architecture];
+            forge:pushd( directory );
+            forge:system( 
+                cl, 
+                ('cl %s /Fo%s "%s"'):format(ccflags, output_directory, source), 
+                environment, 
+                nil,
+                msvc.dependencies_filter(output_directory, forge:absolute(directory))
+            );
+            forge:popd();
+        end
+    end
+
+    for _, object in pairs(objects_by_source) do
+        object:set_built( true );
+    end
+end
+
+-- Archive objects into a static library. 
+function msvc.archive( forge, target ) 
+    printf( forge:leaf(target) );
+
+    local settings = forge.settings;
+
+    local flags = {
+        '/nologo'
+    };
+   
+    if settings.link_time_code_generation then
+        table.insert( flags, '/ltcg' );
+    end
+    
+    forge:pushd( settings.obj_directory(target) );
+    local objects = {};
+    for _, dependency in target:dependencies() do
+        local prototype = dependency:prototype();
+        if prototype == forge.Cc or prototype == forge.Cxx then
+            for _, object in dependency:dependencies() do
+                table.insert( objects, forge:relative(object:filename()) );
+            end
+        end
+    end
+    
+    if #objects > 0 then
+        local arflags = table.concat( flags, ' ' );
+        local arobjects = table.concat( objects, '" "' );
+        local msar = msvc.visual_cxx_tool( forge, 'lib.exe' );
+        local environment = msvc.environments_by_architecture[settings.architecture];
+        forge:system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, forge:native(target:filename()), arobjects), environment );
+    end
+    forge:popd();
+end
+
+-- Link dynamic libraries and executables.
+function msvc.link( forge, target ) 
+    printf( forge:leaf(target) );
+
+    local objects = {};
+    local libraries = {};
+    local settings = forge.settings;
+    forge:pushd( settings.obj_directory(target) );
+    for _, dependency in target:dependencies() do
+        local prototype = dependency:prototype();
+        if prototype == forge.Cc or prototype == forge.Cxx then
+            assertf( target.architecture == dependency.architecture, "Architectures for '%s' (%s) and '%s' (%s) don't match", target:path(), tostring(target.architecture), dependency:path(), tostring(dependency.architecture) );
+            for _, object in dependency:dependencies() do
+                if object:prototype() == nil then
+                    table.insert( objects, forge:relative(object:filename()) );
+                end
+            end
+        elseif prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
+            table.insert( libraries, ('%s.lib'):format(forge:basename(dependency:filename())) );
+        end
+    end
+
+    local flags = {};
+    msvc.append_link_flags( forge, target, flags );
+    msvc.append_library_directories( forge, target, flags );
+    msvc.append_link_libraries( forge, target, libraries );
+
+    if #objects > 0 then
+        local msld = msvc.visual_cxx_tool( forge, "link.exe" );
+        local msmt = msvc.windows_sdk_tool( forge, "mt.exe" );
+        local msrc = msvc.windows_sdk_tool( forge, "rc.exe" );
+        local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( settings.obj_directory(target), target:id() );
+
+        if settings.incremental_linking then
+            local embedded_manifest = ("%s_embedded.manifest"):format( target:id() );
+            local embedded_manifest_rc = ("%s_embedded_manifest.rc"):format( target:id() );
+            local embedded_manifest_res = ("%s_embedded_manifest.res"):format( target:id() );
+
+            if not forge:exists(embedded_manifest_rc) then        
+                local rc = io.open( forge:absolute(embedded_manifest_rc), "wb" );
+                assertf( rc, "Opening '%s' to write manifest failed", forge:absolute(embedded_manifest_rc) );
+                if target:prototype() == Executable then
+                    rc:write( ('1 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "%s_embedded.manifest"'):format(target:id()) );
+                else
+                    rc:write( ('2 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "%s_embedded.manifest"'):format(target:id()) );
+                end
+                rc:close();
+            end
+
+            local ignore_filter = function() end;
+            local ldflags = table.concat( flags, ' ' );
+            local ldlibs = table.concat( libraries, ' ' );
+            local ldobjects = table.concat( objects, '" "' );
+            local environment = msvc.environments_by_architecture[settings.architecture];
+
+            if forge:exists(embedded_manifest) ~= true then
+                forge:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+                forge:system( msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest), environment );
+                forge:system( msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
+            end
+
+            table.insert( objects, embedded_manifest_res );
+            table.insert( flags, "/incremental" );
+            local ldflags = table.concat( flags, ' ' );
+            local ldobjects = table.concat( objects, '" "' );
+
+            forge:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+            forge:system( msmt, ('mt /nologo /out:"%s" /manifest %s'):format(embedded_manifest, intermediate_manifest), environment );
+            forge:system( msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
+            forge:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+        else
+            table.insert( flags, "/incremental:no" );
+
+            local ldflags = table.concat( flags, ' ' );
+            local ldlibs = table.concat( libraries, ' ' );
+            local ldobjects = table.concat( objects, '" "' );
+            local environment = msvc.environments_by_architecture[settings.architecture];
+
+            forge:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+            forge:sleep( 100 );
+            forge:system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(forge:native(target:filename()), intermediate_manifest), environment );
+        end
+    end
+    forge:popd();
+end
+
+local Cc = forge:GroupPrototype( 'Cc', msvc.object_filename );
+Cc.language = 'c';
+Cc.build = msvc.compile;
+msvc.Cc = Cc;
+
+local Cxx = forge:GroupPrototype( 'Cxx', msvc.object_filename );
+Cxx.language = 'c++';
+Cxx.build = msvc.compile;
+msvc.Cxx = Cxx;
+
+local StaticLibrary = forge:FilePrototype( 'StaticLibrary', msvc.static_library_filename );
+StaticLibrary.build = msvc.archive;
+msvc.StaticLibrary = StaticLibrary;
+
+local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', msvc.dynamic_library_filename );
+DynamicLibrary.build = msvc.link;
+msvc.DynamicLibrary = DynamicLibrary;
+
+local Executable = forge:FilePrototype( 'Executable', msvc.executable_filename );
+Executable.build = msvc.link;
+msvc.Executable = Executable;
+
+-- Register the Microsoft Visual C++ C/C++ toolset in *forge*.
+function msvc.register( forge )
+    forge.Cc = msvc.Cc;
+    forge.Cxx = msvc.Cxx;
+    forge.StaticLibrary = msvc.StaticLibrary;
+    forge.DynamicLibrary = msvc.DynamicLibrary;
+    forge.Executable = msvc.Executable;
+end
+
+function msvc.visual_cxx_tool( forge, tool )
+    local settings = forge.settings;
+    local msvc = settings.msvc;
     if msvc.toolset_version >= 15 then 
-        if target.architecture == 'x86_64' then
+        if settings.architecture == 'x86_64' then
             return ('%s\\bin\\Hostx64\\x64\\%s'):format( msvc.visual_cxx_directory, tool );
         else
             return ('%s\\bin\\Hostx64\\x86\\%s'):format( msvc.visual_cxx_directory, tool );
         end
     else
-        if target.architecture == 'x86_64' then
-            return ('%s/VC/bin/amd64/%s'):format( target.settings.msvc.visual_studio_directory, tool );
+        if settings.architecture == 'x86_64' then
+            return ('%s/VC/bin/amd64/%s'):format( msvc.visual_studio_directory, tool );
         else
-            return ('%s/VC/bin/%s'):format( target.settings.msvc.visual_studio_directory, tool );
+            return ('%s/VC/bin/%s'):format( msvc.visual_studio_directory, tool );
         end
     end
 end
 
-function msvc.windows_sdk_tool( target, tool )
-    local settings = target.settings;
+function msvc.windows_sdk_tool( forge, tool )
+    local settings = forge.settings;
     local directory = settings.msvc.windows_sdk_directory;
     local version = settings.msvc.windows_sdk_version;
-    if target.architecture == "x86_64" then
+    if settings.architecture == "x86_64" then
         return ("%s\\bin\\%s\\x64\\%s"):format( directory, version, tool );
     else
         return ("%s\\bin\\%s\\x86\\%s"):format( directory, version, tool );
     end
 end
 
-function msvc.append_defines( target, flags )
-    table.insert( flags, ('/DBUILD_PLATFORM_%s'):format(forge:upper(platform)) );
-    table.insert( flags, ('/DBUILD_VARIANT_%s'):format(forge:upper(variant)) );
-    table.insert( flags, ('/DBUILD_LIBRARY_SUFFIX="\\"_%s.lib\\""'):format(target.architecture) );
-    table.insert( flags, ('/DBUILD_LIBRARY_TYPE_%s'):format(forge:upper(target.settings.library_type)) );
-    table.insert( flags, '/D_CRT_SECURE_NO_WARNINGS' );
+function msvc.append_defines( forge, target, flags )
+    local settings = forge.settings;
 
-    if string.find(target.settings.runtime_library, "debug", 1, true) then
-        table.insert( flags, "/D_DEBUG" );
-        table.insert( flags, "/DDEBUG" );
-    else 
-        table.insert( flags, "/DNDEBUG" );
+    if not settings.assertions then
+        table.insert( flags, '/DNDEBUG' );
     end
 
-    if target.settings.defines then
-        for _, define in ipairs(target.settings.defines) do
-            table.insert( flags, ("/D%s"):format(define) );
+    if settings.defines then
+        for _, define in ipairs(settings.defines) do
+            table.insert( flags, ('/D%s'):format(define) );
         end
     end
 
     if target.defines then
         for _, define in ipairs(target.defines) do
-            table.insert( flags, ("/D%s"):format(define) );
+            table.insert( flags, ('/D%s'):format(define) );
         end
     end
 end
 
-function msvc.append_version_defines( target, flags )
-    table.insert( flags, ('/DBUILD_VERSION="\\"%s\\""'):format(version) );
-end
+function msvc.append_include_directories( forge, target, flags )
+    local settings = forge.settings;
 
-function msvc.append_include_directories( target, flags )
     if target.include_directories then
         for _, directory in ipairs(target.include_directories) do
             table.insert( flags, ('/I "%s"'):format(forge:relative(directory)) );
         end
     end
 
-    if target.settings.include_directories then
-        for _, directory in ipairs(target.settings.include_directories) do
+    if settings.include_directories then
+        for _, directory in ipairs(settings.include_directories) do
             table.insert( flags, ('/I "%s"'):format(directory) );
         end
     end
 end
 
-function msvc.append_compile_flags( target, flags )
-    table.insert( flags, "/nologo" );
-    table.insert( flags, "/FS" );
-    table.insert( flags, "/FC" );
-    table.insert( flags, "/c" );
-    table.insert( flags, "/showIncludes" );
+function msvc.append_compile_flags( forge, target, flags )
+    local settings = forge.settings;
 
-    local settings = target.settings;
+    table.insert( flags, '/nologo' );
+    table.insert( flags, '/FS' );
+    table.insert( flags, '/FC' );
+    table.insert( flags, '/c' );
+    table.insert( flags, '/showIncludes' );
 
-    local language = target.language or "c++";
-    if language == "c" then 
-        table.insert( flags, "/TC" );
-    elseif language == "c++" then
-        table.insert( flags, "/TP" );
-        if target.settings.exceptions then
-            table.insert( flags, "/EHsc" );
+    local language = target.language or 'c++';
+    if language == 'c' then 
+        table.insert( flags, '/TC' );
+    elseif language == 'c++' then
+        table.insert( flags, '/TP' );
+        if settings.exceptions then
+            table.insert( flags, '/EHsc' );
         end
-        if target.settings.run_time_type_info then
-            table.insert( flags, "/GR" );
+        if settings.run_time_type_info then
+            table.insert( flags, '/GR' );
         end
     else
-        assert( false, "Only the 'c' and 'c++' languages are supported by Microsoft Visual C++" );
+        assert( false, 'Only C and C++ are supported by Microsoft Visual C++' );
     end
 
-    if target.settings.runtime_library == "static" then
-        table.insert( flags, "/MT" );
-    elseif target.settings.runtime_library == "static_debug" then
-        table.insert( flags, "/MTd" );
-    elseif target.settings.runtime_library == "dynamic" then
-        table.insert( flags, "/MD" );
-    elseif target.settings.runtime_library == "dynamic_debug" then
-        table.insert( flags, "/MDd" );
+    if settings.runtime_library == 'static' then
+        table.insert( flags, '/MT' );
+    elseif settings.runtime_library == 'static_debug' then
+        table.insert( flags, '/MTd' );
+    elseif settings.runtime_library == 'dynamic' then
+        table.insert( flags, '/MD' );
+    elseif settings.runtime_library == 'dynamic_debug' then
+        table.insert( flags, '/MDd' );
     end
     
-    if target.settings.debug then
-        local pdb = ("%s%s.pdb"):format(settings.obj_directory(target), target:working_directory():id() );
-        table.insert( flags, ("/Zi /Fd%s"):format(forge:native(pdb)) );
+    if settings.debug then
+        local pdb = ('%s/%s.pdb'):format(settings.obj_directory(target), target:working_directory():id() );
+        table.insert( flags, ('/Zi /Fd%s'):format(forge:native(pdb)) );
     end
 
-    if target.settings.link_time_code_generation then
-        table.insert( flags, "/GL" );
+    if settings.link_time_code_generation then
+        table.insert( flags, '/GL' );
     end
 
-    if target.settings.minimal_rebuild then
-        table.insert( flags, "/Gm" );
+    if settings.minimal_rebuild then
+        table.insert( flags, '/Gm' );
     end
 
-    if target.settings.optimization then
-        table.insert( flags, "/GF /O2 /Ot /Oi /Ox /Oy /GS- /favor:blend" );
+    if settings.optimization then
+        table.insert( flags, '/GF /O2 /Ot /Oi /Ox /Oy /GS- /favor:blend' );
     end
 
-    if target.settings.preprocess then
-        table.insert( flags, "/P /C" );
+    if settings.preprocess then
+        table.insert( flags, '/P /C' );
     end
 
-    if target.settings.run_time_checks then
-        table.insert( flags, "/RTC1" );
+    if settings.run_time_checks then
+        table.insert( flags, '/RTC1' );
     end
 
-    if target.settings.warnings_as_errors then 
-        table.insert( flags, "/WX" );
+    if settings.warnings_as_errors then 
+        table.insert( flags, '/WX' );
     end
 
-    local warning_level = target.settings.warning_level
+    local warning_level = settings.warning_level
     if warning_level == 0 then 
-        table.insert( flags, "/w" );
+        table.insert( flags, '/w' );
     elseif warning_level == 1 then
-        table.insert( flags, "/W1" );
+        table.insert( flags, '/W1' );
     elseif warning_level == 2 then
-        table.insert( flags, "/W2" );
+        table.insert( flags, '/W2' );
     elseif warning_level == 3 then
-        table.insert( flags, "/W3" );
+        table.insert( flags, '/W3' );
     elseif warning_level >= 4 then
-        table.insert( flags, "/W4" );
+        table.insert( flags, '/W4' );
     end
 end
 
-function msvc.append_library_directories( target, flags )
+function msvc.append_library_directories( forge, target, flags )
+    local settings = forge.settings;
+
     if target.library_directories then
         for _, directory in ipairs(target.library_directories) do
             table.insert( flags, ('/libpath:"%s"'):format(directory) );
         end
     end    
 
-    if target.settings.library_directories then
-        for _, directory in ipairs(target.settings.library_directories) do
+    if settings.library_directories then
+        for _, directory in ipairs(settings.library_directories) do
             table.insert( flags, ('/libpath:"%s"'):format(directory) );
         end
     end    
 end
 
-function msvc.append_link_flags( target, flags )
-    local settings = target.settings;
+function msvc.append_link_flags( forge, target, flags )
+    local settings = forge.settings;
 
     table.insert( flags, "/nologo" );
 
     local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( settings.obj_directory(target), target:id() );
-    table.insert( flags, "/manifest" );
-    table.insert( flags, ("/manifestfile:%s"):format(intermediate_manifest) );
+    table.insert( flags, '/manifest' );
+    table.insert( flags, ('/manifestfile:%s'):format(intermediate_manifest) );
     
-    if target.settings.subsystem then
-        table.insert( flags, ("/subsystem:%s"):format(target.settings.subsystem) );
+    if settings.subsystem then
+        table.insert( flags, ('/subsystem:%s'):format(settings.subsystem) );
     end
 
-    table.insert( flags, ("/out:%s"):format(forge:native(target:filename())) );
+    table.insert( flags, ('/out:%s'):format(forge:native(target:filename())) );
     if target:prototype() == forge.DynamicLibrary then
-        table.insert( flags, "/dll" );
-        table.insert( flags, ("/implib:%s"):format(forge:native(("%s/%s.lib"):format(target.settings.lib, target:id()))) );
+        table.insert( flags, '/dll' );
+        table.insert( flags, ('/implib:%s'):format(forge:native(('%s/%s.lib'):format(settings.lib, target:id()))) );
     end
     
-    if target.settings.verbose_linking then
-        table.insert( flags, "/verbose" );
+    if settings.verbose_linking then
+        table.insert( flags, '/verbose' );
     end
     
-    if target.settings.debug then
-        table.insert( flags, "/debug" );
+    if settings.debug then
+        table.insert( flags, '/debug' );
         local pdb = ('%s/%s.pdb'):format( settings.obj_directory(target), target:id() );
-        table.insert( flags, ("/pdb:%s"):format(forge:native(pdb)) );
+        table.insert( flags, ('/pdb:%s'):format(forge:native(pdb)) );
     end
 
-    if target.settings.link_time_code_generation then
-        table.insert( flags, "/ltcg" );
+    if settings.link_time_code_generation then
+        table.insert( flags, '/ltcg' );
     end
 
-    if target.settings.generate_map_file then
+    if settings.generate_map_file then
         local map = ('%s/%s.map'):format( settings.obj_directory(target), target:id() );
-        table.insert( flags, ("/map:%s"):format(forge:native(map)) );
+        table.insert( flags, ('/map:%s'):format(forge:native(map)) );
     end
 
-    if target.settings.optimization then
-        table.insert( flags, "/opt:ref" );
-        table.insert( flags, "/opt:icf" );
+    if settings.optimization then
+        table.insert( flags, '/opt:ref' );
+        table.insert( flags, '/opt:icf' );
     end
 
-    if target.settings.stack_size then
-        table.insert( flags, ("/stack:%d"):format(target.settings.stack_size) );
+    if settings.stack_size then
+        table.insert( flags, ('/stack:%d'):format(settings.stack_size) );
     end
 end
 
-function msvc.append_link_libraries( target, flags )
-    if target.settings.third_party_libraries then
-        for _, library in ipairs(target.settings.third_party_libraries) do
-            table.insert( flags, ("%s.lib"):format(forge:basename(library)) );
+function msvc.append_link_libraries( forge, target, flags )
+    local settings = forge.settings;
+
+    if settings.libraries then
+        for _, library in ipairs(settings.libraries) do
+            table.insert( flags, ('%s.lib'):format(forge:basename(library)) );
         end
     end
-    if target.third_party_libraries then
-        for _, library in ipairs(target.settings.third_party_libraries) do
-            table.insert( flags, ("%s.lib"):format(forge:basename(library)) );
-        end
-    end
-    if target.system_libraries then
-        for _, library in ipairs(target.system_libraries) do
-            table.insert( flags, ("%s.lib"):format(forge:basename(library)) );
+
+    if target.libraries then
+        for _, library in ipairs(settings.libraries) do
+            table.insert( flags, ('%s.lib'):format(forge:basename(library)) );
         end
     end
 end
@@ -528,4 +752,6 @@ function msvc.dependencies_filter( output_directory, source_directory )
     return dependencies_filter;
 end
 
+_G.msvc = msvc;
 forge:register_module( msvc );
+return msvc;

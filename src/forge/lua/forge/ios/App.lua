@@ -81,5 +81,3 @@ end
 function App.clean( forge, target )
     forge:rmdir( target:filename() );
 end
-
-ios.App = App;

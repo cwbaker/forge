@@ -120,6 +120,7 @@ return {
         };
 
         ["debug"] = {
+            assertions = true;
             compile_as_c = false;
             debug = true;
             debuggable = true;
@@ -151,6 +152,7 @@ return {
         };
 
         ["release"] = {
+            assertions = true;
             compile_as_c = false;
             debug = true;
             debuggable = true;
@@ -182,6 +184,7 @@ return {
         };
 
         ["shipping"] = {
+            assertions = false; 
             compile_as_c = false;
             debug = false;
             debuggable = false;

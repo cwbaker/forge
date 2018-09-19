@@ -140,14 +140,15 @@ function forge:FilePrototype( identifier, filename_modifier )
     return file_prototype;
 end
 
-function forge:PatternPrototype( identifier, default_replacement, default_pattern )
+function forge:PatternPrototype( identifier, replacement_modifier )
+    local replacement_modifier = replacement_modifier or forge.interpolate;
     local pattern_prototype = self:TargetPrototype( identifier );
     pattern_prototype.create = function( forge, identifier )
         local target = forge:Target( forge:anonymous() );
-        target.replacement = forge:interpolate( identifier or default_replacement or '${obj}/%1' );
+        target.replacement = replacement_modifier( forge, identifier );
         target.depend = function( forge, target, dependencies )
             local replacement = target.replacement;
-            local pattern = target.pattern or default_pattern or '(.-([^\\/]-))(%.?[^%.\\/]*)$';
+            local pattern = '(.-([^\\/]-))(%.?[^%.\\/]*)$';
             local attributes = forge:merge( {}, dependencies );
             for _, filename in ipairs(dependencies) do
                 local source_file = forge:SourceFile( filename );
@@ -163,17 +164,18 @@ function forge:PatternPrototype( identifier, default_replacement, default_patter
     return pattern_prototype;
 end
 
-function forge:GroupPrototype( identifier, default_replacement, default_pattern )
+function forge:GroupPrototype( identifier, replacement_modifier )
+    local replacement_modifier = replacement_modifier or forge.interpolate;
     local group_prototype = self:TargetPrototype( identifier );
     group_prototype.create = function( forge, identifier, target_prototype )
         local target = forge:Target( forge:anonymous(), target_prototype );
-        target.replacement = forge:interpolate( identifier );
+        target.replacement = replacement_modifier( forge, identifier );
         return target;
     end;
     group_prototype.depend = function( forge, target, dependencies )
         forge:merge( target, dependencies );
-        local replacement = target.replacement or default_replacement or '${obj}/%1';
-        local pattern = target.pattern or default_pattern or '(.-([^\\/]-))(%.?[^%.\\/]*)$';
+        local replacement = target.replacement;
+        local pattern = '(.-([^\\/]-))(%.?[^%.\\/]*)$';
         for _, filename in ipairs(dependencies) do
             local source_file = forge:SourceFile( filename );
             local identifier = forge:root_relative( source_file ):gsub( pattern, replacement );
@@ -704,11 +706,6 @@ function forge:build_visit( ... )
     return function ( target )
         local build_function = target.build;
         if build_function and target:outdated() then 
-            local filename = target:filename();
-            if filename ~= "" then
-                printf( self:leaf(filename) );
-            end
-            target:clear_implicit_dependencies();
             local success, error_message = pcall( build_function, target.forge, target, table.unpack(args) );
             target:set_built( success );
             if not success then 
@@ -722,6 +719,7 @@ end
 -- Add dependencies detected by the injected build hooks library to the 
 -- target /target/.
 function forge:dependencies_filter( target )
+    target:clear_implicit_dependencies();
     return function( line )
         if line:match("^==") then 
             local READ_PATTERN = "^== read '([^']*)'";
@@ -742,12 +740,14 @@ end
 -- Recursively walk the dependencies of *target* until a target with a 
 -- filename or the maximum level limit is reached.
 function forge:walk_dependencies( target, start, finish, maximum_level )
+    local index = 1;
     local maximum_level = maximum_level or math.maxinteger;
     local function walk_dependencies_recursively( target, level )
         for _, dependency in target:dependencies() do 
             local phony = dependency:filename() == "";
             if not phony then
-                coroutine.yield( dependency, level );
+                coroutine.yield( index, dependency, level );
+                index = index + 1;
             end
             if phony and level + 1 < maximum_level then 
                 walk_dependencies_recursively( dependency, level + 1 );
@@ -755,10 +755,11 @@ function forge:walk_dependencies( target, start, finish, maximum_level )
         end
     end
     return coroutine.wrap( function() 
-        for index, dependency in target:dependencies(start, finish) do 
+        for _, dependency in target:dependencies(start, finish) do 
             local phony = dependency:filename() == '';
             if not phony then
-                coroutine.yield( dependency, level );
+                coroutine.yield( index, dependency, level );
+                index = index + 1;
             end
             if phony then 
                 walk_dependencies_recursively( dependency, 0 );

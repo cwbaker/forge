@@ -1,197 +1,34 @@
 
-linux = {};
-
-function linux.configure( settings )
-    local local_settings = forge.local_settings;
-
-    if not local_settings.linux then
-        local_settings.updated = true;
-        local_settings.linux = {
-            architectures = { "x86_64" };
-            gcc = "/usr/bin/gcc";
-            gxx = "/usr/bin/g++";
-            ar = "/usr/bin/ar";
-        };
-    end
-end
+local linux = {};
 
 function linux.initialize( settings )
     if forge:operating_system() == 'linux' then
-        local path = {
-            "/usr/bin",
-            "/bin"
-        };
-        linux.environment = {
-            PATH = table.concat( path, ":" );
-        };
+        local gcc = require 'forge.cc.gcc';
 
         for _, architecture in ipairs(settings.linux.architectures) do 
-            forge:add_default_build( ("cc_linux_%s"):format(architecture), forge:configure {
+            local gcc_forge = forge:configure {
                 obj = ("%s/cc_linux_%s"):format( settings.obj, architecture );
                 platform = "linux";
                 architecture = architecture;
                 default_architecture = architecture;
-                cc = linux.cc;
-                build_library = linux.build_library;
-                clean_library = linux.clean_library;
-                build_executable = linux.build_executable;
-                clean_executable = linux.clean_executable;
                 obj_directory = linux.obj_directory;
-                cc_name = linux.cc_name;
-                cxx_name = linux.cxx_name;
-                pch_name = linux.pch_name;
-                pdb_name = linux.pdb_name;
-                obj_name = linux.obj_name;
-                lib_name = linux.lib_name;
-                exp_name = linux.exp_name;
-                dll_name = linux.dll_name;
-                exe_name = linux.exe_name;        
-                ilk_name = linux.ilk_name;
-            } );
+            };
+            gcc.register( gcc_forge );
+            forge:add_default_build( ("cc_linux_%s"):format(architecture), gcc_forge );
         end
 
         local settings = forge.settings;
-        local architecture = settings.default_architecture;
-        settings.obj = forge:root( ("%s/cc_linux_%s"):format(settings.obj, architecture) );
-        settings.platform = "linux";
-        settings.architecture = architecture;
-        settings.default_architecture = architecture;
-        settings.cc = linux.cc;
-        settings.objc = linux.objc;
-        settings.build_library = linux.build_library;
-        settings.clean_library = linux.clean_library;
-        settings.build_executable = linux.build_executable;
-        settings.clean_executable = linux.clean_executable;
-        settings.lipo_executable = linux.lipo_executable;
-        settings.obj_directory = linux.obj_directory;
-        settings.cc_name = linux.cc_name;
-        settings.cxx_name = linux.cxx_name;
-        settings.obj_name = linux.obj_name;
-        settings.lib_name = linux.lib_name;
-        settings.dll_name = linux.dll_name;
-        settings.exe_name = linux.exe_name;
+        local default_architecture = settings.default_architecture;
+        local default_forge = forge:default_build( ('cc_linux_%s'):format(default_architecture) );
+        assert( default_forge, 'default Forge instance not found for Linux initialization' );
+        local default_settings = default_forge.settings;
+        settings.obj = default_settings.obj;
+        settings.platform = default_settings.platform;
+        settings.architecture = default_settings.architecture;
+        settings.default_architecture = default_settings.default_architecture;
+        settings.obj_directory = default_settings.obj_directory;
+        gcc.register( forge );
     end
-end
-
-function linux.cc( target )
-
-    local flags = {
-        "-DBUILD_OS_LINUX";
-    };
-
-    gcc.append_defines( target, flags );
-    gcc.append_version_defines( target, flags );
-    gcc.append_include_directories( target, flags );
-    gcc.append_compile_flags( target, flags );
-
-    local ccflags = table.concat( flags, " " );
-    local gcc_ = target.settings.linux.gcc;
-    
-    for _, object in target:dependencies() do
-        if object:outdated() then
-            object:set_built( false );
-            local source = object:dependency();
-            print( forge:leaf(source:id()) );
-            local output = object:filename();
-            local input = forge:relative( source:filename() );
-            forge:system( 
-                gcc_, 
-                ('gcc %s -o "%s" "%s"'):format(ccflags, output, input), 
-                linux.environment,
-                forge:dependencies_filter(object)
-            );
-            object:set_built( true );
-        end
-    end
-end
-
-function linux.build_library( target )
-    local flags = {
-        "-rcs"
-    };
-    
-    local settings = target.settings;
-    forge:pushd( settings.obj_directory(target) );
-    local objects = {};
-    for _, compile in target:dependencies() do
-        local prototype = compile:prototype();
-        if prototype == forge.Cc or prototype == forge.Cxx then
-            for _, object in compile:dependencies() do
-                table.insert( objects, forge:relative(object:filename()) )
-            end
-        end
-    end
-    
-    if #objects > 0 then
-        local arflags = table.concat( flags, " " );
-        local arobjects = table.concat( objects, '" "' );
-        local ar = target.settings.linux.ar;
-        forge:system( ar, ('ar %s "%s" "%s"'):format(arflags, forge:native(target:filename()), arobjects), linux.environment );
-    end
-    forge:popd();
-end
-
-function linux.clean_library( target )
-    forge:rm( target );
-    local settings = target.settings;
-    forge:rmdir( settings.obj_directory(target) );
-end
-
-function linux.build_executable( target )
-    local flags = { 
-        -- ("-Wl,-soname,%s"):format( forge:leaf(target:filename()) ),
-        -- "-shared",
-        -- "-no-canonical-prefixes",
-        -- "-Wl,--no-undefined",
-        -- "-Wl,-z,noexecstack",
-        -- "-Wl,-z,relro",
-        -- "-Wl,-z,now",
-        -- ('-o "%s"'):format( forge:native(target:filename()) )
-    };
-
-    gcc.append_link_flags( target, flags );
-    gcc.append_library_directories( target, flags );
-
-    local objects = {};
-    local libraries = {};
-
-    local settings = target.settings;
-    forge:pushd( settings.obj_directory(target) );
-    for _, dependency in target:dependencies() do
-        local prototype = dependency:prototype();
-        if prototype == forge.Cc or prototype == forge.Cxx then
-            for _, object in dependency:dependencies() do
-                if object:prototype() == nil then
-                    table.insert( objects, forge:relative(object:filename()) );
-                end
-            end
-        elseif prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
-            if dependency.whole_archive then
-                table.insert( libraries, ("-Wl,--whole-archive") );
-            end
-            table.insert( libraries, ("-l%s"):format(dependency:id()) );
-            if dependency.whole_archive then
-                table.insert( libraries, ("-Wl,--no-whole-archive") );
-            end
-        end
-    end
-
-    gcc.append_link_libraries( target, libraries );
-
-    if #objects > 0 then
-        local ldflags = table.concat( flags, " " );
-        local ldobjects = table.concat( objects, '" "' );
-        local ldlibs = table.concat( libraries, " " );
-        local gxx = settings.linux.gxx;
-        forge:system( gxx, ('g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), linux.environment );
-    end
-    forge:popd();
-end 
-
-function linux.clean_executable( target )
-    forge:rm( target );
-    local settings = target.settings;
-    forge:rmdir( settings.obj_directory(target) );
 end
 
 function linux.obj_directory( target )
@@ -199,28 +36,5 @@ function linux.obj_directory( target )
     return forge:absolute( relative_path, target.settings.obj );
 end
 
-function linux.cc_name( name )
-    return ("%s.c"):format( forge:basename(name) );
-end
-
-function linux.cxx_name( name )
-    return ("%s.cpp"):format( forge:basename(name) );
-end
-
-function linux.obj_name( name )
-    return ("%s.o"):format( name );
-end
-
-function linux.lib_name( name )
-    return ("lib%s.a"):format( name );
-end
-
-function linux.dll_name( name )
-    return ("lib%s.so"):format( name );
-end
-
-function linux.exe_name( name )
-    return ("%s"):format( name );
-end
-
 forge:register_module( linux );
+return linux;

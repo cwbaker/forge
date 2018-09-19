@@ -23,6 +23,8 @@ function Ivy.build( forge, target )
 	file:close();
 	file = nil;
 
+	target:clear_implicit_dependencies();
+	
 	local directory = target:directory();
 	for path in paths:gmatch('([^:]+)[:\n\r]') do 
 		local organisation, artifact, extension = path:match( pattern );
