@@ -246,8 +246,9 @@ int LuaForge::execute( lua_State* lua_state )
 
         Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
 
-        const char* command = luaL_checkstring( lua_state, COMMAND );
-        const char* command_line = luaL_checkstring( lua_state, COMMAND_LINE );
+        size_t command_line_length = 0;
+        const char* command_line = luaL_checklstring( lua_state, COMMAND_LINE, &command_line_length );
+
         unique_ptr<process::Environment> environment;
         if ( !lua_isnoneornil(lua_state, ENVIRONMENT) )
         {
@@ -310,9 +311,15 @@ int LuaForge::execute( lua_State* lua_state )
             arguments.reset( new Arguments(forge->lua_state(), lua_state, ARGUMENTS, lua_gettop(lua_state) + 1) );
         }
 
+        // Retrieve the command arguments last to avoid `luaL_tolstring()` 
+        // pushing a string onto the stack that is then confused with the
+        // variable length arguments gathered into the `Arguments` object.
+        size_t command_length = 0;
+        const char* command = luaL_tolstring( lua_state, COMMAND, &command_length );
+
         forge->scheduler()->execute( 
-            string(command), 
-            string(command_line), 
+            string(command, command_length), 
+            string(command_line, command_line_length), 
             environment.release(), 
             dependencies_filter.release(), 
             stdout_filter.release(), 
