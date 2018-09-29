@@ -177,37 +177,19 @@ int Graph::successful_revision() const
 }
 
 /**
-// Find or create a TargetPrototype.
+// Create a new target prototype.
 //
 // @param id
-//  The identifier of the TargetPrototype to find or create (assumed not 
-//  empty).
+//  The identifier of the target prototype to create.
 //
 // @return
 //  The TargetPrototype.
 */
 TargetPrototype* Graph::add_target_prototype( const std::string& id )
 {   
-    SWEET_ASSERT( !id.empty() );
-
-    vector<TargetPrototype* >::const_iterator i = target_prototypes_.begin(); 
-    while ( i != target_prototypes_.end() && (*i)->id() != id )
-    {
-        ++i;
-    }
-
-    TargetPrototype* target_prototype = NULL;
-    if ( i == target_prototypes_.end() )
-    {
-        unique_ptr<TargetPrototype> new_target_prototype( new TargetPrototype(id, forge_) );
-        target_prototype = new_target_prototype.get();
-        target_prototypes_.push_back( new_target_prototype.release() );
-    }
-    else
-    {
-        target_prototype = *i;
-    }    
-    return target_prototype;
+    unique_ptr<TargetPrototype> target_prototype( new TargetPrototype(id, forge_) );
+    target_prototypes_.push_back( target_prototype.get() );
+    return target_prototype.release();
 }
 
 /**
