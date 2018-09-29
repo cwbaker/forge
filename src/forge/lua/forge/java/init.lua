@@ -51,7 +51,7 @@ end
 function java.add_jar_dependencies( jar, jars )
     if jars and platform ~= "" then
         for _, value in ipairs(jars) do
-            jar:add_dependency( forge:target(forge:root(value)) );
+            jar:add_dependency( forge:add_target(forge:root(value)) );
         end
     end
 end

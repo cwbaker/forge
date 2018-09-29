@@ -2,7 +2,7 @@
 local Target = forge.Target;
 
 function Target.create( forge, identifier, target_prototype )
-	local target = forge:target( identifier, target_prototype );
+	local target = forge:add_target( identifier, target_prototype );
 	target.settings = forge.settings;
     return target;	
 end

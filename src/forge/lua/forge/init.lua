@@ -341,7 +341,7 @@ end
 function forge:default_targets( targets )
     local all = forge:all();
     for _, default_target in ipairs(targets) do
-        local target = forge:target( ("%s/all"):format(default_target) );
+        local target = forge:add_target( ("%s/all"):format(default_target) );
         all:add_dependency( target );
     end
 end
