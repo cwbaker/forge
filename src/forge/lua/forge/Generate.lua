@@ -1,5 +1,5 @@
 
-local Generate = forge:TargetPrototype( "Generate" );
+local Generate = forge:FilePrototype( "Generate" );
 
 function Generate.build( forge, target )
     local outputs = {};

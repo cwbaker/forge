@@ -1,5 +1,5 @@
 
-local Jar = forge:TargetPrototype( "Jar" );
+local Jar = forge:FilePrototype( "Jar" );
 
 local function included( jar, filename )
     if forge:is_directory(filename) then 

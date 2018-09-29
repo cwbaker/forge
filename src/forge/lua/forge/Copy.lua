@@ -1,5 +1,5 @@
 
-local Copy = forge:TargetPrototype( 'Copy' );
+local Copy = forge:FilePrototype( 'Copy' );
 
 function Copy.build( forge, target )
     forge:rm( target );

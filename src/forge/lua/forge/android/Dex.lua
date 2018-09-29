@@ -1,5 +1,5 @@
 
-local Dex = forge:TargetPrototype( 'Dex' );
+local Dex = forge:FilePrototype( 'Dex' );
 
 function Dex.depend( forge, target, dependencies )
     local jars = dependencies.jars;

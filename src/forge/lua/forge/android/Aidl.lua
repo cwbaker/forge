@@ -1,5 +1,5 @@
 
-local Aidl = forge:TargetPrototype( 'Aidl' );
+local Aidl = forge:FilePrototype( 'Aidl' );
 
 function Aidl.build( forge, target )
     local settings = target.settings;

@@ -1,5 +1,5 @@
 
-local AndroidManifest = forge:TargetPrototype( 'AndroidManifest' );
+local AndroidManifest = forge:FilePrototype( 'AndroidManifest' );
 
 function AndroidManifest.build( forge, target )
     local manifests = {};
