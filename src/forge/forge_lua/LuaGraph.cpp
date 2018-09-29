@@ -44,8 +44,8 @@ void LuaGraph::create( Forge* forge, lua_State* lua_state )
     {
         { "target_prototype", &LuaGraph::add_target_prototype },
         { "add_target_prototype", &LuaGraph::add_target_prototype },
-        { "file", &LuaGraph::file },
-        { "target", &LuaGraph::target },
+        { "target", &LuaGraph::add_target },
+        { "add_target", &LuaGraph::add_target },
         { "find_target", &LuaGraph::find_target },
         { "anonymous", &LuaGraph::anonymous },
         { "current_buildfile", &LuaGraph::current_buildfile },
@@ -68,7 +68,28 @@ void LuaGraph::destroy()
 {
 }
 
-Target* LuaGraph::add_target( lua_State* lua_state )
+int LuaGraph::add_target_prototype( lua_State* lua_state )
+{
+    try
+    {
+        const int FORGE = 1;
+        const int IDENTIFIER = 2;
+        string id = luaL_checkstring( lua_state, IDENTIFIER );        
+        Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+        TargetPrototype* target_prototype = forge->graph()->add_target_prototype( id );
+        forge->create_target_prototype_lua_binding( target_prototype );
+        luaxx_push( lua_state, target_prototype );
+        return 1;
+    }
+    
+    catch ( const std::exception& exception )
+    {
+        lua_pushstring( lua_state, exception.what() );
+        return lua_error( lua_state );
+    }
+}
+
+int LuaGraph::add_target( lua_State* lua_state )
 {
     const int FORGE = 1;
     const int IDENTIFIER = 2;
@@ -104,42 +125,7 @@ Target* LuaGraph::add_target( lua_State* lua_state )
         lua_setfield( lua_state, -2, "settings" );
         lua_pop( lua_state, 1 );
     }
-    return target;
-}
-
-int LuaGraph::add_target_prototype( lua_State* lua_state )
-{
-    try
-    {
-        const int FORGE = 1;
-        const int IDENTIFIER = 2;
-        string id = luaL_checkstring( lua_state, IDENTIFIER );        
-        Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
-        TargetPrototype* target_prototype = forge->graph()->add_target_prototype( id );
-        forge->create_target_prototype_lua_binding( target_prototype );
-        luaxx_push( lua_state, target_prototype );
-        return 1;
-    }
-    
-    catch ( const std::exception& exception )
-    {
-        lua_pushstring( lua_state, exception.what() );
-        return lua_error( lua_state );
-    }
-}
-
-int LuaGraph::file( lua_State* lua_state )
-{
-    Target* target = LuaGraph::add_target( lua_state );
-    target->set_filename( target->path() );
-    luaxx_push( lua_state, target );
-    return 1;
-}
-
-int LuaGraph::target( lua_State* lua_state )
-{
-    Target* target = LuaGraph::add_target( lua_state ); 
-    luaxx_push( lua_state, target );
+    luaxx_push( lua_state, target );    
     return 1;
 }
 

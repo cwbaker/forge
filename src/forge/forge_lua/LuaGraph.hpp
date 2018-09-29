@@ -19,12 +19,10 @@ public:
     ~LuaGraph();
     void create( Forge* forge, lua_State* lua_state );
     void destroy();
-    static Target* add_target( lua_State* lua_state );
 
 private:
     static int add_target_prototype( lua_State* lua_state );
-    static int file( lua_State* lua_state );
-    static int target( lua_State* lua_state );
+    static int add_target( lua_State* lua_state );
     static int find_target( lua_State* lua_state );
     static int anonymous( lua_State* lua_state );
     static int current_buildfile( lua_State* lua_state );
