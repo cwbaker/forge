@@ -3,6 +3,8 @@
 // Copyright (c) Charles Baker.  All rights reserved.
 //
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -41,11 +43,11 @@ void Environment::append( const char* key, const char* value )
 
     uintptr_t key_start = buffer_.size();
     buffer_.resize( buffer_.size() + key_length + value_length + 2 );
-    strcpy( &buffer_[key_start], key );
+    strncpy( &buffer_[key_start], key, key_length );
     buffer_[key_start + key_length] = '=';
     size_t value_start = key_start + key_length + 1;
-    strcpy( &buffer_[value_start], value );
-    buffer_[value_start + value_length + 0] = 0;
+    strncpy( &buffer_[value_start], value, value_length );
+    buffer_[value_start + value_length] = 0;
 
     values_.push_back( (char*) key_start );
 }
