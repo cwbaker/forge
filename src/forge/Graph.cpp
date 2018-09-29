@@ -186,7 +186,7 @@ int Graph::successful_revision() const
 // @return
 //  The TargetPrototype.
 */
-TargetPrototype* Graph::target_prototype( const std::string& id )
+TargetPrototype* Graph::add_target_prototype( const std::string& id )
 {   
     SWEET_ASSERT( !id.empty() );
 

@@ -46,7 +46,7 @@ class Graph
         int visited_revision() const;
         int successful_revision() const;             
 
-        TargetPrototype* target_prototype( const std::string& id );
+        TargetPrototype* add_target_prototype( const std::string& id );
         Target* target( const std::string& id, TargetPrototype* target_prototype = NULL, Target* working_directory = NULL );
         Target* find_target( const std::string& path, Target* working_directory );
         Target* find_target_by_element( Target* target, const std::string& element );

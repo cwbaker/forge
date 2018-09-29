@@ -42,7 +42,8 @@ void LuaGraph::create( Forge* forge, lua_State* lua_state )
 
     static const luaL_Reg functions[] = 
     {
-        { "target_prototype", &LuaGraph::target_prototype },
+        { "target_prototype", &LuaGraph::add_target_prototype },
+        { "add_target_prototype", &LuaGraph::add_target_prototype },
         { "file", &LuaGraph::file },
         { "target", &LuaGraph::target },
         { "find_target", &LuaGraph::find_target },
@@ -106,7 +107,7 @@ Target* LuaGraph::add_target( lua_State* lua_state )
     return target;
 }
 
-int LuaGraph::target_prototype( lua_State* lua_state )
+int LuaGraph::add_target_prototype( lua_State* lua_state )
 {
     try
     {
@@ -114,7 +115,7 @@ int LuaGraph::target_prototype( lua_State* lua_state )
         const int IDENTIFIER = 2;
         string id = luaL_checkstring( lua_state, IDENTIFIER );        
         Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
-        TargetPrototype* target_prototype = forge->graph()->target_prototype( id );
+        TargetPrototype* target_prototype = forge->graph()->add_target_prototype( id );
         forge->create_target_prototype_lua_binding( target_prototype );
         luaxx_push( lua_state, target_prototype );
         return 1;
