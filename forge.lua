@@ -5,7 +5,6 @@
 package.path = forge:root('src/forge/lua/?.lua')..';'..forge:root('src/forge/lua/?/init.lua');
 
 require "forge";
-require "forge.cc";
 require "forge.visual_studio";
 require "forge.xcode";
 require "forge.linux";
