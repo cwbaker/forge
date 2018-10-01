@@ -32,9 +32,7 @@ local settings = forge:initialize {
         forge:root( ('%s/lib'):format(variant) ),
     };
     defines = {
-        ('BUILD_PLATFORM_%s'):format( forge:upper(platform) );
         ('BUILD_VARIANT_%s'):format( forge:upper(variant) );
-        ('BUILD_OS_%s'):format( forge:upper(platform) );
     };
     visual_studio = {
         sln = forge:root( "forge.sln" );

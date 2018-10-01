@@ -6,6 +6,31 @@
 #ifndef SWEET_BUILD_HPP_INCLUDED
 #define SWEET_BUILD_HPP_INCLUDED
 
+// Define macros for target platform based on macros defined automatically
+// by compilers when building to target those platforms.
+#ifdef _WIN32
+#define BUILD_OS_WINDOWS
+#define BUILD_PLATFORM_WINDOWS
+#elif __APPLE__
+#include "TargetConditionals.h"
+#if TARGET_OS_IPHONE 
+#define BUILD_OS_IOS
+#define BUILD_PLATFORM_IOS
+#elif TARGET_OS_MAC
+#define BUILD_OS_MACOS
+#define BUILD_PLATFORM_MACOS
+#else
+#error "Unknown Apple platform!"
+#endif
+#elif __ANDROID__
+#define BUILD_OS_ANDROID
+#define BUILD_OS_ANDROID
+#define BUILD_PLATFORM_ANDROID
+#elif __linux__
+#define BUILD_OS_LINUX
+#define BUILD_PLATFORM_LINUX
+#endif
+
 //
 // Define macros for all components based on the variant that is being 
 // built.

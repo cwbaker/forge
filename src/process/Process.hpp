@@ -1,6 +1,7 @@
 #ifndef SWEET_PROCESS_PROCESS_HPP_INCLUDED
 #define SWEET_PROCESS_PROCESS_HPP_INCLUDED
 
+#include <build.hpp>
 #include <vector>
 #include <stdint.h>
 
