@@ -30,7 +30,7 @@ function App.depend( forge, target, dependencies )
     local entitlements = dependencies.entitlements;
     if entitlements then 
         target.entitlements = ("%s/%s"):format( settings.obj_directory(target), "Entitlements.plist" );
-        table.insert( dependencies, forge:Generate (target.entitlements) (entitlements) );
+        table.insert( dependencies, forge:Generate (target.entitlements) {entitlements} );
         dependencies.entitlements = nil;
     end
     return forge.Target.depend( forge, target, dependencies );

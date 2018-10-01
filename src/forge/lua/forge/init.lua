@@ -219,7 +219,9 @@ function forge:map( target_prototype, replacement, pattern, filenames )
         local filename, substitutions = source:gsub( pattern, replacement );
         if substitutions > 0 then 
             local destination = forge:interpolate( filename, settings );
-            local target = target_prototype (self, destination) (source);
+            local target = target_prototype (self, destination) {
+                source
+            };
             table.insert( targets, target );
         end
     end
@@ -234,7 +236,9 @@ function forge:map_ls( target_prototype, replacement, pattern, settings )
         local filename, substitutions = source:gsub( pattern, replacement );
         if substitutions > 0 then    
             local destination = forge:interpolate( filename, settings );
-            local target = target_prototype (self, destination) (source);
+            local target = target_prototype (self, destination) {
+                source
+            };
             table.insert( targets, target );
         end
     end
@@ -250,7 +254,9 @@ function forge:map_find( target_prototype, replacement, pattern, settings )
             local filename, substitutions = source:gsub( pattern, replacement );
             if substitutions > 0 then
                 local destination = forge:interpolate( filename, settings );
-                local target = target_prototype (self, destination) (source);
+                local target = target_prototype (self, destination) {
+                    source
+                };
                 table.insert( targets, target );
             end
         end
