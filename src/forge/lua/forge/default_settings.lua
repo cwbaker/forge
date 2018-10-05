@@ -55,9 +55,9 @@ return {
         };
 
         ["macos"] = {
-            default_architecture = "x86_64";
+            default_architecture = 'x86_64';
             architectures = {
-                "i386", "x86_64"
+                'x86_64'
             };
             framework_directories = {
             };
