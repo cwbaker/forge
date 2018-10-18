@@ -392,12 +392,6 @@ void Forge::create_target_lua_binding( Target* target )
     lua_forge_->lua_target()->create_target( target );
 }
 
-void Forge::recover_target_lua_binding( Target* target )
-{
-    SWEET_ASSERT( lua_forge_ );
-    lua_forge_->lua_target()->recover_target( target );
-}
-
 void Forge::update_target_lua_binding( Target* target )
 {
     SWEET_ASSERT( lua_forge_ );

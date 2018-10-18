@@ -135,28 +135,17 @@ void LuaTarget::destroy()
 void LuaTarget::create_target( Target* target )
 {
     SWEET_ASSERT( target );
-
     if ( !target->referenced_by_script() )
     {
         luaxx_create( lua_state_, target, TARGET_TYPE );
         target->set_referenced_by_script( true );
-        recover_target( target );
         update_target( target );
     }
-}
-
-void LuaTarget::recover_target( Target* target )
-{
-    SWEET_ASSERT( target );
-    luaxx_push( lua_state_, target );
-    luaL_setmetatable( lua_state_, TARGET_METATABLE );
-    lua_pop( lua_state_, 1 );
 }
 
 void LuaTarget::update_target( Target* target )
 {
     SWEET_ASSERT( target );
-
     TargetPrototype* target_prototype = target->prototype();
     if ( target_prototype )
     {

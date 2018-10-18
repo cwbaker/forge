@@ -87,7 +87,6 @@ class Forge
         void script( const std::string& script );
 
         void create_target_lua_binding( Target* target );
-        void recover_target_lua_binding( Target* target );
         void update_target_lua_binding( Target* target );
         void destroy_target_lua_binding( Target* target );
         void create_target_prototype_lua_binding( TargetPrototype* target_prototype );

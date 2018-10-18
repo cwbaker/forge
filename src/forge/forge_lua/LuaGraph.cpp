@@ -104,8 +104,6 @@ int LuaGraph::add_target( lua_State* lua_state )
     if ( !target->referenced_by_script() )
     {
         forge->create_target_lua_binding( target );
-        forge->recover_target_lua_binding( target );
-        forge->update_target_lua_binding( target );
 
         // Set `target.forge` to the value of the Forge object that created 
         // this target.  The Forge object is used later on to provide the 

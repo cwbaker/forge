@@ -26,7 +26,6 @@ public:
     void create( lua_State* lua_state );
     void destroy();
     void create_target( Target* target );
-    void recover_target( Target* target );
     void update_target( Target* target );
     void destroy_target( Target* target );
 
