@@ -100,19 +100,48 @@ int LuaGraph::add_target( lua_State* lua_state )
     Target* working_directory = context->working_directory();
     string identifier = luaL_checkstring( lua_state, IDENTIFIER );
     TargetPrototype* target_prototype = (TargetPrototype*) luaxx_to( lua_state, TARGET_PROTOTYPE, TARGET_PROTOTYPE_TYPE );
-    Target* target = graph->target( identifier, target_prototype, working_directory );
-    if ( !target->referenced_by_script() )
+    Target* target = graph->add_or_find_target( identifier, working_directory );
+
+    bool update_target_prototype = target_prototype && !target->prototype();
+    if ( update_target_prototype )
+    {
+        target->set_prototype( target_prototype );
+        target->set_working_directory( working_directory );
+    }
+
+    bool update_working_directory = !target->working_directory();
+    if ( update_working_directory )
+    {
+        target->set_working_directory( working_directory );
+    }
+
+    if ( target_prototype && target->prototype() != target_prototype )
+    {
+        forge->errorf( "The target '%s' has been created with prototypes '%s' and '%s'", identifier.c_str(), target->prototype()->id().c_str(), target_prototype ? target_prototype->id().c_str() : "none" );
+    }
+
+    bool create_lua_binding = !target->referenced_by_script();
+    if ( create_lua_binding )
     {
         forge->create_target_lua_binding( target );
+    }
 
-        // Set `target.forge` to the value of the Forge object that created 
-        // this target.  The Forge object is used later on to provide the 
-        // correct Forge object and settings when visiting targets in a 
-        // postorder traversal.
+    // Set `target.forge` to the value of the Forge object that created 
+    // this target.  The Forge object is used later on to provide the 
+    // correct Forge object and settings when visiting targets in a 
+    // postorder traversal.
+    //
+    // This also happens when the target prototype is set for the first time
+    // so that targets that are lazily defined after they have been created by
+    // another target depending on them have access to the Forge instance they
+    // are defined in rather than just the first Forge instance that referenced
+    // them which is usually incorrect.
+    if ( update_target_prototype || update_working_directory || create_lua_binding )
+    {
         luaxx_push( lua_state, target );
         lua_pushvalue( lua_state, FORGE );
         lua_setfield( lua_state, -2, "forge" );
-        lua_pop( lua_state, 1 );        
+        lua_pop( lua_state, 1 );
 
         // Set `target.settings` to the value of `forge.settings` from the 
         // Forge object that created this target.  This seems, at the time of
@@ -123,6 +152,7 @@ int LuaGraph::add_target( lua_State* lua_state )
         lua_setfield( lua_state, -2, "settings" );
         lua_pop( lua_state, 1 );
     }
+
     luaxx_push( lua_state, target );    
     return 1;
 }

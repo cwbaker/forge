@@ -192,8 +192,18 @@ TargetPrototype* Graph::add_target_prototype( const std::string& id )
     return target_prototype.release();
 }
 
+Target* Graph::target( const std::string& id )
+{
+    Target* target = add_or_find_target( id, nullptr );
+    if ( !target->working_directory() )
+    {
+        target->set_working_directory( root_target_.get() );
+    }
+    return target;
+}
+
 /**
-// Find or create a Target.
+// Add or find a Target.
 //
 // Finds or create the Target by breaking \e id into '/' delimited elements
 // and searching up or down the target hierarchy relative to 
@@ -230,10 +240,6 @@ TargetPrototype* Graph::add_target_prototype( const std::string& id )
 // @param id
 //  The identifier of the Target to find or create.
 //
-// @param target_prototype
-//  The TargetPrototype of the Target to create or null to create a Target that has no
-//  TargetPrototype.
-//
 // @param working_directory
 //  The Target that the identifier is relative to or null if the identifier
 //  is relative to the root Target.
@@ -241,7 +247,7 @@ TargetPrototype* Graph::add_target_prototype( const std::string& id )
 // @return
 //  The Target.
 */
-Target* Graph::target( const std::string& id, TargetPrototype* target_prototype, Target* working_directory )
+Target* Graph::add_or_find_target( const std::string& id, Target* working_directory )
 {
     boost::filesystem::path path( id );
     Target* target = working_directory && path.is_relative() ? working_directory : root_target_.get();
@@ -277,22 +283,6 @@ Target* Graph::target( const std::string& id, TargetPrototype* target_prototype,
         Target* next_target = new_target.get();
         target->add_target( new_target.release(), target );
         target = next_target;
-    }
-
-    if ( target_prototype && target->prototype() == NULL )
-    {
-        target->set_prototype( target_prototype );
-        target->set_working_directory( working_directory );
-    }
-
-    if ( target->working_directory() == NULL )
-    {
-        target->set_working_directory( working_directory );
-    }
-
-    if ( target_prototype && target->prototype() != target_prototype )
-    {
-        forge_->errorf( "The target '%s' has been created with prototypes '%s' and '%s'", id.c_str(), target->prototype()->id().c_str(), target_prototype ? target_prototype->id().c_str() : "none" );
     }
 
     return target;
@@ -442,7 +432,7 @@ int Graph::buildfile( const std::string& filename )
     SWEET_ASSERT( root_target_ );     
     boost::filesystem::path path( forge_->absolute(filename) );
     SWEET_ASSERT( path.is_absolute() );   
-    Target* buildfile_target = Graph::target( path.generic_string(), nullptr, nullptr );
+    Target* buildfile_target = Graph::target( path.generic_string() );
     buildfile_target->set_filename( path.generic_string() );
     if ( cache_target_ )
     {
@@ -611,7 +601,7 @@ void Graph::recover()
     root_target_->recover( this );
     if ( !filename_.empty() )
     {
-        cache_target_ = target( filename_, NULL, NULL );
+        cache_target_ = target( filename_ );
         cache_target_->set_filename( filename_ );
         bind( cache_target_ );
     }
