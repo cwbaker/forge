@@ -425,11 +425,11 @@ end
 -- Execute command with arguments and optional filter and raise an error if 
 -- it doesn't return 0.
 function forge:system( command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... )
-    if type(arguments) == "table" then
-        arguments = table.concat( arguments, " " );
+    if type(arguments) == 'table' then
+        arguments = table.concat( arguments, ' ' );
     end
     if self:execute(command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ...) ~= 0 then       
-        error( ("%s failed"):format(arguments), 0 );
+        error( ('%s failed'):format(arguments), 0 );
     end
 end
 
