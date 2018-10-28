@@ -66,7 +66,7 @@ function clang.archive( forge, target )
     };
 
     local settings = forge.settings;
-    forge:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(forge, target) );
     local objects =  {};
     for _, object in forge:walk_dependencies( target ) do
         local prototype = object:prototype();
@@ -90,7 +90,7 @@ function clang.link( forge, target )
 
     local objects = {};
     local libraries = {};
-    forge:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(forge, target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
         if prototype == forge.Cc or prototype == forge.Cxx or prototype == forge.ObjC or prototype == forge.ObjCxx then
@@ -341,7 +341,7 @@ function clang.append_link_flags( forge, target, flags )
     end
     
     if settings.generate_map_file then
-        table.insert( flags, ('-Wl,-map,"%s"'):format(forge:native(('%s/%s.map'):format(settings.obj_directory(target), target:id()))) );
+        table.insert( flags, ('-Wl,-map,"%s"'):format(forge:native(('%s/%s.map'):format(settings.obj_directory(forge, target), target:id()))) );
     end
 
     if settings.strip and not settings.generate_dsym_bundle then

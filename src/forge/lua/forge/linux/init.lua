@@ -31,9 +31,9 @@ function linux.initialize( settings )
     end
 end
 
-function linux.obj_directory( target )
+function linux.obj_directory( forge, target )
     local relative_path = forge:relative( target:working_directory():path(), forge:root() );
-    return forge:absolute( relative_path, target.settings.obj );
+    return forge:absolute( relative_path, forge.settings.obj );
 end
 
 forge:register_module( linux );

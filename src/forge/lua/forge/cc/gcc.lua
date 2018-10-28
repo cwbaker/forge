@@ -75,7 +75,7 @@ end
 function gcc.archive( forge, target )
     printf( forge:leaf(target) );
     local settings = forge.settings;
-    forge:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(forge, target) );
     local objects =  {};
     for _, object in forge:walk_dependencies( target ) do
         local prototype = object:prototype();
@@ -99,7 +99,7 @@ function gcc.link( forge, target )
     local objects = {};
     local libraries = {};
     local settings = forge.settings;
-    forge:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(forge, target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
         if prototype == forge.Cc or prototype == forge.Cxx then

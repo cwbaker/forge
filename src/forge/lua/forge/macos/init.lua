@@ -123,9 +123,9 @@ function macos.lipo_executable( target )
     forge:system( xcrun, ('xcrun --sdk macosx lipo -create -output "%s" "%s"'):format(target:filename(), executables) );
 end
 
-function macos.obj_directory( target )
+function macos.obj_directory( forge, target )
     local relative_path = forge:relative( target:working_directory():path(), forge:root() );
-    return forge:absolute( relative_path, target.settings.obj );
+    return forge:absolute( relative_path, forge.settings.obj );
 end
 
 forge:register_module( macos );

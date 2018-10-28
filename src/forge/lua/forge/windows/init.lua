@@ -31,9 +31,9 @@ function windows.initialize( settings )
     end
 end
 
-function windows.obj_directory( target )
+function windows.obj_directory( forge, target )
     local relative_path = forge:relative( target:working_directory():path(), forge:root() );
-    return forge:absolute( relative_path, target.settings.obj );
+    return forge:absolute( relative_path, forge.settings.obj );
 end
 
 forge:register_module( windows );

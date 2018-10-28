@@ -290,7 +290,7 @@ function msvc.compile( forge, target )
             -- Make sure that the output directory has a trailing slash so
             -- that Visual C++ doesn't interpret it as a file when a single
             -- source file is compiled.
-            local output_directory = forge:native( ('%s/%s'):format(settings.obj_directory(target), forge:relative(directory)) );
+            local output_directory = forge:native( ('%s/%s'):format(settings.obj_directory(forge, target), forge:relative(directory)) );
             if output_directory:sub(-1) ~= '\\' then 
                 output_directory = ('%s\\'):format( output_directory );
             end
@@ -330,7 +330,7 @@ function msvc.archive( forge, target )
         table.insert( flags, '/ltcg' );
     end
     
-    forge:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(forge, target) );
     local objects = {};
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
@@ -358,7 +358,7 @@ function msvc.link( forge, target )
     local objects = {};
     local libraries = {};
     local settings = forge.settings;
-    forge:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(forge, target) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == forge.Cc or prototype == forge.Cxx then
@@ -382,7 +382,7 @@ function msvc.link( forge, target )
         local msld = msvc.visual_cxx_tool( forge, "link.exe" );
         local msmt = msvc.windows_sdk_tool( forge, "mt.exe" );
         local msrc = msvc.windows_sdk_tool( forge, "rc.exe" );
-        local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( settings.obj_directory(target), target:id() );
+        local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( settings.obj_directory(forge, target), target:id() );
 
         if settings.incremental_linking then
             local embedded_manifest = ("%s_embedded.manifest"):format( target:id() );
@@ -568,7 +568,7 @@ function msvc.append_compile_flags( forge, target, flags )
     end
     
     if settings.debug then
-        local pdb = ('%s/%s.pdb'):format(settings.obj_directory(target), target:working_directory():id() );
+        local pdb = ('%s/%s.pdb'):format(settings.obj_directory(forge, target), target:working_directory():id() );
         table.insert( flags, ('/Zi /Fd%s'):format(forge:native(pdb)) );
     end
 
@@ -631,7 +631,7 @@ function msvc.append_link_flags( forge, target, flags )
 
     table.insert( flags, "/nologo" );
 
-    local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( settings.obj_directory(target), target:id() );
+    local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( settings.obj_directory(forge, target), target:id() );
     table.insert( flags, '/manifest' );
     table.insert( flags, ('/manifestfile:%s'):format(intermediate_manifest) );
     
@@ -651,7 +651,7 @@ function msvc.append_link_flags( forge, target, flags )
     
     if settings.debug then
         table.insert( flags, '/debug' );
-        local pdb = ('%s/%s.pdb'):format( settings.obj_directory(target), target:id() );
+        local pdb = ('%s/%s.pdb'):format( settings.obj_directory(forge, target), target:id() );
         table.insert( flags, ('/pdb:%s'):format(forge:native(pdb)) );
     end
 
@@ -660,7 +660,7 @@ function msvc.append_link_flags( forge, target, flags )
     end
 
     if settings.generate_map_file then
-        local map = ('%s/%s.map'):format( settings.obj_directory(target), target:id() );
+        local map = ('%s/%s.map'):format( settings.obj_directory(forge, target), target:id() );
         table.insert( flags, ('/map:%s'):format(forge:native(map)) );
     end
 

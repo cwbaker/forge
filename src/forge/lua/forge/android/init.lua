@@ -258,7 +258,7 @@ function android.build_library( target )
     };
     
     local settings = target.settings;
-    forge:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(forge, target) );
     local objects = {};
     for _, compile in target:dependencies() do
         local prototype = compile:prototype();
@@ -281,7 +281,7 @@ end
 function android.clean_library( target )
     forge:rm( target );
     local settings = target.settings;
-    forge:rmdir( settings.obj_directory(target) );
+    forge:rmdir( settings.obj_directory(forge, target) );
 end
 
 function android.build_executable( target )
@@ -307,7 +307,7 @@ function android.build_executable( target )
     local libraries = {};
 
     local settings = target.settings;
-    forge:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(forge, target) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == forge.Cc or prototype == forge.Cxx then
@@ -346,7 +346,7 @@ end
 function android.clean_executable( target )
     forge:rm( target );
     local settings = target.settings;
-    forge:rmdir( settings.obj_directory(target) );
+    forge:rmdir( settings.obj_directory(forge, target) );
 end
 
 -- Find the first Android .apk package found in the dependencies of the
@@ -380,9 +380,9 @@ function android.deploy( apk )
     end
 end
 
-function android.obj_directory( target )
+function android.obj_directory( forge, target )
     local relative_path = forge:relative( target:working_directory():path(), forge:root() );
-    return forge:absolute( relative_path, target.settings.obj );
+    return forge:absolute( relative_path, forge.settings.obj );
 end
 
 function android.cc_name( name )

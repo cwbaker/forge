@@ -163,7 +163,7 @@ function ios.build_library( target )
     };
 
     local settings = target.settings;
-    forge:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(forge, target) );
     local objects =  {};
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
@@ -186,7 +186,7 @@ end;
 
 function ios.clean_library( target )
     forge:rm( target:filename() );
-    forge:rmdir( obj_directory(target) );
+    forge:rmdir( obj_directory(forge, target) );
 end;
 
 function ios.build_executable( target )
@@ -210,7 +210,7 @@ function ios.build_executable( target )
     local objects = {};
     local libraries = {};
 
-    forge:pushd( settings.obj_directory(target) );
+    forge:pushd( settings.obj_directory(forge, target) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype == forge.Cc or prototype == forge.Cxx or prototype == forge.ObjC or prototype == forge.ObjCxx then
@@ -275,9 +275,9 @@ function ios.deploy( app )
     end
 end
 
-function ios.obj_directory( target )
+function ios.obj_directory( forge, target )
     local relative_path = forge:relative( target:working_directory():path(), forge:root() );
-    return forge:absolute( relative_path, target.settings.obj );
+    return forge:absolute( relative_path, forge.settings.obj );
 end
 
 function ios.cc_name( name )
