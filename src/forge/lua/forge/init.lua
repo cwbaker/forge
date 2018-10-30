@@ -725,7 +725,6 @@ end
 -- Add dependencies detected by the injected build hooks library to the 
 -- target /target/.
 function forge:dependencies_filter( target )
-    target:clear_implicit_dependencies();
     return function( line )
         if line:match("^==") then 
             local READ_PATTERN = "^== read '([^']*)'";

@@ -237,6 +237,7 @@ function android.cc( target )
     for _, object in target:dependencies() do
         if object:outdated() then
             object:set_built( false );
+            object:clear_implicit_dependencies();
             local source = object:dependency();
             print( forge:leaf(source:id()) );
             local output = object:filename();

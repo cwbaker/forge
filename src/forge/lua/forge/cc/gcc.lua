@@ -63,6 +63,7 @@ function gcc.compile( forge, target )
     local output = target:filename();
     local input = forge:relative( source:filename() );
     print( forge:leaf(source:id()) );
+    target:clear_implicit_dependencies();
     forge:system( 
         gcc_, 
         ('gcc %s -MMD -MF "%s" -o "%s" "%s"'):format(ccflags, dependencies, output, input), 
