@@ -1,5 +1,5 @@
 
-java = {};
+local java = {};
 
 function java.configure( settings )
     local function autodetect_jdk_directory()
@@ -69,3 +69,4 @@ require "forge.java.Jar";
 require "forge.java.Java";
 
 forge:register_module( java );
+return java;

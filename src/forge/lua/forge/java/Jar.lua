@@ -1,5 +1,5 @@
 
-local Jar = forge:FilePrototype( "Jar" );
+local Jar = forge:FilePrototype( 'Jar' );
 
 local function included( jar, filename )
     if forge:is_directory(filename) then 
@@ -42,5 +42,3 @@ function Jar.build( forge, target )
     forge:system( jar, ('jar cvf "%s" "%s"'):format(target:filename(), table.concat(classes, [[" "]])) );
     forge:popd();
 end
-
-java.Jar = Jar;

@@ -1,13 +1,13 @@
 
-local Java = forge:TargetPrototype( "Java" );
+local Java = forge:TargetPrototype( 'Java' );
 
-function Java.create( forge )
+function Java.create( forge, identifier )
     local settings = forge.settings;
-    local java_ = forge:Target( forge:anonymous(), Java );
-    java_:set_filename( ("%s/Java.%s.timestamp"):format(settings.classes_directory(java_), java_:id()) );
-    java_:add_ordering_dependency( forge:Directory(settings.classes_directory(java_)) );
-    java.add_jar_dependencies( java_, settings.jars );
-    return java_;
+    local target = forge:Target( forge:anonymous(), Java );
+    target:set_filename( ("%s/Java.%s.timestamp"):format(settings.classes_directory(target), target:id()) );
+    target:add_ordering_dependency( forge:Directory(settings.classes_directory(target)) );
+    java.add_jar_dependencies( target, settings.jars );
+    return target;
 end
 
 function Java.depend( forge, target, dependencies )
@@ -109,5 +109,3 @@ function Java.clean( forge, target )
     forge:rm( target:filename() );
     forge:rmdir( settings.classes_directory(target) )
 end
-
-java.Java = Java;
