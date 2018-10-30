@@ -129,4 +129,5 @@ function macos.obj_directory( target )
 end
 
 forge:register_module( macos );
+forge.macos = macos;
 return macos;

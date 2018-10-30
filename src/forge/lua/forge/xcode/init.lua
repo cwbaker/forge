@@ -363,13 +363,19 @@ local function footer( xcodeproj, project )
     );
 end;
 
-local function find_targets_by_prototype( target, prototype )
+local function find_targets_by_prototype( target, prototype_identifier )
+    local forge = target.forge;
+    local prototype = forge[prototype_identifier];
     local targets = {};
-    if target:prototype() == prototype then 
-        table.insert( targets, target );
-        return targets;
+    if prototype then
+        if target:prototype() == prototype then 
+            table.insert( targets, target );
+            return targets;
+        end
     end
     for _, dependency in target:dependencies() do 
+        local forge = dependency.forge;
+        local prototype = forge[prototype_identifier];
         if dependency:prototype() == prototype then 
             table.insert( targets, dependency );
         end
@@ -377,14 +383,16 @@ local function find_targets_by_prototype( target, prototype )
     return targets;
 end
 
-local function find_architectures_by_prototype( target, prototype, architectures )
+local function find_architectures_by_prototype( target, prototype_identifier, architectures )
+    local forge = target.forge;
+    local prototype = forge[prototype_identifier];
     local architectures = architectures or {};
     if target:prototype() == prototype then 
-        local architecture = target.settings.architecture;
+        local architecture = forge.settings.architecture;
         table.insert( architectures, architecture );
     else
         for _, dependency in target:dependencies() do 
-            find_architectures_by_prototype( dependency, prototype, architectures );
+            find_architectures_by_prototype( dependency, prototype_identifier, architectures );
         end
     end
     return architectures;
@@ -442,35 +450,39 @@ function xcode.generate_project( name, project )
 
     for _, target in project:dependencies() do 
         if target then 
-            if _G.ios then
-                local ios_apps = find_targets_by_prototype( target, forge.App );
+            if forge.ios then
+                local ios_apps = find_targets_by_prototype( target, 'App' );
                 for _, ios_app in ipairs(ios_apps) do 
-                    local architectures = find_architectures_by_prototype( target, forge.Executable );
+                    local architectures = find_architectures_by_prototype( target, 'Executable' );
                     add_legacy_target( ios_app, platform, architectures );
                 end
             end
 
-            if _G.android then
-                local android_apks = find_targets_by_prototype( target, forge.Apk );
+            if forge.android then
+                local android_apks = find_targets_by_prototype( target, 'Apk' );
                 for _, android_apk in ipairs(android_apks) do 
-                    add_legacy_target( android_apk, platform );
+                    local architectures = find_architectures_by_prototype( target, 'Executable' );
+                    add_legacy_target( android_apk, platform, architectures );
                 end
             end
 
-            if _G.macos or _G.windows then
-                local executables = find_targets_by_prototype( target, forge.Executable );
+            if forge.macos or forge.windows then
+                local executables = find_targets_by_prototype( target, 'Executable' );
                 for _, executable in ipairs(executables) do 
-                    add_legacy_target( executable, platform );
+                    local architectures = find_architectures_by_prototype( target, 'Executable' );
+                    add_legacy_target( executable, platform, architectures );
                 end
 
-                local dynamic_libraries = find_targets_by_prototype( target, forge.DynamicLibrary );
+                local dynamic_libraries = find_targets_by_prototype( target, 'DynamicLibrary' );
                 for _, dynamic_library in ipairs(dynamic_libraries) do 
-                    add_legacy_target( dynamic_library, platform );
+                    local architectures = find_architectures_by_prototype( target, 'DynamicLibrary' );
+                    add_legacy_target( dynamic_library, platform, architectures );
                 end
 
-                local binaries = find_targets_by_prototype( target, forge.Lipo );
+                local binaries = find_targets_by_prototype( target, 'Lipo' );
                 for _, binary in ipairs(binaries) do 
-                    add_legacy_target( binary, platform );
+                    local architectures = find_architectures_by_prototype( target, 'Lipo' );
+                    add_legacy_target( binary, platform, architectures );
                 end
             end
         end
