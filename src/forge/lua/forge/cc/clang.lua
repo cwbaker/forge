@@ -78,7 +78,7 @@ function clang.archive( forge, target )
     if #objects > 0 then
         local arflags = table.concat( flags, ' ' );
         local arobjects = table.concat( objects, '" "' );
-        local xcrun = settings.macos.xcrun;
+        local xcrun = settings.xcrun;
         forge:system( xcrun, ('xcrun --sdk macosx libtool %s -o "%s" "%s"'):format(arflags, forge:native(target), arobjects) );
     end
     forge:popd();
@@ -104,6 +104,23 @@ function clang.link( forge, target )
     clang.append_link_flags( forge, target, flags );
     clang.append_library_directories( forge, target, flags );
     clang.append_link_libraries( forge, target, libraries );
+
+    local sdkroot = settings.sdkroot;
+    if sdkroot == 'macosx' then 
+        local macos_deployment_target = settings.macos_deployment_target;
+        if macos_deployment_target then 
+            table.insert( flags, ('-mmacosx-version-min=%s'):format(macos_deployment_target) );
+        end
+    elseif sdkroot == 'iphoneos' then
+        local iphoneos_deployment_target = settings.iphoneos_deployment_target;
+        if iphoneos_deployment_target then 
+            if settings.platform == 'ios' then 
+                table.insert( flags, ('-mios-version-min=%s'):format(iphoneos_deployment_target) );
+            elseif settings.platform == 'ios_simulator' then
+                table.insert( flags, ('-mios-simulator-version-min=%s'):format(iphoneos_deployment_target) );
+            end
+        end
+    end
 
     if #objects > 0 then
         local xcrun = settings.xcrun;
@@ -315,11 +332,6 @@ end
 
 function clang.append_link_flags( forge, target, flags )
     local settings = forge.settings;
-
-    local macos_deployment_target = settings.macos_deployment_target;
-    if macos_deployment_target then 
-        table.insert( flags, ('-mmacosx-version-min=%s'):format(macos_deployment_target) );
-    end
 
     local rpaths = target.rpaths;
     if rpaths then 
