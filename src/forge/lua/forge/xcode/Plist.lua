@@ -1,5 +1,5 @@
 
-local Plist = forge:TargetPrototype( 'Plist' );
+local Plist = forge:FilePrototype( 'Plist' );
 
 function Plist.build( forge, plist )
     local command_line = {
