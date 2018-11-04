@@ -32,19 +32,6 @@ function clang.compile( forge, target )
     clang.append_include_directories( forge, target, flags );
     clang.append_compile_flags( forge, target, flags );
     
-    local sdkroot = settings.sdkroot;
-    if sdkroot == 'macosx' then 
-        local macos_deployment_target = settings.macos_deployment_target;
-        if macos_deployment_target then 
-            table.insert( flags, ('-mmacosx-version-min=%s'):format(macos_deployment_target) );
-        end
-    elseif sdkroot == 'iphoneos' then
-        local iphoneos_deployment_target = settings.iphoneos_deployment_target;
-        if iphoneos_deployment_target then 
-            table.insert( flags, ('-miphoneos-version-min=%s'):format(iphoneos_deployment_target) );
-        end
-    end
-
     local ccflags = table.concat( flags, ' ' );
     local xcrun = settings.xcrun;
     local source = target:dependency();
@@ -104,23 +91,6 @@ function clang.link( forge, target )
     clang.append_link_flags( forge, target, flags );
     clang.append_library_directories( forge, target, flags );
     clang.append_link_libraries( forge, target, libraries );
-
-    local sdkroot = settings.sdkroot;
-    if sdkroot == 'macosx' then 
-        local macos_deployment_target = settings.macos_deployment_target;
-        if macos_deployment_target then 
-            table.insert( flags, ('-mmacosx-version-min=%s'):format(macos_deployment_target) );
-        end
-    elseif sdkroot == 'iphoneos' then
-        local iphoneos_deployment_target = settings.iphoneos_deployment_target;
-        if iphoneos_deployment_target then 
-            if settings.platform == 'ios' then 
-                table.insert( flags, ('-mios-version-min=%s'):format(iphoneos_deployment_target) );
-            elseif settings.platform == 'ios_simulator' then
-                table.insert( flags, ('-mios-simulator-version-min=%s'):format(iphoneos_deployment_target) );
-            end
-        end
-    end
 
     if #objects > 0 then
         local xcrun = settings.xcrun;
@@ -210,18 +180,6 @@ function clang.append_include_directories( forge, target, flags )
     if settings.include_directories then
         for _, directory in ipairs(settings.include_directories) do
             table.insert( flags, ('-I "%s"'):format(directory) );
-        end
-    end
-
-    if target.framework_directories then 
-        for _, directory in ipairs(target.framework_directories) do
-            table.insert( flags, ('-F "%s"'):format(directory) );
-        end
-    end
-
-    if settings.framework_directories then 
-        for _, directory in ipairs(settings.framework_directories) do
-            table.insert( flags, ('-F "%s"'):format(directory) );
         end
     end
 end
@@ -316,29 +274,10 @@ function clang.append_library_directories( forge, target, library_directories )
             table.insert( library_directories, ('-L "%s"'):format(directory) );
         end
     end
-    
-    if target.framework_directories then 
-        for _, directory in ipairs(target.framework_directories) do
-            table.insert( library_directories, ('-F "%s"'):format(directory) );
-        end
-    end
-    
-    if settings.framework_directories then 
-        for _, directory in ipairs(settings.framework_directories) do
-            table.insert( library_directories, ('-F "%s"'):format(directory) );
-        end
-    end
 end
 
 function clang.append_link_flags( forge, target, flags )
     local settings = forge.settings;
-
-    local rpaths = target.rpaths;
-    if rpaths then 
-        for _, rpath in ipairs(rpaths) do 
-            table.insert( flags, ('-rpath "%s"'):format(rpath) );
-        end
-    end
 
     table.insert( flags, ('-arch %s'):format(settings.architecture) );
     table.insert( flags, '-std=c++11' );
@@ -379,18 +318,6 @@ function clang.append_link_libraries( forge, target, libraries )
     if target.libraries then
         for _, library in ipairs(target.libraries) do
             table.insert( libraries, ("-l%s"):format(library) );
-        end
-    end
-
-    if settings.frameworks then 
-        for _, framework in ipairs(settings.frameworks) do
-            table.insert( libraries, ('-framework "%s"'):format(framework) );
-        end
-    end
-
-    if target.frameworks then
-        for _, framework in ipairs(target.frameworks) do
-            table.insert( libraries, ('-framework "%s"'):format(framework) );
         end
     end
 end

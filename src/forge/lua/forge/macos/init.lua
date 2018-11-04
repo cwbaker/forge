@@ -80,19 +80,18 @@ end
 function macos.initialize( settings )
     if forge:operating_system() == 'macos' then
         for _, architecture in ipairs(settings.architectures) do 
-            local clang_forge = forge:configure {
+            local xcode_clang_forge = forge:configure {
                 obj = ('%s/cc_macos_%s'):format( settings.obj, architecture );
                 platform = 'macos';
                 sdkroot = 'macosx';
                 xcrun = settings.macos.xcrun;
                 architecture = architecture;
                 default_architecture = architecture;
-                lipo_executable = macos.lipo_executable;
                 obj_directory = macos.obj_directory;
             };
-            local clang = require 'forge.cc.clang';
-            clang.register( clang_forge );
-            forge:add_default_build( ('cc_macos_%s'):format(architecture), clang_forge );
+            local xcode_clang = require 'forge.xcode_clang';
+            xcode_clang.register( xcode_clang_forge );
+            forge:add_default_build( ('cc_macos_%s'):format(architecture), xcode_clang_forge );
         end
 
         local settings = forge.settings;
@@ -106,21 +105,10 @@ function macos.initialize( settings )
         settings.xcrun = default_settings.xcrun;
         settings.architecture = default_settings.architecture;
         settings.default_architecture = default_settings.default_architecture;
-        settings.lipo_executable = default_settings.lipo_executable;
         settings.obj_directory = default_settings.obj_directory;
-        local clang = require 'forge.cc.clang';
-        clang.register( forge );
+        local xcode_clang = require 'forge.xcode_clang';
+        xcode_clang.register( forge );
     end
-end
-
-function macos.lipo_executable( target )
-    local executables = {};
-    for _, executable in target:dependencies() do 
-        table.insert( executables, executable:filename() );
-    end
-    executables = table.concat( executables, [[" "]] );
-    local xcrun = target.settings.macos.xcrun;
-    forge:system( xcrun, ('xcrun --sdk macosx lipo -create -output "%s" "%s"'):format(target:filename(), executables) );
 end
 
 function macos.obj_directory( forge, target )

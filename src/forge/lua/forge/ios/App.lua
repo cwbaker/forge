@@ -41,7 +41,7 @@ function App.build( forge, target )
     if target.settings.generate_dsym_bundle then 
         local executable;
         for _, dependency in target:dependencies() do 
-            if dependency:prototype() == forge.xcode.Lipo then 
+            if dependency:prototype() == forge.Lipo then 
                 executable = dependency:filename();
                 break;
             end
@@ -54,7 +54,7 @@ function App.build( forge, target )
         end
     end
 
-    local provisioning_profile = _G.provisioning_profile or target.settings.provisioning_profile;
+    local provisioning_profile = _G.provisioning_profile or target.provisioning_profile;
     if provisioning_profile then
         local embedded_provisioning_profile = ("%s/embedded.mobileprovision"):format( target:filename() );
         forge:rm( embedded_provisioning_profile );
@@ -79,5 +79,5 @@ function App.build( forge, target )
 end
 
 function App.clean( forge, target )
-    forge:rmdir( target:filename() );
+    -- forge:rmdir( target:filename() );
 end

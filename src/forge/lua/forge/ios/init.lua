@@ -86,7 +86,7 @@ end
 function ios.initialize( settings )
     if forge:operating_system() == 'macos' then 
         for _, architecture in ipairs(settings.ios.architectures) do 
-            local clang_forge = forge:configure {
+            local xcode_clang_forge = forge:configure {
                 obj = ('%s/cc_ios_%s'):format( settings.obj, architecture );
                 platform = 'ios';
                 sdkroot = 'iphoneos';
@@ -96,26 +96,14 @@ function ios.initialize( settings )
                 iphoneos_deployment_target = '8.0';
                 targeted_device_family = '1,2';
                 provisioning_profile = forge:home( 'sweet/sweet_software/dev.mobileprovision' );
-                lipo_executable = ios.lipo_executable;
                 obj_directory = ios.obj_directory;
             };
-            local clang = require 'forge.cc.clang';
-            clang.register( clang_forge );
-            forge:add_default_build( ('cc_ios_%s'):format(architecture), clang_forge );
+            local xcode_clang = require 'forge.xcode_clang';
+            xcode_clang.register( xcode_clang_forge );
+            forge:add_default_build( ('cc_ios_%s'):format(architecture), xcode_clang_forge );
         end
     end
 end
-
-function ios.lipo_executable( target )
-    local executables = {};
-    for _, executable in target:dependencies() do 
-        table.insert( executables, executable:filename() );
-    end
-    local settings = target.settings;
-    local sdk = ios.sdkroot_by_target_and_platform( target, settings.platform );
-    executables = table.concat( executables, '" "' );
-    local xcrun = target.settings.ios.xcrun;
-    forge:system( xcrun, ('xcrun --sdk %s lipo -create -output "%s" "%s"'):format(sdk, target:filename(), executables) );
 
 function ios.obj_directory( forge, target )
     local relative_path = forge:relative( target:working_directory():path(), forge:root() );

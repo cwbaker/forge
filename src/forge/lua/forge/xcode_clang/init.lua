@@ -58,7 +58,7 @@ function xcode_clang.compile( forge, target )
         xcrun, 
         ('xcrun --sdk %s clang %s -MMD -MF "%s" -o "%s" "%s"'):format(sdkroot, ccflags, dependencies, output, input)
     );
-    xcode_clang.parse_dependencies_file( forge, dependencies, target );
+    clang.parse_dependencies_file( forge, dependencies, target );
 end
 
 -- Archive objects into a static library. 
