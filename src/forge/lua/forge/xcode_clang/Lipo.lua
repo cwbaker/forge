@@ -1,9 +1,9 @@
 
-local Lipo = forge:TargetPrototype( 'Lipo' );
+local Lipo = forge:FilePrototype( 'Lipo' );
 
 function Lipo.build( forge, lipo )
     local settings = forge.settings;
-    settings.lipo_executable( lipo );
+    settings.lipo_executable( forge, lipo );
 end
 
 xcode.Lipo = Lipo;

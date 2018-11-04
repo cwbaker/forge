@@ -11,10 +11,16 @@ function AssetCatalog.create( forge, identifier, target_prototype, partial_info_
 end
 
 function AssetCatalog.build( forge, assets )
-	local settings = assets.settings or forge:current_settings();
-	local platform = settings.platform or 'ios';
-    local sdkroot = settings.sdkroot or 'iphoneos';
-    local xcrun = settings.xcrun or settings.ios.xcrun or settings.macos.xcrun;
+	-- local settings = forge.settings;
+	-- local platform = settings.platform or 'ios';
+ --    local sdkroot = settings.sdkroot or 'iphoneos';
+ --    local xcrun = settings.xcrun or settings.ios.xcrun or settings.macos.xcrun;
+
+	local settings = forge.settings;
+	local platform = 'ios';
+	local sdkroot = 'iphoneos';
+	local xcrun = settings.ios.xcrun or settings.macos.xcrun;
+
 
     local args = {
     	'xcrun';
