@@ -1,22 +1,5 @@
 
--- Switch platform to 'ios_simulator' if the specified platform is 'ios' but
--- the environment variable 'SDKROOT' contains 'iPhoneSimulator'.  This is to
--- accomodate builds triggered from Xcode that always specify 'ios' as the 
--- platform but might be building for the iOS simulator.
-local sdkroot = os.getenv( "SDKROOT" );
-if platform and platform == "ios" and sdkroot and sdkroot:find("iPhoneSimulator") then 
-    platform = "ios_simulator";
-end
-
 local ios = {};
-
-function ios.sdkroot_by_target_and_platform( target, platform )
-    local sdkroot = target.settings.sdkroot or "iphoneos";
-    if platform == "ios_simulator" then 
-        sdkroot = string.gsub( sdkroot, "iphoneos", "iphonesimulator" );
-    end
-    return sdkroot;
-end
 
 function ios.configure( settings )
     local function autodetect_iphoneos_sdk_version()
@@ -98,145 +81,29 @@ function ios.configure( settings )
             architectures = { "armv7", "arm64" };
         };
     end
-end;
-
-function ios.initialize( settings )
-    for _, architecture in ipairs(settings.ios.architectures) do 
-        local clang_forge = forge:configure {
-            obj = ('%s/cc_ios_%s'):format( settings.obj, architecture );
-            platform = 'ios';
-            sdkroot = 'iphoneos';
-            xcrun = settings.ios.xcrun;
-            architecture = architecture;
-            default_architecture = architecture;
-            iphoneos_deployment_target = '8.0';
-            targeted_device_family = '1,2';
-            provisioning_profile = forge:home( 'sweet/sweet_software/dev.mobileprovision' );
-            lipo_executable = ios.lipo_executable;
-            obj_directory = ios.obj_directory;
-        };
-        local clang = require 'forge.cc.clang';
-        clang.register( clang_forge );
-        forge:add_default_build( ('cc_ios_%s'):format(architecture), clang_forge );
-    end
-end;
-
-function ios.cc( target )
-    local flags = {
-        '-DBUILD_OS_IOS'
-    };
-    clang.append_defines( target, flags );
-    clang.append_include_directories( target, flags );
-    clang.append_compile_flags( target, flags );
-
-    local settings = target.settings;
-    local iphoneos_deployment_target = settings.iphoneos_deployment_target;
-    if iphoneos_deployment_target then 
-        table.insert( flags, ("-miphoneos-version-min=%s"):format(iphoneos_deployment_target) );
-    end
-
-    local sdkroot = ios.sdkroot_by_target_and_platform( target, settings.platform );
-    local ccflags = table.concat( flags, " " );
-    local xcrun = settings.ios.xcrun;
-
-    for _, object in target:dependencies() do
-        if object:outdated() then
-            object:set_built( false );
-            local source = object:dependency();
-            print( forge:leaf(source) );
-            local dependencies = ("%s.d"):format( object );
-            local output = object:filename();
-            local input = forge:absolute( source );
-            forge:system( 
-                xcrun, 
-                ('xcrun --sdk %s clang %s -MMD -MF "%s" -o "%s" "%s"'):format(sdkroot, ccflags, dependencies, output, input)
-            );
-            clang.parse_dependencies_file( dependencies, object );
-            object:set_built( true );
-        end
-    end
-end;
-
-function ios.build_library( target )
-    local flags = {
-        "-static"
-    };
-
-    local settings = target.settings;
-    forge:pushd( settings.obj_directory(forge, target) );
-    local objects =  {};
-    for _, dependency in target:dependencies() do
-        local prototype = dependency:prototype();
-        if prototype == forge.Cc or prototype == forge.Cxx or prototype == forge.ObjC or prototype == forge.ObjCxx then
-            for _, object in dependency:dependencies() do
-                table.insert( objects, forge:relative(object:filename()) );
-            end
-        end
-    end
-    
-    if #objects > 0 then
-        local sdkroot = ios.sdkroot_by_target_and_platform( target, settings.platform );
-        local arflags = table.concat( flags, " " );
-        local arobjects = table.concat( objects, [[" "]] );
-        local xcrun = target.settings.ios.xcrun;
-        forge:system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, forge:native(target:filename()), arobjects) );
-    end
-    forge:popd();
-end;
-
-function ios.clean_library( target )
-    forge:rm( target:filename() );
-    forge:rmdir( obj_directory(forge, target) );
-end;
-
-function ios.build_executable( target )
-    local flags = {};
-    clang.append_link_flags( target, flags );
-    table.insert( flags, "-ObjC" );
-    table.insert( flags, "-all_load" );
-
-    local settings = target.settings;
-    local iphoneos_deployment_target = settings.iphoneos_deployment_target;
-    if iphoneos_deployment_target then 
-        if settings.platform == "ios" then 
-            table.insert( flags, ("-mios-version-min=%s"):format(iphoneos_deployment_target) );
-        elseif settings.platform == "ios_simulator" then
-            table.insert( flags, ("-mios-simulator-version-min=%s"):format(iphoneos_deployment_target) );
-        end
-    end
-
-    clang.append_library_directories( target, flags );
-
-    local objects = {};
-    local libraries = {};
-
-    forge:pushd( settings.obj_directory(forge, target) );
-    for _, dependency in target:dependencies() do
-        local prototype = dependency:prototype();
-        if prototype == forge.Cc or prototype == forge.Cxx or prototype == forge.ObjC or prototype == forge.ObjCxx then
-            for _, object in dependency:dependencies() do
-                table.insert( objects, forge:relative(object:filename()) );
-            end
-        elseif prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
-            table.insert( libraries, ("-l%s"):format(dependency:id()) );
-        end
-    end
-
-    clang.append_link_libraries( target, libraries );
-
-    if #objects > 0 then
-        local sdkroot = ios.sdkroot_by_target_and_platform( target, settings.platform );
-        local ldflags = table.concat( flags, " " );
-        local ldobjects = table.concat( objects, '" "' );
-        local ldlibs = table.concat( libraries, " " );
-        local xcrun = settings.ios.xcrun;
-        forge:system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
-    end
-    forge:popd();
 end
 
-function ios.clean_executable( target )
-    forge:rm( target:filename() );
+function ios.initialize( settings )
+    if forge:operating_system() == 'macos' then 
+        for _, architecture in ipairs(settings.ios.architectures) do 
+            local clang_forge = forge:configure {
+                obj = ('%s/cc_ios_%s'):format( settings.obj, architecture );
+                platform = 'ios';
+                sdkroot = 'iphoneos';
+                xcrun = settings.ios.xcrun;
+                architecture = architecture;
+                default_architecture = architecture;
+                iphoneos_deployment_target = '8.0';
+                targeted_device_family = '1,2';
+                provisioning_profile = forge:home( 'sweet/sweet_software/dev.mobileprovision' );
+                lipo_executable = ios.lipo_executable;
+                obj_directory = ios.obj_directory;
+            };
+            local clang = require 'forge.cc.clang';
+            clang.register( clang_forge );
+            forge:add_default_build( ('cc_ios_%s'):format(architecture), clang_forge );
+        end
+    end
 end
 
 function ios.lipo_executable( target )
@@ -249,6 +116,10 @@ function ios.lipo_executable( target )
     executables = table.concat( executables, '" "' );
     local xcrun = target.settings.ios.xcrun;
     forge:system( xcrun, ('xcrun --sdk %s lipo -create -output "%s" "%s"'):format(sdk, target:filename(), executables) );
+
+function ios.obj_directory( forge, target )
+    local relative_path = forge:relative( target:working_directory():path(), forge:root() );
+    return forge:absolute( relative_path, forge.settings.obj );
 end
 
 -- Find the first iOS .app bundle found in the dependencies of the
@@ -275,36 +146,8 @@ function ios.deploy( app )
     end
 end
 
-function ios.obj_directory( forge, target )
-    local relative_path = forge:relative( target:working_directory():path(), forge:root() );
-    return forge:absolute( relative_path, forge.settings.obj );
-end
-
-function ios.cc_name( name )
-    return ("%s.c"):format( forge:basename(name) );
-end
-
-function ios.cxx_name( name )
-    return ("%s.cpp"):format( forge:basename(name) );
-end
-
-function ios.obj_name( name )
-    return ('%s.o'):format( name );
-end
-
-function ios.lib_name( name )
-    return ("lib%s.a"):format( name );
-end
-
-function ios.dll_name( name )
-    return ("%s.dylib"):format( name );
-end
-
-function ios.exe_name( name )
-    return ("%s"):format( name );
-end
-
-require "forge.ios.App";
+require 'forge.ios.App';
 
 forge:register_module( ios );
+forge.ios = ios;
 return ios;
