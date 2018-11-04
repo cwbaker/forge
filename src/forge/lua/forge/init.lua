@@ -86,7 +86,9 @@ function forge:add_default_build( identifier, build )
 end
 
 function forge:default_build( pattern )
-    local pattern = forge:interpolate( pattern );
+    if pattern then
+        pattern = forge:interpolate( pattern );
+    end
     for _, default_build in ipairs(self.default_builds_) do 
         local identifier = default_build[1];
         if pattern == nil or pattern == "" or identifier:find(pattern) then 
@@ -96,9 +98,11 @@ function forge:default_build( pattern )
 end
 
 function forge:default_builds( pattern )
+    if pattern then
+        pattern = forge:interpolate( pattern );
+    end
     return coroutine.wrap( function() 
         local index = 1;
-        local pattern = forge:interpolate( pattern );
         for _, default_build in ipairs(self.default_builds_) do 
             local identifier = default_build[1];
             if pattern == nil or pattern == "" or identifier:find(pattern) then 
