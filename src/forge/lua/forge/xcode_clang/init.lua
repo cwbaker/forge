@@ -41,9 +41,9 @@ function xcode_clang.compile( forge, target )
             table.insert( flags, ('-mmacosx-version-min=%s'):format(macos_deployment_target) );
         end
     elseif sdkroot == 'iphoneos' then
-        local iphoneos_deployment_target = settings.iphoneos_deployment_target;
-        if iphoneos_deployment_target then 
-            table.insert( flags, ('-miphoneos-version-min=%s'):format(iphoneos_deployment_target) );
+        local ios_deployment_target = settings.ios_deployment_target;
+        if ios_deployment_target then 
+            table.insert( flags, ('-miphoneos-version-min=%s'):format(ios_deployment_target) );
         end
     end
 
@@ -114,12 +114,12 @@ function xcode_clang.link( forge, target )
             table.insert( flags, ('-mmacosx-version-min=%s'):format(macos_deployment_target) );
         end
     elseif sdkroot == 'iphoneos' then
-        local iphoneos_deployment_target = settings.iphoneos_deployment_target;
-        if iphoneos_deployment_target then 
+        local ios_deployment_target = settings.ios_deployment_target;
+        if ios_deployment_target then 
             if settings.platform == 'ios' then 
-                table.insert( flags, ('-mios-version-min=%s'):format(iphoneos_deployment_target) );
+                table.insert( flags, ('-miphoneos-version-min=%s'):format(ios_deployment_target) );
             elseif settings.platform == 'ios_simulator' then
-                table.insert( flags, ('-mios-simulator-version-min=%s'):format(iphoneos_deployment_target) );
+                table.insert( flags, ('-miphoneos-simulator-version-min=%s'):format(ios_deployment_target) );
             end
         end
     end
