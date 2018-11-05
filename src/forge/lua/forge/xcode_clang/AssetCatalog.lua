@@ -6,50 +6,49 @@ function AssetCatalog.create( forge, identifier, target_prototype, partial_info_
 	if partial_info_plist then 
 		assets:set_filename( forge:absolute(partial_info_plist), 2 );
 	end
-    assets:add_ordering_dependency( forge:Directory(assets:directory()) );
 	return assets;
 end
 
 function AssetCatalog.build( forge, assets )
-	-- local settings = forge.settings;
-	-- local platform = settings.platform or 'ios';
- --    local sdkroot = settings.sdkroot or 'iphoneos';
- --    local xcrun = settings.xcrun or settings.ios.xcrun or settings.macos.xcrun;
-
 	local settings = forge.settings;
-	local platform = 'ios';
-	local sdkroot = 'iphoneos';
-	local xcrun = settings.ios.xcrun or settings.macos.xcrun;
-
+    local sdkroot = settings.sdkroot;
+    local xcrun = settings.xcrun;
 
     local args = {
     	'xcrun';
     	('--sdk %s'):format( sdkroot );
     	'actool';
-		('--compile %s'):format( assets:ordering_dependency(1) );
-		('--output-format %s'):format( assets.output_format or 'binary1' );
-		('--compress-pngs');
+		'--output-format human-readable-text';
+		'--compress-pngs';
+		('--compile "%s"'):format( assets:ordering_dependency(1) );
 	};
 
 	local partial_info_plist = assets:filename(2);
 	if partial_info_plist and partial_info_plist ~= '' then
-		table.insert( args, ('--output-partial-info-plist %s'):format(partial_info_plist) );
+		table.insert( args, ('--output-partial-info-plist "%s"'):format(partial_info_plist) );
 	end
 
 	table.insert( args, ('--platform %s'):format(sdkroot) );
-	local minimum_deployment_target = settings[('%s_deployment_target'):format(sdkroot)];
-	if minimum_deployment_target then 
-		table.insert( args, ('--minimum-deployment-target %s'):format(minimum_deployment_target) );
-	end
+    if sdkroot == 'macosx' then 
+        local macos_deployment_target = settings.macos_deployment_target;
+        if macos_deployment_target then 
+            table.insert( args, ('--minimum-deployment-target %s'):format(macos_deployment_target) );
+        end
+    elseif sdkroot == 'iphoneos' then
+        local ios_deployment_target = settings.ios_deployment_target;
+        if ios_deployment_target then 
+            table.insert( args, ('--minimum-deployment-target %s'):format(ios_deployment_target) );
+        end
+    end
 
 	local app_icon = assets.app_icon;
 	if app_icon then
-		table.insert( args, ('--app-icon %s'):format(app_icon) );
+		table.insert( args, ('--app-icon "%s"'):format(app_icon) );
 	end
 
 	local launch_image = assets.launch_image;
 	if launch_image then 
-		table.insert( args, ('--launch-image %s'):format(launch_image) );
+		table.insert( args, ('--launch-image "%s"'):format(launch_image) );
 	end
 
 	table.insert( args, assets:dependency():filename() );
