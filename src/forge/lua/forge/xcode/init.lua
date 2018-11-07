@@ -257,10 +257,10 @@ local function generate_configuration( xcodeproj, configuration, id, settings )
         );
     end
 
-    if settings.iphoneos_deployment_target then 
+    if settings.ios_deployment_target then 
         xcodeproj:write(([[
             IPHONEOS_DEPLOYMENT_TARGET = "%s";
-]]):format(settings.iphoneos_deployment_target)
+]]):format(settings.ios_deployment_target)
         );
     end
 

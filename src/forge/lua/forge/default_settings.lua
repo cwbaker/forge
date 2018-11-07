@@ -71,7 +71,7 @@ return {
             framework_directories = {
             };
             sdkroot = "iphoneos";
-            iphoneos_deployment_target = "8.0";
+            ios_deployment_target = "8.0";
             targeted_device_family = "1,2";
             provisioning_profile = forge:home( "sweet/sweet_software/dev.mobileprovision" );
         };
@@ -86,7 +86,7 @@ return {
             -- The "sdkroot" setting is replaced with "iphonesimulator" at 
             -- build time when building for the simulator.
             sdkroot = "iphoneos"; 
-            iphoneos_deployment_target = "7.0";
+            ios_deployment_target = "7.0";
             targeted_device_family = "1,2";
             provisioning_profile = forge:home( "sweet/sweet_software/dev.mobileprovision" );
         };

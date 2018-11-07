@@ -93,7 +93,7 @@ function ios.initialize( settings )
                 xcrun = settings.ios.xcrun;
                 architecture = architecture;
                 default_architecture = architecture;
-                iphoneos_deployment_target = '8.0';
+                ios_deployment_target = '8.0';
                 targeted_device_family = '1,2';
                 provisioning_profile = forge:home( 'sweet/sweet_software/dev.mobileprovision' );
                 obj_directory = ios.obj_directory;
