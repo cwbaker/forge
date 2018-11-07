@@ -526,13 +526,15 @@ function xcode_build()
         local failures = build();
         assertf( failures == 0, "%d failures", failures );
         if failures == 0 then 
-            if forge.ios then 
+            local ios = forge.ios;
+            if ios then 
                 local app = ios.find_app();
                 if app then 
                     ios.deploy( app );
                 end
             end
-            if forge.android then 
+            local android = forge.android;
+            if android then 
                 local apk = android.find_apk();
                 if apk then 
                     android.deploy( apk );
