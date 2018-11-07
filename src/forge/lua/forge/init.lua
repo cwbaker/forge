@@ -87,7 +87,7 @@ end
 
 function forge:default_build( pattern )
     if pattern then
-        pattern = forge:interpolate( pattern );
+        pattern = self:interpolate( pattern );
     end
     for _, default_build in ipairs(self.default_builds_) do 
         local identifier = default_build[1];
@@ -99,7 +99,7 @@ end
 
 function forge:default_builds( pattern )
     if pattern then
-        pattern = forge:interpolate( pattern );
+        pattern = self:interpolate( pattern );
     end
     return coroutine.wrap( function() 
         local index = 1;
@@ -166,7 +166,7 @@ function forge:PatternPrototype( identifier, replacement_modifier )
             end
         end     
         return target;
-    end;
+    end
     return pattern_prototype;
 end
 
@@ -197,7 +197,7 @@ function forge:File( identifier, target_prototype )
     local target = self:Target( self:interpolate(identifier), target_prototype );
     target:set_filename( target:path() );
     target:set_cleanable( true );
-    target:add_ordering_dependency( forge:Directory(forge:branch(target)) );
+    target:add_ordering_dependency( self:Directory(self:branch(target)) );
     return target;
 end
 
@@ -219,12 +219,12 @@ end
 
 function forge:map( target_prototype, replacement, pattern, filenames )
     local targets = {};
-    local settings = settings or self:current_settings();
+    local settings = settings or self.settings;
     for _, source_filename in ipairs(filenames) do 
-        local source = forge:relative( source_filename );
+        local source = self:relative( source_filename );
         local filename, substitutions = source:gsub( pattern, replacement );
         if substitutions > 0 then 
-            local destination = forge:interpolate( filename, settings );
+            local destination = self:interpolate( filename, settings );
             local target = target_prototype (self, destination) {
                 source
             };
@@ -236,12 +236,12 @@ end
 
 function forge:map_ls( target_prototype, replacement, pattern, settings )
     local targets = {};
-    local settings = settings or self:current_settings();
-    for source_filename in forge:ls("") do
-        local source = forge:relative( source_filename );
+    local settings = settings or self.settings;
+    for source_filename in self:ls('') do
+        local source = self:relative( source_filename );
         local filename, substitutions = source:gsub( pattern, replacement );
         if substitutions > 0 then    
-            local destination = forge:interpolate( filename, settings );
+            local destination = self:interpolate( filename, settings );
             local target = target_prototype (self, destination) {
                 source
             };
@@ -253,13 +253,13 @@ end
 
 function forge:map_find( target_prototype, replacement, pattern, settings )
     local targets = {};
-    local settings = settings or self:current_settings();
-    for source_filename in forge:find("") do
-        if forge:is_file(source_filename) then
-            local source = forge:relative( source_filename );
+    local settings = settings or self.settings;
+    for source_filename in self:find("") do
+        if self:is_file(source_filename) then
+            local source = self:relative( source_filename );
             local filename, substitutions = source:gsub( pattern, replacement );
             if substitutions > 0 then
-                local destination = forge:interpolate( filename, settings );
+                local destination = self:interpolate( filename, settings );
                 local target = target_prototype (self, destination) {
                     source
                 };
@@ -421,9 +421,9 @@ end
 -- Add targets to the current directory's target so that they will be built 
 -- when a build is invoked from that directory.
 function forge:default_targets( targets )
-    local all = forge:all();
+    local all = self:all();
     for _, default_target in ipairs(targets) do
-        local target = forge:add_target( ("%s/all"):format(default_target) );
+        local target = self:add_target( ("%s/all"):format(default_target) );
         all:add_dependency( target );
     end
 end
@@ -573,7 +573,7 @@ function forge:merge( destination, source )
     for key, value in pairs(source) do
         if type(key) == 'string' then
             if type(value) == 'table' then
-                destination[key] = forge:append( destination[key], value );
+                destination[key] = self:append( destination[key], value );
             else
                 destination[key] = value;
             end
@@ -659,7 +659,7 @@ end
 -- directory.
 function forge:object( filename, extension, settings )
     local settings = settings or self:current_settings();
-    local prefix = settings.obj or forge:root();
+    local prefix = settings.obj or self:root();
     local filename = self:relative( self:absolute(filename), self:root() );
     return ('%s/%s'):format( prefix, filename );
 end
