@@ -81,6 +81,7 @@ function xcode_clang.archive( forge, target )
         local arflags = table.concat( flags, ' ' );
         local arobjects = table.concat( objects, '" "' );
         local xcrun = settings.xcrun;
+        printf( '%s', forge:leaf(target) );
         forge:system( xcrun, ('xcrun --sdk macosx libtool %s -o "%s" "%s"'):format(arflags, forge:native(target), arobjects) );
     end
     forge:popd();
@@ -130,6 +131,7 @@ function xcode_clang.link( forge, target )
         local ldflags = table.concat( flags, ' ' );
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, ' ' );
+        printf( '%s', forge:leaf(target) );
         forge:system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
     end
     forge:popd();
