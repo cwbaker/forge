@@ -5,7 +5,7 @@ function Generate.build( forge, target )
     local outputs = {};
     for _, dependency in target:dependencies() do 
         local template = assert( loadfile(forge:native(forge:absolute(dependency))) );
-        local success, output_or_error_message = pcall( template, target );
+        local success, output_or_error_message = pcall( template, forge, target );
         assert( success, output_or_error_message );
         table.insert( outputs, output_or_error_message );
     end
