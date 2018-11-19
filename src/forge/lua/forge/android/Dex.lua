@@ -20,10 +20,10 @@ function Dex.build( forge, target )
     end
 
     local jars = {};
-    local settings = target.settings;
+    local settings = forge.settings;
     local proguard = target:dependency( 1 );
-    if proguard and target.settings.android.proguard_enabled then 
-        local proguard_sh = ("%s/bin/proguard.sh"):format( target.settings.android.proguard_directory );
+    if proguard and settings.android.proguard_enabled then 
+        local proguard_sh = ("%s/bin/proguard.sh"):format( settings.android.proguard_directory );
         forge:system( proguard_sh, {
             'proguard.sh',
             ('-printmapping \"%s/%s.map\"'):format( settings.classes_directory(target), forge:leaf(target) ),
@@ -52,7 +52,7 @@ function Dex.build( forge, target )
         end
     end
 
-    local dx = forge:native( ("%s/dx"):format(target.settings.android.build_tools_directory) );
+    local dx = forge:native( ("%s/dx"):format(settings.android.build_tools_directory) );
     if forge:operating_system() == "windows" then
         dx = ("%s.bat"):format( dx );
     end
@@ -64,5 +64,3 @@ function Dex.build( forge, target )
         ('%s'):format( table.concat(jars, " ") )
     } );
 end
-
-android.Dex = Dex;

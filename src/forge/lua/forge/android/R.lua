@@ -17,7 +17,7 @@ function R.build( forge, target )
     local android_manifest = target:dependency( 1 );
     assertf( android_manifest and forge:leaf(android_manifest) == "AndroidManifest.xml", "Android R '%s' does not specify 'AndroidManifest.xml' as its first dependency", target:path() );
 
-    local settings = target.settings;
+    local settings = forge.settings;
     local working_directory = target:working_directory();
     local gen_directory = ("%s/%s"):format( settings.gen, forge:relative(working_directory:path(), forge:root()) );
 
@@ -48,5 +48,3 @@ function R.build( forge, target )
     local aapt = ('%s/aapt'):format( settings.android.build_tools_directory );
     forge:system( aapt, command_line );
 end
-
-android.R = R;

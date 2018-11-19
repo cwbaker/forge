@@ -3,10 +3,10 @@ local java = {};
 
 function java.configure( settings )
     local function autodetect_jdk_directory()
-        if forge:operating_system() == "windows" then
-            return "C:/Program Files/Java/jdk1.6.0_39";
+        if forge:operating_system() == 'windows' then
+            return 'C:/Program Files/Java/jdk1.6.0_39';
         else
-            return "/Library/Java/Home";
+            return '/Library/Java/Home';
         end
     end
 
@@ -57,16 +57,16 @@ function java.add_jar_dependencies( jar, jars )
 end
 
 function java.gen_directory( target )
-    return string.format( "%s/%s", target.settings.gen, forge:relative(target:working_directory():path(), forge:root()) );
+    return string.format( '%s/%s', target.settings.gen, forge:relative(target:working_directory():path(), forge:root()) );
 end
 
 function java.classes_directory( target )
-    return string.format( "%s/%s", target.settings.classes, forge:relative(target:working_directory():path(), forge:root()) );
+    return string.format( '%s/%s', target.settings.classes, forge:relative(target:working_directory():path(), forge:root()) );
 end
 
-require "forge.java.Ivy";
-require "forge.java.Jar";
-require "forge.java.Java";
+require 'forge.java.Ivy';
+require 'forge.java.Jar';
+require 'forge.java.Java';
 
 forge:register_module( java );
 return java;

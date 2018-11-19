@@ -1,5 +1,5 @@
 
-android = {};
+local android = {};
 
 local directory_by_architecture = {
     ["armv5"] = "armeabi";
@@ -10,18 +10,18 @@ local directory_by_architecture = {
 
 function android.configure( settings )
     local function autodetect_ndk_directory()
-        if forge:operating_system() == "windows" then
-            return "C:/android/android-ndk";
+        if forge:operating_system() == 'windows' then
+            return 'C:/android/android-ndk';
         else
-            return forge:home( "Library/Android/ndk" );
+            return forge:home( 'Library/Android/ndk' );
         end
     end
 
     local function autodetect_sdk_directory()
-        if forge:operating_system() == "windows" then
-            return "C:/Program Files (x86)/Android/android-sdk";
+        if forge:operating_system() == 'windows' then
+            return 'C:/Program Files (x86)/Android/android-sdk';
         else
-            return forge:home( "Library/Android/sdk" );
+            return forge:home( 'Library/Android/sdk' );
         end
     end
 
@@ -39,13 +39,13 @@ function android.configure( settings )
         local_settings.android = {
             ndk_directory = autodetect_ndk_directory();
             sdk_directory = autodetect_sdk_directory();
-            build_tools_directory = ("%s/build-tools/22.0.1"):format( autodetect_sdk_directory() );
+            build_tools_directory = ('%s/build-tools/22.0.1'):format( autodetect_sdk_directory() );
             proguard_directory = autodetect_proguard_directory();
             manifest_merger = autodetect_manifest_merger();
-            toolchain_version = "4.9";
-            ndk_platform = "android-21";
-            sdk_platform = "android-22";
-            architectures = { "armv5", "armv7" };
+            toolchain_version = '4.9';
+            ndk_platform = 'android-21';
+            sdk_platform = 'android-22';
+            architectures = { 'armv5', 'armv7' };
         };
     end
 end
@@ -135,61 +135,48 @@ function android.library_directories( settings, architecture )
 end
 
 function android.initialize( settings )
-    if forge:operating_system() == "windows" then
+    if forge:operating_system() == 'windows' then
         local path = {
-            ("%s/bin"):format( android.toolchain_directory(settings, "armv5") )
+            ('%s/bin'):format( android.toolchain_directory(settings, 'armv5') )
         };
         android.environment = {
-            PATH = table.concat( path, ";" );
+            PATH = table.concat( path, ';' );
         };
     else
         local path = {
-            "/usr/bin",
-            "/bin",
-            ("%s/bin"):format( android.toolchain_directory(settings, "armv5") )
+            '/usr/bin',
+            '/bin',
+            ('%s/bin'):format( android.toolchain_directory(settings, 'armv5') )
         };
         android.environment = {
-            PATH = table.concat( path, ":" );
+            PATH = table.concat( path, ':' );
         };
     end
 
-    settings.android.proguard_enabled = settings.android.proguard_enabled or variant == "shipping";
+    settings.android.proguard_enabled = settings.android.proguard_enabled or variant == 'shipping';
     
     for _, architecture in ipairs(settings.android.architectures) do 
-        forge:add_default_build( ("cc_android_%s"):format(architecture), forge:configure {
-            obj = ("%s/cc_android_%s"):format( settings.obj, architecture );
-            platform = "android";
+        local android_ndk_forge = forge:configure {
+            obj = ('%s/cc_android_%s'):format( settings.obj, architecture );
+            platform = 'android';
             architecture = architecture;
             default_architecture = architecture;
-            runtime_library = "gnustl_shared";
-            cc = android.cc;
-            build_library = android.build_library;
-            clean_library = android.clean_library;
-            build_executable = android.build_executable;
-            clean_executable = android.clean_executable;
-            gen_directory = android.gen_directory;
-            classes_directory = android.classes_directory;
+            runtime_library = 'gnustl_shared';
             obj_directory = android.obj_directory;
-            cc_name = android.cc_name;
-            cxx_name = android.cxx_name;
-            pch_name = android.pch_name;
-            pdb_name = android.pdb_name;
-            obj_name = android.obj_name;
-            lib_name = android.lib_name;
-            exp_name = android.exp_name;
-            dll_name = android.dll_name;
-            exe_name = android.exe_name;        
-            ilk_name = android.ilk_name;
-        } );
+        };
+        local android_ndk_gcc = require 'forge.cc.android_ndk_gcc';
+        android_ndk_gcc.register( android_ndk_forge );
+        forge:add_default_build( ('cc_android_%s'):format(architecture), android_ndk_forge );
     end
 
-    forge:add_default_build( "java_android", forge:configure {
+    local android_java_forge = forge:configure {
         classes = forge:root( ('%s/classes/java_android'):format(variant) );
         gen = forge:root( ('%s/gen/java_android'):format(variant) );
         system_jars = {
-            ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
+            ('%s/platforms/%s/android.jar'):format( settings.android.sdk_directory, settings.android.sdk_platform );
         };
-    } );
+    };
+    forge:add_default_build( 'java_android', android_java_forge );
 end
 
 function android.cc( target )
@@ -446,11 +433,13 @@ function android.DynamicLibrary( build, name, architecture )
     return group;
 end
 
-require "forge.android.Aidl";
-require "forge.android.AndroidManifest";
-require "forge.android.Apk";
-require "forge.android.BuildConfig";
-require "forge.android.Dex";
-require "forge.android.R";
+require 'forge.android.Aidl';
+require 'forge.android.AndroidManifest';
+require 'forge.android.Apk';
+require 'forge.android.BuildConfig';
+require 'forge.android.Dex';
+require 'forge.android.R';
 
 forge:register_module( android );
+forge.android = android;
+return android;

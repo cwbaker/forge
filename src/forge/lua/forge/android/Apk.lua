@@ -26,7 +26,7 @@ function Apk.build( forge, target )
     end
     assertf( android_manifest and forge:leaf(android_manifest:filename()) == "AndroidManifest.xml", "Android APK '%s' does not specify a manifest named 'AndroidManifest.xml'", target:path() );
 
-    local settings = target.settings;
+    local settings = forge.settings;
     local aapt = ("%s/aapt"):format( settings.android.build_tools_directory );
     local android_jar = ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
     forge:system( aapt, {
@@ -78,5 +78,3 @@ function Apk.clean( forge, target )
     forge:rm( ("%s.unaligned"):format(target:filename()) );
     forge:rm( target );
 end
-
-android.Apk = Apk;

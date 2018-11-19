@@ -47,7 +47,7 @@ public final class BuildConfig {
         assert( output_file, ("Opening '%s' to write generated text failed"):format(filename) );
         output_file:write( HEADER:format(package) );
         if target.DEBUG == nil then 
-            output_file:write( BOOLEAN_BODY:format("DEBUG", tostring(target.settings.debug)) );
+            output_file:write( BOOLEAN_BODY:format("DEBUG", tostring(forge.settings.debug)) );
         end
         for key, value in pairs(target) do 
             if type(value) == "boolean" then
@@ -67,5 +67,3 @@ public final class BuildConfig {
         output_file = nil;
     end
 end
-
-android.BuildConfig = BuildConfig;
