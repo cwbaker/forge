@@ -92,6 +92,12 @@ int LuaTargetPrototype::create_call_metamethod( lua_State* lua_state )
     const int FORGE = 2;
     const int IDENTIFIER = 3;
     const int VARARGS = 4;
+
+    if ( lua_type(lua_state, IDENTIFIER) == LUA_TNONE )
+    {
+        return luaL_argerror( lua_state, IDENTIFIER - 1, "string expected" );
+    }
+
     int args = lua_gettop( lua_state );
     lua_getfield( lua_state, TARGET_PROTOTYPE, "create" );
     lua_pushvalue( lua_state, FORGE );
