@@ -160,7 +160,7 @@ function android.initialize( settings )
             obj = ('%s/cc_android_%s'):format( settings.obj, architecture );
             platform = 'android';
             architecture = architecture;
-            default_architecture = architecture;
+            arch_directory = directory_by_architecture[architecture];
             runtime_library = 'gnustl_shared';
             obj_directory = android.obj_directory;
         };
