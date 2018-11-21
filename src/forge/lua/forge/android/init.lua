@@ -401,16 +401,15 @@ function android.android_jar( settings )
     return ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
 end
 
-function android.DynamicLibrary( build, name, architecture )
-    local settings = forge:current_settings();
-    local architecture = architecture or settings.architecture;
-    assertf( architecture, 'Missing architecture for Android dynamic library "%s"', name );
-    local dynamic_library = forge:DynamicLibrary( ("${apk}/lib/%s/%s"):format(directory_by_architecture[architecture], name), architecture );
-    dynamic_library.architecture = architecture;
+function android.DynamicLibrary( forge, identifier )
+    local settings = forge.settings;
+    local architecture = settings.architecture;
+    assertf( architecture, 'Missing architecture for Android dynamic library "%s"', identifier );
+    local dynamic_library = forge:DynamicLibrary( identifier );
 
     local group = forge:Target( forge:anonymous() );
     group:add_dependency( dynamic_library );
-    group.depend = function( build, group, ... )
+    group.depend = function( forge, group, ... )
         return dynamic_library.depend( dynamic_library.forge, dynamic_library, ... );
     end
 
@@ -418,10 +417,12 @@ function android.DynamicLibrary( build, name, architecture )
     if runtime_library then 
         if runtime_library:match(".*_shared") then 
             local destination = ("%s/lib%s.so"):format( forge:branch(dynamic_library:filename()), runtime_library );
-            for _, directory in ipairs(android.library_directories(dynamic_library.settings, dynamic_library.architecture)) do
+            for _, directory in ipairs(android.library_directories(settings, settings.architecture)) do
                 local source = ("%s/lib%s.so"):format( directory, runtime_library );
                 if forge:exists(source) then
-                    local copy = forge:Copy (destination) (source);
+                    local copy = forge:Copy (destination) {
+                        source
+                    };
                     group:add_dependency( copy );
                     break;
                 end
