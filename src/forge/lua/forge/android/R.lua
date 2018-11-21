@@ -27,7 +27,7 @@ function R.build( forge, target )
         '--auto-add-overlay',
         '-f',
         '-m',
-        ('-I "%s"'):format( android.android_jar(settings) ),
+        ('-I "%s"'):format( forge.android.android_jar(settings) ),
         ('-J "%s"'):format( gen_directory ),
         ('-M "%s"'):format( android_manifest:filename() ),
         ('--extra-packages %s'):format(table.concat(target.packages, ":"))
