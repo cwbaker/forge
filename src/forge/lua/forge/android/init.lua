@@ -398,7 +398,6 @@ function android.exe_name( name, architecture )
 end
 
 function android.android_jar( settings )
-    local settings = settings or forge:current_settings();
     return ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
 end
 
