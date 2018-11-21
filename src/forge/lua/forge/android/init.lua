@@ -39,7 +39,7 @@ function android.configure( settings )
         local_settings.android = {
             ndk_directory = autodetect_ndk_directory();
             sdk_directory = autodetect_sdk_directory();
-            build_tools_directory = ('%s/build-tools/22.0.1'):format( autodetect_sdk_directory() );
+            build_tools_directory = ('%s/build-tools/28.0.0'):format( autodetect_sdk_directory() );
             proguard_directory = autodetect_proguard_directory();
             manifest_merger = autodetect_manifest_merger();
             toolchain_version = '4.9';
