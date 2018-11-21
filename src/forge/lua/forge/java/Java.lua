@@ -6,7 +6,6 @@ function Java.create( forge, identifier )
     local target = forge:Target( forge:anonymous(), Java );
     target:set_filename( ("%s/Java.%s.timestamp"):format(settings.classes_directory(target), target:id()) );
     target:add_ordering_dependency( forge:Directory(settings.classes_directory(target)) );
-    java.add_jar_dependencies( target, settings.jars );
     return target;
 end
 
@@ -21,7 +20,6 @@ function Java.depend( forge, target, dependencies )
 
     local jars = dependencies.jars;
     if jars then 
-        java.add_jar_dependencies( target, jars );
         dependencies.jars = nil;
     end
 
@@ -84,15 +82,15 @@ function Java.build( forge, target )
         
         local command_line = {
             'javac',
+            '-source 1.7',
+            '-target 1.7',
+            '-g',
             '-Xlint:unchecked',
+            '-encoding UTF-8',
             ('-d "%s"'):format(output),
             ('-sourcepath "%s"'):format(table.concat(sourcepaths, ':')),
             ('-classpath "%s"'):format(classpath),
-            '-target 1.7',
             ('-bootclasspath "%s"'):format(table.concat(jars, ':')),
-            '-encoding UTF-8',
-            '-g',
-            '-source 1.7',
             ('%s'):format(table.concat(source_files, ' '))
         };
         forge:system( javac, command_line );
