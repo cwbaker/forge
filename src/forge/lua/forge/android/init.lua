@@ -342,7 +342,7 @@ end
 function android.find_apk( directory )
     local directory = directory or forge:find_target( forge:initial("all") );
     for _, dependency in directory:dependencies() do
-        if dependency:prototype() == android.Apk then 
+        if dependency:prototype() == forge.Apk then 
             return dependency;
         end
     end
