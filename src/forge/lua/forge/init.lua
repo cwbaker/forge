@@ -755,7 +755,7 @@ function forge:walk_dependencies( target, start, finish, maximum_level )
     local maximum_level = maximum_level or math.maxinteger;
     local function walk_dependencies_recursively( target, level )
         for _, dependency in target:dependencies() do 
-            local phony = dependency:filename() == "";
+            local phony = dependency:filename() == '';
             if not phony then
                 coroutine.yield( index, dependency, level );
                 index = index + 1;
