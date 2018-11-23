@@ -26,6 +26,59 @@ function android_ndk_gcc.executable_filename( forge, identifier )
     return identifier, filename;
 end
 
+-- The DynamicLibrary target prototype for Android adds any C++ runtime dynamic library as a dependency that is copied into the same directory as 
+-- the shared object that is linked.  This is assumed to be the architecture
+-- specific native library directory of an Android APK.
+--
+-- The DynamicLibrary target prototype for Android implicitly copies the C++ 
+-- runtime dynamic library used into the destination directory alongside the
+-- built dynamic library.
+
+-- The dummy target `group` is created so that the `Apk` target prototype's 
+-- dependency walk picks up the copied C++ runtime dynamic library and adds 
+-- it to the Android APK.  
+--
+-- If the copied C++ runtime dynamic library is a dependency of the 
+-- DynamicLibrary target it is ignored by the `Apk` build's dependency walk
+-- because the dependency walk terminates at the first target that has a 
+-- filename, i.e. the dynamic library, and thus never reaches the copied C++
+-- runtime dynamic library.
+function android_ndk_gcc.dynamic_library( forge, identifier, target_prototype )
+    local identifier, filename = android_ndk_gcc.dynamic_library_filename( forge, identifier );
+    local dynamic_library = forge:Target( identifier, target_prototype );
+    dynamic_library:set_filename( filename or dynamic_library:path() );
+    dynamic_library:set_cleanable( true );
+    local directory = forge:Directory( forge:branch(dynamic_library) );
+    dynamic_library:add_ordering_dependency( directory );
+
+    local group = forge:Target( forge:anonymous() );
+    group:add_dependency( dynamic_library );
+    group.depend = function( forge, group, ... )
+        return dynamic_library.depend( dynamic_library.forge, dynamic_library, ... );
+    end
+
+    local settings = forge.settings;
+    local runtime_library = settings.runtime_library;
+    if runtime_library then 
+        if runtime_library:match(".*_shared") then 
+            local destination = ("%s/lib%s.so"):format( directory:filename(), runtime_library );
+            for _, directory in ipairs(android.library_directories(settings, settings.architecture)) do
+                local source = ("%s/lib%s.so"):format( directory, runtime_library );
+                if forge:exists(source) then
+                    group:add_dependency(
+                        forge:Copy (destination) {
+                            source
+                        }
+                    );
+                    break;
+                end
+            end
+        end
+    end
+
+    return group;
+end
+
 -- Compile C, C++, Objective-C, and Objective-C++.
 function android_ndk_gcc.compile( forge, target ) 
     local settings = forge.settings;
@@ -127,7 +180,8 @@ local StaticLibrary = forge:FilePrototype( 'StaticLibrary', android_ndk_gcc.stat
 StaticLibrary.build = android_ndk_gcc.archive;
 android_ndk_gcc.StaticLibrary = StaticLibrary;
 
-local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', android_ndk_gcc.dynamic_library_filename );
+local DynamicLibrary = forge:TargetPrototype( 'DynamicLibrary' );
+DynamicLibrary.create = android_ndk_gcc.dynamic_library;
 DynamicLibrary.build = android_ndk_gcc.link;
 android_ndk_gcc.DynamicLibrary = DynamicLibrary;
 
