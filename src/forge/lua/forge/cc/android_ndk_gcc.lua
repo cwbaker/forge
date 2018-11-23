@@ -131,10 +131,6 @@ local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', android_ndk_gcc.dy
 DynamicLibrary.build = android_ndk_gcc.link;
 android_ndk_gcc.DynamicLibrary = DynamicLibrary;
 
-local Executable = forge:FilePrototype( 'Executable', android_ndk_gcc.executable_filename );
-Executable.build = android_ndk_gcc.link;
-android_ndk_gcc.Executable = Executable;
-
 -- Register the Android NDK GCC C/C++ toolset in *forge*.
 function android_ndk_gcc.register( forge )
     forge.Cc = android_ndk_gcc.Cc;
