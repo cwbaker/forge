@@ -1,5 +1,5 @@
 
-local Ivy = forge:TargetPrototype( 'Ivy' );
+local Ivy = forge:FilePrototype( 'Ivy' );
 
 function Ivy.build( forge, target )
 	local settings = target.settings;
