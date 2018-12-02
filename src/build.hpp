@@ -1,14 +1,9 @@
-//
-// build.hpp
-// Copyright (c) Charles Baker. All rights reserved.
-//
-
 #ifndef SWEET_BUILD_HPP_INCLUDED
 #define SWEET_BUILD_HPP_INCLUDED
 
 // Define macros for target platform based on macros defined automatically
 // by compilers when building to target those platforms.
-#ifdef _WIN32
+#if _WIN32 || _WIN64
 #define BUILD_OS_WINDOWS
 #define BUILD_PLATFORM_WINDOWS
 #elif __APPLE__
