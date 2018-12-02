@@ -70,6 +70,19 @@ function android.toolchain_directory( settings, architecture )
     );
 end
 
+function android.prebuilt_directory( forge )
+    local prebuilt_directory_by_architecture = {
+        ['armv5'] = 'arm';
+        ['armv7'] = 'arm';
+        ['mips'] = 'mips';
+        ['mips64'] = 'mips64';
+        ['x86'] = 'x86';
+        ['x86_64'] = 'x86_64';
+    };
+    local settings = forge.settings;
+    return ('%s/prebuilt/android-%s'):format( settings.android.ndk_directory, prebuilt_directory_by_architecture[settings.architecture] );
+end
+
 function android.platform_directory( settings, architecture )
     local android = settings.android;
     local arch_by_architecture = {

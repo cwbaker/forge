@@ -76,6 +76,14 @@ function android_ndk_gcc.dynamic_library( forge, identifier, target_prototype )
         end
     end
 
+    if settings.debug then 
+        group:add_dependency(
+            forge:Copy (('%s/gdbserver'):format(directory)) {
+                ('%s/gdbserver/gdbserver'):format( android.prebuilt_directory(forge) );
+            }
+        );
+    end
+
     return group;
 end
 
