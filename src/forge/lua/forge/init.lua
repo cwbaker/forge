@@ -473,11 +473,15 @@ function forge:interpolate( template, variables )
     end
 
     local interpolate = forge.interpolate;
-    local variables = variables or self:current_settings();
+    local settings = self.settings;
+    local variables = variables or settings;
     return (template:gsub('%$(%b{})', function(word) 
         local parameters = split( interpolate(forge, word:sub(2, -2), variables) );
         local identifier = parameters[1];
         local substitute = variables[identifier];
+        if not substitute then 
+            substitute = settings[identifier];
+        end
         if not substitute then 
             substitute = self[identifier];
         end
