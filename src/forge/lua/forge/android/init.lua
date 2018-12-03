@@ -8,6 +8,15 @@ local directory_by_architecture = {
     ["x86"] = "x86";
 };
 
+local short_directory_by_architecture = {
+        ['armv5'] = 'arm';
+        ['armv7'] = 'arm';
+        ['mips'] = 'mips';
+        ['mips64'] = 'mips64';
+        ['x86'] = 'x86';
+        ['x86_64'] = 'x86_64';
+};
+
 function android.configure( settings )
     local function autodetect_ndk_directory()
         if forge:operating_system() == 'windows' then
@@ -70,17 +79,14 @@ function android.toolchain_directory( settings, architecture )
     );
 end
 
-function android.prebuilt_directory( forge )
-    local prebuilt_directory_by_architecture = {
-        ['armv5'] = 'arm';
-        ['armv7'] = 'arm';
-        ['mips'] = 'mips';
-        ['mips64'] = 'mips64';
-        ['x86'] = 'x86';
-        ['x86_64'] = 'x86_64';
-    };
+function android.short_directory_by_architecture( forge )
     local settings = forge.settings;
-    return ('%s/prebuilt/android-%s'):format( settings.android.ndk_directory, prebuilt_directory_by_architecture[settings.architecture] );
+    return short_directory_by_architecture[settings.architecture];
+end
+
+function android.prebuilt_directory( forge )
+    local settings = forge.settings;
+    return ('%s/prebuilt/android-%s'):format( settings.android.ndk_directory, short_directory_by_architecture[settings.architecture] );
 end
 
 function android.platform_directory( settings, architecture )
@@ -174,6 +180,7 @@ function android.initialize( settings )
             platform = 'android';
             architecture = architecture;
             arch_directory = directory_by_architecture[architecture];
+            short_arch_directory = short_directory_by_architecture[architecture];
             runtime_library = 'gnustl_shared';
             obj_directory = android.obj_directory;
         };

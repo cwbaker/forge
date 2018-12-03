@@ -1,6 +1,7 @@
 
 local gcc = require 'forge.cc.gcc';
 local android = require 'forge.android';
+require 'forge.Interpolate';
 
 local android_ndk_gcc = {};
 
@@ -77,9 +78,23 @@ function android_ndk_gcc.dynamic_library( forge, identifier, target_prototype )
     end
 
     if settings.debug then 
+        local GDB_SETUP_TEMPLATE = [[
+set solib-search ${solib_search_path}
+source ${ndk_directory}/prebuilt/common/gdb/common.setup
+directory ${ndk_directory}/${ndk_platform}/${short_arch_directory}/usr/include
+]];
         group:add_dependency(
             forge:Copy (('%s/gdbserver'):format(directory)) {
                 ('%s/gdbserver/gdbserver'):format( android.prebuilt_directory(forge) );
+            }
+        );
+        group:add_dependency(
+            forge:Interpolate (('%s/gdb.setup'):format(directory)) {
+                GDB_SETUP_TEMPLATE;
+                solib_search_path = directory:filename();
+                ndk_directory = settings.android.ndk_directory;
+                ndk_platform = settings.android.ndk_platform;
+                short_arch_directory = settings.android.short_arch_directory;
             }
         );
     end
