@@ -1,8 +1,8 @@
 
-for _, forge in forge:default_builds("cc_.*") do
+for _, forge in forge:builds('cc.*') do
     forge:StaticLibrary '${lib}/luaxx_${architecture}' {
         forge:Cxx '${obj}/%1' {
-            "luaxx.cpp"
+            'luaxx.cpp'
         };
     };
 end

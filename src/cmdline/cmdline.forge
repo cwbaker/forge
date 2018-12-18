@@ -1,14 +1,14 @@
 
-buildfile "cmdline_test/cmdline_test.forge";
+buildfile 'cmdline_test/cmdline_test.forge';
 
-for _, forge in forge:default_builds("cc_.*") do
+for _, forge in forge:builds('cc.*') do
     forge:StaticLibrary '${lib}/cmdline_${architecture}' {
         forge:Cxx '${obj}/%1' {
-            "AddOption.cpp",
-            "Error.cpp",
-            "Option.cpp",
-            "Parser.cpp",
-            "Splitter.cpp"
+            'AddOption.cpp',
+            'Error.cpp',
+            'Option.cpp',
+            'Parser.cpp',
+            'Splitter.cpp'
         };
     };
 end

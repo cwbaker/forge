@@ -56,4 +56,4 @@ function AssetCatalog.build( forge, assets )
     forge:system( xcrun, args );
 end
 
-xcode.AssetCatalog = AssetCatalog;
+return AssetCatalog;

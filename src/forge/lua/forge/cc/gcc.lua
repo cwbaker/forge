@@ -8,19 +8,90 @@ gcc.flags_by_architecture = {
     x86_64 = '';
 };
 
-function gcc.configure( settings )
-    local local_settings = forge.local_settings;
-    if not local_settings.gcc then
-        local_settings.updated = true;
-        local_settings.gcc = {
-            architectures = { 'x86_64' };
-            gcc = '/usr/bin/gcc';
-            gxx = '/usr/bin/g++';
-            ar = '/usr/bin/ar';
-            environment = {
-                PATH = '/usr/bin:/bin';
+function gcc.configure( forge )
+    local project_gcc = forge.settings.gcc or {};
+    local local_gcc = forge.local_settings.gcc;
+    if not local_gcc then
+        local_gcc = {
+            gcc = project_gcc.gcc or '/usr/bin/gcc';
+            gxx = project_gcc.gxx or '/usr/bin/g++';
+            ar = project_gcc.ar or '/usr/bin/ar';
+            environment = project_gcc.environment or {
+                PATH = '/usr/bin';
             };
         };
+        local_gcc.valid = forge:exists( local_gcc.gcc ) and forge:exists( local_gcc.gxx ) and forge:exists( local_gcc.ar );
+        forge.local_settings.gcc = local_gcc;
+        forge.local_settings.updated = true;
+    end
+    return local_gcc.valid;
+end
+
+function gcc.initialize( forge )
+    if gcc.configure(forge) then
+        local identifier = forge.settings.identifier;
+        if identifier then
+            forge:add_build( forge:interpolate(identifier), forge );
+        end
+
+        local Cc = forge:PatternPrototype( 'Cc', gcc.object_filename );
+        Cc.language = 'c';
+        Cc.build = gcc.compile;
+        forge.Cc = Cc;
+
+        local Cxx = forge:PatternPrototype( 'Cxx', gcc.object_filename );
+        Cxx.language = 'c++';
+        Cxx.build = gcc.compile;
+        forge.Cxx = Cxx;
+
+        local StaticLibrary = forge:FilePrototype( 'StaticLibrary', gcc.static_library_filename );
+        StaticLibrary.build = gcc.archive;
+        forge.StaticLibrary = StaticLibrary;
+
+        local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', gcc.dynamic_library_filename );
+        DynamicLibrary.build = gcc.link;
+        forge.DynamicLibrary = DynamicLibrary;
+
+        local Executable = forge:FilePrototype( 'Executable', gcc.executable_filename );
+        Executable.build = gcc.link;
+        forge.Executable = Executable;
+
+        forge:defaults( forge.settings, {
+            arch = 'x86_64';
+            architecture = 'x86_64';
+            assertions = true;
+            compile_as_c = false;
+            debug = true;
+            debuggable = true;
+            exceptions = true;
+            fast_floating_point = false;
+            framework_directories = {};
+            generate_dsym_bundle = false;
+            generate_map_file = true;
+            incremental_linking = true;
+            link_time_code_generation = false;
+            minimal_rebuild = true;
+            objc_arc = true;
+            objc_modules = true;
+            optimization = false;
+            pre_compiled_headers = true;
+            preprocess = false;
+            profiling = false;
+            run_time_checks = true;
+            runtime_library = 'static_debug';
+            run_time_type_info = true;
+            sse2 = true;
+            stack_size = 1048576;
+            standard = 'c++17';
+            string_pooling = false;
+            strip = false;
+            subsystem = 'CONSOLE';
+            verbose_linking = false;
+            warning_level = 3;
+            warnings_as_errors = true;
+        } );
+
+        return gcc;
     end
 end
 
@@ -76,7 +147,7 @@ end
 function gcc.archive( forge, target )
     printf( forge:leaf(target) );
     local settings = forge.settings;
-    forge:pushd( settings.obj_directory(forge, target) );
+    forge:pushd( forge:obj_directory(target) );
     local objects =  {};
     for _, object in forge:walk_dependencies( target ) do
         local prototype = object:prototype();
@@ -100,7 +171,7 @@ function gcc.link( forge, target )
     local objects = {};
     local libraries = {};
     local settings = forge.settings;
-    forge:pushd( settings.obj_directory(forge, target) );
+    forge:pushd( forge:obj_directory(target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
         if prototype == forge.Cc or prototype == forge.Cxx then
@@ -130,37 +201,6 @@ function gcc.link( forge, target )
         forge:system( gxx, ('g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
     end
     forge:popd();
-end
-
-local Cc = forge:PatternPrototype( 'Cc', gcc.object_filename );
-Cc.language = 'c';
-Cc.build = gcc.compile;
-gcc.Cc = Cc;
-
-local Cxx = forge:PatternPrototype( 'Cxx', gcc.object_filename );
-Cxx.language = 'c++';
-Cxx.build = gcc.compile;
-gcc.Cxx = Cxx;
-
-local StaticLibrary = forge:FilePrototype( 'StaticLibrary', gcc.static_library_filename );
-StaticLibrary.build = gcc.archive;
-gcc.StaticLibrary = StaticLibrary;
-
-local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', gcc.dynamic_library_filename );
-DynamicLibrary.build = gcc.link;
-gcc.DynamicLibrary = DynamicLibrary;
-
-local Executable = forge:FilePrototype( 'Executable', gcc.executable_filename );
-Executable.build = gcc.link;
-gcc.Executable = Executable;
-
--- Register the gcc C/C++ toolset in *forge*.
-function gcc.register( forge )
-    forge.Cc = gcc.Cc;
-    forge.Cxx = gcc.Cxx;
-    forge.StaticLibrary = gcc.StaticLibrary;
-    forge.DynamicLibrary = gcc.DynamicLibrary;
-    forge.Executable = gcc.Executable;
 end
 
 function gcc.append_defines( forge, target, flags )
@@ -212,13 +252,18 @@ function gcc.append_compile_flags( forge, target, flags )
     if language then
         table.insert( flags, ("-x %s"):format(language) );
         if string.find(language, "c++", 1, true) then
-            table.insert( flags, "-std=c++11" );
             if settings.exceptions then
                 table.insert( flags, "-fexceptions" );
             end
+
             if settings.run_time_type_info then
                 table.insert( flags, "-frtti" );
             end
+
+            local standard = settings.standard;
+            if standard then 
+                table.insert( flags, ('-std=%s'):format(standard) );
+            end                
         end
     end
         
@@ -322,5 +367,12 @@ function gcc.append_link_libraries( forge, target, libraries )
     end
 end
 
-forge:register_module( gcc );
+setmetatable( gcc, {
+    __call = function( gcc, settings )
+        local forge = require( 'forge' ):clone( settings );
+        gcc.initialize( forge );
+        return forge;
+    end
+} );
+
 return gcc;

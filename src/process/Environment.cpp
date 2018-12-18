@@ -43,10 +43,10 @@ void Environment::append( const char* key, const char* value )
 
     uintptr_t key_start = buffer_.size();
     buffer_.resize( buffer_.size() + key_length + value_length + 2 );
-    strncpy( &buffer_[key_start], key, key_length );
+    strncpy( &buffer_[key_start], key, key_length + 1 );
     buffer_[key_start + key_length] = '=';
     size_t value_start = key_start + key_length + 1;
-    strncpy( &buffer_[value_start], value, value_length );
+    strncpy( &buffer_[value_start], value, value_length + 1 );
     buffer_[value_start + value_length] = 0;
 
     values_.push_back( (char*) key_start );

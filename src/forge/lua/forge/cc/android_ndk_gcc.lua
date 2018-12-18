@@ -108,7 +108,7 @@ end
 function android_ndk_gcc.archive( forge, target )
     local settings = forge.settings;
 
-    forge:pushd( settings.obj_directory(forge, target) );
+    forge:pushd( forge:obj_directory(target) );
     local objects = {};
     for _, object in forge:walk_dependencies(target) do
         local prototype = object:prototype();
@@ -132,7 +132,7 @@ function android_ndk_gcc.link( forge, target )
    
     local objects = {};
     local libraries = {};
-    forge:pushd( settings.obj_directory(forge, target) );
+    forge:pushd( forge:obj_directory(target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
         if prototype == forge.Cc or prototype == forge.Cxx then

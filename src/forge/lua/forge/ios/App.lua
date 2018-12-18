@@ -1,8 +1,8 @@
 
 local App = forge:TargetPrototype( 'App' );
 
-local function default_identifier_filename( identifier, architecture, settings )
-    local settings = settings or forge:current_settings();
+local function default_identifier_filename( identifier, settings )
+    local settings = settings or forge.settings;
     local identifier = forge:interpolate( identifier, settings );
     local leaf = forge:leaf( identifier );
     local branch = settings.bin;
@@ -16,12 +16,11 @@ end
 
 function App.create( forge, identifier )
     local settings = forge.settings;
-    local identifier, filename = default_identifier_filename( identifier, architecture, settings );
+    local identifier, filename = default_identifier_filename( identifier, settings );
     local app = forge:Target( identifier, App );
     app:set_filename( filename );
     app:set_cleanable( true );
     app:add_ordering_dependency( forge:Directory(forge:branch(app)) );
-    app.architecture = architecture or settings.default_architecture;
     return app;
 end
 

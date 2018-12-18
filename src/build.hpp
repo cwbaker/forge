@@ -19,7 +19,6 @@
 #endif
 #elif __ANDROID__
 #define BUILD_OS_ANDROID
-#define BUILD_OS_ANDROID
 #define BUILD_PLATFORM_ANDROID
 #elif __linux__
 #define BUILD_OS_LINUX

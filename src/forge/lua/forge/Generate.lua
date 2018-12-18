@@ -16,3 +16,5 @@ function Generate.build( forge, target )
     output_file:close();
     output_file = nil;
 end
+
+return Generate;

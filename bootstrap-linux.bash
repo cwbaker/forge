@@ -6,7 +6,7 @@ BIN=$(pwd)/bootstrap-linux/bin
 cc() {
     for file in $1; do
         echo $file...
-        local DEFINES="-DBUILD_OS_LINUX -DBUILD_VARIANT_DEBUG -DBUILD_VERSION=\"bootstrap\" -DLUA_USE_POSIX -DLUA_USE_DLOPEN"
+        local DEFINES="-DBUILD_VARIANT_DEBUG -DBUILD_VERSION=\"bootstrap\" -DLUA_USE_POSIX -DLUA_USE_DLOPEN"
         local INCLUDE_DIRS="-I $SRC -I $SRC/lua/src -I $SRC/boost"
         local FLAGS="-x c -g"
         gcc $DEFINES $INCLUDE_DIRS $FLAGS -o $file.o -c $file
@@ -16,7 +16,7 @@ cc() {
 cxx() {
     for file in $1; do
         echo $file...
-        local DEFINES="-DBUILD_OS_LINUX -DBUILD_VARIANT_DEBUG -DBUILD_VERSION=\"bootstrap\" -DLUA_USE_POSIX -DLUA_USE_DLOPEN"
+        local DEFINES="-DBUILD_VARIANT_DEBUG -DBUILD_VERSION=\"bootstrap\" -DLUA_USE_POSIX -DLUA_USE_DLOPEN"
         local INCLUDE_DIRS="-I $SRC -I $SRC/lua/src -I $SRC/boost"
         local FLAGS="-x c++ -std=c++11 -fexceptions -frtti -fPIC -g -Wno-deprecated-declarations"
         g++ $DEFINES $INCLUDE_DIRS $FLAGS -o $file.o -c $file

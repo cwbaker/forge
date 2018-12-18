@@ -1,22 +1,21 @@
 
-buildfile "error_test/error_test.forge";
+buildfile 'error_test/error_test.forge';
 
-for _, forge in forge:default_builds("cc_.*") do 
+for _, forge in forge:builds('cc.*') do 
     forge:StaticLibrary '${lib}/error_${architecture}' {
         defines = {
             -- Define POSIX_C_SOURCE=200112L to get the correct beahvior from
             -- `strerror_r()` in `Error::format()` for Linux.  See 
             -- `man strerror_r` for more details.
-            "POSIX_C_SOURCE=200112L"
+            'POSIX_C_SOURCE=200112L'
         };
 
         forge:Cxx '${obj}/%1' {
-            precompiled_header = "stdafx.hpp";
-            "boost_integration.cpp",
-            "dinkumware_integration.cpp",
-            "Error.cpp",
-            "ErrorPolicy.cpp",
-            "functions.cpp"
+            'boost_integration.cpp',
+            'dinkumware_integration.cpp',
+            'Error.cpp',
+            'ErrorPolicy.cpp',
+            'functions.cpp'
         };
     };
 end

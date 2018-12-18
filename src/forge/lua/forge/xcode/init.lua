@@ -5,6 +5,8 @@ local function uuid()
     return ("%08x%08x%08x"):format( id, id, id );
 end
 
+local VARIANTS = { 'debug', 'release', 'shipping' };
+
 local files = {};
 local groups = {};
 local legacy_targets = {};
@@ -82,7 +84,7 @@ local function add_legacy_target( target, platform, architectures )
             forge = forge:executable( "forge" );
             path = filename;
             settings = settings;
-            configurations = add_configurations( architectures, settings.variants );
+            configurations = add_configurations( architectures, VARIANTS );
         };
         legacy_targets[filename] = legacy_target;
     end
@@ -433,18 +435,11 @@ end
 
 xcode = {};
 
-function xcode.configure( settings )
-end
-
-function xcode.initialize( settings )
-    xcode.configure( settings );
-end
-
 function xcode.generate_project( name, project )
     project_root = forge:branch( name );
     project_id = forge:leaf( forge:basename(name) );
     project_configuration_list_uuid = uuid();
-    project_configurations = add_configurations( nil, forge.settings.variants );
+    project_configurations = add_configurations( nil, VARIANTS );
 
     populate_source( forge:root(), {"^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java"}, {"^.*%.framework"} );
 

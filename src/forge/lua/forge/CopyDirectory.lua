@@ -1,7 +1,7 @@
 
-require 'forge.Copy';
+local Copy = require 'forge.Copy';
 
-local CopyDirectory = forge:TargetPrototype( "CopyDirectory" );
+local CopyDirectory = forge:TargetPrototype( 'CopyDirectory' );
 
 function CopyDirectory.create( forge, identifier )
     local settings = forge.settings;
@@ -17,7 +17,7 @@ function CopyDirectory.depend( forge, target, dependencies )
     for _, value in ipairs(dependencies) do 
         local source_directory = forge:interpolate( value, settings );
         local destination_directory = target:ordering_dependency():filename();
-        local cache = forge:find_target( settings.cache );
+        local cache = forge:find_target( forge.cache );
         cache:add_dependency( forge:SourceDirectory(source_directory) );
 
         forge:pushd( source_directory );
@@ -35,3 +35,5 @@ function CopyDirectory.depend( forge, target, dependencies )
         forge:popd();
     end
 end
+
+return CopyDirectory;

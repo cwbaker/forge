@@ -16,4 +16,4 @@ function Xib.build( forge, xib )
     );
 end
 
-xcode.Xib = Xib;
+return Xib;

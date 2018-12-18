@@ -1,33 +1,32 @@
 
-for _, forge in forge:default_builds("cc_.*") do
-    local settings =  {
-        defines = {
-            "_CRT_SECURE_NO_DEPRECATE",
-            "_SCL_SECURE_NO_DEPRECATE",
-            "_WIN32_WINNT=0x0500",
-            "WIN32_LEAN_AND_MEAN"
-        };
+-- Disable warnings on Linux to avoid unused variable warnings in Boost
+-- System library headers.
+local warning_level = 3;
+if forge:operating_system() == 'linux' then
+    warning_level = 0;
+end
+
+for _, forge in forge:builds('cc.*') do
+    local forge = forge:inherit {
+        warning_level = warning_level;
     };
-
-    -- Disable warnings on Linux to avoid unused variable warnings in Boost
-    -- System library headers.
-    if forge:operating_system() == "linux" then
-        settings.warning_level = 0;
-    end
-
-    local forge = forge:configure( settings );
     forge:StaticLibrary '${lib}/forge_lua_${architecture}' {
         forge:Cxx '${obj}/%1' {
-            -- Disable automatic linking to Boost libraries.
-            defines = { "BOOST_ALL_NO_LIB" };
-            "LuaForge.cpp",
-            "LuaContext.cpp",
-            "LuaFileSystem.cpp",
-            "LuaGraph.cpp",
-            "LuaSystem.cpp",
-            "LuaTarget.cpp",
-            "LuaTargetPrototype.cpp",
-            "types.cpp"
+            defines = {
+                'BOOST_ALL_NO_LIB', -- Disable automatic linking to Boost libraries.
+                '_CRT_SECURE_NO_DEPRECATE',
+                '_SCL_SECURE_NO_DEPRECATE',
+                '_WIN32_WINNT=0x0500',
+                'WIN32_LEAN_AND_MEAN'
+            };
+            'LuaForge.cpp',
+            'LuaContext.cpp',
+            'LuaFileSystem.cpp',
+            'LuaGraph.cpp',
+            'LuaSystem.cpp',
+            'LuaTarget.cpp',
+            'LuaTargetPrototype.cpp',
+            'types.cpp'
         };
     };
 end

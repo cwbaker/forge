@@ -1,10 +1,10 @@
 
-for _, forge in forge:default_builds("cc_.*") do 
-    local forge, settings = forge:configure {
+for _, forge in forge:builds('cc.*') do 
+    local forge = forge:inherit {
         warning_level = 0;
         defines = { 
             -- Disable automatic linking to Boost libraries.
-            "BOOST_ALL_NO_LIB" 
+            'BOOST_ALL_NO_LIB' 
         };
     };
 
@@ -20,10 +20,10 @@ for _, forge in forge:default_builds("cc_.*") do
         };
     };
 
-    if platform == "windows" then
+    if forge:platform_matches('windows') then
         boost_filesystem {
             forge:Cxx '${obj}/%1' {
-                "windows_file_codecvt.cpp"
+                'windows_file_codecvt.cpp'
             };
         };
     end

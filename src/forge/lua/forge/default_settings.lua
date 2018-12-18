@@ -36,18 +36,14 @@ return {
 
     platforms = platforms_by_operating_system [forge:operating_system()];
 
-    variants = {};
-
     settings_by_platform = {
         [""] = {
-            default_architecture = "";
             architectures = {
                 ""
             };
         };
 
         ["android"] = {
-            default_architecture = "armv7";
             architectures = { 
                 'armv5', 'armv7' 
             };
@@ -55,7 +51,6 @@ return {
         };
 
         ["macos"] = {
-            default_architecture = 'x86_64';
             architectures = {
                 'x86_64'
             };
@@ -64,7 +59,6 @@ return {
         };
 
         ["ios"] = {
-            default_architecture = "armv7";
             architectures = {
                 "armv7", "arm64"
             };
@@ -77,7 +71,6 @@ return {
         };
 
         ["ios_simulator"] = {
-            default_architecture = "x86_64";
             architectures = {
                 "i386", "x86_64"
             };
@@ -92,14 +85,12 @@ return {
         };
 
         ["linux"] = {
-            default_architecture = "x86_64";
             architectures = { 
                 "x86_64" 
             };
         };
 
         ["windows"] = {
-            default_architecture = "x86_64";
             architectures = {
                 "x86_64"
             };
@@ -116,7 +107,6 @@ return {
 
     settings_by_variant = {
         [""] = {        
-            library_type = "static";
         };
 
         ["debug"] = {
@@ -129,7 +119,6 @@ return {
             generate_dsym_bundle = false;
             generate_map_file = true;
             incremental_linking = true;
-            library_type = "static";
             link_time_code_generation = false;
             minimal_rebuild = true;
             objc_arc = true;
@@ -143,6 +132,7 @@ return {
             run_time_type_info = true;
             sse2 = true;
             stack_size = 1048576;
+            standard = 'c++17';
             string_pooling = false;
             strip = false;
             subsystem = "CONSOLE";
@@ -161,7 +151,6 @@ return {
             generate_dsym_bundle = false;
             generate_map_file = true;
             incremental_linking = false;
-            library_type = "static";
             link_time_code_generation = true;
             minimal_rebuild = false;
             objc_arc = true;
@@ -175,6 +164,7 @@ return {
             run_time_type_info = true;
             sse2 = true;
             stack_size = 1048576;        
+            standard = 'c++17';
             string_pooling = false;
             strip = false;
             subsystem = "CONSOLE";
@@ -193,7 +183,6 @@ return {
             generate_dsym_bundle = true;
             generate_map_file = true;
             incremental_linking = false;
-            library_type = "static";
             link_time_code_generation = true;
             minimal_rebuild = false;
             objc_arc = true;
@@ -207,6 +196,7 @@ return {
             run_time_type_info = true;
             sse2 = true;
             stack_size = 1048576;        
+            standard = 'c++17';
             string_pooling = false;
             strip = true;
             subsystem = "CONSOLE";

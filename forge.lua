@@ -4,29 +4,22 @@
 -- development and are versioned along with the code that they are building.
 package.path = forge:root('src/forge/lua/?.lua')..';'..forge:root('src/forge/lua/?/init.lua');
 
-require "forge";
-require "forge.visual_studio";
-require "forge.xcode";
-require "forge.linux";
-require "forge.macos";
-require "forge.windows";
-
 platform = platform or forge:operating_system();
-variant = forge:lower( variant or "debug" );
-version = version or ("%s %s %s"):format( os.date("%Y.%m.%d %H:%M:%S"), platform, variant );
-goal = goal or "";
-jobs = jobs or 4;
+variant = forge:lower( variant or 'debug' );
+version = version or ('%s %s %s'):format( os.date('%Y.%m.%d %H:%M:%S'), platform, variant );
+goal = goal or '';
 
-local settings = forge:initialize {
-    variants = { "debug", "release", "shipping" };
+local forge = require 'forge.cc' {
+    identifier = 'cc_${platform}_${architecture}';
+    platform = forge:operating_system();
     bin = forge:root( ('%s/bin'):format(variant) );
     lib = forge:root( ('%s/lib'):format(variant) );
-    obj = forge:root( ('%s/obj'):format(variant) );
+    obj = forge:root( ('%s/obj/cc_%s_x86_64'):format(variant, forge:operating_system()) );
     include_directories = {
-        forge:root( 'src' ),
-        forge:root( 'src/boost' ),
-        forge:root( 'src/lua/src' ),
-        forge:root( 'src/unittest-cpp' )
+        forge:root( 'src' );
+        forge:root( 'src/boost' );
+        forge:root( 'src/lua/src' );
+        forge:root( 'src/unittest-cpp' );
     };
     library_directories = {
         forge:root( ('%s/lib'):format(variant) ),
@@ -34,27 +27,26 @@ local settings = forge:initialize {
     defines = {
         ('BUILD_VARIANT_%s'):format( forge:upper(variant) );
     };
-    visual_studio = {
-        sln = forge:root( "forge.sln" );
-    };
-    xcode = {
-        xcodeproj = forge:root( "forge.xcodeproj" );
-    };
-    zero_brane_studio = {
-        mobdebug = forge:switch { forge:operating_system();
-            macos = "/Applications/ZeroBraneStudio.app/Contents/ZeroBraneStudio/lualibs/mobdebug/mobdebug.lua";
-            windows = "C:\\Program Files (x86)\\ZeroBraneStudio\\lualibs\\mobdebug\\mobdebug.lua";
-        };
-    };
-};
 
--- Targets built when building from the root directory and as targets when
--- generating XCode projects and Visual Studio solutions.
-forge:default_targets {
-    'src/forge',
-    'src/forge/forge',
-    'src/forge/forge_hooks',
-    'src/forge/forge_test'
+    architecture = 'x86_64';
+    assertions = variant ~= 'shipping';
+    debug = variant ~= 'shipping';
+    debuggable = variant ~= 'shipping';
+    exceptions = true;
+    fast_floating_point = variant ~= 'debug';
+    incremental_linking = variant == 'debug';
+    link_time_code_generation = variant == 'shipping';
+    minimal_rebuild = variant == 'debug';
+    optimization = variant ~= 'debug';
+    run_time_checks = variant == 'debug';
+    runtime_library = variant == 'debug' and 'static_debug' or 'static_release';
+    run_time_type_info = true;
+    stack_size = 1048576;
+    standard = 'c++14';
+    string_pooling = variant == 'shipping';
+    strip = false;
+    warning_level = 3;
+    warnings_as_errors = true;
 };
 
 buildfile 'src/assert/assert.forge';
@@ -66,6 +58,12 @@ buildfile 'src/lua/lua.forge';
 buildfile 'src/luaxx/luaxx.forge';
 buildfile 'src/process/process.forge';
 buildfile 'src/unittest-cpp/unittest-cpp.forge';
+
+forge:all {
+    'src/forge/forge/all';
+    'src/forge/forge_hooks/all';
+    'src/forge/forge_test/all';
+};
 
 function install()
     prefix = prefix or forge:home( 'forge' );

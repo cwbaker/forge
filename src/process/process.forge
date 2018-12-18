@@ -1,12 +1,12 @@
 
 buildfile "process_test/process_test.forge";
 
-for _, forge in forge:default_builds("cc_.*") do
+for _, forge in forge:builds('cc.*') do
     forge:StaticLibrary '${lib}/process_${architecture}' {
         forge:Cxx '${obj}/%1' {
-            "Error.cpp",
-            "Environment.cpp",
-            "Process.cpp"
+            'Error.cpp',
+            'Environment.cpp',
+            'Process.cpp'
         };
     };
 end

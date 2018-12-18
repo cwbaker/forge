@@ -1,5 +1,6 @@
 
 local vcxproj = {};
+local VARIANTS = { 'debug', 'release', 'shipping' };
 
 local function generate_header( target, write )
     local HEADER = [[
@@ -27,7 +28,7 @@ local function generate_project_configurations( target, write )
 
     write( START_PROJECT_CONFIGURATIONS );
     for _, platform in ipairs(target.settings.platforms) do
-        for _, variant in ipairs(target.settings.variants) do
+        for _, variant in ipairs(VARIANTS) do
             write( PROJECT_CONFIGURATION, platform, variant, platform, variant );
         end
     end
@@ -52,7 +53,7 @@ local function generate_configuration_property_groups( target, write )
   </PropertyGroup>
 ]];
     for _, platform in ipairs(target.settings.platforms) do 
-        for _, variant in ipairs(target.settings.variants) do 
+        for _, variant in ipairs(VARIANTS) do 
             write( PROPERTY_GROUP, platform, variant );
         end
     end
@@ -92,7 +93,7 @@ local function generate_property_groups( target, write )
 ]];
     local build_tool = forge:native( forge:relative(forge:executable("forge.exe")) );
     for _, platform in ipairs(target.settings.platforms) do
-        for _, variant in ipairs(target.settings.variants) do
+        for _, variant in ipairs(VARIANTS) do
             local variant_settings = target.settings.settings_by_variant[variant];
             
             local output = "";
@@ -104,7 +105,6 @@ local function generate_property_groups( target, write )
                 ('/DBUILD_PLATFORM_%s'):format( forge:upper(platform) );
                 ('/DBUILD_VARIANT_%s'):format( forge:upper(variant) );
                 ('/DBUILD_LIBRARY_SUFFIX="\\"_%s.lib\\""'):format( target.architecture );
-                ('/DBUILD_LIBRARY_TYPE_%s'):format( forge:upper(variant_settings.library_type) );
             };
             if variant_settings.defines then
                 for _, define in ipairs(variant_settings.defines) do

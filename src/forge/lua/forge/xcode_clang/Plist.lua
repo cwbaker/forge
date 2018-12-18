@@ -12,4 +12,4 @@ function Plist.build( forge, plist )
     forge:system( plutil, table.concat(command_line, " ") );
 end
 
-xcode.Plist = Plist;
+return Plist;

@@ -1,4 +1,6 @@
 
+forge = _G.forge or {};
+
 -- Provide printf().
 function printf( format, ... ) 
     print( string.format(format, ...) );
@@ -43,8 +45,7 @@ end
 
 -- Provide global reconfigure command.
 function reconfigure()
-    rm( forge.settings.local_settings_filename );
-    forge:find_initial_target();
+    forge:rm( forge:root('local_settings.lua') );
     return 0;
 end
 
@@ -76,54 +77,62 @@ Commands:
     ]];
 end
 
-forge = _G.forge or {};
-forge.settings = {};
-forge.modules_ = {};
-forge.default_builds_ = {};
-
-function forge:add_default_build( identifier, build )
-    table.insert( self.default_builds_, {identifier, build} );
+function forge:add_build( identifier, build )    
+    table.insert( self.builds_, {build:interpolate(identifier), build} );
+    return build;
 end
 
-function forge:default_build( pattern )
-    if pattern then
-        pattern = self:interpolate( pattern );
-    end
-    for _, default_build in ipairs(self.default_builds_) do 
-        local identifier = default_build[1];
-        if pattern == nil or pattern == "" or identifier:find(pattern) then 
-            return default_build[2];
+function forge:build( pattern )
+    for _, build in ipairs(self.builds_) do 
+        local identifier = build[1];
+        if pattern == nil or pattern == '' or identifier:find(pattern) then 
+            return build[2];
         end
     end        
 end
 
-function forge:default_builds( pattern )
-    if pattern then
-        pattern = self:interpolate( pattern );
-    end
+function forge:builds( pattern )
     return coroutine.wrap( function() 
         local index = 1;
-        for _, default_build in ipairs(self.default_builds_) do 
-            local identifier = default_build[1];
-            if pattern == nil or pattern == "" or identifier:find(pattern) then 
-                coroutine.yield( index, default_build[2] );
+        for _, build in ipairs(self.builds_) do 
+            local identifier = build[1];
+            if pattern == nil or pattern == '' or identifier:find(pattern) then 
+                coroutine.yield( index, build[2] );
                 index = index + 1;
             end
         end        
     end );
 end
 
-function forge:platform_matches( ... )
-    local platform = self.settings.platform;
-    if platform == "" then 
-        return true;
-    end
-    for i = 1, select("#", ...) do
-        if platform:match(select(i, ...)) then
-            return true;
-        end
-    end
-    return false;
+function forge:call( settings_to_apply )
+    self:copy_settings( self.settings, settings_to_apply );
+end
+
+function forge:create( settings )
+    local forge = {
+        __this = self.__this;
+        settings = settings or {};
+    };
+    setmetatable( forge, {
+        __index = self;
+    } );
+    return forge;
+end
+
+function forge:clone( settings_to_apply )
+    local settings = {};
+    local copy_settings = self.copy_settings;
+    copy_settings( self, settings, self.settings );
+    copy_settings( self, settings, settings_to_apply );
+    return self:create( settings );
+end
+
+function forge:inherit( settings )
+    local settings = settings or {};
+    setmetatable( settings, {
+        __index = self.settings;
+    } );
+    return self:create( settings );
 end
 
 function forge:TargetPrototype( identifier )
@@ -217,176 +226,6 @@ function forge:SourceDirectory( identifier, settings )
     return self:SourceFile( identifier, settings );
 end
 
-function forge:map( target_prototype, replacement, pattern, filenames )
-    local targets = {};
-    local settings = settings or self.settings;
-    for _, source_filename in ipairs(filenames) do 
-        local source = self:relative( source_filename );
-        local filename, substitutions = source:gsub( pattern, replacement );
-        if substitutions > 0 then 
-            local destination = self:interpolate( filename, settings );
-            local target = target_prototype (self, destination) {
-                source
-            };
-            table.insert( targets, target );
-        end
-    end
-    return table.unpack( targets );
-end
-
-function forge:map_ls( target_prototype, replacement, pattern, settings )
-    local targets = {};
-    local settings = settings or self.settings;
-    for source_filename in self:ls('') do
-        local source = self:relative( source_filename );
-        local filename, substitutions = source:gsub( pattern, replacement );
-        if substitutions > 0 then    
-            local destination = self:interpolate( filename, settings );
-            local target = target_prototype (self, destination) {
-                source
-            };
-            table.insert( targets, target );
-        end
-    end
-    return table.unpack( targets );
-end
-
-function forge:map_find( target_prototype, replacement, pattern, settings )
-    local targets = {};
-    local settings = settings or self.settings;
-    for source_filename in self:find("") do
-        if self:is_file(source_filename) then
-            local source = self:relative( source_filename );
-            local filename, substitutions = source:gsub( pattern, replacement );
-            if substitutions > 0 then
-                local destination = self:interpolate( filename, settings );
-                local target = target_prototype (self, destination) {
-                    source
-                };
-                table.insert( targets, target );
-            end
-        end
-    end
-    return table.unpack( targets );
-end
-
--- Perform per run initialization of the build system.
-function forge:initialize( project_settings )
-    -- Merge settings from /source_settings/ into /settings/.
-    local function merge_settings( settings, source_settings )
-        settings = settings or {};
-        if source_settings then 
-            for _, v in ipairs(source_settings) do
-                table.insert( settings, v );
-            end
-            for k, v in pairs(source_settings) do
-                if type(k) == "string" then
-                    if type(v) == "table" then
-                        settings[k] = merge_settings( settings[k], v );
-                    else
-                        settings[k] = v;
-                    end
-                end
-            end
-        end
-        return settings;
-    end
-
-    -- Set default values for variables that can be passed on the command line.
-    platform = platform or self:operating_system();
-    variant = variant or "debug";
-    version = version or ("%s %s %s"):format( os.date("%Y.%m.%d.%H%M"), platform, variant );
-    goal = goal or "";
-    jobs = jobs or 8;
-
-    self:set_maximum_parallel_jobs( jobs );
-    if self:operating_system() == "linux" then
-        self:set_forge_hooks_library( self:executable("libforge_hooks.so") );
-    elseif self:operating_system() == "macos" then
-        self:set_forge_hooks_library( self:executable("forge_hooks.dylib") );
-    elseif self:operating_system() == "windows" then 
-        self:set_forge_hooks_library( self:executable("forge_hooks.dll") );
-    end    
-
-    -- Set default settings (all other settings inherit from this table).
-    local default_settings = dofile( self:script('forge/default_settings') );
-
-    local local_settings = {};
-    setmetatable( local_settings, {__index = default_settings}  );
-
-    local user_settings_filename = default_settings.user_settings_filename;
-    if self:exists(user_settings_filename) then
-        merge_settings( local_settings, dofile(user_settings_filename) );
-    end
-
-    local local_settings_filename = default_settings.local_settings_filename;
-    if self:exists(local_settings_filename) then
-        merge_settings( local_settings, dofile(local_settings_filename) );
-    end
-
-    local variant_settings = default_settings.settings_by_variant[variant];
-    assertf( variant_settings, "The variant '%s' is not supported", variant );
-
-    local platform_settings = default_settings.settings_by_platform[platform];
-    assertf( platform_settings, "The platform '%s' is not supported", platform );
-
-    local settings = {};
-    setmetatable( settings, {__index = local_settings} );
-    merge_settings( settings, variant_settings );
-    merge_settings( settings, platform_settings );
-    merge_settings( settings, project_settings );
-
-    if settings.library_type == "static" then
-        self.Library = self.StaticLibrary;
-    elseif settings.library_type == "dynamic" then
-        self.Library = self.DynamicLibrary;
-    else
-        error( string.format("The library type '%s' is not 'static' or 'dynamic'", tostring(settings.library_type)) );
-    end
-
-    if settings.variants and #settings.variants > 0 then 
-        default_settings.cache = self:root( ('%s/.forge'):format(variant) );
-    end
-
-    _G.settings = settings;
-    self.default_settings = default_settings;
-    self.local_settings = local_settings;
-    self.settings = settings;
-    self:configure_modules( settings );
-    self:initialize_modules( settings );
-    self:load_binary( settings.cache );
-    self:clear();
-    return settings;
-end
-
--- Register *module* to be configured and initialized when the build sysetm 
--- is initialized.
-function forge:register_module( module )
-    table.insert( self.modules_, module ); 
-end
-
--- Call `configure` for each registered module that provides it.
-function forge:configure_modules( settings )
-    local modules = self.modules_;
-    for _, module in ipairs(modules) do 
-        local configure = module.configure;
-        if configure and type(configure) == "function" then 
-            configure( settings );
-        end
-    end
-end
-
--- Call `initialize` for each registered module that provides it.
-function forge:initialize_modules( settings )
-    local modules = self.modules_;
-    for _, module in ipairs(modules) do 
-        local initialize = module.initialize;
-        if initialize and type(initialize) == "function" then 
-            initialize( settings );
-        end
-    end
-end
-
 -- Convert a version string into a date table (assuming that the version 
 -- string is of the form '%Y.%m.%d.%H%M').
 function forge:version_date( version )
@@ -418,16 +257,6 @@ function forge:version_code( version, reference_time )
     return math.ceil( os.difftime(version_time, reference_time) / SECONDS_PER_HALF_DAY );
 end
 
--- Add targets to the current directory's target so that they will be built 
--- when a build is invoked from that directory.
-function forge:default_targets( targets )
-    local all = self:all();
-    for _, default_target in ipairs(targets) do
-        local target = self:add_target( ("%s/all"):format(default_target) );
-        all:add_dependency( target );
-    end
-end
-
 -- Execute command with arguments and optional filter and raise an error if 
 -- it doesn't return 0.
 function forge:system( command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... )
@@ -442,17 +271,17 @@ end
 -- Execute a command through the host system's native shell - either 
 -- "C:/windows/system32/cmd.exe" on Windows system or "/bin/sh" anywhere else.
 function forge:shell( arguments, dependencies_filter, stdout_filter, stderr_filter, ... )
-    if type(arguments) == "table" then 
-        arguments = table.concat( arguments, " " );
+    if type(arguments) == 'table' then 
+        arguments = table.concat( arguments, ' ' );
     end
-    if self:operating_system() == "windows" then
-        local cmd = "C:/windows/system32/cmd.exe";
+    if self:operating_system() == 'windows' then
+        local cmd = 'C:/windows/system32/cmd.exe';
         local result = self:execute( cmd, ('cmd /c "%s"'):format(arguments), dependencies_filter, stdout_filter, stderr_filter, ... );
-        assertf( result == 0, "[[%s]] failed (result=%d)", arguments, result );
+        assertf( result == 0, '[[%s]] failed (result=%d)', arguments, result );
     else
-        local sh = "/bin/sh";
+        local sh = '/bin/sh';
         local result = self:execute( sh, ('sh -c "%s"'):format(arguments), dependencies_filter, stdout_filter, stderr_filter, ... );
-        assertf( result == 0, "[[%s]] failed (result=%d)", arguments, tonumber(result) );
+        assertf( result == 0, '[[%s]] failed (result=%d)', arguments, tonumber(result) );
     end
 end
 
@@ -499,19 +328,6 @@ function forge:interpolate( template, variables )
         assertf( substitute, 'Missing substitute for "%s" in "%s"', identifier, template );
         return substitute or word;
     end));
-end
-
--- Dump the keys, values, and prototype of a table for debugging.
-function forge:dump( t )
-    print( tostring(t) );
-    if t ~= nil then
-        if getmetatable(t) ~= nil then
-            printf( "  prototype=%s", tostring(getmetatable(t).__index) );
-        end
-        for k, v in pairs(t) do
-            printf( "  %s -> %s", tostring(k), tostring(v) );
-        end
-    end
 end
 
 -- Save a settings table to a file.
@@ -586,14 +402,29 @@ function forge:merge( destination, source )
     return destination;
 end
 
--- Get the *all* target for the current working directory adding any 
--- targets that are passed in as dependencies.
-function forge:all( dependencies )
-    local all = self:target( "all" );
-    if dependencies then 
-        all.depend( self, all, dependencies );
+-- Set fields in that aren't set in *destination* to values in *source*.
+function forge:defaults( destination, source )
+    local destination = destination or {};
+    for key, value in pairs(source) do 
+        if type(key) == 'string' and destination[key] == nil then 
+            destination[key] = value;
+        end
     end
-    return all;
+    return destination;
+end
+
+function forge:copy_settings( destination, source )
+    if source then
+        local copy_settings = self.copy_settings;
+        for key, value in pairs(source) do 
+            if type(value) ~= 'table' then 
+                destination[key] = value;
+            else
+                destination[key] = copy_settings( self, destination[key] or {}, value );
+            end
+        end
+    end
+    return destination;
 end
 
 -- Find and return the initial target to forge.
@@ -607,12 +438,12 @@ end
 -- `${*goal*}/all` is returned.  If neither of those targets exists then nil 
 -- is returned.
 function forge:find_initial_target( goal )
-    if not goal or goal == "" then 
+    if not goal or goal == '' then 
         local goal = self:initial();
-        local all = self:find_target( ("%s/all"):format(goal) );
-        while not all and goal ~= "" do 
+        local all = self:find_target( ('%s/all'):format(goal) );
+        while not all and goal ~= '' do 
             goal = self:branch( goal );
-            all = self:find_target( ("%s/all"):format(goal) );
+            all = self:find_target( ('%s/all'):format(goal) );
         end
         return all;
     end
@@ -623,7 +454,7 @@ function forge:find_initial_target( goal )
         return all;
     end
 
-    local all = self:find_target( ("%s/all"):format(goal) );
+    local all = self:find_target( ('%s/all'):format(goal) );
     if all and all:dependency() then
         return all;
     end
@@ -632,70 +463,18 @@ end
 
 -- Save the dependency graph to the file specified by /settings.cache/.
 function forge:save()
-    local settings = self:current_settings();
+    local settings = self.settings;
     if self.local_settings and self.local_settings.updated then
         self.local_settings.updated = nil;
-        self:save_settings( self.local_settings, settings.local_settings_filename );
+        self:save_settings( self.local_settings, self:root('local_settings.lua') );
     end
-    self:mkdir( self:branch(settings.cache) );
-    self:save_binary( settings.cache );
+    self:mkdir( self:branch(forge.cache) );
+    self:save_binary();
 end
 
 -- Express *path* relative to the root directory.
 function forge:root_relative( path )
     return self:relative( self:absolute(path), self:root() );
-end
-
--- Convert /name/ into a path relative to the first pattern in package.paths
--- that expands to an existing file.
-function forge:script( name )
-    for path in string.gmatch(package.path, "([^;]*);?") do
-        local filename = string.gsub( path, "?", name );
-        if self:exists(filename) then
-            return filename;
-        end
-    end
-    errorf( "Script '%s' not found", filename );
-end
-
--- Convert /filename/ into an object directory path by prepending the object 
--- directory to the portion of /filename/ that is relative to the root 
--- directory.
-function forge:object( filename, extension, settings )
-    local settings = settings or self:current_settings();
-    local prefix = settings.obj or self:root();
-    local filename = self:relative( self:absolute(filename), self:root() );
-    return ('%s/%s'):format( prefix, filename );
-end
-
--- Convert /path/ into a generated files directory path by prepending the 
--- generated directory to the portion of /path/ that is relative to the root
--- directory.
-function forge:generated( filename, architecture, settings )
-    settings = settings or self:current_settings();
-    filename = self:relative( self:absolute(filename), self:root() );
-    if architecture then 
-        return ("%s/%s/%s"):format( settings.gen, architecture, filename );
-    end
-    return ("%s/%s"):format( settings.gen, filename );
-end
-
-function forge:configure( settings )
-    local forge = { 
-        __this = self.__this;
-        settings = settings;
-    };
-    setmetatable( settings, {
-        __index = self.settings;
-    } );
-    setmetatable( forge, {
-        __index = self;
-    } );
-    return forge, settings;
-end
-
-function forge:current_settings()
-    return self.settings;
 end
 
 -- Visit a target by calling a member function "clean" if it exists or if
@@ -783,9 +562,96 @@ function forge:walk_dependencies( target, start, finish, maximum_level )
     end );
 end
 
+function forge:platform_matches( ... )
+    local platform = self.settings.platform;
+    if platform == nil or platform == '' then 
+        return true;
+    end
+    for i = 1, select('#', ...) do
+        if platform:match(select(i, ...)) then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- Get the *all* target for the current working directory adding any 
+-- targets that are passed in as dependencies.
+function forge:all( dependencies )
+    local all = self:add_target( 'all' );
+    if dependencies then 
+        for _, dependency in ipairs(dependencies) do
+            if type(dependency) == 'string' then 
+                dependency = self:add_target( self:interpolate(dependency) );
+            end
+            all:add_dependency( dependency );
+        end
+    end
+    return all;
+end
+
+function forge:map( target_prototype, replacement, pattern, filenames )
+    local targets = {};
+    local settings = self.settings;
+    for _, source_filename in ipairs(filenames) do 
+        local source = forge:relative( source_filename );
+        local filename, substitutions = source:gsub( pattern, replacement );
+        if substitutions > 0 then 
+            local destination = self:interpolate( filename, settings );
+            local target = target_prototype (self, destination) {
+                source
+            };
+            table.insert( targets, target );
+        end
+    end
+    return table.unpack( targets );
+end
+
+function forge:map_ls( target_prototype, replacement, pattern, settings )
+    local targets = {};
+    local settings = settings or self.settings;
+    for source_filename in self:ls('') do
+        local source = forge:relative( source_filename );
+        local filename, substitutions = source:gsub( pattern, replacement );
+        if substitutions > 0 then    
+            local destination = self:interpolate( filename, settings );
+            local target = target_prototype (self, destination) {
+                source
+            };
+            table.insert( targets, target );
+        end
+    end
+    return table.unpack( targets );
+end
+
+function forge:map_find( target_prototype, replacement, pattern, settings )
+    local targets = {};
+    local settings = self.settings;
+    for source_filename in self:find("") do
+        if self:is_file(source_filename) then
+            local source = forge:relative( source_filename );
+            local filename, substitutions = source:gsub( pattern, replacement );
+            if substitutions > 0 then
+                local destination = self:interpolate( filename, settings );
+                local target = target_prototype (self, destination) {
+                    source
+                };
+                table.insert( targets, target );
+            end
+        end
+    end
+    return table.unpack( targets );
+end
+
+-- Convert a target into the object directory that it should build to.
+function forge:obj_directory( target )
+    local relative_path = forge:relative( target:working_directory():path(), forge:root() );
+    return forge:absolute( relative_path, self.settings.obj );
+end
+
 -- Recursively copy files from *source* to *destination*.
 function forge:cpdir( destination, source, settings )
-    local settings = settings or self:current_settings();
+    local settings = settings or self.settings;
     local destination = self:interpolate( destination, settings );
     local source = self:interpolate( source, settings );
     self:pushd( source );
@@ -800,5 +666,30 @@ function forge:cpdir( destination, source, settings )
     self:popd();
 end
 
-require "forge.Target";
-require "forge.Directory";
+require 'forge.Target';
+require 'forge.Directory';
+
+forge.settings = {};
+forge.builds_ = {};
+forge.local_settings = forge:exists( forge:root('local_settings.lua') ) and dofile( forge:root('local_settings.lua') ) or {};
+forge.cache = forge:root( '.forge' );
+
+if variant or forge.variant then 
+    forge.cache = forge:root( ('%s/.forge'):format(variant or forge.variant) );
+end
+
+-- Load dependency graph from the cache file, if it exists, and set the name
+-- of the cache file either way.
+forge:load_binary( forge.cache );
+
+-- Copy local settings values through to settings
+forge:copy_settings( forge.settings, forge.local_settings );
+
+setmetatable( forge, {
+    __call = function( forge, settings_to_apply )
+        forge:copy_settings( forge.settings, settings_to_apply );
+        return forge;
+    end;
+} );
+
+return forge;

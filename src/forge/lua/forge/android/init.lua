@@ -162,7 +162,6 @@ function android.initialize( settings )
             architecture = architecture;
             arch_directory = directory_by_architecture[architecture];
             runtime_library = 'gnustl_shared';
-            obj_directory = android.obj_directory;
         };
         local android_ndk_gcc = require 'forge.cc.android_ndk_gcc';
         android_ndk_gcc.register( android_ndk_forge );

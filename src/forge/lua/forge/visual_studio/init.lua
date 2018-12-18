@@ -7,7 +7,7 @@ local sln = require "forge.visual_studio.sln";
 -- Generate a UUID by calling the uuidgen tool.
 local function uuid()    
     local uuids = {};
-    local target_to_provide_settings_hack = {settings = forge:current_settings()};
+    local target_to_provide_settings_hack = {settings = forge.settings};
     local uuidgen = msvc.windows_sdk_tool( target_to_provide_settings_hack, 'uuidgen.exe' );
     local arguments = "uuidgen";
     forge:system( uuidgen, arguments, nil, nil, function(line)

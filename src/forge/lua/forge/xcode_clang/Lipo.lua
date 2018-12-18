@@ -6,4 +6,4 @@ function Lipo.build( forge, lipo )
     settings.lipo_executable( forge, lipo );
 end
 
-xcode.Lipo = Lipo;
+return Lipo;

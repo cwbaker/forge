@@ -1,5 +1,6 @@
 
 local sln = {};
+local VARIANTS = { 'debug', 'release', 'shipping' };
 
 local function generate_header( write )
     local HEADER = [[
@@ -79,7 +80,7 @@ local function generate_solution_configuration_platforms( write )
 
     write( START_SOLUTION_CONFIGURATION_PLATFORMS );
     for _, platform in ipairs(forge.settings.platforms) do
-        for _, variant in ipairs(forge.settings.variants) do
+        for _, variant in ipairs(VARIANTS) do
             write( SOLUTION_CONFIGURATION_PLATFORM, platform, variant, platform, variant );
         end
     end
@@ -99,11 +100,10 @@ local function generate_project_configuration_platforms( write, targets )
 ]];
 
     local platforms = { "windows" };
-    local variants = { "debug", "release", "shipping" };
     write( START_PROJECT_CONFIGURATION_PLATFORMS );
     for _, target in pairs(targets) do
         for _, platform in ipairs(platforms) do
-            for _, variant in ipairs(variants) do
+            for _, variant in ipairs(VARIANTS) do
             	write( PROJECT_CONFIGURATION_PLATFORM, 
             		target.uuid, 
             		platform, variant, 

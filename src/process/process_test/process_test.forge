@@ -1,4 +1,6 @@
 
+local forge = forge:build( 'cc.*' );
+
 forge:all {
     forge:Executable '${bin}/process_test' {
         '${lib}/process_${architecture}';
@@ -7,9 +9,8 @@ forge:all {
         '${lib}/assert_${architecture}';
 
         forge:Cxx '${obj}/%1' {
-            precompiled_header = "stdafx.hpp";
-            "Application.cpp",
-            "main.cpp"
+            'Application.cpp',
+            'main.cpp'
         };
     };
 };

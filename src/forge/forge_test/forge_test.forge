@@ -1,41 +1,47 @@
 
-local forge = forge:configure {
-    -- Disable automatic linking to Boost libraries.
-    defines = { "BOOST_ALL_NO_LIB" };
-};
-
 -- Disable warnings on Linux to avoid unused variable warnings in Boost
 -- System library headers.
-if forge:operating_system() == "linux" then
-    settings.warning_level = 0;
+local warning_level = 3;
+local libraries = nil;
+if forge:operating_system() == 'linux' then
+    warning_level = 0;
+    libraries = {
+        'pthread';
+        'dl';
+    };
 end
 
-forge:all {
-    forge:Executable '${bin}/forge_test' {
-        '${lib}/forge_${architecture}';
-        '${lib}/forge_lua_${architecture}';
-        '${lib}/process_${architecture}';
-        '${lib}/luaxx_${architecture}';
-        '${lib}/cmdline_${architecture}';
-        '${lib}/error_${architecture}';
-        '${lib}/assert_${architecture}';
-        '${lib}/liblua_${architecture}';
-        '${lib}/boost_filesystem_${architecture}';
-        '${lib}/boost_system_${architecture}';
-        '${lib}/UnitTest++_${architecture}';
+for _, forge in forge:builds('cc.*') do
+    local forge = forge:inherit {
+        warning_level = warning_level;
+    };
+    forge:all {
+        forge:Executable '${bin}/forge_test' {
+            '${lib}/forge_${architecture}';
+            '${lib}/forge_lua_${architecture}';
+            '${lib}/process_${architecture}';
+            '${lib}/luaxx_${architecture}';
+            '${lib}/cmdline_${architecture}';
+            '${lib}/error_${architecture}';
+            '${lib}/assert_${architecture}';
+            '${lib}/liblua_${architecture}';
+            '${lib}/boost_filesystem_${architecture}';
+            '${lib}/boost_system_${architecture}';
+            '${lib}/UnitTest++_${architecture}';
 
-        system_libraries = forge:switch {
-            platform;
-            linux = { 'pthread', 'dl' };
-        };
-        
-        forge:Cxx '${obj}/%1' {
-            "main.cpp",
-            "ErrorChecker.cpp",
-            "FileChecker.cpp",
-            "TestDirectoryApi.cpp",
-            "TestGraph.cpp",
-            "TestPostorder.cpp"
+            libraries = libraries;
+            
+            forge:Cxx '${obj}/%1' {
+                defines = { 
+                    'BOOST_ALL_NO_LIB' -- Disable automatic linking to Boost libraries.
+                };
+                'main.cpp',
+                'ErrorChecker.cpp',
+                'FileChecker.cpp',
+                'TestDirectoryApi.cpp',
+                'TestGraph.cpp',
+                'TestPostorder.cpp'
+            };
         };
     };
-};
+end

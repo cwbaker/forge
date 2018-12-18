@@ -8,7 +8,6 @@ require 'forge.windows';
 variant = forge:lower( variant or 'debug' );
 
 forge:initialize {
-    variants = { "debug", "release", "shipping" };
     bin = forge:root( ('%s/bin'):format(variant) );
     lib = forge:root( ('%s/lib'):format(variant) );
     obj = forge:root( ('%s/obj'):format(variant) );

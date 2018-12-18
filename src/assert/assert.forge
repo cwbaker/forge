@@ -1,5 +1,5 @@
 
-for _, forge in forge:default_builds('cc_.*') do
+for _, forge in forge:builds('cc.*') do
     forge:StaticLibrary '${lib}/assert_${architecture}' {
         forge:Cc '${obj}/%1' {
             'assert.cpp'

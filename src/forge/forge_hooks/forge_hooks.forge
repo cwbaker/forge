@@ -1,32 +1,38 @@
 
-if forge:operating_system() == "linux" then
-    forge:all {
-        forge:DynamicLibrary '${bin}/forge_hooks' {
-            forge:Cxx '${obj}/%1' {
-                "forge_hooks_linux.cpp"
+if forge:operating_system() == 'linux' then
+    for _, forge in forge:builds('cc.*') do
+        forge:all {
+            forge:DynamicLibrary '${bin}/forge_hooks' {
+                forge:Cxx '${obj}/%1' {
+                    'forge_hooks_linux.cpp'
+                };
             };
         };
-    };
+    end
 end
 
-if forge:operating_system() == "macos" then
-    forge:all {
-        forge:DynamicLibrary '${bin}/forge_hooks' { 
-            forge:Cxx '${obj}/%1' {
-                "forge_hooks_macos.cpp"
+if forge:operating_system() == 'macos' then
+    for _, forge in forge:builds('cc.*') do
+        forge:all {
+            forge:DynamicLibrary '${bin}/forge_hooks' { 
+                forge:Cxx '${obj}/%1' {
+                    "forge_hooks_macos.cpp"
+                };
             };
         };
-    };
+    end
 end
 
-if forge:operating_system() == "windows" then
-    forge:all {
-        forge:DynamicLibrary '${bin}/forge_hooks' {
-            '${lib}/assert_${architecture}';
-            forge:Cxx '${obj}/%1' {
-                "forge_hooks_windows.cpp",
-                "ImportDescriptor.cpp"
+if forge:operating_system() == 'windows' then
+    for _, forge in forge:builds('cc.*') do
+        forge:all {
+            forge:DynamicLibrary '${bin}/forge_hooks' {
+                '${lib}/assert_${architecture}';
+                forge:Cxx '${obj}/%1' {
+                    'forge_hooks_windows.cpp',
+                    'ImportDescriptor.cpp'
+                };
             };
         };
-    };
+    end
 end

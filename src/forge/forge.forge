@@ -4,15 +4,17 @@ buildfile 'forge_hooks/forge_hooks.forge';
 buildfile 'forge_lua/forge_lua.forge';
 buildfile 'forge_test/forge_test.forge';
 
-for _, forge in forge:default_builds("cc_.*") do
-    -- Disable warnings on Linux to avoid unused variable warnings in Boost
-    -- System library headers.
-    local settings = {};
-    if forge:operating_system() == 'linux' then
-        settings.warning_level = 0;
-    end
+-- Disable warnings on Linux to avoid unused variable warnings in Boost
+-- System library headers.
+local warning_level = 3;
+if forge:operating_system() == 'linux' then
+    warning_level = 0;
+end
 
-    local forge = forge:configure( settings );
+for _, forge in forge:builds('cc.*') do
+    local forge = forge:inherit {
+        warning_level = warning_level;
+    };
     forge:StaticLibrary '${lib}/forge_${architecture}' {
         forge:Cxx '${obj}/%1' {
             defines = {
@@ -23,22 +25,22 @@ for _, forge in forge:default_builds("cc_.*") do
                 'WIN32_LEAN_AND_MEAN'; -- Include minimumal declarations from Windows headers
             };
 
-            "Arguments.cpp",
-            "Context.cpp",
-            "Executor.cpp",
-            "Filter.cpp",
-            "Forge.cpp",
-            "ForgeEventSink.cpp",
-            "Graph.cpp",
-            "GraphReader.cpp",
-            "GraphWriter.cpp",
-            "Job.cpp",
-            "Reader.cpp", 
-            "Scheduler.cpp", 
-            "System.cpp",
-            "Target.cpp",
-            "TargetPrototype.cpp",
-            "path_functions.cpp"
+            'Arguments.cpp',
+            'Context.cpp',
+            'Executor.cpp',
+            'Filter.cpp',
+            'Forge.cpp',
+            'ForgeEventSink.cpp',
+            'Graph.cpp',
+            'GraphReader.cpp',
+            'GraphWriter.cpp',
+            'Job.cpp',
+            'Reader.cpp', 
+            'Scheduler.cpp', 
+            'System.cpp',
+            'Target.cpp',
+            'TargetPrototype.cpp',
+            'path_functions.cpp'
         };
     };
 end

@@ -53,7 +53,7 @@ function clang.archive( forge, target )
     };
 
     local settings = forge.settings;
-    forge:pushd( settings.obj_directory(forge, target) );
+    forge:pushd( forge:obj_directory(target) );
     local objects =  {};
     for _, object in forge:walk_dependencies( target ) do
         local prototype = object:prototype();
@@ -77,7 +77,7 @@ function clang.link( forge, target )
 
     local objects = {};
     local libraries = {};
-    forge:pushd( settings.obj_directory(forge, target) );
+    forge:pushd( forge:obj_directory(target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
         if prototype == forge.Cc or prototype == forge.Cxx or prototype == forge.ObjC or prototype == forge.ObjCxx then
@@ -103,47 +103,39 @@ function clang.link( forge, target )
     forge:popd();
 end
 
-local Cc = forge:PatternPrototype( 'Cc', clang.object_filename );
-Cc.language = 'c';
-Cc.build = clang.compile;
-clang.Cc = Cc;
-
-local Cxx = forge:PatternPrototype( 'Cxx', clang.object_filename );
-Cxx.language = 'c++';
-Cxx.build = clang.compile;
-clang.Cxx = Cxx;
-
-local ObjC = forge:PatternPrototype( 'ObjC', clang.object_filename );
-ObjC.language = 'objective-c';
-ObjC.build = clang.compile;
-clang.ObjC = ObjC;
-
-local ObjCxx = forge:PatternPrototype( 'ObjCxx', clang.object_filename );
-ObjCxx.language = 'objective-c++';
-ObjCxx.build = clang.compile;
-clang.ObjCxx = ObjCxx;
-
-local StaticLibrary = forge:FilePrototype( 'StaticLibrary', clang.static_library_filename );
-StaticLibrary.build = clang.archive;
-clang.StaticLibrary = StaticLibrary;
-
-local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', clang.dynamic_library_filename );
-DynamicLibrary.build = clang.link;
-clang.DynamicLibrary = DynamicLibrary;
-
-local Executable = forge:FilePrototype( 'Executable', clang.executable_filename );
-Executable.build = clang.link;
-clang.Executable = Executable;
-
 -- Register the clang C/C++ toolset in *forge*.
 function clang.register( forge )
-    forge.Cc = clang.Cc;
-    forge.Cxx = clang.Cxx;
-    forge.ObjC = clang.ObjC;
-    forge.ObjCxx = clang.ObjCxx;
-    forge.StaticLibrary = clang.StaticLibrary;
-    forge.DynamicLibrary = clang.DynamicLibrary;
-    forge.Executable = clang.Executable;
+    local Cc = forge:PatternPrototype( 'Cc', clang.object_filename );
+    Cc.language = 'c';
+    Cc.build = clang.compile;
+    forge.Cc = Cc;
+
+    local Cxx = forge:PatternPrototype( 'Cxx', clang.object_filename );
+    Cxx.language = 'c++';
+    Cxx.build = clang.compile;
+    forge.Cxx = Cxx;
+
+    local ObjC = forge:PatternPrototype( 'ObjC', clang.object_filename );
+    ObjC.language = 'objective-c';
+    ObjC.build = clang.compile;
+    forge.ObjC = ObjC;
+
+    local ObjCxx = forge:PatternPrototype( 'ObjCxx', clang.object_filename );
+    ObjCxx.language = 'objective-c++';
+    ObjCxx.build = clang.compile;
+    forge.ObjCxx = ObjCxx;
+
+    local StaticLibrary = forge:FilePrototype( 'StaticLibrary', clang.static_library_filename );
+    StaticLibrary.build = clang.archive;
+    forge.StaticLibrary = StaticLibrary;
+
+    local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', clang.dynamic_library_filename );
+    DynamicLibrary.build = clang.link;
+    forge.DynamicLibrary = DynamicLibrary;
+
+    local Executable = forge:FilePrototype( 'Executable', clang.executable_filename );
+    Executable.build = clang.link;
+    forge.Executable = Executable;
 end
 
 function clang.append_defines( forge, target, flags )
@@ -195,15 +187,21 @@ function clang.append_compile_flags( forge, target, flags )
     if language then
         table.insert( flags, ('-x %s'):format(language) );
         if string.find(language, 'c++', 1, true) then
-            table.insert( flags, '-std=c++11' );
             table.insert( flags, '-stdlib=libc++' );
             table.insert( flags, '-Wno-deprecated' );
-            if target.settings.exceptions then
+
+            if settings.exceptions then
                 table.insert( flags, '-fexceptions' );
             end
-            if target.settings.run_time_type_info then
+
+            if settings.run_time_type_info then
                 table.insert( flags, '-frtti' );
             end
+
+            local standard = settings.standard;
+            if standard then 
+                table.insert( flags, ('-std=%s'):format(standard) );
+            end                
         end
 
         if string.find(language, 'objective', 1, true) then
@@ -212,41 +210,41 @@ function clang.append_compile_flags( forge, target, flags )
             table.insert( flags, '"-DIBOutlet=__attribute__((iboutlet))"' );
             table.insert( flags, '"-DIBOutletCollection(ClassName)=__attribute__((iboutletcollection(ClassName)))"' );
             table.insert( flags, '"-DIBAction=void)__attribute__((ibaction)"' );
-            if target.settings.objc_arc then
+            if settings.objc_arc then
                 table.insert( flags, '-fobjc-arc' );
             end
-            if target.settings.objc_modules then
+            if settings.objc_modules then
                 if language == 'objective-c' then
                     table.insert( flags, '-fmodules' );
                 end
             end
         end
     end
-        
-    if target.settings.debug then
+
+    if settings.debug then
         table.insert( flags, '-g3' );
     end
 
-    if target.settings.optimization then
+    if settings.optimization then
         table.insert( flags, '-O3' );
         table.insert( flags, '-Ofast' );
     end
     
-    if target.settings.preprocess then
+    if settings.preprocess then
         table.insert( flags, '-E' );
     end
 
-    if target.settings.runtime_checks then
+    if settings.runtime_checks then
         table.insert( flags, '-fstack-protector' );
     else
         table.insert( flags, '-fno-stack-protector' );
     end
 
-    if target.settings.warnings_as_errors then 
+    if settings.warnings_as_errors then 
         table.insert( flags, '-Werror' );
     end
 
-    local warning_level = target.settings.warning_level
+    local warning_level = settings.warning_level
     if warning_level == 0 then 
         table.insert( flags, '-w' );
     elseif warning_level == 1 then
@@ -292,7 +290,7 @@ function clang.append_link_flags( forge, target, flags )
     end
     
     if settings.generate_map_file then
-        table.insert( flags, ('-Wl,-map,"%s"'):format(forge:native(('%s/%s.map'):format(settings.obj_directory(forge, target), target:id()))) );
+        table.insert( flags, ('-Wl,-map,"%s"'):format(forge:native(('%s/%s.map'):format(forge:obj_directory(target), target:id()))) );
     end
 
     if settings.strip and not settings.generate_dsym_bundle then
@@ -348,5 +346,4 @@ function clang.parse_dependencies_file( forge, filename, object )
     end
 end
 
-forge:register_module( clang );
 return clang;
