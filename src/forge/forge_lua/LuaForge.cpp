@@ -316,6 +316,7 @@ int LuaForge::execute( lua_State* lua_state )
         // variable length arguments gathered into the `Arguments` object.
         size_t command_length = 0;
         const char* command = luaL_tolstring( lua_state, COMMAND, &command_length );
+        luaL_argcheck( lua_state, command_length > 0, COMMAND, "command must not be empty" );
 
         forge->scheduler()->execute( 
             string(command, command_length), 
