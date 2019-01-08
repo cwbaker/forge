@@ -56,7 +56,7 @@ Graph::Graph( Forge* forge )
   successful_revision_( 0 )
 {
     SWEET_ASSERT( forge_ );
-    root_target_.reset( new Target("", this) );
+    root_target_.reset( new Target("$$root", this) );
 }
 
 Graph::~Graph()
@@ -249,12 +249,15 @@ Target* Graph::target( const std::string& id )
 */
 Target* Graph::add_or_find_target( const std::string& id, Target* working_directory )
 {
-    boost::filesystem::path path( id );
-    Target* target = working_directory && path.is_relative() ? working_directory : root_target_.get();
-    SWEET_ASSERT( target );
-
+    SWEET_ASSERT( !id.empty() );
+    
+    Target* target = nullptr;
     if ( !id.empty() )
     {
+        boost::filesystem::path path( id );
+        target = working_directory && path.is_relative() ? working_directory : root_target_.get();
+        SWEET_ASSERT( target );
+
         boost::filesystem::path::const_iterator i = path.begin();
 
         if ( path.has_root_name() )
@@ -277,14 +280,6 @@ Target* Graph::add_or_find_target( const std::string& id, Target* working_direct
             ++i;
         }
     }
-    else
-    {
-        unique_ptr<Target> new_target( new Target("", this) );
-        Target* next_target = new_target.get();
-        target->add_target( new_target.release(), target );
-        target = next_target;
-    }
-
     return target;
 }
 
@@ -863,20 +858,33 @@ void Graph::print_namespace( Target* target )
             SWEET_ASSERT( target != 0 );
             SWEET_ASSERT( level >= 0 );
 
-            if ( !target->id().empty() )
+            // if ( !target->id().empty() )
             {
                 printf( "\n" );
                 for ( int i = 0; i < level; ++i )
                 {
-                    printf( "    " );
+                    printf( "  " );
                 }
 
-                if ( target->prototype() != NULL )
+                printf( "%p ", target );
+
+                if ( target->prototype() )
                 {
                     printf( "%s ", target->prototype()->id().c_str() );
-                }
+                }                
 
                 printf( "'%s'", target->id().c_str() );
+
+                const vector<string>& filenames = target->filenames();
+                for ( vector<string>::const_iterator filename = filenames.begin(); filename != filenames.end(); ++filename )
+                {
+                    printf( "\n" );
+                    for ( int i = 0; i < level + 1; ++i )
+                    {
+                        printf( "  " );
+                    }
+                    printf( "'%s'", filename->c_str() );
+                }
             }
 
             if ( !target->visited() )

@@ -98,9 +98,11 @@ int LuaGraph::add_target( lua_State* lua_state )
     Context* context = forge->context();
     Graph* graph = forge->graph();
     Target* working_directory = context->working_directory();
-    string identifier = luaL_checkstring( lua_state, IDENTIFIER );
+    size_t identifier_length = 0;
+    const char* identifier = luaL_checklstring( lua_state, IDENTIFIER, &identifier_length );
+    luaL_argcheck( lua_state, identifier && identifier_length > 0, IDENTIFIER, "missing or empty identifier" );
     TargetPrototype* target_prototype = (TargetPrototype*) luaxx_to( lua_state, TARGET_PROTOTYPE, TARGET_PROTOTYPE_TYPE );
-    Target* target = graph->add_or_find_target( identifier, working_directory );
+    Target* target = graph->add_or_find_target( string(identifier, identifier_length), working_directory );
 
     bool update_target_prototype = target_prototype && !target->prototype();
     if ( update_target_prototype )
@@ -117,7 +119,7 @@ int LuaGraph::add_target( lua_State* lua_state )
 
     if ( target_prototype && target->prototype() != target_prototype )
     {
-        forge->errorf( "The target '%s' has been created with prototypes '%s' and '%s'", identifier.c_str(), target->prototype()->id().c_str(), target_prototype ? target_prototype->id().c_str() : "none" );
+        forge->errorf( "The target '%s' has been created with prototypes '%s' and '%s'", identifier, target->prototype()->id().c_str(), target_prototype ? target_prototype->id().c_str() : "none" );
     }
 
     bool create_lua_binding = !target->referenced_by_script();

@@ -93,6 +93,7 @@ Target::Target( const std::string& id, Graph* graph )
   postorder_height_( -1 ),
   anonymous_( 0 )
 {
+    SWEET_ASSERT( !id_.empty() );
     SWEET_ASSERT( graph_ );
 }
 
@@ -1419,7 +1420,7 @@ void Target::read( GraphReader& reader )
     reader.value( &built_ );
     reader.value( &filenames_ );
     reader.value( &targets_ );
-    reader.refer( &implicit_dependencies_ );
+    reader.refer( &implicit_dependencies_ );    
 }
 
 /**
