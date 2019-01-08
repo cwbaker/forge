@@ -18,14 +18,10 @@ using namespace sweet::forge;
 /**
 // Constructor.
 //
-// @param directory
-//  The inital working directory to set for this Context (assumed to be
-//  an absolute path).
-//
 // @param forge
 //  The Forge that this Context is part of.
 */
-Context::Context( const boost::filesystem::path& directory, Forge* forge )
+Context::Context( Forge* forge )
 : forge_( forge ),
   lua_state_( nullptr ),
   lua_state_reference_( LUA_NOREF ),
@@ -36,7 +32,6 @@ Context::Context( const boost::filesystem::path& directory, Forge* forge )
   exit_code_( 0 ),
   buildfile_calling_context_( nullptr )
 {
-    reset_directory( directory );
     lua_State* lua_state = forge->lua_state();
     lua_state_ = lua_newthread( lua_state );
     lua_state_reference_ = luaL_ref( lua_state, LUA_REGISTRYINDEX );

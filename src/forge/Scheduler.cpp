@@ -431,7 +431,7 @@ Context* Scheduler::allocate_context( Target* working_directory, Job* job )
 {
     SWEET_ASSERT( working_directory );
     SWEET_ASSERT( !job || job->working_directory() == working_directory );    
-    Context* context = new Context( boost::filesystem::path(""), forge_ );
+    Context* context = new Context( forge_ );
     context->reset_directory_to_target( working_directory );
     context->set_job( job );
     return context;

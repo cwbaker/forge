@@ -32,7 +32,7 @@ class Context
     Context* buildfile_calling_context_; ///< The Context that made a `buildfile()` call and yielded
 
     public:
-        Context( const boost::filesystem::path& directory, Forge* forge );
+        Context( Forge* forge );
         ~Context();
 
         lua_State* lua_state() const;
