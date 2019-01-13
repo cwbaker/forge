@@ -318,16 +318,23 @@ int LuaForge::execute( lua_State* lua_state )
         const char* command = luaL_tolstring( lua_state, COMMAND, &command_length );
         luaL_argcheck( lua_state, command_length > 0, COMMAND, "command must not be empty" );
 
-        forge->scheduler()->execute( 
-            string(command, command_length), 
-            string(command_line, command_line_length), 
-            environment.release(), 
-            dependencies_filter.release(), 
-            stdout_filter.release(), 
-            stderr_filter.release(), 
-            arguments.release(), 
-            forge->context() 
-        );
+        // Lift the command and command line strings out into explicit local
+        // variables to workaround what seems to be a bug in Visual C++ 2017
+        // that seems to both elide copying those strings as well as 
+        // destroying them when `lua_yield()` below throws as part of its 
+        // yielding implementation.
+        string command_string( command, command_length );
+        string command_line_string( command_line, command_line_length );
+
+        forge->scheduler()->execute(
+            command_string,
+            command_line_string,
+            environment.release(),
+            dependencies_filter.release(),
+            stdout_filter.release(),
+            stderr_filter.release(),
+            arguments.release(),
+            forge->context());
 
         return lua_yield( lua_state, 0 );
     }
