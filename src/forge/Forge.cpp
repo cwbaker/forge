@@ -63,6 +63,14 @@ Forge::Forge( const std::string& initial_directory, error::ErrorPolicy& error_po
     graph_ = new Graph( this );
     scheduler_ = new Scheduler( this );
     executor_ = new Executor( this );
+
+#if defined BUILD_OS_WINDOWS
+    set_forge_hooks_library( executable("forge_hooks.dll").generic_string() );
+#elif defined BUILD_OS_MACOS
+    set_forge_hooks_library( executable("forge_hooks.dylib").generic_string() );
+#else
+    set_forge_hooks_library( executable("libforge_hooks.so").generic_string() );
+#endif    
 }
 
 /**
