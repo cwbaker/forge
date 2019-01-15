@@ -70,7 +70,9 @@ Forge::Forge( const std::string& initial_directory, error::ErrorPolicy& error_po
     set_forge_hooks_library( executable("forge_hooks.dylib").generic_string() );
 #else
     set_forge_hooks_library( executable("libforge_hooks.so").generic_string() );
-#endif    
+#endif
+
+    set_maximum_parallel_jobs( 2 * system_->number_of_logical_processors() );
 }
 
 /**
