@@ -22,23 +22,23 @@ class System
     public:
         System();
         
-        bool exists( const std::string& path );
-        bool is_file( const std::string& path );
-        bool is_directory( const std::string& path );
-        bool is_regular( const std::string& path );
-        std::time_t last_write_time( const std::string& path );
-        boost::filesystem::directory_iterator ls( const std::string& path );
-        boost::filesystem::recursive_directory_iterator find( const std::string& path );
-        std::string executable();
-        std::string home();
-        void mkdir( const std::string& path );
-        void rmdir( const std::string& path );
-        void cp( const std::string& from, const std::string& to );
-        void rm( const std::string& path );
-        const char* operating_system();
-        const char* getenv( const char* name );
-        void sleep( float milliseconds );
-        float ticks();
+        bool exists( const std::string& path ) const;
+        bool is_file( const std::string& path ) const;
+        bool is_directory( const std::string& path ) const;
+        bool is_regular( const std::string& path ) const;
+        std::time_t last_write_time( const std::string& path ) const;
+        boost::filesystem::directory_iterator ls( const std::string& path ) const;
+        boost::filesystem::recursive_directory_iterator find( const std::string& path ) const;
+        std::string executable() const;
+        std::string home() const;
+        void mkdir( const std::string& path ) const;
+        void rmdir( const std::string& path ) const;
+        void cp( const std::string& from, const std::string& to ) const;
+        void rm( const std::string& path ) const;
+        const char* operating_system() const;
+        const char* getenv( const char* name ) const;
+        void sleep( float milliseconds ) const;
+        float ticks() const;
 };
 
 }

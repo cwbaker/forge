@@ -39,7 +39,7 @@ System::System()
 // @return
 //  True if \e path exists otherwise false.
 */
-bool System::exists( const std::string& path ) 
+bool System::exists( const std::string& path ) const
 {
     return boost::filesystem::exists( path );
 }
@@ -53,7 +53,7 @@ bool System::exists( const std::string& path )
 // @return
 //  True if \e path is a directory otherwise false.
 */
-bool System::is_file( const std::string& path )
+bool System::is_file( const std::string& path ) const
 {
     return boost::filesystem::is_regular( path );
 }
@@ -67,7 +67,7 @@ bool System::is_file( const std::string& path )
 // @return
 //  True if \e path is a directory otherwise false.
 */
-bool System::is_directory( const std::string& path )
+bool System::is_directory( const std::string& path ) const
 {
     return boost::filesystem::is_directory( path );
 }
@@ -81,7 +81,7 @@ bool System::is_directory( const std::string& path )
 // @return
 //  True if \e path is a regular file otherwise false.
 */
-bool System::is_regular( const std::string& path )
+bool System::is_regular( const std::string& path ) const
 {
     return boost::filesystem::is_regular( path );
 }
@@ -95,7 +95,7 @@ bool System::is_regular( const std::string& path )
 // @return
 //  The last write time of the file system entry \e path.
 */
-std::time_t System::last_write_time( const std::string& path )
+std::time_t System::last_write_time( const std::string& path ) const
 {
     return boost::filesystem::last_write_time( path );
 }
@@ -110,7 +110,7 @@ std::time_t System::last_write_time( const std::string& path )
 //  A boost::filesystem::directory_iterator that iterates over the files
 //  in the directory.
 */
-boost::filesystem::directory_iterator System::ls( const std::string& path )
+boost::filesystem::directory_iterator System::ls( const std::string& path ) const
 {
     return boost::filesystem::exists( path ) ? 
         boost::filesystem::directory_iterator( path ) : 
@@ -128,7 +128,7 @@ boost::filesystem::directory_iterator System::ls( const std::string& path )
 //  A boost::filesystem::recursive_directory_iterator that recursively 
 //  iterates over the files in the directory and its children.
 */
-boost::filesystem::recursive_directory_iterator System::find( const std::string& path )
+boost::filesystem::recursive_directory_iterator System::find( const std::string& path ) const
 {
     return boost::filesystem::exists( path ) ? 
         boost::filesystem::recursive_directory_iterator( path ) : 
@@ -142,7 +142,7 @@ boost::filesystem::recursive_directory_iterator System::find( const std::string&
 // @return
 //  Returns the full path to the build executable.
 */
-std::string System::executable()
+std::string System::executable() const
 {
 #if defined(BUILD_OS_WINDOWS)
     char executable_path [MAX_PATH + 1];
@@ -200,7 +200,7 @@ std::string System::executable()
 /**
 // Get the full path to the user's home directory.
 */
-std::string System::home()
+std::string System::home() const
 {
 #if defined (BUILD_OS_WINDOWS)
     const char* HOME = "USERPROFILE";
@@ -222,7 +222,7 @@ std::string System::home()
 // @param path
 //  The path to the directory to create.
 */
-void System::mkdir( const std::string& path )
+void System::mkdir( const std::string& path ) const
 {
     boost::filesystem::create_directories( path );
 }
@@ -233,7 +233,7 @@ void System::mkdir( const std::string& path )
 // @param path
 //  The directory to remove.
 */
-void System::rmdir( const std::string& path )
+void System::rmdir( const std::string& path ) const
 {
     boost::filesystem::remove_all( path );
 }
@@ -247,7 +247,7 @@ void System::rmdir( const std::string& path )
 // @param to
 //  The destination to copy the file to.
 */
-void System::cp( const std::string& from, const std::string& to )
+void System::cp( const std::string& from, const std::string& to ) const
 {
     boost::filesystem::copy_file( from, to );
 }
@@ -258,7 +258,7 @@ void System::cp( const std::string& from, const std::string& to )
 // @param path
 //  The path to the file or directory to remove.
 */
-void System::rm( const std::string& path )
+void System::rm( const std::string& path ) const
 {
     boost::filesystem::remove( path );
 }
@@ -269,7 +269,7 @@ void System::rm( const std::string& path )
 // @return
 //  The string "windows" on Windows or the string "macosx" on MacOSX.
 */
-const char* System::operating_system()
+const char* System::operating_system() const
 {
 #if defined(BUILD_OS_WINDOWS)
     return "windows";
@@ -293,7 +293,7 @@ const char* System::operating_system()
 //  The value of the environment attribute or null if the environment attribute 
 //  isn't set.
 */
-const char* System::getenv( const char* name )
+const char* System::getenv( const char* name ) const
 {
     SWEET_ASSERT( name );
     return ::getenv( name );
@@ -305,7 +305,7 @@ const char* System::getenv( const char* name )
 // @param milliseconds
 //  The number of milliseconds to pause execution for.
 */
-void System::sleep( float milliseconds )
+void System::sleep( float milliseconds ) const
 {
 #if defined(BUILD_OS_WINDOWS)
     SWEET_ASSERT( milliseconds >= 0.0f );
@@ -327,7 +327,7 @@ void System::sleep( float milliseconds )
 // @return
 //  The number of milliseconds elapsed since the system was started.
 */
-float System::ticks()
+float System::ticks() const
 {    
 #if defined(BUILD_OS_WINDOWS)
     return static_cast<float>( ::GetTickCount() ) - initial_tick_count_;
