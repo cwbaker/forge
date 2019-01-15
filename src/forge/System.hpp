@@ -37,6 +37,7 @@ class System
         void rm( const std::string& path ) const;
         const char* operating_system() const;
         const char* getenv( const char* name ) const;
+        int number_of_logical_processors() const;
         void sleep( float milliseconds ) const;
         float ticks() const;
 };

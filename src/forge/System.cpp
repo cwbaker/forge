@@ -12,9 +12,12 @@
 #include <unistd.h>
 #include <time.h>
 #include <mach-o/dyld.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
 #elif defined(BUILD_OS_LINUX)
 #include <unistd.h>
 #include <linux/limits.h>
+#include <sys/sysinfo.h>
 #endif
 
 using std::string;
@@ -297,6 +300,30 @@ const char* System::getenv( const char* name ) const
 {
     SWEET_ASSERT( name );
     return ::getenv( name );
+}
+
+/**
+// Get the number of logical processors available in the system.
+//
+// @return
+//  The number of logical processors.
+*/
+int System::number_of_logical_processors() const
+{
+#if defined(BUILD_OS_WINDOWS)
+    SYSTEM_INFO system_info = {0};
+    ::GetSystemInfo( &system_info );
+    return int(system_info.dwNumberOfProcessors);
+#elif defined(BUILD_OS_MACOS)
+    int processors = 0;
+    size_t length = sizeof(processors);
+    sysctlbyname( "hw.logicalcpu", &processors, &length, nullptr, 0 );
+    return processors;
+#elif defined(BUILD_OS_LINUX)
+    return get_nprocs();
+#else
+#error "System::number_of_logical_processors() is not implemented for this platform"
+#endif
 }
 
 /**
