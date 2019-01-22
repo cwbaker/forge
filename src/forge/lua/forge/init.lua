@@ -67,7 +67,6 @@ function help()
 Variables:
   goal               Target to build (relative to current working directory).
   variant            Variant built (debug, release, or shipping).
-  version            Version used through build scripts and code.
 Commands:
   build              Build outdated targets.
   clean              Clean all targets.
