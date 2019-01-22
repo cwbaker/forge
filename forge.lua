@@ -4,10 +4,7 @@
 -- development and are versioned along with the code that they are building.
 package.path = forge:root('src/forge/lua/?.lua')..';'..forge:root('src/forge/lua/?/init.lua');
 
-platform = platform or forge:operating_system();
 variant = forge:lower( variant or 'debug' );
-version = version or ('%s %s %s'):format( os.date('%Y.%m.%d %H:%M:%S'), platform, variant );
-goal = goal or '';
 
 local forge = require 'forge.cc' {
     identifier = 'cc_${platform}_${architecture}';
