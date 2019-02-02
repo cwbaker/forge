@@ -136,8 +136,8 @@ int LuaGraph::add_target( lua_State* lua_state )
     // This also happens when the target prototype is set for the first time
     // so that targets that are lazily defined after they have been created by
     // another target depending on them have access to the Forge instance they
-    // are defined in rather than just the first Forge instance that referenced
-    // them which is usually incorrect.
+    // are defined in rather than just the first Forge instance that first 
+    // referenced them which is difficult to control and typically incorrect.
     if ( update_target_prototype || update_working_directory || create_lua_binding )
     {
         luaxx_push( lua_state, target );
