@@ -92,7 +92,7 @@ void LuaTarget::create( lua_State* lua_state )
     lua_pop( lua_state_, 1 );
 
     // Set the metatable for `Target` to redirect calls to create new targets 
-    // in `LuaGraph::target()` via `LuaTarget::target_call_metamethod()`.
+    // in `LuaGraph::add_target()` via `LuaTarget::target_call_metamethod()`.
     luaxx_push( lua_state_, this );
     lua_newtable( lua_state_ );
     lua_pushcfunction( lua_state_, &LuaTarget::target_call_metamethod );
