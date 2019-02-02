@@ -20,6 +20,8 @@ class LuaTarget
     lua_State* lua_state_; ///< The main Lua virtual machine to create the target API in.
 
 public:
+    static const char* TARGET_METATABLE;
+
     LuaTarget();
     ~LuaTarget();
 
