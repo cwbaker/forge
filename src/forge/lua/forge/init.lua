@@ -76,7 +76,7 @@ Commands:
     ]];
 end
 
-function forge:add_build( identifier, build )    
+function forge:add_build( identifier, build )
     table.insert( self.builds_, {build:interpolate(identifier), build} );
     return build;
 end
@@ -134,9 +134,43 @@ function forge:inherit( settings )
     return self:create( settings );
 end
 
+function forge:PatternElement( target_prototype, replacement_modifier, pattern )
+    local target_prototype = target_prototype or forge.File;
+    local replacement_modifier = replacement_modifier or forge.interpolate;
+    local pattern = pattern or '(.-([^\\/]-)(%.?[^%.\\/]*))$';
+    
+    local function element_call_metamethod( element, dependencies )
+        local forge = element.forge;
+        local replacement = element.replacement;
+        local attributes = forge:merge( {}, dependencies );
+        for _, filename in ipairs(dependencies) do
+            local source_file = forge:SourceFile( filename );
+            local identifier = forge:root_relative( source_file ):gsub( pattern, replacement );
+            local target = target_prototype( forge, identifier );
+            target:add_dependency( source_file );
+            forge:merge( target, attributes );
+            table.insert( element, target );
+        end
+        return element;
+    end
+
+    local element_metatable = {
+        __call = element_call_metamethod;
+    };
+
+    return function( forge, replacement )
+        local element = {
+            forge = forge;
+            replacement = replacement_modifier( forge, replacement );
+        };
+        setmetatable( element, element_metatable );
+        return element;
+    end
+end
+
 function forge:TargetPrototype( identifier )
     local target_prototype = self:target_prototype( identifier );
-    self[identifier] = target_prototype;
+    -- self[identifier] = target_prototype;
     return target_prototype;
 end
 
@@ -665,8 +699,10 @@ function forge:cpdir( destination, source, settings )
     self:popd();
 end
 
-require 'forge.Target';
-require 'forge.Directory';
+forge.Target = require 'forge.Target';
+forge.Directory = require 'forge.Directory';
+forge.Copy = require 'forge.Copy';
+forge.CopyDirectory = require 'forge.CopyDirectory';
 
 forge.settings = {};
 forge.builds_ = {};
