@@ -1,9 +1,10 @@
 
 local clang = require 'forge.cc.clang';
+local xcodeproj = require 'forge.cc.xcode.xcodeproj';
 
-local xcode_clang = {};
+local xcode = {};
 
-function xcode_clang.configure( forge )
+function xcode.configure( forge )
     local function autodetect_sdk_version( sdk )
         local sdk_version = '';
         local sdk_build_version = '';
@@ -60,13 +61,13 @@ function xcode_clang.configure( forge )
     local settings = forge.settings;
     local local_settings = forge.local_settings;
     if forge:operating_system() == 'macos' then
-        if not local_settings.xcode_clang then
+        if not local_settings.xcode then
             local macosx_sdk_version, macosx_sdk_build_version = autodetect_sdk_version( 'macosx' );
             local iphoneos_sdk_version, iphoneos_sdk_build_version = autodetect_sdk_version( 'iphoneos' );
             local xcode_version, xcode_build_version = autodetect_xcode_version();
             local os_version = autodetect_macos_version();
             local_settings.updated = true;
-            local_settings.xcode_clang = {
+            local_settings.xcode = {
                 xcrun = "/usr/bin/xcrun";
                 codesign = "/usr/bin/codesign";
                 plutil = "/usr/bin/plutil";
@@ -88,55 +89,54 @@ function xcode_clang.configure( forge )
     end
 end
 
-function xcode_clang.initialize( forge )
-    if xcode_clang.configure(forge, forge.local_settings) then 
+function xcode.initialize( forge )
+    if xcode.configure(forge, forge.local_settings) then 
         local identifier = forge.settings.identifier;
         if identifier then
             forge:add_build( forge:interpolate(identifier), forge );
         end
 
-        forge.AssetCatalog = require 'forge.xcode_clang.AssetCatalog';
-        forge.Plist = require 'forge.xcode_clang.Plist';
-        forge.Lipo = require 'forge.xcode_clang.Lipo';
-        forge.Xib = require 'forge.xcode_clang.Xib';
+        local settings = forge.settings;
+        if settings.platform == 'ios' then
+            forge.App = require 'forge.cc.xcode.App';
+        end
+        forge.AssetCatalog = require 'forge.cc.xcode.AssetCatalog';
+        forge.Plist = require 'forge.cc.xcode.Plist';
+        forge.Lipo = require 'forge.cc.xcode.Lipo';
+        forge.Xib = require 'forge.cc.xcode.Xib';
 
-        local Cc = forge:PatternPrototype( 'Cc', xcode_clang.object_filename );
+        local Cc = forge:PatternPrototype( 'Cc', xcode.object_filename );
         Cc.language = 'c';
-        Cc.build = xcode_clang.compile;
+        Cc.build = xcode.compile;
         forge.Cc = Cc;
 
-        local Cxx = forge:PatternPrototype( 'Cxx', xcode_clang.object_filename );
+        local Cxx = forge:PatternPrototype( 'Cxx', xcode.object_filename );
         Cxx.language = 'c++';
-        Cxx.build = xcode_clang.compile;
+        Cxx.build = xcode.compile;
         forge.Cxx = Cxx;
 
-        local ObjC = forge:PatternPrototype( 'ObjC', xcode_clang.object_filename );
+        local ObjC = forge:PatternPrototype( 'ObjC', xcode.object_filename );
         ObjC.language = 'objective-c';
-        ObjC.build = xcode_clang.compile;
+        ObjC.build = xcode.compile;
         forge.ObjC = ObjC;
 
-        local ObjCxx = forge:PatternPrototype( 'ObjCxx', xcode_clang.object_filename );
+        local ObjCxx = forge:PatternPrototype( 'ObjCxx', xcode.object_filename );
         ObjCxx.language = 'objective-c++';
-        ObjCxx.build = xcode_clang.compile;
+        ObjCxx.build = xcode.compile;
         forge.ObjCxx = ObjCxx;
 
-        local StaticLibrary = forge:FilePrototype( 'StaticLibrary', xcode_clang.static_library_filename );
-        StaticLibrary.build = xcode_clang.archive;
+        local StaticLibrary = forge:FilePrototype( 'StaticLibrary', xcode.static_library_filename );
+        StaticLibrary.build = xcode.archive;
         forge.StaticLibrary = StaticLibrary;
 
-        local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', xcode_clang.dynamic_library_filename );
-        DynamicLibrary.build = xcode_clang.link;
+        local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', xcode.dynamic_library_filename );
+        DynamicLibrary.build = xcode.link;
         forge.DynamicLibrary = DynamicLibrary;
 
-        local Executable = forge:FilePrototype( 'Executable', xcode_clang.executable_filename );
-        Executable.build = xcode_clang.link;
+        local Executable = forge:FilePrototype( 'Executable', xcode.executable_filename );
+        Executable.build = xcode.link;
         forge.Executable = Executable;
 
-        local Lipo = forge:FilePrototype( 'Lipo' );
-        Lipo.build = xcode_clang.lipo;
-        forge.Lipo = Lipo;
-
-        local settings = forge.settings;
         forge:defaults( forge.settings, {
             architecture = 'x86_64';
             assertions = true;
@@ -177,45 +177,45 @@ function xcode_clang.initialize( forge )
             settings.sdkroot = 'iphoneos';
         end
 
-        return xcode_clang;
+        return xcode;
     end
 end
 
-function xcode_clang.object_filename( forge, identifier )
+function xcode.object_filename( forge, identifier )
     return ('%s.o'):format( identifier );
 end
 
-function xcode_clang.static_library_filename( forge, identifier )
+function xcode.static_library_filename( forge, identifier )
     local identifier = forge:absolute( forge:interpolate(identifier) );
     local filename = ('%s/lib%s.a'):format( forge:branch(identifier), forge:leaf(identifier) );
     return identifier, filename;
 end
 
-function xcode_clang.dynamic_library_filename( forge, identifier )
+function xcode.dynamic_library_filename( forge, identifier )
     local identifier = forge:absolute( forge:interpolate(identifier) );
     local filename = ('%s.dylib'):format( identifier );
     return identifier, filename;
 end
 
-function xcode_clang.executable_filename( forge, identifier )
+function xcode.executable_filename( forge, identifier )
     local identifier = forge:interpolate( identifier );
     local filename = identifier;
     return identifier, filename;
 end
 
 -- Compile C, C++, Objective-C, and Objective-C++.
-function xcode_clang.compile( forge, target ) 
+function xcode.compile( forge, target ) 
     local settings = forge.settings;
 
     local flags = {};
-    xcode_clang.append_defines( forge, target, flags );
-    xcode_clang.append_include_directories( forge, target, flags );
-    xcode_clang.append_compile_flags( forge, target, flags );
-    xcode_clang.append_deployment_target_flags( forge, target, flags );
+    xcode.append_defines( forge, target, flags );
+    xcode.append_include_directories( forge, target, flags );
+    xcode.append_compile_flags( forge, target, flags );
+    xcode.append_deployment_target_flags( forge, target, flags );
 
     local sdkroot = settings.sdkroot;
     local ccflags = table.concat( flags, ' ' );
-    local xcrun = settings.xcode_clang.xcrun;
+    local xcrun = settings.xcode.xcrun;
     local source = target:dependency();
     print( forge:leaf(source) );
     local dependencies = ('%s.d'):format( target );
@@ -229,7 +229,7 @@ function xcode_clang.compile( forge, target )
 end
 
 -- Archive objects into a static library. 
-function xcode_clang.archive( forge, target )
+function xcode.archive( forge, target )
     local flags = {
         '-static'
     };
@@ -248,7 +248,7 @@ function xcode_clang.archive( forge, target )
         local sdkroot = forge.settings.sdkroot;
         local arflags = table.concat( flags, ' ' );
         local arobjects = table.concat( objects, '" "' );
-        local xcrun = settings.xcode_clang.xcrun;
+        local xcrun = settings.xcode.xcrun;
         printf( '%s', forge:leaf(target) );
         forge:system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, forge:native(target), arobjects) );
     end
@@ -256,7 +256,7 @@ function xcode_clang.archive( forge, target )
 end
 
 -- Link dynamic libraries and executables.
-function xcode_clang.link( forge, target ) 
+function xcode.link( forge, target ) 
     local settings = forge.settings;
 
     local objects = {};
@@ -272,13 +272,13 @@ function xcode_clang.link( forge, target )
     end
 
     local flags = {};
-    xcode_clang.append_link_flags( forge, target, flags );
-    xcode_clang.append_library_directories( forge, target, flags );
-    xcode_clang.append_link_libraries( forge, target, libraries );
-    xcode_clang.append_deployment_target_flags( forge, target, flags );
+    xcode.append_link_flags( forge, target, flags );
+    xcode.append_library_directories( forge, target, flags );
+    xcode.append_link_libraries( forge, target, libraries );
+    xcode.append_deployment_target_flags( forge, target, flags );
 
     if #objects > 0 then
-        local xcrun = settings.xcode_clang.xcrun;
+        local xcrun = settings.xcode.xcrun;
         local sdkroot = settings.sdkroot;
         local ldflags = table.concat( flags, ' ' );
         local ldobjects = table.concat( objects, '" "' );
@@ -289,27 +289,15 @@ function xcode_clang.link( forge, target )
     forge:popd();
 end
 
-function xcode_clang.lipo( forge, target )
-    local executables = {};
-    for _, executable in target:dependencies() do 
-        table.insert( executables, executable:filename() );
-    end
-    executables = table.concat( executables, '" "' );
-    local settings = forge.settings;
-    local xcrun = settings.xcode_clang.xcrun;
-    local sdkroot = settings.sdkroot;
-    forge:system( xcrun, ('xcrun --sdk %s lipo -create -output "%s" "%s"'):format(sdkroot, target:filename(), executables) );
-end
-
 -- Register the clang C/C++ toolset in *forge*.
-function xcode_clang.register( forge )
+function xcode.register( forge )
 end
 
-function xcode_clang.append_defines( forge, target, flags )
+function xcode.append_defines( forge, target, flags )
 	clang.append_defines( forge, target, flags );
 end
 
-function xcode_clang.append_include_directories( forge, target, flags )
+function xcode.append_include_directories( forge, target, flags )
 	clang.append_include_directories( forge, target, flags );
 
     if target.framework_directories then 
@@ -326,11 +314,11 @@ function xcode_clang.append_include_directories( forge, target, flags )
     end
 end
 
-function xcode_clang.append_compile_flags( forge, target, flags )
+function xcode.append_compile_flags( forge, target, flags )
 	clang.append_compile_flags( forge, target, flags );
 end
 
-function xcode_clang.append_library_directories( forge, target, library_directories )
+function xcode.append_library_directories( forge, target, library_directories )
     clang.append_library_directories( forge, target, library_directories );
     
     if target.framework_directories then 
@@ -347,7 +335,7 @@ function xcode_clang.append_library_directories( forge, target, library_director
     end
 end
 
-function xcode_clang.append_deployment_target_flags( forge, target, flags )
+function xcode.append_deployment_target_flags( forge, target, flags )
     local settings = forge.settings;
     local sdkroot = settings.sdkroot;
     if sdkroot == 'macosx' then 
@@ -363,7 +351,7 @@ function xcode_clang.append_deployment_target_flags( forge, target, flags )
     end
 end
 
-function xcode_clang.append_link_flags( forge, target, flags )
+function xcode.append_link_flags( forge, target, flags )
     clang.append_link_flags( forge, target, flags );
 
     local rpaths = target.rpaths;
@@ -374,7 +362,7 @@ function xcode_clang.append_link_flags( forge, target, flags )
     end
 end
 
-function xcode_clang.append_link_libraries( forge, target, libraries )
+function xcode.append_link_libraries( forge, target, libraries )
 	clang.append_link_libraries( forge, target, libraries );
 
     local settings = forge.settings;
@@ -391,12 +379,12 @@ function xcode_clang.append_link_libraries( forge, target, libraries )
     end
 end
 
-setmetatable( xcode_clang, {
-    __call = function( xcode_clang, settings )
+setmetatable( xcode, {
+    __call = function( xcode, settings )
         local forge = require( 'forge' ):clone( settings );
-        xcode_clang.initialize( forge );
+        xcode.initialize( forge );
         return forge;
     end
 } );
 
-return xcode_clang;
+return xcode;

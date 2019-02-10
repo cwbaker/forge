@@ -178,7 +178,7 @@ local function generate_legacy_targets( xcodeproj, legacy_targets )
         local template = [[
         ${uuid} /* ${name} */ = {
             isa = PBXLegacyTarget;
-            buildArgumentsString = "platform=${platform} variant=$(CONFIGURATION) action=$(ACTION) xcode_build";
+            buildArgumentsString = "variant=$(CONFIGURATION) action=$(ACTION) xcode_build";
             buildConfigurationList = ${configuration_list} /* Build configuration list for PBXLegacyTarget "${name}" */;
             buildPhases = (
             );
@@ -365,38 +365,37 @@ local function footer( xcodeproj, project )
     );
 end;
 
+local function walk( target, visit )
+    if not visit(target) then
+        for _, dependency in target:dependencies() do 
+            walk( dependency, visit );
+        end
+    end
+end
+
 local function find_targets_by_prototype( target, prototype_identifier )
-    local forge = target.forge;
-    local prototype = forge[prototype_identifier];
     local targets = {};
-    if prototype then
-        if target:prototype() == prototype then 
-            table.insert( targets, target );
-            return targets;
-        end
-    end
-    for _, dependency in target:dependencies() do 
-        local forge = dependency.forge;
+    walk( target, function (target)
+        local forge = target.forge;
         local prototype = forge[prototype_identifier];
-        if dependency:prototype() == prototype then 
-            table.insert( targets, dependency );
+        if prototype and target:prototype() == prototype then 
+            table.insert( targets, target );
+            return true;
         end
-    end
+    end );
     return targets;
 end
 
 local function find_architectures_by_prototype( target, prototype_identifier, architectures )
-    local forge = target.forge;
-    local prototype = forge[prototype_identifier];
-    local architectures = architectures or {};
-    if target:prototype() == prototype then 
-        local architecture = forge.settings.architecture;
-        table.insert( architectures, architecture );
-    else
-        for _, dependency in target:dependencies() do 
-            find_architectures_by_prototype( dependency, prototype_identifier, architectures );
+    local architectures = {};
+    walk( target, function (target) 
+        local forge = target.forge;
+        local prototype = forge[prototype_identifier];
+        if prototype and target:prototype() == prototype then 
+            table.insert( architectures, forge.settings.architecture );
+            return true;
         end
-    end
+    end );
     return architectures;
 end
 
@@ -433,55 +432,56 @@ local function populate_source( source, includes, excludes )
     end
 end
 
-xcode = {};
-
-function xcode.generate_project( name, project )
+local function generate_xcodeproj( name, project )
     project_root = forge:branch( name );
     project_id = forge:leaf( forge:basename(name) );
     project_configuration_list_uuid = uuid();
     project_configurations = add_configurations( nil, VARIANTS );
 
-    populate_source( forge:root(), {"^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java"}, {"^.*%.framework"} );
+    populate_source( forge:root('src'), {"^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java"}, {"^.*%.framework"} );
 
-    for _, target in project:dependencies() do 
-        if target then 
-            if forge.ios then
-                local ios_apps = find_targets_by_prototype( target, 'App' );
-                for _, ios_app in ipairs(ios_apps) do 
-                    local architectures = find_architectures_by_prototype( target, 'Executable' );
-                    add_legacy_target( ios_app, platform, architectures );
-                end
+    walk( project, function (target) 
+        local forge = target.forge;
+        local settings = forge.settings;
+        if settings.platform == 'ios' then
+            local ios_apps = find_targets_by_prototype( target, 'App' );
+            for _, ios_app in ipairs(ios_apps) do 
+                local architectures = find_architectures_by_prototype( target, 'Executable' );
+                add_legacy_target( ios_app, platform, architectures );
             end
-
-            if forge.android then
-                local android_apks = find_targets_by_prototype( target, 'Apk' );
-                for _, android_apk in ipairs(android_apks) do 
-                    local architectures = find_architectures_by_prototype( target, 'Executable' );
-                    add_legacy_target( android_apk, platform, architectures );
-                end
-            end
-
-            if forge.macos or forge.windows then
-                local executables = find_targets_by_prototype( target, 'Executable' );
-                for _, executable in ipairs(executables) do 
-                    local architectures = find_architectures_by_prototype( target, 'Executable' );
-                    add_legacy_target( executable, platform, architectures );
-                end
-
-                local dynamic_libraries = find_targets_by_prototype( target, 'DynamicLibrary' );
-                for _, dynamic_library in ipairs(dynamic_libraries) do 
-                    local architectures = find_architectures_by_prototype( target, 'DynamicLibrary' );
-                    add_legacy_target( dynamic_library, platform, architectures );
-                end
-
-                local binaries = find_targets_by_prototype( target, 'Lipo' );
-                for _, binary in ipairs(binaries) do 
-                    local architectures = find_architectures_by_prototype( target, 'Lipo' );
-                    add_legacy_target( binary, platform, architectures );
-                end
-            end
+            return true;
         end
-    end
+
+        if settings.platform == 'android' then
+            local android_apks = find_targets_by_prototype( target, 'Apk' );
+            for _, android_apk in ipairs(android_apks) do 
+                local architectures = find_architectures_by_prototype( target, 'Executable' );
+                add_legacy_target( android_apk, platform, architectures );
+            end
+            return true;
+        end
+
+        if settings.platform == 'macos' or settings.platform == 'windows' then
+            local executables = find_targets_by_prototype( target, 'Executable' );
+            for _, executable in ipairs(executables) do 
+                local architectures = find_architectures_by_prototype( target, 'Executable' );
+                add_legacy_target( executable, platform, architectures );
+            end
+
+            local dynamic_libraries = find_targets_by_prototype( target, 'DynamicLibrary' );
+            for _, dynamic_library in ipairs(dynamic_libraries) do 
+                local architectures = find_architectures_by_prototype( target, 'DynamicLibrary' );
+                add_legacy_target( dynamic_library, platform, architectures );
+            end
+
+            local binaries = find_targets_by_prototype( target, 'Lipo' );
+            for _, binary in ipairs(binaries) do 
+                local architectures = find_architectures_by_prototype( target, 'Lipo' );
+                add_legacy_target( binary, platform, architectures );
+            end
+            return true;
+        end
+    end );
 
     local xcodeproj_directory = name;
     if forge:exists( xcodeproj_directory ) then
@@ -505,42 +505,34 @@ end
 
 -- The "xcodeproj" command entry point (global).
 function xcodeproj()
-    local all = all or forge:find_target( forge:root("all") );
-    assertf( all, "Missing target at '%s' to generate Xcode project from", forge:root() );
-    assertf( forge.settings.xcode, "Missing Xcode settings in 'settings.xcode'" );
-    assertf( forge.settings.xcode.xcodeproj, "Missing Xcode project filename in 'settings.xcode.xcodeproj'" );
-    xcode.generate_project( settings.xcode.xcodeproj, all );
+    local all = all or forge:find_target( forge:root('all') );
+    assertf( all, 'Missing target at "%s" to generate Xcode project from', forge:root() );
+    local settings = forge.settings;
+    assertf( settings.xcode, 'Missing Xcode settings in "settings.xcode"' );
+    assertf( settings.xcode.xcodeproj, 'Missing Xcode project filename in "settings.xcode.xcodeproj"' );
+    generate_xcodeproj( settings.xcode.xcodeproj, all );
 end
 
 -- The "xcode_build" command entry point (global) this is used by generated
 -- Xcode projects to trigger a build or clean.
 function xcode_build()
-    forge:set_stack_trace_enabled( true );    
-    action = action or "build";
-    if action == "" or action == "build" then
+    forge:set_stack_trace_enabled( true );
+    local action = action or 'build';
+    if action == '' or action == 'build' then
         local failures = build();
-        assertf( failures == 0, "%d failures", failures );
-        if failures == 0 then 
-            local ios = forge.ios;
-            if ios then 
-                local app = ios.find_app();
-                if app then 
-                    ios.deploy( app );
-                end
-            end
-            local android = forge.android;
-            if android then 
-                local apk = android.find_apk();
-                if apk then 
-                    android.deploy( apk );
-                end
-            end
-        end
-    elseif action == "clean" then
+        assertf( failures == 0, '%d failures', failures );
+        -- if failures == 0 then 
+        --     local android = forge.android;
+        --     if android then 
+        --         local apk = android.find_apk();
+        --         if apk then 
+        --             android.deploy( apk );
+        --         end
+        --     end
+        -- end
+    elseif action == 'clean' then
         clean();
     else
-        error( ("Unable to map the Xcode action '%s' to a build command"):format(tostring(action)) );
+        error( ('Unable to map the Xcode action "%s" to a build command'):format(tostring(action)) );
     end
 end
-
-forge:register_module( xcode );

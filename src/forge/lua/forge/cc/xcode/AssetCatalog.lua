@@ -12,7 +12,7 @@ end
 function AssetCatalog.build( forge, assets )
 	local settings = forge.settings;
     local sdkroot = settings.sdkroot;
-    local xcrun = settings.xcrun;
+    local xcrun = settings.xcode.xcrun;
 
     local args = {
     	'xcrun';

@@ -1,8 +1,7 @@
 
 local App = forge:TargetPrototype( 'App' );
 
-local function default_identifier_filename( identifier, settings )
-    local settings = settings or forge.settings;
+local function default_identifier_filename( forge, identifier, settings )
     local identifier = forge:interpolate( identifier, settings );
     local leaf = forge:leaf( identifier );
     local branch = settings.bin;
@@ -16,7 +15,7 @@ end
 
 function App.create( forge, identifier )
     local settings = forge.settings;
-    local identifier, filename = default_identifier_filename( identifier, settings );
+    local identifier, filename = default_identifier_filename( forge, identifier, settings );
     local app = forge:Target( identifier, App );
     app:set_filename( filename );
     app:set_cleanable( true );
@@ -25,7 +24,7 @@ function App.create( forge, identifier )
 end
 
 function App.depend( forge, target, dependencies )
-    local settings = target.settings;
+    local settings = forge.settings;
     local entitlements = dependencies.entitlements;
     if entitlements then 
         table.insert( dependencies, entitlements );
@@ -36,7 +35,8 @@ function App.depend( forge, target, dependencies )
 end
 
 function App.build( forge, target )
-    local xcrun = target.settings.ios.xcrun;
+    local settings = forge.settings;
+    local xcrun = settings.xcode.xcrun;
     if target.settings.generate_dsym_bundle then 
         local executable;
         for _, dependency in target:dependencies() do 
@@ -62,7 +62,7 @@ function App.build( forge, target )
 
     local command_line = {
         "codesign";
-        ('-s "%s"'):format( _G.signing_identity or target.settings.ios.signing_identity );
+        ('-s "%s"'):format( _G.signing_identity or settings.xcode.signing_identity );
         "--force";
         "--no-strict";
         "-vv";
@@ -73,12 +73,12 @@ function App.build( forge, target )
         table.insert( command_line, ('--entitlements "%s"'):format(entitlements) );
     end
 
-    local codesign = target.settings.ios.codesign;
-    forge:system( codesign, table.concat(command_line, " "), environment );
+    local codesign = settings.xcode.codesign;
+    forge:system( codesign, table.concat(command_line, ' '), environment );
 end
 
 function App.clean( forge, target )
-    -- forge:rmdir( target:filename() );
+    forge:rmdir( target:filename() );
 end
 
 return App;
