@@ -8,7 +8,15 @@ local directory_by_architecture = {
     ["x86"] = "x86";
 };
 
-function android.configure( settings )
+function android.configure( forge )
+    local function autodetect_jdk_directory()
+        if forge:operating_system() == 'windows' then
+            return 'C:/Program Files/Java/jdk1.6.0_39';
+        else
+            return '/Library/Java/Home';
+        end
+    end
+
     local function autodetect_ndk_directory()
         if forge:operating_system() == 'windows' then
             return 'C:/android/android-ndk';
@@ -33,20 +41,102 @@ function android.configure( settings )
         return forge:home( 'android-manifest-merger/target/manifest-merger-jar-with-dependencies.jar' );
     end
 
+    local function autodetect_ivy()
+        if forge:operating_system() == 'windows' then 
+            return 'C:/Program Files/Apache Ivy/ivy-2.5.0-rc1.jar';
+        else
+            return forge:home( 'apache-ivy-2.5.0-rc1/ivy-2.5.0-rc1.jar' );
+        end
+    end
+
+    local function autodetect_ivy_cache_directory() 
+        return forge:home( '.ivy2/cache' );
+    end
+
+    local function autodetect_unzip() 
+        if forge:operating_system() == 'windows' then 
+            return 'unzip.exe';
+        else 
+            return '/usr/bin/unzip';
+        end
+    end
+
     local local_settings = forge.local_settings;
     if not local_settings.android then
-        local_settings.updated = true;
-        local_settings.android = {
+        local android = {
             ndk_directory = autodetect_ndk_directory();
             sdk_directory = autodetect_sdk_directory();
+            jdk_directory = autodetect_jdk_directory();
             build_tools_directory = ('%s/build-tools/28.0.0'):format( autodetect_sdk_directory() );
             proguard_directory = autodetect_proguard_directory();
             manifest_merger = autodetect_manifest_merger();
             toolchain_version = '4.9';
             ndk_platform = 'android-21';
             sdk_platform = 'android-22';
+            ivy = autodetect_ivy();
+            ivy_cache_directory = autodetect_ivy_cache_directory();
+            unzip = autodetect_unzip();
             architectures = { 'armv5', 'armv7' };
         };
+        android.valid = forge:exists( android.ndk_directory ) and forge:exists( android.sdk_directory ) and forge:exists( android.jdk_directory );
+        local_settings.android = android;
+        local_settings.updated = true;
+    end
+    -- return local_settings.android.valid;
+    return true;
+end
+
+function android.initialize( forge )
+    if android.configure(forge) then
+        local identifier = forge.settings.identifier;
+        if identifier then
+            forge:add_build( forge:interpolate(identifier), forge );
+        end
+
+        local settings = forge.settings;
+        
+        local Aidl = require 'forge.android.Aidl';
+        forge.Aidl = forge:PatternElement( Aidl );
+        forge.AndroidManifest = require 'forge.android.AndroidManifest';
+        forge.Apk = require 'forge.android.Apk';
+        forge.BuildConfig = require 'forge.android.BuildConfig';
+        forge.Dex = require 'forge.android.Dex';
+        forge.R = require 'forge.android.R';
+        forge.Jar = require 'forge.android.Jar';
+        forge.Java = require 'forge.android.Java';
+        forge.Ivy = require 'forge.android.Ivy';
+        forge.android_jar = android.android_jar;
+
+        if forge:operating_system() == 'windows' then
+            local path = {
+                ('%s/bin'):format( android.toolchain_directory(settings, 'armv5') )
+            };
+            android.environment = {
+                PATH = table.concat( path, ';' );
+            };
+        else
+            local path = {
+                '/usr/bin',
+                '/bin',
+                ('%s/bin'):format( android.toolchain_directory(settings, 'armv5') )
+            };
+            android.environment = {
+                PATH = table.concat( path, ':' );
+            };
+        end
+
+        forge:defaults( forge.settings, {
+            classes = forge:root( ('%s/classes/android'):format(variant) );
+            gen = forge:root( ('%s/gen/android'):format(variant) );
+            bootclasspaths = {
+                ('%s/platforms/%s/android.jar'):format( settings.android.sdk_directory, settings.android.sdk_platform );
+            };
+            debug = variant == 'debug';
+        } );
+
+        settings.android.proguard_enabled = settings.android.proguard_enabled or variant == 'shipping';
+
+        return forge;
     end
 end
 
@@ -134,52 +224,9 @@ function android.library_directories( settings, architecture )
     end
 end
 
-function android.initialize( settings )
-    if forge:operating_system() == 'windows' then
-        local path = {
-            ('%s/bin'):format( android.toolchain_directory(settings, 'armv5') )
-        };
-        android.environment = {
-            PATH = table.concat( path, ';' );
-        };
-    else
-        local path = {
-            '/usr/bin',
-            '/bin',
-            ('%s/bin'):format( android.toolchain_directory(settings, 'armv5') )
-        };
-        android.environment = {
-            PATH = table.concat( path, ':' );
-        };
-    end
-
-    settings.android.proguard_enabled = settings.android.proguard_enabled or variant == 'shipping';
-    
-    for _, architecture in ipairs(settings.android.architectures) do 
-        local android_ndk_forge = forge:configure {
-            obj = ('%s/cc_android_%s'):format( settings.obj, architecture );
-            platform = 'android';
-            architecture = architecture;
-            arch_directory = directory_by_architecture[architecture];
-            runtime_library = 'gnustl_shared';
-        };
-        local android_ndk_gcc = require 'forge.cc.android_ndk_gcc';
-        android_ndk_gcc.register( android_ndk_forge );
-        forge:add_default_build( ('cc_android_%s'):format(architecture), android_ndk_forge );
-    end
-
-    local android_java_forge = forge:configure {
-        classes = forge:root( ('%s/classes/java_android'):format(variant) );
-        gen = forge:root( ('%s/gen/java_android'):format(variant) );
-        system_jars = {
-            ('%s/platforms/%s/android.jar'):format( settings.android.sdk_directory, settings.android.sdk_platform );
-        };
-    };
-    forge:add_default_build( 'java_android', android_java_forge );
-end
-
 -- Return the full path to the Android system JAR.
-function android.android_jar( settings )
+function android.android_jar( forge )
+    local settings = forge.settings;
     return ('%s/platforms/%s/android.jar'):format( settings.android.sdk_directory, settings.android.sdk_platform );
 end
 
@@ -214,13 +261,4 @@ function android.deploy( apk )
     end
 end
 
-require 'forge.android.Aidl';
-require 'forge.android.AndroidManifest';
-require 'forge.android.Apk';
-require 'forge.android.BuildConfig';
-require 'forge.android.Dex';
-require 'forge.android.R';
-
-forge:register_module( android );
-forge.android = android;
 return android;

@@ -3,13 +3,13 @@ local Ivy = forge:FilePrototype( 'Ivy' );
 
 function Ivy.build( forge, target )
 	local settings = target.settings;
-	local java = ('%s/bin/java'):format( settings.java.jdk_directory );
-	local ivy = settings.java.ivy;
-	local unzip = settings.java.unzip or '/usr/bin/unzip';
+	local java = ('%s/bin/java'):format( settings.android.jdk_directory );
+	local ivy = settings.android.ivy;
+	local unzip = settings.android.unzip or '/usr/bin/unzip';
 	local pattern = ('^%s/([^/]*)/.*/[aj]ars/(.*)(%%.[^%%.]*)$'):format( settings.ivy_cache_directory or forge:home('.ivy2/cache') );
 	local args = {
 		'java';
-		('-jar "%s"'):format( settings.java.ivy );
+		('-jar "%s"'):format( settings.android.ivy );
 		('-settings "%s"'):format( target:dependency(2) or 'ivysettings.xml' );
 		('-ivy "%s"'):format( target:dependency(1) or 'ivy.xml' );
 		('-retrieve "%s/[organisation]/[artifact]-[revision].[ext]"'):format( target:directory() );
@@ -51,3 +51,5 @@ function Ivy.build( forge, target )
 	-- that this `Ivy` target isn't outdated after being built.
 	forge:touch( target );
 end
+
+return Ivy;

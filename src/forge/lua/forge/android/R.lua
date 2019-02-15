@@ -1,25 +1,11 @@
 
-local R = forge:TargetPrototype( 'R' );
+local android = require 'forge.android';
 
-function R.create( forge, packages )
-    local r = forge:Target( forge:anonymous(), R );
-    r.packages = packages;
-    for index, package in ipairs(packages) do 
-        local filename = forge:generated( ("%s/R.java"):format(package:gsub("%.", "/")), nil, forge.settings );
-        r:set_filename( filename, index );
-        r:add_ordering_dependency( forge:Directory(forge:branch(filename)) );
-    end
-    r:add_implicit_dependency( forge:current_buildfile() );
-    return r;
-end
+local R = forge:JavaStylePrototype( 'R' );
 
 function R.build( forge, target )
     local android_manifest = target:dependency( 1 );
     assertf( android_manifest and forge:leaf(android_manifest) == "AndroidManifest.xml", "Android R '%s' does not specify 'AndroidManifest.xml' as its first dependency", target:path() );
-
-    local settings = forge.settings;
-    local working_directory = target:working_directory();
-    local gen_directory = ("%s/%s"):format( settings.gen, forge:relative(working_directory:path(), forge:root()) );
 
     local command_line = {
         'aapt',
@@ -27,8 +13,8 @@ function R.build( forge, target )
         '--auto-add-overlay',
         '-f',
         '-m',
-        ('-I "%s"'):format( forge.android.android_jar(settings) ),
-        ('-J "%s"'):format( gen_directory ),
+        ('-I "%s"'):format( android.android_jar(forge) ),
+        ('-J "%s"'):format( target:ordering_dependency() ),
         ('-M "%s"'):format( android_manifest:filename() ),
         ('--extra-packages %s'):format(table.concat(target.packages, ":"))
     };
@@ -45,6 +31,8 @@ function R.build( forge, target )
         end
     end
 
-    local aapt = ('%s/aapt'):format( settings.android.build_tools_directory );
-    forge:system( aapt, command_line );
+    local aapt = ('%s/aapt'):format( forge.settings.android.build_tools_directory );
+    forge:system( aapt, command_line, nil, forge:filenames_filter(target) );
 end
+
+return R;

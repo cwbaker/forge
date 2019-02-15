@@ -50,7 +50,7 @@ function Apk.build( forge, target )
         } );
     end
 
-    local jarsigner = ("%s/bin/jarsigner"):format( settings.java.jdk_directory );
+    local jarsigner = ("%s/bin/jarsigner"):format( settings.android.jdk_directory );
     local key = _G.key or "androiddebugkey";
     local keypass = _G.keypass or "android";
     local keystore = _G.keystore or forge:relative( ("%s/debug.keystore"):format(target:working_directory():path()) );
@@ -78,3 +78,5 @@ function Apk.clean( forge, target )
     forge:rm( ("%s.unaligned"):format(target:filename()) );
     forge:rm( target );
 end
+
+return Apk;

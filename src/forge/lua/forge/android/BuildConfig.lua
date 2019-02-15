@@ -1,17 +1,5 @@
 
-local BuildConfig = forge:TargetPrototype( 'BuildConfig' );
-
-function BuildConfig.create( forge, packages )
-    local build_config = forge:Target( forge:anonymous(), BuildConfig );
-    build_config.packages = packages;
-    for index, package in ipairs(packages) do 
-        local filename = forge:generated( ("%s/BuildConfig.java"):format(package:gsub("%.", "/")), nil, forge.settings );
-        build_config:set_filename( filename, index );
-        build_config:add_ordering_dependency( forge:Directory(forge:branch(filename)) );
-    end
-    build_config:add_implicit_dependency( forge:current_buildfile() );
-    return build_config;
-end
+local BuildConfig = forge:JavaStylePrototype( 'BuildConfig' );
 
 function BuildConfig.build( forge, target )
     local HEADER = [[
@@ -41,24 +29,27 @@ public final class BuildConfig {
 }
 ]];
 
+    local output_directory = target:ordering_dependency():filename();
     for index, package in ipairs(target.packages) do
-        local filename = target:filename( index );
-        local output_file = io.open( filename, "wb" );
-        assert( output_file, ("Opening '%s' to write generated text failed"):format(filename) );
+        local filename = forge:interpolate( ('%s/%s/BuildConfig.java'):format(output_directory, package:gsub('%.', '/')) );
+        target:add_filename( filename );
+        forge:mkdir( forge:branch(filename) );
+        local output_file = io.open( filename, 'wb' );
+        assert( output_file, ('Opening "%s" to write generated text failed'):format(filename) );
         output_file:write( HEADER:format(package) );
         if target.DEBUG == nil then 
-            output_file:write( BOOLEAN_BODY:format("DEBUG", tostring(forge.settings.debug)) );
+            output_file:write( BOOLEAN_BODY:format('DEBUG', tostring(forge.settings.debug or false)) );
         end
         for key, value in pairs(target) do 
-            if type(value) == "boolean" then
+            if type(value) == 'boolean' then
                 output_file:write( BOOLEAN_BODY:format(key, tostring(value)) );
-            elseif type(value) == "number" then
+            elseif type(value) == 'number' then
                 if math.floor(value) == value then 
                     output_file:write( INT_BODY:format(key, value) );
                 else
                     output_file:write( FLOAT_BODY:format(key, value) );
                 end
-            elseif type(value) == "string" then
+            elseif type(value) == 'string' then
                 output_file:write( STRING_BODY:format(key, value) );
             end
         end
@@ -67,3 +58,5 @@ public final class BuildConfig {
         output_file = nil;
     end
 end
+
+return BuildConfig;

@@ -236,6 +236,20 @@ function forge:GroupPrototype( identifier, replacement_modifier )
     return group_prototype;
 end
 
+function forge:JavaStylePrototype( identifier )
+    local interpolate = forge.interpolate;
+    local pattern = '(.-([^\\/]-))(%.?[^%.\\/]*)$';
+    local java_style_prototype = self:TargetPrototype( identifier );
+    function java_style_prototype.create( forge, output_directory, target_prototype )
+        local output_directory = forge:root_relative():gsub( pattern, interpolate(forge, output_directory) );
+        local target = forge:Target( forge:anonymous(), target_prototype );
+        target:add_ordering_dependency( forge:Directory(output_directory) );
+        target:set_cleanable( true );
+        return target;
+    end
+    return java_style_prototype;
+end
+
 function forge:File( identifier, target_prototype )
     local target = self:Target( self:interpolate(identifier), target_prototype );
     target:set_filename( target:path() );

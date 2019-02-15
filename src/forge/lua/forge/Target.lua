@@ -34,7 +34,7 @@ function Target.depend( forge, target, dependencies )
     end
 
     forge:merge( target, dependencies );
-    local settings = target.settings;
+
     walk( dependencies, function (value) 
         if type(value) ~= 'table' or typename(value) == 'forge.Target' then
             local source_file = forge:SourceFile( value );

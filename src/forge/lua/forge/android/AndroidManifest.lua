@@ -19,7 +19,7 @@ function AndroidManifest.build( forge, target )
 	assertf( #manifests > 0, 'Missing main "AndroidManifest.xml" as first dependency of AndroidManifest "%s"', target:path() );
 
     local settings = forge.settings;
-    local java = ('%s/bin/java'):format( settings.java.jdk_directory );
+    local java = ('%s/bin/java'):format( settings.android.jdk_directory );
     local manifest_merger_jar = settings.android.manifest_merger;
     local args = {
         'java';
@@ -33,6 +33,7 @@ function AndroidManifest.build( forge, target )
         table.insert( args, ('--libs "%s"'):format(table.concat(manifests, ':', 2)) );
 	end
 
-	printf( '%s', table.concat(args, ' ') );
     forge:system( java, args );
 end
+
+return AndroidManifest;

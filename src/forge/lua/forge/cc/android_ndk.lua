@@ -2,31 +2,32 @@
 local gcc = require 'forge.cc.gcc';
 local android = require 'forge.android';
 
-local android_ndk_gcc = {};
+local android_ndk = {};
 
-function android_ndk_gcc.object_filename( forge, identifier )
+function android_ndk.object_filename( forge, identifier )
     return ('%s.o'):format( identifier );
 end
 
-function android_ndk_gcc.static_library_filename( forge, identifier )
+function android_ndk.static_library_filename( forge, identifier )
     local identifier = forge:absolute( forge:interpolate(identifier) );
     local filename = ('%s/lib%s.a'):format( forge:branch(identifier), forge:leaf(identifier) );
     return identifier, filename;
 end
 
-function android_ndk_gcc.dynamic_library_filename( forge, identifier )
+function android_ndk.dynamic_library_filename( forge, identifier )
     local identifier = forge:absolute( forge:interpolate(identifier) );
     local filename = ('%s/lib%s.so'):format( forge:branch(identifier), forge:leaf(identifier) );
     return identifier, filename;
 end
 
-function android_ndk_gcc.executable_filename( forge, identifier )
+function android_ndk.executable_filename( forge, identifier )
     local identifier = forge:interpolate( identifier );
     local filename = identifier;
     return identifier, filename;
 end
 
--- The DynamicLibrary target prototype for Android adds any C++ runtime dynamic library as a dependency that is copied into the same directory as 
+-- The DynamicLibrary target prototype for Android adds any C++ runtime 
+-- dynamic library as a dependency that is copied into the same directory as 
 -- the shared object that is linked.  This is assumed to be the architecture
 -- specific native library directory of an Android APK.
 --
@@ -43,8 +44,8 @@ end
 -- because the dependency walk terminates at the first target that has a 
 -- filename, i.e. the dynamic library, and thus never reaches the copied C++
 -- runtime dynamic library.
-function android_ndk_gcc.dynamic_library( forge, identifier, target_prototype )
-    local identifier, filename = android_ndk_gcc.dynamic_library_filename( forge, identifier );
+function android_ndk.dynamic_library( forge, identifier, target_prototype )
+    local identifier, filename = android_ndk.dynamic_library_filename( forge, identifier );
     local dynamic_library = forge:Target( identifier, target_prototype );
     dynamic_library:set_filename( filename or dynamic_library:path() );
     dynamic_library:set_cleanable( true );
@@ -80,13 +81,13 @@ function android_ndk_gcc.dynamic_library( forge, identifier, target_prototype )
 end
 
 -- Compile C, C++, Objective-C, and Objective-C++.
-function android_ndk_gcc.compile( forge, target ) 
+function android_ndk.compile( forge, target ) 
     local settings = forge.settings;
 
     local flags = {};
-    android_ndk_gcc.append_compile_flags( forge, target, flags );
-    android_ndk_gcc.append_defines( forge, target, flags );
-    android_ndk_gcc.append_include_directories( forge, target, flags );
+    android_ndk.append_compile_flags( forge, target, flags );
+    android_ndk.append_defines( forge, target, flags );
+    android_ndk.append_include_directories( forge, target, flags );
 
     local ccflags = table.concat( flags, ' ' );
     local gcc_ = ('%s/bin/arm-linux-androideabi-gcc'):format( android.toolchain_directory(settings, settings.architecture) );
@@ -105,7 +106,7 @@ function android_ndk_gcc.compile( forge, target )
 end
 
 -- Archive objects into a static library. 
-function android_ndk_gcc.archive( forge, target )
+function android_ndk.archive( forge, target )
     local settings = forge.settings;
 
     forge:pushd( forge:obj_directory(target) );
@@ -121,13 +122,14 @@ function android_ndk_gcc.archive( forge, target )
         local arflags = '-rcs';
         local arobjects = table.concat( objects, '" "' );
         local ar = ('%s/bin/arm-linux-androideabi-ar'):format( android.toolchain_directory(settings, settings.architecture) );
+        printf( '%s', forge:leaf(target) );
         forge:system( ar, ('ar %s "%s" "%s"'):format(arflags, forge:native(target:filename()), arobjects), android.environment );
     end
     forge:popd();
 end
 
 -- Link dynamic libraries and executables.
-function android_ndk_gcc.link( forge, target ) 
+function android_ndk.link( forge, target ) 
     local settings = forge.settings;
    
     local objects = {};
@@ -149,9 +151,9 @@ function android_ndk_gcc.link( forge, target )
     end
 
     local flags = {};
-    android_ndk_gcc.append_link_flags( forge, target, flags );
-    android_ndk_gcc.append_library_directories( forge, target, flags );
-    android_ndk_gcc.append_link_libraries( forge, target, libraries );
+    android_ndk.append_link_flags( forge, target, flags );
+    android_ndk.append_library_directories( forge, target, flags );
+    android_ndk.append_link_libraries( forge, target, libraries );
 
     if #objects > 0 then
         local ldflags = table.concat( flags, ' ' );
@@ -166,35 +168,90 @@ function android_ndk_gcc.link( forge, target )
     forge:popd();
 end
 
-local Cc = forge:PatternPrototype( 'Cc', android_ndk_gcc.object_filename );
-Cc.language = 'c';
-Cc.build = android_ndk_gcc.compile;
-android_ndk_gcc.Cc = Cc;
-
-local Cxx = forge:PatternPrototype( 'Cxx', android_ndk_gcc.object_filename );
-Cxx.language = 'c++';
-Cxx.build = android_ndk_gcc.compile;
-android_ndk_gcc.Cxx = Cxx;
-
-local StaticLibrary = forge:FilePrototype( 'StaticLibrary', android_ndk_gcc.static_library_filename );
-StaticLibrary.build = android_ndk_gcc.archive;
-android_ndk_gcc.StaticLibrary = StaticLibrary;
-
-local DynamicLibrary = forge:TargetPrototype( 'DynamicLibrary' );
-DynamicLibrary.create = android_ndk_gcc.dynamic_library;
-DynamicLibrary.build = android_ndk_gcc.link;
-android_ndk_gcc.DynamicLibrary = DynamicLibrary;
-
 -- Register the Android NDK GCC C/C++ toolset in *forge*.
-function android_ndk_gcc.register( forge )
-    forge.Cc = android_ndk_gcc.Cc;
-    forge.Cxx = android_ndk_gcc.Cxx;
-    forge.StaticLibrary = android_ndk_gcc.StaticLibrary;
-    forge.DynamicLibrary = android_ndk_gcc.DynamicLibrary;
-    forge.Executable = android_ndk_gcc.Executable;
+function android_ndk.register( forge )
 end
 
-function android_ndk_gcc.append_defines( forge, target, flags )
+function android_ndk.configure( forge )
+    return true;
+end
+
+function android_ndk.initialize( forge )
+    if android_ndk.configure(forge) then
+        local identifier = forge.settings.identifier;
+        if identifier then 
+            forge:add_build( forge:interpolate(identifier), forge );
+        end
+
+        local Cc = forge:PatternPrototype( 'Cc', android_ndk.object_filename );
+        Cc.language = 'c';
+        Cc.build = android_ndk.compile;
+        forge.Cc = Cc;
+
+        local Cxx = forge:PatternPrototype( 'Cxx', android_ndk.object_filename );
+        Cxx.language = 'c++';
+        Cxx.build = android_ndk.compile;
+        forge.Cxx = Cxx;
+
+        local StaticLibrary = forge:FilePrototype( 'StaticLibrary', android_ndk.static_library_filename );
+        StaticLibrary.build = android_ndk.archive;
+        forge.StaticLibrary = StaticLibrary;
+
+        local DynamicLibrary = forge:TargetPrototype( 'DynamicLibrary' );
+        DynamicLibrary.create = android_ndk.dynamic_library;
+        DynamicLibrary.build = android_ndk.link;
+        forge.DynamicLibrary = DynamicLibrary;
+
+        local directory_by_architecture = {
+            ['armv5'] = 'armeabi';
+            ['armv7'] = 'armeabi-v7a';
+            ['arm64'] = 'arm64';
+            ['mips'] = 'mips';
+            ['x86'] = 'x86';
+        };
+
+        local settings = forge.settings;
+        forge:defaults( 
+            settings, {
+            architecture = 'armv7';
+            arch_directory = directory_by_architecture[settings.architecture or 'armv7'];
+            assertions = true;
+            compile_as_c = false;
+            debug = true;
+            debuggable = true;
+            exceptions = true;
+            fast_floating_point = false;
+            framework_directories = {};
+            generate_dsym_bundle = false;
+            generate_map_file = true;
+            incremental_linking = true;
+            link_time_code_generation = false;
+            minimal_rebuild = true;
+            objc_arc = true;
+            objc_modules = true;
+            optimization = false;
+            pre_compiled_headers = true;
+            preprocess = false;
+            profiling = false;
+            run_time_checks = true;
+            runtime_library = 'gnustl_shared';
+            run_time_type_info = true;
+            sse2 = true;
+            stack_size = 1048576;
+            standard = 'c++17';
+            string_pooling = false;
+            strip = false;
+            subsystem = 'CONSOLE';
+            verbose_linking = false;
+            warning_level = 3;
+            warnings_as_errors = true;
+        } );
+
+        return forge;
+    end
+end
+
+function android_ndk.append_defines( forge, target, flags )
 	gcc.append_defines( forge, target, flags );
     table.insert( flags, '-D__ARM_ARCH_5__' );
     table.insert( flags, '-D__ARM_ARCH_5T__' );
@@ -203,7 +260,7 @@ function android_ndk_gcc.append_defines( forge, target, flags )
     table.insert( flags, '-DANDROID' );
 end
 
-function android_ndk_gcc.append_include_directories( forge, target, flags )
+function android_ndk.append_include_directories( forge, target, flags )
     local settings = forge.settings;
 	gcc.append_include_directories( forge, target, flags );
     for _, directory in ipairs(android.include_directories(settings, settings.architecture)) do
@@ -212,7 +269,7 @@ function android_ndk_gcc.append_include_directories( forge, target, flags )
     end    
 end
 
-function android_ndk_gcc.append_compile_flags( forge, target, flags )
+function android_ndk.append_compile_flags( forge, target, flags )
     local settings = forge.settings;
     table.insert( flags, ('--sysroot=%s'):format(android.platform_directory(settings, settings.architecture)) );
     table.insert( flags, '-ffunction-sections' );
@@ -235,7 +292,7 @@ function android_ndk_gcc.append_compile_flags( forge, target, flags )
     gcc.append_compile_flags( forge, target, flags );
 end
 
-function android_ndk_gcc.append_library_directories( forge, target, library_directories )
+function android_ndk.append_library_directories( forge, target, library_directories )
     local settings = forge.settings;
     for _, directory in ipairs(android.library_directories(settings, settings.architecture)) do
         table.insert( library_directories, ('-L"%s"'):format(directory) );
@@ -243,7 +300,7 @@ function android_ndk_gcc.append_library_directories( forge, target, library_dire
     gcc.append_library_directories( forge, target, library_directories );
 end
 
-function android_ndk_gcc.append_link_flags( forge, target, flags )
+function android_ndk.append_link_flags( forge, target, flags )
     local settings = forge.settings;
     table.insert( flags, ('--sysroot=%s'):format( android.platform_directory(settings, settings.architecture) ) );
     table.insert( flags, '-shared' );
@@ -255,7 +312,7 @@ function android_ndk_gcc.append_link_flags( forge, target, flags )
     gcc.append_link_flags( forge, target, flags );
 end
 
-function android_ndk_gcc.append_link_libraries( forge, target, libraries )
+function android_ndk.append_link_libraries( forge, target, libraries )
     local settings = forge.settings;
     local runtime_library = settings.runtime_library;
     if runtime_library then 
@@ -264,5 +321,11 @@ function android_ndk_gcc.append_link_libraries( forge, target, libraries )
 	gcc.append_link_libraries( forge, target, libraries );
 end
 
-forge:register_module( android_ndk_gcc );
-return android_ndk_gcc;
+setmetatable( android_ndk, {
+    __call = function( android_ndk, settings )
+        local forge = require( 'forge' ):clone( settings );
+        return android_ndk.initialize( forge );
+    end
+} );
+
+return android_ndk;
