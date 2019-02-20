@@ -90,7 +90,7 @@ function xcode.configure( forge )
 end
 
 function xcode.initialize( forge )
-    if xcode.configure(forge, forge.local_settings) then 
+    if xcode.configure(forge) then 
         local identifier = forge.settings.identifier;
         if identifier then
             forge:add_build( forge:interpolate(identifier), forge );
@@ -177,7 +177,7 @@ function xcode.initialize( forge )
             settings.sdkroot = 'iphoneos';
         end
 
-        return xcode;
+        return forge;
     end
 end
 
@@ -382,8 +382,7 @@ end
 setmetatable( xcode, {
     __call = function( xcode, settings )
         local forge = require( 'forge' ):clone( settings );
-        xcode.initialize( forge );
-        return forge;
+        return xcode.initialize( forge );
     end
 } );
 
