@@ -57,7 +57,6 @@ function gcc.initialize( forge )
         forge.Executable = Executable;
 
         forge:defaults( forge.settings, {
-            arch = 'x86_64';
             architecture = 'x86_64';
             assertions = true;
             compile_as_c = false;
