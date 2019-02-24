@@ -568,6 +568,32 @@ function forge:dependencies_filter( target )
     end
 end
 
+-- Add dependencies detected by the injected build hooks library to the 
+-- target /target/.
+function forge:filenames_filter( target )
+    target:clear_filenames();
+    local output_directory = target:ordering_dependency():filename();
+    return function( line )
+        if line:match('^==') then 
+            local READ_WRITE_PATTERN = "^== (%a+) '([^']*)'";
+            local read_write, filename = line:match( READ_WRITE_PATTERN );
+            if read_write and filename then
+                local within_source_tree = self:relative( self:absolute(filename), output_directory ):find( '..', 1, true ) == nil;
+                if within_source_tree then 
+                    if read_write == 'write' then
+                        target:add_filename( filename );
+                    else
+                        local source_file = self:SourceFile( filename );
+                        target:add_implicit_dependency( source_file );
+                    end
+                end
+            end
+        else
+            print( line );
+        end
+    end
+end
+
 -- Recursively walk the dependencies of *target* until a target with a 
 -- filename or the maximum level limit is reached.
 function forge:walk_dependencies( target, start, finish, maximum_level )
