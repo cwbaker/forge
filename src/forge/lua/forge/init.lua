@@ -520,9 +520,11 @@ function forge:clean_visit( ... )
         local clean_function = target.clean;
         if clean_function then 
             clean_function( target.forge, target, table.unpack(args) );
-        elseif target:cleanable() and target:filename() ~= '' then 
-            if target:filename() ~= '' then
-                forge:rm( target:filename() );
+        elseif target:cleanable() then 
+            for _, filename in target:filenames() do 
+                if filename ~= '' then
+                    forge:rm( filename );
+                end
             end
             target:clear_filenames();
             target:set_built( false );
