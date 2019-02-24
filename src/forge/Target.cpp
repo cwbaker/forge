@@ -338,10 +338,10 @@ void Target::bind_to_file()
 /**
 // Bind this Target to its dependencies.
 //
-// Sets the timestamp of this Target to be the latest of the last write
-// time of the file that it is bound to or the latest timestamp of any of 
-// its dependencies and sets this Target to be outdated if any of its 
-// dependencies have a timestamp that is later than its last write time.
+// Sets the timestamp of this Target to be the latest last write time of the 
+// files that it is bound to or the latest timestamp of any of its 
+// dependencies.  Set this Target to be outdated if any of its dependencies 
+// have a timestamp that is later than its last write time.
 */
 void Target::bind_to_dependencies()
 {
