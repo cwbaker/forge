@@ -300,7 +300,6 @@ void Target::bind_to_file()
             time_t latest_last_write_time = 0;
             time_t earliest_last_write_time = std::numeric_limits<time_t>::max();
             bool outdated = false;
-            bool bound = false;
 
             for ( vector<string>::const_iterator filename = filenames_.begin(); filename != filenames_.end(); ++filename )
             {
@@ -310,23 +309,18 @@ void Target::bind_to_file()
                     time_t last_write_time = system->last_write_time( *filename );
                     latest_last_write_time = max( last_write_time, latest_last_write_time );
                     earliest_last_write_time = min( last_write_time, earliest_last_write_time );
-                    bound = true;
                 }
                 else
                 {
                     latest_last_write_time = std::numeric_limits<time_t>::max();
                     earliest_last_write_time = 0;
                     outdated = true;
-                    bound = true;
                 }
             }
 
-            if ( bound )
-            {
-                changed_ = last_write_time_ != earliest_last_write_time;
-                timestamp_ = latest_last_write_time;
-                last_write_time_ = earliest_last_write_time;
-            }
+            changed_ = last_write_time_ != earliest_last_write_time;
+            timestamp_ = latest_last_write_time;
+            last_write_time_ = earliest_last_write_time;
             outdated_ = outdated;
         }
         else
