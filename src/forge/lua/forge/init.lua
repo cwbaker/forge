@@ -39,6 +39,7 @@ end
 -- Provide global clean command.
 function clean()
     local failures = forge:postorder( forge:find_initial_target(goal), forge:clean_visit() );
+    forge:save();
     printf( "forge: clean=%sms", tostring(math.ceil(forge:ticks())) );
     return failures;
 end
@@ -519,8 +520,11 @@ function forge:clean_visit( ... )
         local clean_function = target.clean;
         if clean_function then 
             clean_function( target.forge, target, table.unpack(args) );
-        elseif target:cleanable() and target:filename() ~= "" then 
-            forge:rm( target:filename() );
+        elseif target:cleanable() and target:filename() ~= '' then 
+            if target:filename() ~= '' then
+                forge:rm( target:filename() );
+            end
+            target:set_built( false );
         end
     end
 end
