@@ -328,7 +328,7 @@ void Target::bind_to_file()
             changed_ = last_write_time_ != 0;
             timestamp_ = 0;
             last_write_time_ = 0;
-            outdated_ = false;
+            outdated_ = !built_;
         }
         
         bound_to_file_ = true;
