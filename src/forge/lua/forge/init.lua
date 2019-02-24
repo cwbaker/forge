@@ -552,11 +552,11 @@ end
 -- target /target/.
 function forge:dependencies_filter( target )
     return function( line )
-        if line:match("^==") then 
+        if line:match('^==') then 
             local READ_PATTERN = "^== read '([^']*)'";
             local filename = line:match( READ_PATTERN );
             if filename then
-                local within_source_tree = self:relative( self:absolute(filename), self:root() ):find( "..", 1, true ) == nil;
+                local within_source_tree = self:relative( self:absolute(filename), self:root() ):find( '..', 1, true ) == nil;
                 if within_source_tree then 
                     local header = self:SourceFile( filename );
                     target:add_implicit_dependency( header );
