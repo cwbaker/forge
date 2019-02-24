@@ -56,7 +56,9 @@ void LuaTarget::create( lua_State* lua_state )
         { "timestamp", &LuaTarget::timestamp },
         { "last_write_time", &LuaTarget::last_write_time },
         { "outdated", &LuaTarget::outdated },
+        { "add_filename", &LuaTarget::add_filename },
         { "set_filename", &LuaTarget::set_filename },
+        { "clear_filenames", &LuaTarget::clear_filenames },
         { "filename", &LuaTarget::filename },
         { "filenames", &LuaTarget::filenames },
         { "directory", &LuaTarget::directory },
@@ -343,6 +345,21 @@ int LuaTarget::outdated( lua_State* lua_state )
     return 0;
 }
 
+int LuaTarget::add_filename( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int FILENAME = 2;
+    Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        size_t length = 0;
+        const char* filename = luaL_checklstring( lua_state, FILENAME, &length );
+        target->add_filename( string(filename, length) );
+    }
+    return 0;
+}
+
 int LuaTarget::set_filename( lua_State* lua_state )
 {
     const int TARGET = 1;
@@ -357,6 +374,22 @@ int LuaTarget::set_filename( lua_State* lua_state )
         int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
         luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
         target->set_filename( string(filename, length), index - 1 );
+    }
+    return 0;
+}
+
+int LuaTarget::clear_filenames( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int START = 2;
+    const int FINISH = 3;
+    Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    int start = luaL_optinteger( lua_state, START, 0 );
+    int finish = luaL_optinteger( lua_state, FINISH, INT_MAX );
+    if ( target )
+    {
+        target->clear_filenames( start, finish );
     }
     return 0;
 }

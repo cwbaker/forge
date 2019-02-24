@@ -43,7 +43,9 @@ public:
     static int timestamp( lua_State* lua_state );
     static int last_write_time( lua_State* lua_state );
     static int outdated( lua_State* lua_state );
+    static int add_filename( lua_State* lua_state );
     static int set_filename( lua_State* lua_state );
+    static int clear_filenames( lua_State* lua_state );
     static int filename( lua_State* lua_state );
     static int filenames_iterator( lua_State* lua_state );
     static int filenames( lua_State* lua_state );

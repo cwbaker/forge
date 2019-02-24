@@ -542,6 +542,18 @@ bool Target::bound_to_file() const
 }
 
 /**
+// Add another filename to the filenames that this Target is bound to.
+//
+// @param filename
+//  The name of the file to add to the filenames that this target is bound
+//  to (assumed not empty).
+*/
+void Target::add_filename( const std::string& filename )
+{
+    filenames_.push_back( filename );
+}
+
+/**
 // Set the filename that this Target is bound to.
 //
 // If \e index is out of the current range of filenames then empty filenames
@@ -562,6 +574,16 @@ void Target::set_filename( const std::string& filename, int index )
         filenames_.insert( filenames_.end(), index - filenames_.size() + 1, string() );
     }
     filenames_[index] = filename;
+}
+
+/**
+// Clear the filenames that this Target is bound to.
+*/
+void Target::clear_filenames( int start, int finish )
+{
+    vector<string>::const_iterator begin = filenames_.begin() + max( start, 0 );
+    vector<string>::const_iterator end = filenames_.begin() + min( finish, int(filenames_.size()) );
+    filenames_.erase( begin, end );
 }
 
 /**
