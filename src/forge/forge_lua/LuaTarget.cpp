@@ -12,7 +12,9 @@
 #include <luaxx/luaxx.hpp>
 #include <assert/assert.hpp>
 #include <lua.hpp>
+#include <algorithm>
 
+using std::min;
 using std::string;
 using std::vector;
 using namespace sweet;
@@ -384,18 +386,50 @@ int LuaTarget::filename( lua_State* lua_state )
     return 0;
 }
 
+int LuaTarget::filenames_iterator( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int INDEX = 2;
+    const int FINISH = lua_upvalueindex( 1 );
+
+    int finish = static_cast<int>( lua_tointeger(lua_state, FINISH) );
+    Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
+    int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
+
+    if ( target && index <= finish )
+    {
+        SWEET_ASSERT( index <= int(target->filenames().size()) );
+        const string& filename = target->filename( index - 1 );
+        lua_pushinteger( lua_state, index );
+        lua_pushlstring( lua_state, filename.c_str(), filename.length() );
+        return 2;
+    }
+    return 0;
+}
+
 int LuaTarget::filenames( lua_State* lua_state )
 {
     const int TARGET = 1;
+    const int START = 2;
+    const int FINISH = 3;
+
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
-    if ( target )
-    {
-        const vector<string>& filenames = target->filenames();
-        luaxx_pushiterator( lua_state, filenames.begin(), filenames.end(), STRING_VECTOR_CONST_ITERATOR_METATABLE );
-        return 1;
-    }
-    return 0;
+
+    int start = static_cast<int>( luaL_optinteger(lua_state, START, 1) );
+    luaL_argcheck( lua_state, start >= 1, START, "expected start >= 1" );
+
+    int finish = static_cast<int>( luaL_optinteger(lua_state, FINISH, INT_MAX) );
+    luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );   
+
+    const vector<string>& filenames = target->filenames();
+    finish = min( finish, int(filenames.size()) );
+
+    lua_pushinteger( lua_state, finish );
+    lua_pushcclosure( lua_state, &LuaTarget::filenames_iterator, 1 );
+    luaxx_push( lua_state, target );
+    lua_pushinteger( lua_state, start - 1 );
+    return 3;
 }
 
 int LuaTarget::directory( lua_State* lua_state )

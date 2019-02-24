@@ -43,6 +43,7 @@ public:
     static int outdated( lua_State* lua_state );
     static int set_filename( lua_State* lua_state );
     static int filename( lua_State* lua_state );
+    static int filenames_iterator( lua_State* lua_state );
     static int filenames( lua_State* lua_state );
     static int directory( lua_State* lua_state );
     static int set_working_directory( lua_State* lua_state );
