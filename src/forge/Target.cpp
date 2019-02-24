@@ -285,21 +285,11 @@ void Target::bind()
 // time so that this Target will always be newer than any of the Targets that 
 // depend on it.
 //
-// If the file exists and is a directory with no dependencies then the 
-// timestamp is set to the earliest possible time so that it won't cause any
-// of the Targets that depend on this Target to be outdated (as they simply 
-// require that the directory exists).
-//
-// If the file exists and is a file or a directory with dependencies then the
-// timestamp of this Target is set to the last write time of the file so that
-// Targets that depend on this Target will be outdated if they are older than
-// this Target.  Additionally if the last write time of the file or directory
-// is different to the last write time already stored in this Target then this
-// Target is marked as having changed so that it can be scanned if necessary.
-//
-// Otherwise the file doesn't exist or if this Target's filename is an empty 
-// string the timestamp of this Target is set to the earliest possible time 
-// so that it will always be older than any of its dependencies.
+// If the file exists then the timestamp of this Target is set to the last 
+// write time of the file so that Targets that depend on this Target will be
+// outdated if they are older than this Target.  Additionally if the last 
+// write time of the file or directory is different to the last write time 
+// already stored in this Target then this Target is marked as having changed.
 */
 void Target::bind_to_file()
 {
