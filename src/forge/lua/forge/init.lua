@@ -536,13 +536,17 @@ function forge:build_visit( ... )
     local args = {...};
     local clean_visit = self:clean_visit( table.unpack(args) );
     return function ( target )
-        local build_function = target.build;
-        if build_function and target:outdated() then 
-            local success, error_message = pcall( build_function, target.forge, target, table.unpack(args) );
-            target:set_built( success );
-            if not success then 
-                clean_visit( target );
-                assert( success, error_message );
+        if target:outdated() then
+            local build_function = target.build;
+            if build_function then 
+                local success, error_message = pcall( build_function, target.forge, target, table.unpack(args) );
+                target:set_built( success );
+                if not success then 
+                    clean_visit( target );
+                    assert( success, error_message );
+                end
+            else
+                target:set_built( true );
             end
         end
     end
