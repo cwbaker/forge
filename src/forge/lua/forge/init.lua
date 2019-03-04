@@ -524,6 +524,7 @@ function forge:clean_visit( ... )
             if target:filename() ~= '' then
                 forge:rm( target:filename() );
             end
+            target:clear_filenames();
             target:set_built( false );
         end
     end
