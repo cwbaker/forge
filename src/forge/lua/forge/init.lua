@@ -170,9 +170,7 @@ function forge:PatternElement( target_prototype, replacement_modifier, pattern )
 end
 
 function forge:TargetPrototype( identifier )
-    local target_prototype = self:target_prototype( identifier );
-    -- self[identifier] = target_prototype;
-    return target_prototype;
+    return self:target_prototype( identifier );
 end
 
 function forge:FilePrototype( identifier, filename_modifier )
