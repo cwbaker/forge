@@ -748,6 +748,20 @@ function forge:cpdir( destination, source, settings )
     self:popd();
 end
 
+function forge:configure( module, identifier )
+    local local_settings = self.local_settings;
+    local module_settings = local_settings[identifier];
+    if not module_settings then
+        local settings = self.settings;
+        module_settings = module.configure( self, settings[identifier] or {} );
+        settings[identifier] = module_settings;
+        local_settings[identifier] = module_settings;
+        local_settings.updated = true;
+    end
+    local validate = module.validate;
+    return validate == nil or validate( self, module_settings );
+end
+
 forge.Target = require 'forge.Target';
 forge.Directory = require 'forge.Directory';
 forge.Copy = require 'forge.Copy';
