@@ -61,39 +61,38 @@ function android.configure( forge )
         end
     end
 
-    local local_settings = forge.local_settings;
-    if not local_settings.android then
-        local android = {
-            ndk_directory = autodetect_ndk_directory();
-            sdk_directory = autodetect_sdk_directory();
-            jdk_directory = autodetect_jdk_directory();
-            build_tools_directory = ('%s/build-tools/28.0.0'):format( autodetect_sdk_directory() );
-            proguard_directory = autodetect_proguard_directory();
-            manifest_merger = autodetect_manifest_merger();
-            toolchain_version = '4.9';
-            ndk_platform = 'android-21';
-            sdk_platform = 'android-22';
-            ivy = autodetect_ivy();
-            ivy_cache_directory = autodetect_ivy_cache_directory();
-            unzip = autodetect_unzip();
-            architectures = { 'armv5', 'armv7' };
-        };
-        android.valid = forge:exists( android.ndk_directory ) and forge:exists( android.sdk_directory ) and forge:exists( android.jdk_directory );
-        local_settings.android = android;
-        local_settings.updated = true;
-    end
-    -- return local_settings.android.valid;
-    return true;
+    return {
+        ndk_directory = autodetect_ndk_directory();
+        sdk_directory = autodetect_sdk_directory();
+        jdk_directory = autodetect_jdk_directory();
+        build_tools_directory = ('%s/build-tools/28.0.0'):format( autodetect_sdk_directory() );
+        proguard_directory = autodetect_proguard_directory();
+        manifest_merger = autodetect_manifest_merger();
+        toolchain_version = '4.9';
+        ndk_platform = 'android-21';
+        sdk_platform = 'android-22';
+        ivy = autodetect_ivy();
+        ivy_cache_directory = autodetect_ivy_cache_directory();
+        unzip = autodetect_unzip();
+        architectures = { 'armv5', 'armv7' };
+    };
+end
+
+function android.validate( forge, android_settings )
+    return 
+        forge:exists( android_settings.ndk_directory ) and 
+        forge:exists( android_settings.sdk_directory ) and 
+        forge:exists( android_settings.jdk_directory )
+    ;
 end
 
 function android.initialize( forge )
-    if android.configure(forge) then
+    if forge:configure(android, 'android') then
+        local settings = forge.settings;
         local identifier = forge.settings.identifier;
         if identifier then
             forge:add_build( forge:interpolate(identifier), forge );
         end
-
-        local settings = forge.settings;
         
         local Aidl = require 'forge.android.Aidl';
         forge.Aidl = forge:PatternElement( Aidl );

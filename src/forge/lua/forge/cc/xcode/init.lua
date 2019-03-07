@@ -4,7 +4,7 @@ local xcodeproj = require 'forge.cc.xcode.xcodeproj';
 
 local xcode = {};
 
-function xcode.configure( forge )
+function xcode.configure( forge, xcode_settings )
     local function autodetect_sdk_version( sdk )
         local sdk_version = '';
         local sdk_build_version = '';
@@ -58,39 +58,36 @@ function xcode.configure( forge )
         return os_version;
     end
 
-    local settings = forge.settings;
-    local local_settings = forge.local_settings;
-    if forge:operating_system() == 'macos' then
-        if not local_settings.xcode then
-            local macosx_sdk_version, macosx_sdk_build_version = autodetect_sdk_version( 'macosx' );
-            local iphoneos_sdk_version, iphoneos_sdk_build_version = autodetect_sdk_version( 'iphoneos' );
-            local xcode_version, xcode_build_version = autodetect_xcode_version();
-            local os_version = autodetect_macos_version();
-            local_settings.updated = true;
-            local_settings.xcode = {
-                xcrun = "/usr/bin/xcrun";
-                codesign = "/usr/bin/codesign";
-                plutil = "/usr/bin/plutil";
-                signing_identity = "iPhone Developer";
-                sdk_version = {
-                    iphoneos = iphoneos_sdk_version;
-                    macosx = macosx_sdk_version;
-                };
-                sdk_build_version = {
-                    iphoneos = iphoneos_sdk_build_version;
-                    macosx = macosx_sdk_build_version;
-                };
-                xcode_version = xcode_version;
-                xcode_build_version = xcode_build_version;
-                os_version = os_version;
-            };
-        end
-        return true;
-    end
+    local macosx_sdk_version, macosx_sdk_build_version = autodetect_sdk_version( 'macosx' );
+    local iphoneos_sdk_version, iphoneos_sdk_build_version = autodetect_sdk_version( 'iphoneos' );
+    local xcode_version, xcode_build_version = autodetect_xcode_version();
+    local os_version = autodetect_macos_version();
+
+    return {
+        xcrun = "/usr/bin/xcrun";
+        codesign = "/usr/bin/codesign";
+        plutil = "/usr/bin/plutil";
+        signing_identity = "iPhone Developer";
+        sdk_version = {
+            iphoneos = iphoneos_sdk_version;
+            macosx = macosx_sdk_version;
+        };
+        sdk_build_version = {
+            iphoneos = iphoneos_sdk_build_version;
+            macosx = macosx_sdk_build_version;
+        };
+        xcode_version = xcode_version;
+        xcode_build_version = xcode_build_version;
+        os_version = os_version;
+    };
+end
+
+function xcode.validate( forge, xcode_settings )
+    return xcode_settings.xcode_version ~= nil;
 end
 
 function xcode.initialize( forge )
-    if xcode.configure(forge) then 
+    if forge:configure( xcode, 'xcode' ) then 
         local identifier = forge.settings.identifier;
         if identifier then
             forge:add_build( forge:interpolate(identifier), forge );

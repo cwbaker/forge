@@ -168,87 +168,77 @@ function android_ndk.link( forge, target )
     forge:popd();
 end
 
--- Register the Android NDK GCC C/C++ toolset in *forge*.
-function android_ndk.register( forge )
-end
-
-function android_ndk.configure( forge )
-    return true;
-end
-
 function android_ndk.initialize( forge )
-    if android_ndk.configure(forge) then
-        local identifier = forge.settings.identifier;
-        if identifier then 
-            forge:add_build( forge:interpolate(identifier), forge );
-        end
-
-        local Cc = forge:PatternPrototype( 'Cc', android_ndk.object_filename );
-        Cc.language = 'c';
-        Cc.build = android_ndk.compile;
-        forge.Cc = Cc;
-
-        local Cxx = forge:PatternPrototype( 'Cxx', android_ndk.object_filename );
-        Cxx.language = 'c++';
-        Cxx.build = android_ndk.compile;
-        forge.Cxx = Cxx;
-
-        local StaticLibrary = forge:FilePrototype( 'StaticLibrary', android_ndk.static_library_filename );
-        StaticLibrary.build = android_ndk.archive;
-        forge.StaticLibrary = StaticLibrary;
-
-        local DynamicLibrary = forge:TargetPrototype( 'DynamicLibrary' );
-        DynamicLibrary.create = android_ndk.dynamic_library;
-        DynamicLibrary.build = android_ndk.link;
-        forge.DynamicLibrary = DynamicLibrary;
-
-        local directory_by_architecture = {
-            ['armv5'] = 'armeabi';
-            ['armv7'] = 'armeabi-v7a';
-            ['arm64'] = 'arm64';
-            ['mips'] = 'mips';
-            ['x86'] = 'x86';
-        };
-
-        local settings = forge.settings;
-        forge:defaults( 
-            settings, {
-            architecture = 'armv7';
-            arch_directory = directory_by_architecture[settings.architecture or 'armv7'];
-            assertions = true;
-            compile_as_c = false;
-            debug = true;
-            debuggable = true;
-            exceptions = true;
-            fast_floating_point = false;
-            framework_directories = {};
-            generate_dsym_bundle = false;
-            generate_map_file = true;
-            incremental_linking = true;
-            link_time_code_generation = false;
-            minimal_rebuild = true;
-            objc_arc = true;
-            objc_modules = true;
-            optimization = false;
-            pre_compiled_headers = true;
-            preprocess = false;
-            profiling = false;
-            run_time_checks = true;
-            runtime_library = 'gnustl_shared';
-            run_time_type_info = true;
-            sse2 = true;
-            stack_size = 1048576;
-            standard = 'c++17';
-            string_pooling = false;
-            strip = false;
-            subsystem = 'CONSOLE';
-            verbose_linking = false;
-            warning_level = 3;
-            warnings_as_errors = true;
-        } );
-
-        return forge;
+    local identifier = forge.settings.identifier;
+    if identifier then 
+        forge:add_build( forge:interpolate(identifier), forge );
     end
+
+    local Cc = forge:PatternPrototype( 'Cc', android_ndk.object_filename );
+    Cc.language = 'c';
+    Cc.build = android_ndk.compile;
+    forge.Cc = Cc;
+
+    local Cxx = forge:PatternPrototype( 'Cxx', android_ndk.object_filename );
+    Cxx.language = 'c++';
+    Cxx.build = android_ndk.compile;
+    forge.Cxx = Cxx;
+
+    local StaticLibrary = forge:FilePrototype( 'StaticLibrary', android_ndk.static_library_filename );
+    StaticLibrary.build = android_ndk.archive;
+    forge.StaticLibrary = StaticLibrary;
+
+    local DynamicLibrary = forge:TargetPrototype( 'DynamicLibrary' );
+    DynamicLibrary.create = android_ndk.dynamic_library;
+    DynamicLibrary.build = android_ndk.link;
+    forge.DynamicLibrary = DynamicLibrary;
+
+    local directory_by_architecture = {
+        ['armv5'] = 'armeabi';
+        ['armv7'] = 'armeabi-v7a';
+        ['arm64'] = 'arm64';
+        ['mips'] = 'mips';
+        ['x86'] = 'x86';
+    };
+
+    local settings = forge.settings;
+    forge:defaults( 
+        settings, {
+        architecture = 'armv7';
+        arch_directory = directory_by_architecture[settings.architecture or 'armv7'];
+        assertions = true;
+        compile_as_c = false;
+        debug = true;
+        debuggable = true;
+        exceptions = true;
+        fast_floating_point = false;
+        framework_directories = {};
+        generate_dsym_bundle = false;
+        generate_map_file = true;
+        incremental_linking = true;
+        link_time_code_generation = false;
+        minimal_rebuild = true;
+        objc_arc = true;
+        objc_modules = true;
+        optimization = false;
+        pre_compiled_headers = true;
+        preprocess = false;
+        profiling = false;
+        run_time_checks = true;
+        runtime_library = 'gnustl_shared';
+        run_time_type_info = true;
+        sse2 = true;
+        stack_size = 1048576;
+        standard = 'c++17';
+        string_pooling = false;
+        strip = false;
+        subsystem = 'CONSOLE';
+        verbose_linking = false;
+        warning_level = 3;
+        warnings_as_errors = true;
+    } );
+
+    return forge;
 end
 
 function android_ndk.append_defines( forge, target, flags )
