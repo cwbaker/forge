@@ -1,5 +1,5 @@
 
-local Xib = forge:TargetPrototype( 'Xib' );
+local Xib = forge:FilePrototype( 'Xib' );
 
 function Xib.build( forge, target )
     local settings = forge.settings;
