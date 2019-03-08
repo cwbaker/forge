@@ -110,25 +110,26 @@ function msvc.configure( forge, local_settings )
         end
     end
 
-    if forge:operating_system() == 'windows' then
-        local local_settings = forge.local_settings;
-        if not local_settings.msvc then
-            local toolset_version = autodetect_toolset_version();
-            local_settings.updated = true;
-            local_settings.msvc = {
-                toolset_version = toolset_version;
-                visual_studio_directory = autodetect_visual_studio_directory( toolset_version );
-                visual_cxx_directory = autodetect_visual_cxx_directory( toolset_version );
-                windows_sdk_directory = autodetect_windows_sdk_directory();
-                windows_sdk_version = autodetect_windows_sdk_version();
-            };
-        end
-        return true;
-    end
+    local toolset_version = autodetect_toolset_version();
+    return {
+        toolset_version = toolset_version;
+        visual_studio_directory = autodetect_visual_studio_directory( toolset_version );
+        visual_cxx_directory = autodetect_visual_cxx_directory( toolset_version );
+        windows_sdk_directory = autodetect_windows_sdk_directory();
+        windows_sdk_version = autodetect_windows_sdk_version();
+    };
+end
+
+function msvc.validate( forge, msvc_settings )
+    return 
+        forge:operating_system() == 'windows' and 
+        msvc_settings.toolset_version ~= nil and 
+        msvc_settings.visual_cxx_directory ~= nil
+    ;
 end
 
 function msvc.initialize( forge )
-    if msvc.configure(forge, forge.local_settings) then 
+    if forge:configure(msvc, 'msvc') then 
         local identifier = forge.settings.identifier;
         if identifier then
             forge:add_build( forge:interpolate(identifier), forge );

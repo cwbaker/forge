@@ -8,27 +8,27 @@ gcc.flags_by_architecture = {
     x86_64 = '';
 };
 
-function gcc.configure( forge )
-    local project_gcc = forge.settings.gcc or {};
-    local local_gcc = forge.local_settings.gcc;
-    if not local_gcc then
-        local_gcc = {
-            gcc = project_gcc.gcc or '/usr/bin/gcc';
-            gxx = project_gcc.gxx or '/usr/bin/g++';
-            ar = project_gcc.ar or '/usr/bin/ar';
-            environment = project_gcc.environment or {
-                PATH = '/usr/bin';
-            };
+function gcc.configure( forge, gcc_settings )
+    return {
+        gcc = gcc_settings.gcc or '/usr/bin/gcc';
+        gxx = gcc_settings.gxx or '/usr/bin/g++';
+        ar = gcc_settings.ar or '/usr/bin/ar';
+        environment = gcc_settings.environment or {
+            PATH = '/usr/bin';
         };
-        local_gcc.valid = forge:exists( local_gcc.gcc ) and forge:exists( local_gcc.gxx ) and forge:exists( local_gcc.ar );
-        forge.local_settings.gcc = local_gcc;
-        forge.local_settings.updated = true;
-    end
-    return local_gcc.valid;
+    };
+end
+
+function gcc.validate( forge, gcc_settings )
+    return 
+        forge:exists( gcc_settings.gcc ) and 
+        forge:exists( gcc_settings.gxx ) and 
+        forge:exists( gcc_settings.ar )
+    ;
 end
 
 function gcc.initialize( forge )
-    if gcc.configure(forge) then
+    if forge:configure(gcc, 'gcc') then
         local identifier = forge.settings.identifier;
         if identifier then
             forge:add_build( forge:interpolate(identifier), forge );
