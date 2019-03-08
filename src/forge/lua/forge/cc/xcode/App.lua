@@ -1,25 +1,10 @@
 
 local App = forge:TargetPrototype( 'App' );
 
-local function default_identifier_filename( forge, identifier, settings )
-    local identifier = forge:interpolate( identifier, settings );
-    local leaf = forge:leaf( identifier );
-    local branch = settings.bin;
-    if forge:is_absolute(identifier) then 
-        branch = forge:branch( identifier );
-    end
-    local identifier = ("%s$$"):format( identifier );
-    local filename = ("%s/%s"):format( branch, leaf );
-    return identifier, filename;
-end
-
 function App.create( forge, identifier )
-    local settings = forge.settings;
-    local identifier, filename = default_identifier_filename( forge, identifier, settings );
-    local app = forge:Target( identifier, App );
-    app:set_filename( filename );
-    app:set_cleanable( true );
-    app:add_ordering_dependency( forge:Directory(forge:branch(app)) );
+    local filename = forge:interpolate( identifier );
+    local app = forge:Target( ('%s$$'):format(identifier), App );
+    app:add_ordering_dependency( forge:Directory(filename) );
     return app;
 end
 
@@ -46,7 +31,7 @@ function App.build( forge, target )
             end
         end
         if executable then 
-            forge:system( xcrun, ('xcrun dsymutil -o "%s.dSYM" "%s"'):format(target:filename(), executable) );
+            forge:system( xcrun, ('xcrun dsymutil -o "%s.dSYM" "%s"'):format(target:ordering_dependency(), executable) );
             if target.settings.strip then 
                 forge:system( xcrun, ('xcrun strip "%s"'):format(executable) );
             end
@@ -55,7 +40,7 @@ function App.build( forge, target )
 
     local provisioning_profile = _G.provisioning_profile or target.provisioning_profile;
     if provisioning_profile then
-        local embedded_provisioning_profile = ("%s/embedded.mobileprovision"):format( target:filename() );
+        local embedded_provisioning_profile = ("%s/embedded.mobileprovision"):format( target:ordering_dependency() );
         forge:rm( embedded_provisioning_profile );
         forge:cp( embedded_provisioning_profile, provisioning_profile );
     end
@@ -66,7 +51,7 @@ function App.build( forge, target )
         "--force";
         "--no-strict";
         "-vv";
-        ('"%s"'):format( target );
+        ('"%s"'):format( target:ordering_dependency() );
     };
     local entitlements = target.entitlements;
     if entitlements then 
@@ -75,10 +60,6 @@ function App.build( forge, target )
 
     local codesign = settings.xcode.codesign;
     forge:system( codesign, table.concat(command_line, ' '), environment );
-end
-
-function App.clean( forge, target )
-    forge:rmdir( target:filename() );
 end
 
 return App;
