@@ -102,25 +102,27 @@ function xcode.initialize( forge )
         forge.Lipo = require 'forge.cc.xcode.Lipo';
         forge.Xib = require 'forge.cc.xcode.Xib';
 
-        local Cc = forge:PatternPrototype( 'Cc', xcode.object_filename );
+        local pattern = '(.-([^\\/]-))(%.?[^%.\\/]*)$';
+
+        local Cc = forge:FilePrototype( 'Cc' );
         Cc.language = 'c';
         Cc.build = xcode.compile;
-        forge.Cc = Cc;
+        forge.Cc = forge:PatternElement( Cc, xcode.object_filename, pattern );
 
-        local Cxx = forge:PatternPrototype( 'Cxx', xcode.object_filename );
+        local Cxx = forge:FilePrototype( 'Cxx' );
         Cxx.language = 'c++';
         Cxx.build = xcode.compile;
-        forge.Cxx = Cxx;
+        forge.Cxx = forge:PatternElement( Cxx, xcode.object_filename, pattern );
 
-        local ObjC = forge:PatternPrototype( 'ObjC', xcode.object_filename );
+        local ObjC = forge:FilePrototype( 'ObjC' );
         ObjC.language = 'objective-c';
         ObjC.build = xcode.compile;
-        forge.ObjC = ObjC;
+        forge.ObjC = forge:PatternElement( ObjC, xcode.object_filename, pattern );
 
-        local ObjCxx = forge:PatternPrototype( 'ObjCxx', xcode.object_filename );
+        local ObjCxx = forge:FilePrototype( 'ObjCxx' );
         ObjCxx.language = 'objective-c++';
         ObjCxx.build = xcode.compile;
-        forge.ObjCxx = ObjCxx;
+        forge.ObjCxx = forge:PatternElement( ObjCxx, xcode.object_filename, pattern );
 
         local StaticLibrary = forge:FilePrototype( 'StaticLibrary', xcode.static_library_filename );
         StaticLibrary.build = xcode.archive;
@@ -236,7 +238,7 @@ function xcode.archive( forge, target )
     local objects =  {};
     for _, object in forge:walk_dependencies( target ) do
         local prototype = object:prototype();
-        if prototype == forge.Cc or prototype == forge.Cxx or prototype == forge.ObjC or prototype == forge.ObjCxx then
+        if prototype ~= forge.Directory then
             table.insert( objects, forge:relative(object) );
         end
     end
@@ -261,10 +263,10 @@ function xcode.link( forge, target )
     forge:pushd( forge:obj_directory(target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
-        if prototype == forge.Cc or prototype == forge.Cxx or prototype == forge.ObjC or prototype == forge.ObjCxx then
-            table.insert( objects, forge:relative(dependency) );
-        elseif prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
+        if prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
             table.insert( libraries, ('-l%s'):format(dependency:id()) );
+        elseif prototype ~= forge.Directory then
+            table.insert( objects, forge:relative(dependency) );
         end
     end
 

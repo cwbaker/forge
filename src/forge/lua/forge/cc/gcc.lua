@@ -34,15 +34,17 @@ function gcc.initialize( forge )
             forge:add_build( forge:interpolate(identifier), forge );
         end
 
-        local Cc = forge:PatternPrototype( 'Cc', gcc.object_filename );
+        local pattern = '(.-([^\\/]-))(%.?[^%.\\/]*)$';
+
+        local Cc = forge:FilePrototype( 'Cc' );
         Cc.language = 'c';
         Cc.build = gcc.compile;
-        forge.Cc = Cc;
+        forge.Cc = forge:PatternElement( Cc, gcc.object_filename, pattern );
 
-        local Cxx = forge:PatternPrototype( 'Cxx', gcc.object_filename );
+        local Cxx = forge:FilePrototype( 'Cxx' );
         Cxx.language = 'c++';
         Cxx.build = gcc.compile;
-        forge.Cxx = Cxx;
+        forge.Cxx = forge:PatternElement( Cxx, gcc.object_filename, pattern );
 
         local StaticLibrary = forge:FilePrototype( 'StaticLibrary', gcc.static_library_filename );
         StaticLibrary.build = gcc.archive;

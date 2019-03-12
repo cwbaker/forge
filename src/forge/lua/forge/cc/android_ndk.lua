@@ -174,15 +174,17 @@ function android_ndk.initialize( forge )
         forge:add_build( forge:interpolate(identifier), forge );
     end
 
-    local Cc = forge:PatternPrototype( 'Cc', android_ndk.object_filename );
+    local pattern = '(.-([^\\/]-))(%.?[^%.\\/]*)$';
+
+    local Cc = forge:FilePrototype( 'Cc' );
     Cc.language = 'c';
     Cc.build = android_ndk.compile;
-    forge.Cc = Cc;
+    forge.Cc = forge:PatternElement( Cc, android_ndk.object_filename, pattern );
 
-    local Cxx = forge:PatternPrototype( 'Cxx', android_ndk.object_filename );
+    local Cxx = forge:FilePrototype( 'Cxx' );
     Cxx.language = 'c++';
     Cxx.build = android_ndk.compile;
-    forge.Cxx = Cxx;
+    forge.Cxx = forge:PatternElement( Cxx, android_ndk.object_filename, pattern );
 
     local StaticLibrary = forge:FilePrototype( 'StaticLibrary', android_ndk.static_library_filename );
     StaticLibrary.build = android_ndk.archive;
