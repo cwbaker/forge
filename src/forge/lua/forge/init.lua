@@ -187,30 +187,6 @@ function forge:FilePrototype( identifier, filename_modifier )
     return file_prototype;
 end
 
-function forge:PatternPrototype( identifier, replacement_modifier )
-    local replacement_modifier = replacement_modifier or forge.interpolate;
-    local pattern_prototype = self:TargetPrototype( identifier );
-    pattern_prototype.create = function( forge, identifier )
-        local target = forge:Target( forge:anonymous() );
-        target.replacement = replacement_modifier( forge, identifier );
-        target.depend = function( forge, target, dependencies )
-            local replacement = target.replacement;
-            local pattern = '(.-([^\\/]-))(%.?[^%.\\/]*)$';
-            local attributes = forge:merge( {}, dependencies );
-            for _, filename in ipairs(dependencies) do
-                local source_file = forge:SourceFile( filename );
-                local identifier = forge:root_relative( source_file ):gsub( pattern, replacement );
-                local file = forge:File( identifier, pattern_prototype );
-                forge:merge( file, attributes );
-                file:add_dependency( source_file );
-                target:add_dependency( file );
-            end
-        end     
-        return target;
-    end
-    return pattern_prototype;
-end
-
 function forge:GroupPrototype( identifier, replacement_modifier )
     local replacement_modifier = replacement_modifier or forge.interpolate;
     local group_prototype = self:TargetPrototype( identifier );
