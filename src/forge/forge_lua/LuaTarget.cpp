@@ -385,8 +385,8 @@ int LuaTarget::clear_filenames( lua_State* lua_state )
     const int FINISH = 3;
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
-    int start = luaL_optinteger( lua_state, START, 0 );
-    int finish = luaL_optinteger( lua_state, FINISH, INT_MAX );
+    int start = (int) luaL_optinteger( lua_state, START, 0 );
+    int finish = (int) luaL_optinteger( lua_state, FINISH, INT_MAX );
     if ( target )
     {
         target->clear_filenames( start, finish );
