@@ -136,37 +136,26 @@ function forge:inherit( settings )
 end
 
 function forge:PatternElement( target_prototype, replacement_modifier, pattern )
-    local target_prototype = target_prototype or forge.File;
-    local replacement_modifier = replacement_modifier or forge.interpolate;
+    local target_prototype = target_prototype or self.File;
+    local replacement_modifier = replacement_modifier or self.interpolate;
     local pattern = pattern or '(.-([^\\/]-)(%.?[^%.\\/]*))$';
-    
-    local function element_call_metamethod( element, dependencies )
-        local forge = element.forge;
-        local replacement = element.replacement;
-        local attributes = forge:merge( {}, dependencies );
-        for _, filename in ipairs(dependencies) do
-            local source_file = forge:SourceFile( filename );
-            local identifier = forge:root_relative( source_file ):gsub( pattern, replacement );
-            local target = target_prototype( forge, identifier );
-            target:add_dependency( source_file );
-            forge:merge( target, attributes );
-            table.insert( element, target );
-        end
-        return element;
-    end
-
-    local element_metatable = {
-        __call = element_call_metamethod;
-    };
 
     return function( forge, replacement )
-        local element = {
-            forge = forge;
-            replacement = replacement_modifier( forge, replacement );
-        };
-        setmetatable( element, element_metatable );
-        return element;
-    end
+        local targets = {};
+        local replacement = replacement_modifier( forge, replacement );
+        return function( dependencies )
+            local attributes = forge:merge( {}, dependencies );
+            for _, filename in ipairs(dependencies) do
+                local source_file = forge:SourceFile( filename );
+                local identifier = forge:root_relative( source_file ):gsub( pattern, replacement );
+                local target = target_prototype( forge, identifier );
+                target:add_dependency( source_file );
+                forge:merge( target, attributes );
+                table.insert( targets, target );
+            end
+            return targets;
+        end
+    end    
 end
 
 function forge:GroupElement( target_prototype, replacement_modifier, pattern )
