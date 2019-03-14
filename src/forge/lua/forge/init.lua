@@ -169,6 +169,28 @@ function forge:PatternElement( target_prototype, replacement_modifier, pattern )
     end
 end
 
+function forge:GroupElement( target_prototype, replacement_modifier, pattern )
+    local target_prototype = target_prototype or forge.File;
+    local replacement_modifier = replacement_modifier or forge.interpolate;
+    local pattern = pattern or '(.-([^\\/]-)(%.?[^%.\\/]*))$';
+    
+    return function( forge, replacement )
+        local target = forge:Target( forge:anonymous(), target_prototype );
+        local replacement = replacement_modifier( forge, replacement );
+        return function( dependencies )
+            forge:merge( target, dependencies );
+            for _, filename in ipairs(dependencies) do
+                local source_file = forge:SourceFile( filename );
+                local identifier = forge:root_relative( source_file ):gsub( pattern, replacement );
+                local file = forge:File( identifier );
+                file:add_dependency( source_file );
+                target:add_dependency( file );
+            end
+            return target;
+        end
+    end
+end
+
 function forge:TargetPrototype( identifier )
     return self:target_prototype( identifier );
 end
