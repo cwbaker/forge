@@ -125,7 +125,7 @@ function clang.register( forge )
     local ObjCxx = forge:FilePrototype( 'ObjCxx' );
     ObjCxx.language = 'objective-c++';
     ObjCxx.build = clang.compile;
-    forge.ObjCxx = forge:PatternElement( 'ObjCxx', clang.object_filename, pattern );
+    forge.ObjCxx = forge:PatternElement( ObjCxx, clang.object_filename, pattern );
 
     local StaticLibrary = forge:FilePrototype( 'StaticLibrary', clang.static_library_filename );
     StaticLibrary.build = clang.archive;
