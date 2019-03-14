@@ -242,15 +242,17 @@ function msvc.initialize( forge )
             };
         };
 
-        local Cc = forge:GroupPrototype( 'Cc', msvc.object_filename );
+        local pattern = '(.-([^\\/]-))(%.?[^%.\\/]*)$';
+
+        local Cc = forge:TargetPrototype( 'Cc' );
         Cc.language = 'c';
         Cc.build = msvc.compile;
-        forge.Cc = Cc;
+        forge.Cc = forge:GroupElement( Cc, msvc.object_filename, pattern );
 
-        local Cxx = forge:GroupPrototype( 'Cxx', msvc.object_filename );
+        local Cxx = forge:TargetPrototype( 'Cxx' );
         Cxx.language = 'c++';
         Cxx.build = msvc.compile;
-        forge.Cxx = Cxx;
+        forge.Cxx = forge:GroupElement( Cxx, msvc.object_filename, pattern );
 
         local StaticLibrary = forge:FilePrototype( 'StaticLibrary', msvc.static_library_filename );
         StaticLibrary.build = msvc.archive;
@@ -401,7 +403,7 @@ function msvc.archive( forge, target )
     local objects = {};
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == forge.Cc or prototype == forge.Cxx then
+        if prototype ~= forge.Directory then
             for _, object in dependency:dependencies() do
                 table.insert( objects, forge:relative(object:filename()) );
             end
@@ -428,15 +430,15 @@ function msvc.link( forge, target )
     forge:pushd( forge:obj_directory(target) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == forge.Cc or prototype == forge.Cxx then
+        if prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
+            table.insert( libraries, ('%s.lib'):format(forge:basename(dependency:filename())) );
+        elseif prototype ~= forge.Directory then
             assertf( target.architecture == dependency.architecture, "Architectures for '%s' (%s) and '%s' (%s) don't match", target:path(), tostring(target.architecture), dependency:path(), tostring(dependency.architecture) );
             for _, object in dependency:dependencies() do
                 if object:prototype() == nil then
                     table.insert( objects, forge:relative(object:filename()) );
                 end
             end
-        elseif prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
-            table.insert( libraries, ('%s.lib'):format(forge:basename(dependency:filename())) );
         end
     end
 
