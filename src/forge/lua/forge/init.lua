@@ -170,8 +170,8 @@ function forge:PatternElement( target_prototype, replacement_modifier, pattern )
 end
 
 function forge:GroupElement( target_prototype, replacement_modifier, pattern )
-    local target_prototype = target_prototype or forge.File;
-    local replacement_modifier = replacement_modifier or forge.interpolate;
+    local target_prototype = target_prototype or self.File;
+    local replacement_modifier = replacement_modifier or self.interpolate;
     local pattern = pattern or '(.-([^\\/]-)(%.?[^%.\\/]*))$';
     
     return function( forge, replacement )
