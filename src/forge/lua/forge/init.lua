@@ -138,7 +138,7 @@ end
 function forge:PatternElement( target_prototype, replacement_modifier, pattern )
     local target_prototype = target_prototype or self.File;
     local replacement_modifier = replacement_modifier or self.interpolate;
-    local pattern = pattern or '(.-([^\\/]-)(%.?[^%.\\/]*))$';
+    local pattern = pattern or '(.-([^\\/]-))(%.?[^%.\\/]*)$';
 
     return function( forge, replacement )
         local targets = {};
@@ -161,7 +161,7 @@ end
 function forge:GroupElement( target_prototype, replacement_modifier, pattern )
     local target_prototype = target_prototype or self.File;
     local replacement_modifier = replacement_modifier or self.interpolate;
-    local pattern = pattern or '(.-([^\\/]-)(%.?[^%.\\/]*))$';
+    local pattern = pattern or '(.-([^\\/]-))(%.?[^%.\\/]*)$';
     
     return function( forge, replacement )
         local target = forge:Target( forge:anonymous(), target_prototype );
@@ -198,9 +198,9 @@ function forge:FilePrototype( identifier, filename_modifier )
     return file_prototype;
 end
 
-function forge:JavaStylePrototype( identifier )
+function forge:JavaStylePrototype( identifier, pattern )
     local interpolate = forge.interpolate;
-    local pattern = '(.-([^\\/]-))(%.?[^%.\\/]*)$';
+    local pattern = pattern or '(.-([^\\/]-))(%.?[^%.\\/]*)$';
     local java_style_prototype = self:TargetPrototype( identifier );
     function java_style_prototype.create( forge, output_directory, target_prototype )
         local output_directory = forge:root_relative():gsub( pattern, interpolate(forge, output_directory) );
