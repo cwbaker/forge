@@ -242,17 +242,15 @@ function msvc.initialize( forge )
             };
         };
 
-        local pattern = '(.-([^\\/]-))(%.?[^%.\\/]*)$';
-
         local Cc = forge:TargetPrototype( 'Cc' );
         Cc.language = 'c';
         Cc.build = msvc.compile;
-        forge.Cc = forge:GroupElement( Cc, msvc.object_filename, pattern );
+        forge.Cc = forge:GroupElement( Cc, msvc.object_filename );
 
         local Cxx = forge:TargetPrototype( 'Cxx' );
         Cxx.language = 'c++';
         Cxx.build = msvc.compile;
-        forge.Cxx = forge:GroupElement( Cxx, msvc.object_filename, pattern );
+        forge.Cxx = forge:GroupElement( Cxx, msvc.object_filename );
 
         local StaticLibrary = forge:FilePrototype( 'StaticLibrary', msvc.static_library_filename );
         StaticLibrary.build = msvc.archive;

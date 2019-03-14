@@ -105,27 +105,25 @@ end
 
 -- Register the clang C/C++ toolset in *forge*.
 function clang.register( forge )
-    local pattern = '(.-([^\\/]-))(%.?[^%.\\/]*)$';
-
     local Cc = forge:FilePrototype( 'Cc' );
     Cc.language = 'c';
     Cc.build = clang.compile;
-    forge.Cc = forge:PatternElement( Cc, clang.object_filename, pattern );
+    forge.Cc = forge:PatternElement( Cc, clang.object_filename );
 
     local Cxx = forge:FilePrototype( 'Cxx' );
     Cxx.language = 'c++';
     Cxx.build = clang.compile;
-    forge.Cxx = forge:PatternElement( Cxx, clang.object_filename, pattern );
+    forge.Cxx = forge:PatternElement( Cxx, clang.object_filename );
 
     local ObjC = forge:FilePrototype( 'ObjC' );
     ObjC.language = 'objective-c';
     ObjC.build = clang.compile;
-    forge.ObjC = forge:PatternElement( ObjC, clang.object_filename, pattern );
+    forge.ObjC = forge:PatternElement( ObjC, clang.object_filename );
 
     local ObjCxx = forge:FilePrototype( 'ObjCxx' );
     ObjCxx.language = 'objective-c++';
     ObjCxx.build = clang.compile;
-    forge.ObjCxx = forge:PatternElement( ObjCxx, clang.object_filename, pattern );
+    forge.ObjCxx = forge:PatternElement( ObjCxx, clang.object_filename );
 
     local StaticLibrary = forge:FilePrototype( 'StaticLibrary', clang.static_library_filename );
     StaticLibrary.build = clang.archive;

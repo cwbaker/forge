@@ -102,27 +102,25 @@ function xcode.initialize( forge )
         forge.Lipo = require 'forge.cc.xcode.Lipo';
         forge.Xib = require 'forge.cc.xcode.Xib';
 
-        local pattern = '(.-([^\\/]-))(%.?[^%.\\/]*)$';
-
         local Cc = forge:FilePrototype( 'Cc' );
         Cc.language = 'c';
         Cc.build = xcode.compile;
-        forge.Cc = forge:PatternElement( Cc, xcode.object_filename, pattern );
+        forge.Cc = forge:PatternElement( Cc, xcode.object_filename );
 
         local Cxx = forge:FilePrototype( 'Cxx' );
         Cxx.language = 'c++';
         Cxx.build = xcode.compile;
-        forge.Cxx = forge:PatternElement( Cxx, xcode.object_filename, pattern );
+        forge.Cxx = forge:PatternElement( Cxx, xcode.object_filename );
 
         local ObjC = forge:FilePrototype( 'ObjC' );
         ObjC.language = 'objective-c';
         ObjC.build = xcode.compile;
-        forge.ObjC = forge:PatternElement( ObjC, xcode.object_filename, pattern );
+        forge.ObjC = forge:PatternElement( ObjC, xcode.object_filename );
 
         local ObjCxx = forge:FilePrototype( 'ObjCxx' );
         ObjCxx.language = 'objective-c++';
         ObjCxx.build = xcode.compile;
-        forge.ObjCxx = forge:PatternElement( ObjCxx, xcode.object_filename, pattern );
+        forge.ObjCxx = forge:PatternElement( ObjCxx, xcode.object_filename );
 
         local StaticLibrary = forge:FilePrototype( 'StaticLibrary', xcode.static_library_filename );
         StaticLibrary.build = xcode.archive;
