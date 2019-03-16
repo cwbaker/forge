@@ -608,6 +608,33 @@ function forge:walk_dependencies( target, start, finish, maximum_level )
     end );
 end
 
+-- Recursively walk the tables passed in *dependencies* until reaching targets
+-- or non-table values (e.g. strings) that are yielded back to the caller.
+function forge:walk_tables( dependencies )
+    local function typename( value )
+        if type(value) == 'table' then 
+            local metatable = getmetatable( value );
+            return metatable and metatable.__name;
+        end
+    end
+
+    local index = 1;
+    local function walk( values )
+        for _, value in ipairs(values) do
+            if type(value) ~= 'table' or typename(value) == 'forge.Target' then
+                coroutine.yield( index, value );
+                index = index + 1;
+            else
+                walk( value );
+            end
+        end
+    end
+
+    return coroutine.wrap( function()
+        walk( dependencies );
+    end );
+end
+
 function forge:platform_matches( ... )
     local platform = self.settings.platform;
     if platform == nil or platform == '' then 
