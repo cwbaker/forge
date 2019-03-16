@@ -755,7 +755,7 @@ end
 
 forge.Target = require 'forge.Target';
 forge.Directory = require 'forge.Directory';
-forge.Copy = require 'forge.Copy';
+forge.Copy = forge:PatternElement( require('forge.Copy') );
 forge.CopyDirectory = require 'forge.CopyDirectory';
 
 forge.settings = {};

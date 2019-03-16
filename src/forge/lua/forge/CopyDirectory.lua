@@ -24,8 +24,9 @@ function CopyDirectory.depend( forge, target, dependencies )
         for source_filename in forge:find('') do 
             if forge:is_file(source_filename) then
                 local filename = forge:absolute( forge:relative(source_filename), destination_directory );
-                local copy = forge:Copy (filename);
-                copy:add_dependency( forge:SourceFile(source_filename) );
+                local copy = forge:Copy (filename) {
+                    source_filename;
+                };
                 target:add_dependency( copy );
             elseif forge:is_directory(source_filename) then 
                 local directory = forge:SourceDirectory( source_filename );
