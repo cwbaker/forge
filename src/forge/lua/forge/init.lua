@@ -145,7 +145,7 @@ function forge:PatternElement( target_prototype, replacement_modifier, pattern )
         local replacement = replacement_modifier( forge, replacement );
         return function( dependencies )
             local attributes = forge:merge( {}, dependencies );
-            for _, filename in ipairs(dependencies) do
+            for _, filename in forge:walk_tables(dependencies) do
                 local source_file = forge:SourceFile( filename );
                 local identifier = forge:root_relative( source_file ):gsub( pattern, replacement );
                 local target = target_prototype( forge, identifier );
@@ -168,7 +168,7 @@ function forge:GroupElement( target_prototype, replacement_modifier, pattern )
         local replacement = replacement_modifier( forge, replacement );
         return function( dependencies )
             forge:merge( target, dependencies );
-            for _, filename in ipairs(dependencies) do
+            for _, filename in forge:walk_tables(dependencies) do
                 local source_file = forge:SourceFile( filename );
                 local identifier = forge:root_relative( source_file ):gsub( pattern, replacement );
                 local file = forge:File( identifier );
