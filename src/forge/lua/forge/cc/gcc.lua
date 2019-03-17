@@ -150,7 +150,7 @@ function gcc.archive( forge, target )
     local objects =  {};
     for _, object in forge:walk_dependencies( target ) do
         local prototype = object:prototype();
-        if prototype == forge.Cc or prototype == forge.Cxx then
+        if prototype ~= forge.Directory then
             table.insert( objects, forge:relative(object) );
         end
     end
@@ -173,9 +173,7 @@ function gcc.link( forge, target )
     forge:pushd( forge:obj_directory(target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
-        if prototype == forge.Cc or prototype == forge.Cxx then
-            table.insert( objects, forge:relative(dependency) );
-        elseif prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
+        if prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
             if dependency.whole_archive then 
                 table.insert( libraries, '-Wl,--whole-archive' );
             end
@@ -183,6 +181,8 @@ function gcc.link( forge, target )
             if dependency.whole_archive then 
                 table.insert( libraries, '-Wl,--no-whole-archive' );
             end
+        elseif prototype ~= forge.Directory then
+            table.insert( objects, forge:relative(dependency) );
         end
     end
 
