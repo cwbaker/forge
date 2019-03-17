@@ -428,7 +428,7 @@ int Graph::buildfile( const std::string& filename )
     boost::filesystem::path path( forge_->absolute(filename) );
     SWEET_ASSERT( path.is_absolute() );   
     Target* buildfile_target = Graph::target( path.generic_string() );
-    buildfile_target->set_filename( path.generic_string() );
+    buildfile_target->set_filename( path.generic_string(), 0 );
     if ( cache_target_ )
     {
         cache_target_->add_explicit_dependency( buildfile_target );
@@ -597,7 +597,7 @@ void Graph::recover()
     if ( !filename_.empty() )
     {
         cache_target_ = target( filename_ );
-        cache_target_->set_filename( filename_ );
+        cache_target_->set_filename( filename_, 0 );
         bind( cache_target_ );
     }
 }

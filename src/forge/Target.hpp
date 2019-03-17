@@ -87,11 +87,11 @@ class Target
         bool bound_to_file() const;
 
         void add_filename( const std::string& filename );
-        void set_filename( const std::string& filename, int index = 0 );
-        void clear_filenames( int start = 0, int finish = INT_MAX );
-        const std::string& filename( int index = 0 ) const;
+        void set_filename( const std::string& filename, int index );
+        void clear_filenames( int start, int finish );
+        const std::string& filename( int index ) const;
         const std::vector<std::string>& filenames() const;
-        std::string directory( int index = 0 ) const;
+        std::string directory( int index ) const;
 
         void set_working_directory( Target* target );
         Target* working_directory() const;
