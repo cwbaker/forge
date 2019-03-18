@@ -19,12 +19,12 @@
 Copy `foo.in` to `foo.out`:
 
 ~~~lua
-require 'forge';
-
-forge:initialize();
+local forge = require 'forge' {
+    output = forge:root( 'output' ); 
+};
 
 forge:all {
-    forge:Copy 'foo.out' {
+    forge:Copy '${output}/foo.out' {
         'foo.in'
     };    
 };
@@ -39,6 +39,8 @@ function Copy.build( forge, target )
     forge:rm( target );
     forge:cp( target, target:dependency() );
 end
+
+return Copy;
 ~~~
 
 ## Installation
