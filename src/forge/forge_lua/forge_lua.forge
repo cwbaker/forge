@@ -16,7 +16,7 @@ for _, forge in forge:builds('cc.*') do
                 'BOOST_ALL_NO_LIB', -- Disable automatic linking to Boost libraries.
                 '_CRT_SECURE_NO_DEPRECATE',
                 '_SCL_SECURE_NO_DEPRECATE',
-                '_WIN32_WINNT=0x0500',
+                '_WIN32_WINNT=0x0a00',
                 'WIN32_LEAN_AND_MEAN'
             };
             'LuaForge.cpp',
