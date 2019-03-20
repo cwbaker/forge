@@ -278,7 +278,6 @@ const char* System::operating_system() const
     return "windows";
 #elif defined(BUILD_OS_MACOS)
     return "macos";
-
 #elif defined(BUILD_OS_LINUX)
     return "linux";
 #else
