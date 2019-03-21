@@ -581,8 +581,8 @@ void Target::set_filename( const std::string& filename, int index )
 */
 void Target::clear_filenames( int start, int finish )
 {
-    vector<string>::const_iterator begin = filenames_.begin() + max( start, 0 );
-    vector<string>::const_iterator end = filenames_.begin() + min( finish, int(filenames_.size()) );
+    vector<string>::iterator begin = filenames_.begin() + max( start, 0 );
+    vector<string>::iterator end = filenames_.begin() + min( finish, int(filenames_.size()) );
     filenames_.erase( begin, end );
 }
 
