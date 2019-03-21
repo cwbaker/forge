@@ -36,7 +36,6 @@ Executor::Executor( Forge* forge )
   forge_hooks_library_(),
   maximum_parallel_jobs_( 1 ),
   threads_(),
-  active_jobs_( 0 ),
   done_( false )
 {
     SWEET_ASSERT( forge_ );
@@ -58,11 +57,6 @@ int Executor::maximum_parallel_jobs() const
     return maximum_parallel_jobs_;
 }
 
-int Executor::active_jobs() const
-{
-    return active_jobs_;
-}
-
 void Executor::set_forge_hooks_library( const std::string& forge_hooks_library )
 {
     forge_hooks_library_ = forge_hooks_library;
@@ -79,14 +73,10 @@ void Executor::execute( const std::string& command, const std::string& command_l
     SWEET_ASSERT( !command.empty() );
     SWEET_ASSERT( context );
 
-    if ( !command.empty() )
-    {
-        start();
-        std::unique_lock<std::mutex> lock( jobs_mutex_ );
-        jobs_.push_back( std::bind(&Executor::thread_execute, this, command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context->working_directory(), context) );
-        ++active_jobs_;
-        jobs_ready_condition_.notify_all();
-    }
+    start();
+    std::unique_lock<std::mutex> lock( jobs_mutex_ );
+    jobs_.push_back( std::bind(&Executor::thread_execute, this, command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context->working_directory(), context) );
+    jobs_ready_condition_.notify_all();
 }
 
 int Executor::thread_main( void* context )
@@ -115,7 +105,6 @@ void Executor::thread_process()
             lock.unlock();
             function();
             lock.lock();
-            --active_jobs_;
         }
     }
 }
@@ -147,15 +136,15 @@ void Executor::thread_execute( const std::string& command, const std::string& co
         inject_build_hooks_windows( &process, write_dependencies_pipe );
         process.resume();
 
+        Scheduler* scheduler = forge_->scheduler();
         if ( dependencies_filter && !forge_hooks_library_.empty() )
         {
-            forge_->reader()->read( read_dependencies_pipe, dependencies_filter, arguments, working_directory );
+            scheduler->read( read_dependencies_pipe, dependencies_filter, arguments, working_directory );
         }
-
-        forge_->reader()->read( stdout_pipe, stdout_filter, arguments, working_directory );
-        forge_->reader()->read( stderr_pipe, stderr_filter, arguments, working_directory );
+        scheduler->read( stdout_pipe, stdout_filter, arguments, working_directory );
+        scheduler->read( stderr_pipe, stderr_filter, arguments, working_directory );
         process.wait();
-        forge_->scheduler()->push_execute_finished( process.exit_code(), context, environment );
+        scheduler->push_execute_finished( process.exit_code(), context, environment );
     }
 
     catch ( const std::exception& exception )

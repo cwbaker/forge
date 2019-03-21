@@ -43,7 +43,6 @@ class Executor
     std::string forge_hooks_library_; ///< The full path to the build hooks library.
     int maximum_parallel_jobs_; ///< The maximum number of parallel jobs to allow.
     std::vector<std::thread*> threads_; ///< The thread pool of threads used to process Jobs.
-    int active_jobs_; ///< The number of active jobs.
     bool done_; ///< Whether or not this Executor has finished processing (indicates to the threads in the thread pool that they should return).
 
     public:
@@ -51,7 +50,6 @@ class Executor
         ~Executor();
         const std::string& forge_hooks_library() const;
         int maximum_parallel_jobs() const;
-        int active_jobs() const;
         void set_forge_hooks_library( const std::string& forge_hook_library );
         void set_maximum_parallel_jobs( int maximum_parallel_jobs );
         void execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Context* context );

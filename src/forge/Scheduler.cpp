@@ -39,6 +39,7 @@ Scheduler::Scheduler( Forge* forge )
   results_mutex_(),
   results_condition_(),
   results_(),
+  execute_jobs_( 0 ),
   buildfile_calls_( 0 ),
   failures_( 0 )
 {
@@ -237,6 +238,7 @@ void Scheduler::push_errorf( const char* format, ... )
 void Scheduler::push_execute_finished( int exit_code, Context* context, process::Environment* environment )
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
+    --execute_jobs_;
     results_.push_back( std::bind(&Scheduler::execute_finished, this, exit_code, context, environment) );
     results_condition_.notify_all();
 }
@@ -250,8 +252,10 @@ void Scheduler::push_filter_finished( Filter* filter, Arguments* arguments )
 
 void Scheduler::execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Context* context )
 {
+    SWEET_ASSERT( !command.empty() );
     std::unique_lock<std::mutex> lock( results_mutex_ );
     forge_->executor()->execute( command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context );
+    ++execute_jobs_;
 }
 
 void Scheduler::wait()
@@ -466,12 +470,11 @@ void Scheduler::destroy_context( Context* context )
 
 bool Scheduler::dispatch_results()
 {
-    Executor* executor = forge_->executor();
     Reader* reader = forge_->reader();
     std::unique_lock<std::mutex> lock( results_mutex_ );
     if ( results_.empty() )
     {
-        if ( executor->active_jobs() > 0 || reader->active_jobs() > 0 )
+        if ( execute_jobs_ > 0 || reader->active_jobs() > 0 )
         {
             results_condition_.wait( lock );            
         }
@@ -486,7 +489,7 @@ bool Scheduler::dispatch_results()
         lock.lock();
     }
     
-    return executor->active_jobs() > 0 || reader->active_jobs() > 0;
+    return execute_jobs_ > 0 || reader->active_jobs() > 0;
 }
 
 void Scheduler::process_begin( Context* context )
