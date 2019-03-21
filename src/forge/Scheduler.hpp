@@ -44,6 +44,7 @@ class Scheduler
     std::deque<std::function<void()> > results_; ///< The functions to be executed as a result of jobs processing in the thread pool.
     std::vector<Target*> buildfiles_stack_; ///< The stack of currently processing buildfiles.
     int execute_jobs_; ///< The number of outstanding execute jobs.
+    int read_jobs_; ///< The number of outstanding read jobs.
     int buildfile_calls_; ///< The number of outstanding calls made to load buildfiles.
     int failures_; ///< The number of failures in the most recent postorder traversal.
 
@@ -57,7 +58,7 @@ class Scheduler
         void call( const boost::filesystem::path& path, const std::string& function );
         void postorder_visit( int function, Job* job );
         void execute_finished( int exit_code, Context* context, process::Environment* environment );
-        void filter_finished( Filter* filter, Arguments* arguments );
+        void read_finished( Filter* filter, Arguments* arguments );
         void buildfile_finished( Context* context, bool success );
         void output( const std::string& output, Filter* filter, Arguments* arguments, Target* working_directory );
         void error( const std::string& what );
@@ -65,9 +66,10 @@ class Scheduler
         void push_output( const std::string& output, Filter* filter, Arguments* arguments, Target* working_directory );
         void push_errorf( const char* format, ... );
         void push_execute_finished( int exit_code, Context* context, process::Environment* environment );
-        void push_filter_finished( Filter* filter, Arguments* arguments );
+        void push_read_finished( Filter* filter, Arguments* arguments );
 
         void execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Context* context );
+        void read( intptr_t fd_or_handle, Filter* filter, Arguments* arguments, Target* working_directory );
         void wait();
         
         int postorder( Target* target, int function );        

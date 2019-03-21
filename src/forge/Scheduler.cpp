@@ -40,6 +40,7 @@ Scheduler::Scheduler( Forge* forge )
   results_condition_(),
   results_(),
   execute_jobs_( 0 ),
+  read_jobs_( 0 ),
   buildfile_calls_( 0 ),
   failures_( 0 )
 {
@@ -162,7 +163,7 @@ void Scheduler::execute_finished( int exit_code, Context* context, process::Envi
     delete environment;
 }
 
-void Scheduler::filter_finished( Filter* filter, Arguments* arguments )
+void Scheduler::read_finished( Filter* filter, Arguments* arguments )
 {
     // Delete filters and arguments on the main thread to avoid accessing the
     // Lua virtual machine from multiple threads as happens if the filter or 
@@ -243,10 +244,11 @@ void Scheduler::push_execute_finished( int exit_code, Context* context, process:
     results_condition_.notify_all();
 }
 
-void Scheduler::push_filter_finished( Filter* filter, Arguments* arguments )
+void Scheduler::push_read_finished( Filter* filter, Arguments* arguments )
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
-    results_.push_back( std::bind(&Scheduler::filter_finished, this, filter, arguments) );
+    --read_jobs_;
+    results_.push_back( std::bind(&Scheduler::read_finished, this, filter, arguments) );
     results_condition_.notify_all();
 }
 
@@ -256,6 +258,13 @@ void Scheduler::execute( const std::string& command, const std::string& command_
     std::unique_lock<std::mutex> lock( results_mutex_ );
     forge_->executor()->execute( command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context );
     ++execute_jobs_;
+}
+
+void Scheduler::read( intptr_t fd_or_handle, Filter* filter, Arguments* arguments, Target* working_directory )
+{
+    std::unique_lock<std::mutex> lock( results_mutex_ );
+    forge_->reader()->read( fd_or_handle, filter, arguments, working_directory );
+    ++read_jobs_;
 }
 
 void Scheduler::wait()
@@ -470,11 +479,10 @@ void Scheduler::destroy_context( Context* context )
 
 bool Scheduler::dispatch_results()
 {
-    Reader* reader = forge_->reader();
     std::unique_lock<std::mutex> lock( results_mutex_ );
     if ( results_.empty() )
     {
-        if ( execute_jobs_ > 0 || reader->active_jobs() > 0 )
+        if ( execute_jobs_ > 0 || read_jobs_ > 0 )
         {
             results_condition_.wait( lock );            
         }
@@ -489,7 +497,7 @@ bool Scheduler::dispatch_results()
         lock.lock();
     }
     
-    return execute_jobs_ > 0 || reader->active_jobs() > 0;
+    return execute_jobs_ > 0 || read_jobs_ > 0;
 }
 
 void Scheduler::process_begin( Context* context )
