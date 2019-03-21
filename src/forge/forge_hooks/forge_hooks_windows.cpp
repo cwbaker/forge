@@ -517,20 +517,20 @@ static void patch_iat( HMODULE module )
             ImportDescriptor kernel32( base_address, "KERNEL32.dll" ); 
             if ( kernel32.valid() )
             {
-                kernel32.patch_function( "CreateFileA", &create_file_a_hook, (void**) &original_create_file_a );
-                kernel32.patch_function( "CreateFileW", &create_file_w_hook, (void**) &original_create_file_w );
-                kernel32.patch_function( "CreateFileTransactedA", &create_file_transacted_a_hook, (void**) &original_create_file_transacted_a );
-                kernel32.patch_function( "CreateFileTransactedW", &create_file_transacted_w_hook, (void**) &original_create_file_transacted_w );
-                kernel32.patch_function( "CreateProcessA", &create_process_a_hook, (void**) &original_create_process_a );
-                kernel32.patch_function( "CreateProcessW", &create_process_w_hook, (void**) &original_create_process_w );
-                kernel32.patch_function( "CreateProcessAsUserA", &create_process_as_user_a_hook, (void**) &original_create_process_as_user_a );
-                kernel32.patch_function( "CreateProcessAsUserW", &create_process_as_user_w_hook, (void**) &original_create_process_as_user_w );
-                kernel32.patch_function( "CreateProcessWithLogonW", &create_process_with_logon_w_hook, (void**) &original_create_process_with_logon_w );
-                kernel32.patch_function( "CreateProcessWithTokenW", &create_process_with_token_w_hook, (void**) &original_create_process_with_token_w );
-                kernel32.patch_function( "LoadLibraryA", &load_library_a_hook, (void**) &original_load_library_a );
-                kernel32.patch_function( "LoadLibraryW", &load_library_w_hook, (void**) &original_load_library_w );
-                kernel32.patch_function( "LoadLibraryExA", &load_library_ex_a_hook, (void**) &original_load_library_ex_a );
-                kernel32.patch_function( "LoadLibraryExW", &load_library_ex_w_hook, (void**) &original_load_library_ex_w );
+                kernel32.patch_function( "CreateFileA", (void*) &create_file_a_hook, (void**) &original_create_file_a );
+                kernel32.patch_function( "CreateFileW", (void*) &create_file_w_hook, (void**) &original_create_file_w );
+                kernel32.patch_function( "CreateFileTransactedA", (void*) &create_file_transacted_a_hook, (void**) &original_create_file_transacted_a );
+                kernel32.patch_function( "CreateFileTransactedW", (void*) &create_file_transacted_w_hook, (void**) &original_create_file_transacted_w );
+                kernel32.patch_function( "CreateProcessA", (void*) &create_process_a_hook, (void**) &original_create_process_a );
+                kernel32.patch_function( "CreateProcessW", (void*) &create_process_w_hook, (void**) &original_create_process_w );
+                kernel32.patch_function( "CreateProcessAsUserA", (void*) &create_process_as_user_a_hook, (void**) &original_create_process_as_user_a );
+                kernel32.patch_function( "CreateProcessAsUserW", (void*) &create_process_as_user_w_hook, (void**) &original_create_process_as_user_w );
+                kernel32.patch_function( "CreateProcessWithLogonW", (void*) &create_process_with_logon_w_hook, (void**) &original_create_process_with_logon_w );
+                kernel32.patch_function( "CreateProcessWithTokenW", (void*) &create_process_with_token_w_hook, (void**) &original_create_process_with_token_w );
+                kernel32.patch_function( "LoadLibraryA", (void*) &load_library_a_hook, (void**) &original_load_library_a );
+                kernel32.patch_function( "LoadLibraryW", (void*) &load_library_w_hook, (void**) &original_load_library_w );
+                kernel32.patch_function( "LoadLibraryExA", (void*) &load_library_ex_a_hook, (void**) &original_load_library_ex_a );
+                kernel32.patch_function( "LoadLibraryExW", (void*) &load_library_ex_w_hook, (void**) &original_load_library_ex_w );
             }
         }
     }

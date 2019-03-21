@@ -87,7 +87,7 @@ IMAGE_THUNK_DATA* ImportDescriptor::find_thunk_for_function( const char* name ) 
         if ( !(original_thunk->u1.Ordinal & IMAGE_ORDINAL_FLAG) )
         {
             IMAGE_IMPORT_BY_NAME* import_by_name = (IMAGE_IMPORT_BY_NAME*) address( original_thunk->u1.AddressOfData );
-            if ( strcmp(import_by_name->Name, name) == 0 )
+            if ( strcmp((const char*) import_by_name->Name, name) == 0 )
             {
                 return thunk;
             }
