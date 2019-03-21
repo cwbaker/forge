@@ -2,6 +2,9 @@
 SRC=$(pwd)/src
 LIB=$(pwd)/bootstrap-linux/lib
 BIN=$(pwd)/bootstrap-linux/bin
+AR=${AR:-ar}
+CC=${CC:-gcc}
+CXX=${CXX:-g++}
 
 cc() {
     for file in $1; do
@@ -9,7 +12,7 @@ cc() {
         local DEFINES="-DBUILD_VARIANT_DEBUG -DBUILD_VERSION=\"bootstrap\" -DLUA_USE_POSIX -DLUA_USE_DLOPEN"
         local INCLUDE_DIRS="-I $SRC -I $SRC/lua/src -I $SRC/boost"
         local FLAGS="-x c -g"
-        gcc $DEFINES $INCLUDE_DIRS $FLAGS -o $file.o -c $file
+        $CC $DEFINES $INCLUDE_DIRS $FLAGS -o $file.o -c $file
     done
 }
 
@@ -19,20 +22,20 @@ cxx() {
         local DEFINES="-DBUILD_VARIANT_DEBUG -DBUILD_VERSION=\"bootstrap\" -DLUA_USE_POSIX -DLUA_USE_DLOPEN"
         local INCLUDE_DIRS="-I $SRC -I $SRC/lua/src -I $SRC/boost"
         local FLAGS="-x c++ -std=c++11 -fexceptions -frtti -fPIC -g -Wno-deprecated-declarations"
-        g++ $DEFINES $INCLUDE_DIRS $FLAGS -o $file.o -c $file
+        $CXX $DEFINES $INCLUDE_DIRS $FLAGS -o $file.o -c $file
     done
 }
 
 archive() {
-    ar -rcs $1 *.o    
+    $AR -rcs $1 *.o    
 }
 
 link_forge() {
-    g++ *.o -g -L $LIB -lforge -lforge_lua -lprocess -lcmdline -lluaxx -lerror -llua -lassert -lboost_filesystem -lboost_system -lpthread -ldl -o $BIN/forge
+    $CXX *.o -g -L $LIB -lforge -lforge_lua -lprocess -lcmdline -lluaxx -lerror -llua -lassert -lboost_filesystem -lboost_system -lpthread -ldl -o $BIN/forge
 }
 
 link_forge_hooks() {
-    g++ *.o -shared -g -o $BIN/libforge_hooks.so
+    $CXX *.o -shared -g -o $BIN/libforge_hooks.so
 }
 
 mkdir -p $LIB
