@@ -10,8 +10,8 @@ gcc.flags_by_architecture = {
 
 function gcc.configure( forge, gcc_settings )
     return {
-        gcc = gcc_settings.gcc or '/usr/bin/gcc';
-        gxx = gcc_settings.gxx or '/usr/bin/g++';
+        gcc = gcc_settings.gcc or os.getenv('CC') or '/usr/bin/gcc';
+        gxx = gcc_settings.gxx or os.getenv('CXX') or '/usr/bin/g++';
         ar = gcc_settings.ar or '/usr/bin/ar';
         environment = gcc_settings.environment or {
             PATH = '/usr/bin';
