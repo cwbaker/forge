@@ -1,0 +1,17 @@
+language: cpp
+matrix:
+  include:
+    - os: linux
+      script:
+        - export CC=/usr/bin/gcc
+        - export CXX=/usr/bin/g++
+        - bash ./bootstrap-linux.bash
+        - ./bootstrap-linux/bin/forge variant=release
+    - os: osx
+      script:
+        - bash ./bootstrap-macos.bash
+        - ./bootstrap-macos/bin/forge variant=release
+    - os: windows
+      script:
+        - cmd.exe /C '"C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" amd64 && bootstrap-windows.bat'
+        - ./bootstrap-windows/bin/forge variant=release
