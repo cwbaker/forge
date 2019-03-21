@@ -16,6 +16,14 @@ function msvc.configure( forge, local_settings )
                     values[key] = value;
                 end
             end );
+            if #values == 0 then 
+                forge:system( vswhere, 'vswhere -products Microsoft.VisualStudio.Product.BuildTools', environment, nil, function(line)
+                    local key, value = line:match( '([%w_]+): ([^\n\r]+)' );
+                    if key and value then 
+                        values[key] = value;
+                    end
+                end );
+            end
             return values;
         end
     end
