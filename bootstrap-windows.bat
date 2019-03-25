@@ -1,9 +1,9 @@
 rem @echo off
 
 set SRC=%~dp0src
-set OBJ=%~dp0bootstrap-windows
-set LIBS=%~dp0bootstrap-windows\lib
-set BIN=%~dp0bootstrap-windows\bin
+set OBJ=%~dp0bootstrap
+set LIBS=%~dp0bootstrap\lib
+set BIN=%~dp0bootstrap\bin
 
 set DEFINES=/DBUILD_VARIANT_DEBUG /DBUILD_VERSION=\"bootstrap\" /DBOOST_ALL_NO_LIB /D_WIN32_WINNT=0x0a00
 set INCLUDE_DIRS=/I %SRC% /I %SRC%\lua\src /I %SRC%\boost

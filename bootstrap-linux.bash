@@ -1,7 +1,7 @@
 
 SRC=$(pwd)/src
-LIB=$(pwd)/bootstrap-linux/lib
-BIN=$(pwd)/bootstrap-linux/bin
+LIB=$(pwd)/bootstrap/lib
+BIN=$(pwd)/bootstrap/bin
 AR=${AR:-ar}
 CC=${CC:-gcc}
 CXX=${CXX:-g++}

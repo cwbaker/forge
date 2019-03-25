@@ -1,7 +1,10 @@
 
 SRC=$(pwd)/src
-LIB=$(pwd)/bootstrap-macos/lib
-BIN=$(pwd)/bootstrap-macos/bin
+LIB=$(pwd)/bootstrap/lib
+BIN=$(pwd)/bootstrap/bin
+AR=${AR:-ar}
+CC=${CC:-clang}
+CXX=${CXX:-clang++}
 
 cc() {
     for file in $1; do
@@ -9,7 +12,7 @@ cc() {
         local DEFINES="-DBUILD_VARIANT_DEBUG -DBUILD_VERSION=\"bootstrap\" -DLUA_USE_POSIX -DLUA_USE_DLOPEN"
         local INCLUDE_DIRS="-I $SRC -I $SRC/lua/src -I $SRC/boost"
         local FLAGS="-x c -g"
-        clang $DEFINES $INCLUDE_DIRS $FLAGS -o $file.o -c $file
+        $CC $DEFINES $INCLUDE_DIRS $FLAGS -o $file.o -c $file
     done
 }
 
@@ -19,20 +22,20 @@ cxx() {
         local DEFINES="-DBUILD_VARIANT_DEBUG -DBUILD_VERSION=\"bootstrap\" -DLUA_USE_POSIX -DLUA_USE_DLOPEN"
         local INCLUDE_DIRS="-I $SRC -I $SRC/lua/src -I $SRC/boost"
         local FLAGS="-x c++ -std=c++11 -stdlib=libc++ -fexceptions -frtti -g"
-        clang++ $DEFINES $INCLUDE_DIRS $FLAGS -o $file.o -c $file
+        $CXX $DEFINES $INCLUDE_DIRS $FLAGS -o $file.o -c $file
     done
 }
 
 archive() {
-    ar -rcs $1 *.o    
+    $AR -rcs $1 *.o    
 }
 
 link_forge() {
-    clang++ *.o -g -L $LIB -lassert -lcmdline -lforge -lforge_lua -lprocess -lluaxx -lerror -llua -lboost_filesystem -lboost_system -o $BIN/forge
+    $CXX *.o -g -L $LIB -lassert -lcmdline -lforge -lforge_lua -lprocess -lluaxx -lerror -llua -lboost_filesystem -lboost_system -o $BIN/forge
 }
 
 link_forge_hooks() {
-    clang++ *.o -Xlinker -dylib -g -o $BIN/forge_hooks.dylib
+    $CXX *.o -Xlinker -dylib -g -o $BIN/forge_hooks.dylib
 }
 
 mkdir -p $LIB

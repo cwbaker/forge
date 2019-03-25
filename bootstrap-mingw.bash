@@ -1,7 +1,7 @@
 
 SRC=$(pwd)/src
-LIB=$(pwd)/bootstrap-mingw/lib
-BIN=$(pwd)/bootstrap-mingw/bin
+LIB=$(pwd)/bootstrap/lib
+BIN=$(pwd)/bootstrap/bin
 AR=${AR:-ar}
 CC=${CC:-gcc}
 CXX=${CXX:-g++}
