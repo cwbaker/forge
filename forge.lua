@@ -73,7 +73,7 @@ forge:all {
 };
 
 function install()
-    prefix = prefix or forge:home( 'forge' );
+    prefix = forge:root( prefix ) or forge:home( 'forge' );
     local failures = default();
     if failures == 0 then 
         forge:cpdir( '${prefix}/bin', '${bin}' );
