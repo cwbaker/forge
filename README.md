@@ -59,7 +59,7 @@ From a shell with GCC installed and available on the path:
 - `cd forge`
 - `git submodule update --init`
 - `bash ./bootstrap-linux.bash`
-- `./bootstrap-linux/bin/forge variant=shipping install`
+- `./bootstrap/bin/forge variant=shipping install`
 - Link to `${HOME}/forge/bin/forge` from your path
 
 **macOS:**
@@ -70,7 +70,7 @@ From a shell with Xcode installed:
 - `cd forge`
 - `git submodule update --init`
 - `bash ./bootstrap-macos.bash`
-- `./bootstrap-macos/bin/forge variant=shipping install`
+- `./bootstrap/bin/forge variant=shipping install`
 - Link to `${HOME}/forge/bin/forge` from your path
 
 **Windows:**
@@ -81,7 +81,7 @@ From a Visual C++ command prompt:
 - `cd forge`
 - `git submodule update --init`
 - `bootstrap-windows.bat`
-- `.\bootstrap-windows\bin\forge.exe variant=shipping install`
+- `.\bootstrap\bin\forge.exe variant=shipping install`
 - Link to `${USERPROFILE}/forge/bin/forge.exe` from your path
 
 NOTE: *Forge* uses [*vswhere*](https://github.com/Microsoft/vswhere/wiki) to find the Visual C++ compiler for Visual Studio 2015 and later and so requires Visual Studio 15.2 (26418.1 Preview) or later that install *vswhere* to a known location to work out of the box.  Visual Studio 2013, 2012, and 2010 may work but aren't tested.
