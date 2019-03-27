@@ -739,6 +739,46 @@ function forge:cpdir( destination, source, settings )
     self:popd();
 end
 
+-- Find first existing file named *filename* in *paths*.
+--
+-- The *filename* variable is interpolated and any variables referenced with 
+-- the `${}` syntax are expanded.  See `forge:interpolate()` for details.
+--
+-- Searching is not performed when *filename* is absolute path.  In this case
+-- *filename* is returned immediately only if it names an existing file.
+--
+-- The *paths* variable can be a string containing a `:` or `;` delimited list
+-- of paths or a table containing those paths.  If *paths* is nil then its 
+-- default value is set to that returned by `os.getenv('PATH')`.
+--
+-- Returns the first file named *filename* that exists at a directory listed
+-- in *paths* or nothing if no existing file is found.
+function forge:which( filename, paths )
+    local filename = self:interpolate( filename );
+    local paths = paths or os.getenv( 'PATH' );
+    if type(paths) == 'string' then
+        if self:is_absolute(filename) then
+            if self:exists(filename) then 
+                return filename;
+            end
+        else
+            for directory in paths:gmatch('[^;:]+') do 
+                local path = ('%s/%s'):format( directory, filename );
+                if self:exists(path) then 
+                    return path;
+                end
+            end
+        end
+    elseif type(paths) == 'table' then
+        for _, directory in ipairs(paths) do 
+            local path = ('%s/%s'):format( directory, filename );
+            if self:exists(path) then 
+                return path;
+            end
+        end
+    end
+end
+
 function forge:configure( module, identifier )
     local local_settings = self.local_settings;
     local module_settings = local_settings[identifier];
