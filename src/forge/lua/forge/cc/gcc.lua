@@ -9,11 +9,11 @@ gcc.flags_by_architecture = {
 };
 
 function gcc.configure( forge, gcc_settings )
-    local path = os.getenv( 'PATH' );
+    local paths = os.getenv( 'PATH' );
     return {
-        gcc = forge:which( gcc_settings.gcc or os.getenv('CC') or 'gcc', path );
-        gxx = forge:which( gcc_settings.gxx or os.getenv('CXX') or 'g++', path );
-        ar = forge:which( gcc_settings.ar or os.getenv('AR') or 'ar', path );
+        gcc = forge:which( gcc_settings.gcc or os.getenv('CC') or 'gcc', paths );
+        gxx = forge:which( gcc_settings.gxx or os.getenv('CXX') or 'g++', paths );
+        ar = forge:which( gcc_settings.ar or os.getenv('AR') or 'ar', paths );
         environment = gcc_settings.environment or {
             PATH = '/usr/bin';
         };
