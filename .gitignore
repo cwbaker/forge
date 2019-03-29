@@ -11,9 +11,7 @@ shipping/
 *.suo
 *.pdb
 .vs
-bootstrap-linux
-bootstrap-macos
-bootstrap-windows
+bootstrap
 copy-file-example.cache
 foo.out
 .forge
