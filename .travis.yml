@@ -23,6 +23,6 @@ deploy:
   skip_cleanup: true
   prerelease: true
   draft: true
-  on:    
+  on:
     repo: cwbaker/forge
     tags: true
