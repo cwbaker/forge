@@ -756,13 +756,20 @@ end
 function forge:which( filename, paths )
     local filename = self:interpolate( filename );
     local paths = paths or os.getenv( 'PATH' );
+    local separator_pattern = '[^:]+';
+    if forge:operating_system() == 'windows' then 
+        separator_pattern = '[^;]+';
+        if forge:extension(filename) == '' then
+            filename = ('%s.exe'):format( filename );
+        end
+    end
     if type(paths) == 'string' then
         if self:is_absolute(filename) then
             if self:exists(filename) then 
                 return filename;
             end
         else
-            for directory in paths:gmatch('[^;:]+') do 
+            for directory in paths:gmatch(separator_pattern) do 
                 local path = ('%s/%s'):format( directory, filename );
                 if self:exists(path) then 
                     return path;
