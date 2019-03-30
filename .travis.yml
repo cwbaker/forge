@@ -13,6 +13,7 @@ before_deploy:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then tar -zcvf ${TRAVIS_BUILD_DIR}/forge-${TRAVIS_OS_NAME}-${TRAVIS_TAG}.tar.gz forge/bin/* forge/lua/** ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then tar -zcvf ${TRAVIS_BUILD_DIR}/forge-macos-${TRAVIS_TAG}.tar.gz forge/bin/* forge/lua/** ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then tar -zcvf ${TRAVIS_BUILD_DIR}/forge-${TRAVIS_OS_NAME}-${TRAVIS_TAG}.tar.gz forge/bin/* forge/lua/** ; fi
+  - cd ${TRAVIS_BUILD_DIR}
 deploy:
   provider: releases
   api_key:
