@@ -34,6 +34,7 @@ Reader::Reader( Forge* forge )
   jobs_ready_condition_(),
   jobs_(),
   threads_(),
+  active_jobs_( 0 ),
   done_( false )
 {
 }
@@ -47,7 +48,8 @@ void Reader::read( intptr_t fd_or_handle, Filter* filter, Arguments* arguments, 
 {
     std::unique_lock<std::mutex> lock( jobs_mutex_ );
     jobs_.push_back( std::bind(&Reader::thread_read, this, fd_or_handle, filter, arguments, working_directory) );
-    while ( jobs_.size() > threads_.size() )
+    ++active_jobs_;
+    while ( active_jobs_ > int(threads_.size()) )
     {
         unique_ptr<std::thread> thread( new std::thread(&Reader::thread_main, this) );
         threads_.push_back( thread.release() );
@@ -75,6 +77,7 @@ void Reader::thread_process()
             lock.unlock();
             function();
             lock.lock();
+            --active_jobs_;
         }
 
         if ( jobs_.empty() )

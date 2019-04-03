@@ -27,6 +27,7 @@ class Reader
     std::condition_variable jobs_ready_condition_; ///< The condition attribute that notifies jobs ready.
     std::deque<std::function<void ()> > jobs_; ///< The functions to be executed in the thread pool.
     std::vector<std::thread*> threads_; ///< The thread pool for this Reader.
+    int active_jobs_;
     bool done_; ///< Whether or not this Reader has finished processing.
 
 public:
