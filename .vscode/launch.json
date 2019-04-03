@@ -20,11 +20,17 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/release/bin/forge.exe",
-            "args": [],
+            "args": ["-r", ".", "variant=release"],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "D:\\source\\reyes\\src\\unittest-cpp",
             "environment": [],
             "externalConsole": true
+        },
+        {
+            "name": "attach",
+            "type": "cppvsdbg",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
         }
     ]
 }
