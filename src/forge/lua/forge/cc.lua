@@ -1,8 +1,8 @@
 
 if forge:operating_system() == 'windows' then
-    return require 'forge.cc.msvc';
+    return require 'forge.msvc';
 elseif forge:operating_system() == 'linux' then 
-    return require 'forge.cc.gcc';
+    return require 'forge.gcc';
 elseif forge:operating_system() == 'macos' then
-    return require 'forge.cc.xcode';
+    return require 'forge.xcode';
 end
