@@ -1,0 +1,11 @@
+
+for _, toolset in toolsets('cc.*') do
+    toolset:all {
+        toolset:Executable '${bin}/hello_world' {
+            '${lib}/hello_world';
+            toolset:Cxx '${obj}/%1' {
+                'main.cpp';
+            };
+        };
+    };
+end

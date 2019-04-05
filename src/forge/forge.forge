@@ -22,7 +22,7 @@ for _, forge in toolsets('cc.*') do
                 '_CRT_SECURE_NO_DEPRECATE'; -- Disable CRT security warnings
                 '_SCL_SECURE_NO_DEPRECATE'; -- Disable SCL security warnings
                 '_WIN32_WINNT=0x0a00'; -- Target Windows 10
-                'WIN32_LEAN_AND_MEAN'; -- Include minimumal declarations from Windows headers
+                'WIN32_LEAN_AND_MEAN'; -- Include minimal declarations from Windows headers
             };
 
             'Arguments.cpp',

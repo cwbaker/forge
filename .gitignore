@@ -14,9 +14,9 @@ shipping/
 .vs
 bootstrap
 copy-file-example.cache
-foo.out
 .forge
 *.o
 *.obj
-/docs/tutorials/cxx-library-tutorial/hello_world
-/docs/tutorials/cxx-executable-tutorial/hello_world
+/docs/tutorials/copying-files/output/
+/docs/tutorials/compile-and-link-cxx/hello_world
+/docs/_site/

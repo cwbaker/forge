@@ -1,0 +1,37 @@
+# Dependencies
+# highlighter: pygments
+markdown: kramdown
+
+remote_theme: cwbaker/doc
+
+kramdown:
+  parse_block_html: true
+
+# Permalinks
+permalink: pretty
+
+# Setup
+title: forge
+tagline: 'Fast, simple, file-based, Lua-scriptable build tool'
+description: 'A fast and simple build tool based on file timestamps and scriptable in Lua.'
+url: https://github.com/cwbaker/forge
+baseurl: /
+author:
+  name: 'Charles Baker'
+
+repository: cwbaker/forge
+
+# Custom vars
+version: 0.0.4
+
+github:
+  repo: https://github.com/cwbaker/forge
+
+plugins:
+- jekyll-github-metadata
+- jekyll-mentions
+- jekyll-paginate
+- jekyll-redirect-from
+- jekyll-remote-theme
+- jekyll-sitemap
+- jemoji

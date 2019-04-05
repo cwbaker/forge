@@ -1,0 +1,8 @@
+
+for _, toolset in toolsets('cc.*') do
+    toolset:StaticLibrary '${lib}/hello_world' {
+        toolset:Cxx '${obj}/%1' {
+            'hello_world.cpp';
+        };
+    };
+end

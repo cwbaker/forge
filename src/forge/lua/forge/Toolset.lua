@@ -268,8 +268,8 @@ function Toolset:SourceFile( identifier )
     return target;
 end
 
-function Toolset:SourceDirectory( identifier, settings )
-    return self:SourceFile( identifier, settings );
+function Toolset:SourceDirectory( identifier )
+    return self:SourceFile( identifier );
 end
 
 Toolset.Target = require 'forge.Target';
