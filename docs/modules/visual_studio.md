@@ -1,4 +1,0 @@
-
-# Visual Studio
-
-## Generating Solutions

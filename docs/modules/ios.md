@@ -1,6 +1,0 @@
-
-# iOS
-
-## Settings
-
-## App

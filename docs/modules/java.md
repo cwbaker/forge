@@ -1,8 +1,0 @@
-
-# Java
-
-## Settings
-
-## Jar
-
-## Java
