@@ -7,7 +7,8 @@
 #include <assert/assert.hpp>
 #include <lua.hpp>
 #include <algorithm>
-#include <memory.h>
+#include <string.h>
+#include <stdlib.h>
 
 using std::max;
 using namespace sweet::luaxx;
