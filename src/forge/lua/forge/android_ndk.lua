@@ -1,5 +1,5 @@
 
-local gcc = require 'forge.cc.gcc';
+local gcc = require 'forge.gcc';
 local android = require 'forge.android';
 
 local android_ndk = {};

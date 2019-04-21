@@ -1,6 +1,6 @@
 
-local clang = require 'forge.cc.clang';
-local xcodeproj = require 'forge.cc.xcode.xcodeproj';
+local clang = require 'forge.clang';
+local xcodeproj = require 'forge.xcode.xcodeproj';
 
 local xcode = {};
 
@@ -95,12 +95,12 @@ function xcode.initialize( forge )
 
         local settings = forge.settings;
         if settings.platform == 'ios' then
-            forge.App = require 'forge.cc.xcode.App';
+            forge.App = require 'forge.xcode.App';
         end
-        forge.AssetCatalog = require 'forge.cc.xcode.AssetCatalog';
-        forge.Plist = require 'forge.cc.xcode.Plist';
-        forge.Lipo = require 'forge.cc.xcode.Lipo';
-        forge.Xib = require 'forge.cc.xcode.Xib';
+        forge.AssetCatalog = require 'forge.xcode.AssetCatalog';
+        forge.Plist = require 'forge.xcode.Plist';
+        forge.Lipo = require 'forge.xcode.Lipo';
+        forge.Xib = require 'forge.xcode.Xib';
 
         local Cc = forge:FilePrototype( 'Cc' );
         Cc.language = 'c';
