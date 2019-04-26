@@ -67,6 +67,7 @@ void LuaTarget::create( lua_State* lua_state )
         { "remove_dependency", &LuaTarget::remove_dependency },
         { "add_implicit_dependency", &LuaTarget::add_implicit_dependency },
         { "clear_implicit_dependencies", &LuaTarget::clear_implicit_dependencies },
+        { "add_secondary_dependency", &LuaTarget::add_secondary_dependency },
         { "add_ordering_dependency", &LuaTarget::add_ordering_dependency },
         { nullptr, nullptr }
     };
@@ -82,6 +83,8 @@ void LuaTarget::create( lua_State* lua_state )
         { "dependencies", &LuaTarget::explicit_dependencies },
         { "implicit_dependency", &LuaTarget::implicit_dependency },
         { "implicit_dependencies", &LuaTarget::implicit_dependencies },
+        { "secondary_dependency", &LuaTarget::secondary_dependency },
+        { "secondary_dependencies", &LuaTarget::secondary_dependencies },
         { "ordering_dependency", &LuaTarget::ordering_dependency },
         { "ordering_dependencies", &LuaTarget::ordering_dependencies },
         { "any_dependency", &LuaTarget::any_dependency },
@@ -578,6 +581,20 @@ int LuaTarget::clear_implicit_dependencies( lua_State* lua_state )
     return 0;
 }
 
+int LuaTarget::add_secondary_dependency( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int DEPENDENCY = 2;
+    Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        Target* dependency = (Target*) luaxx_to( lua_state, DEPENDENCY, TARGET_TYPE );
+        target->add_secondary_dependency( dependency );
+    }
+    return 0;
+}
+
 int LuaTarget::add_ordering_dependency( lua_State* lua_state )
 {
     const int TARGET = 1;
@@ -845,6 +862,92 @@ int LuaTarget::implicit_dependencies( lua_State* lua_state )
     lua_pushinteger( lua_state, finish );
     lua_pushlightuserdata( lua_state, lua_target );
     lua_pushcclosure( lua_state, &LuaTarget::implicit_dependencies_iterator, 2 );
+    luaxx_push( lua_state, target );
+    lua_pushinteger( lua_state, start - 1 );
+    return 3;
+}
+
+int LuaTarget::secondary_dependency( lua_State* lua_state )
+{
+    SWEET_ASSERT( lua_state );
+
+    const int TARGET = 1;
+    const int INDEX = 2;
+    Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "expected target table" );
+
+    int index = lua_isnumber( lua_state, INDEX ) ? static_cast<int>( lua_tointeger(lua_state, INDEX) ) : 1;
+    luaL_argcheck( lua_state, index >= 1, INDEX, "expected index >= 1" );
+    --index;
+
+    Target* dependency = target->secondary_dependency( index );
+    if ( dependency )
+    {
+        if ( !dependency->referenced_by_script() )
+        {
+            LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+            SWEET_ASSERT( lua_target );
+            lua_target->create_target( dependency );
+        }
+        luaxx_push( lua_state, dependency );
+    }
+    else
+    {
+        lua_pushnil( lua_state );
+    }
+    return 1;
+}
+
+int LuaTarget::secondary_dependencies_iterator( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int INDEX = 2;
+    const int FINISH = lua_upvalueindex( 1 );
+    const int LUA_TARGET = lua_upvalueindex( 2 );
+
+    int finish = static_cast<int>( lua_tointeger(lua_state, FINISH) );
+    Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
+    int index = static_cast<int>( lua_tointeger(lua_state, INDEX) ) + 1;
+
+    if ( target && index <= finish )
+    {
+        Target* dependency = target->secondary_dependency( index - 1 );
+        if ( dependency )
+        {
+            if ( !dependency->referenced_by_script() )
+            {
+                LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, LUA_TARGET) );
+                SWEET_ASSERT( lua_target );
+                lua_target->create_target( dependency );
+            }
+            lua_pushinteger( lua_state, index );
+            luaxx_push( lua_state, dependency );
+            return 2;
+        }
+    }
+    return 0;
+}
+
+int LuaTarget::secondary_dependencies( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int START = 2;
+    const int FINISH = 3;
+
+    Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
+    luaL_argcheck( lua_state, target != NULL, TARGET, "expected target table" );
+
+    int start = static_cast<int>( luaL_optinteger(lua_state, START, 1) );
+    luaL_argcheck( lua_state, start >= 1, START, "expected start >= 1" );
+
+    int finish = static_cast<int>( luaL_optinteger(lua_state, FINISH, INT_MAX) );
+    luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );
+
+    LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
+    SWEET_ASSERT( lua_target );    
+    lua_pushinteger( lua_state, finish );
+    lua_pushlightuserdata( lua_state, lua_target );
+    lua_pushcclosure( lua_state, &LuaTarget::secondary_dependencies_iterator, 2 );
     luaxx_push( lua_state, target );
     lua_pushinteger( lua_state, start - 1 );
     return 3;

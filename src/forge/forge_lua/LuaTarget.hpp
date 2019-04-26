@@ -56,6 +56,7 @@ public:
     static int remove_dependency( lua_State* lua_state );
     static int add_implicit_dependency( lua_State* lua_state );
     static int clear_implicit_dependencies( lua_State* lua_state );
+    static int add_secondary_dependency( lua_State* lua_state );
     static int add_ordering_dependency( lua_State* lua_state );
     static int any_dependency( lua_State* lua_state );
     static int any_dependencies_iterator( lua_State* lua_state );
@@ -66,6 +67,9 @@ public:
     static int implicit_dependency( lua_State* lua_state );
     static int implicit_dependencies_iterator( lua_State* lua_state );
     static int implicit_dependencies( lua_State* lua_state );
+    static int secondary_dependency( lua_State* lua_state );
+    static int secondary_dependencies_iterator( lua_State* lua_state );
+    static int secondary_dependencies( lua_State* lua_state );
     static int ordering_dependency( lua_State* lua_state );
     static int ordering_dependencies_iterator( lua_State* lua_state );
     static int ordering_dependencies( lua_State* lua_state );
