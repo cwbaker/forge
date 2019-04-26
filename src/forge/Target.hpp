@@ -42,6 +42,7 @@ class Target
     std::vector<Target*> dependencies_; ///< The Targets that this Target depends on.
     std::vector<Target*> implicit_dependencies_; ///< The Targets that this Target implicitly depends on.
     std::vector<Target*> ordering_dependencies_; ///< The Targets that must build before this Target is built.
+    std::vector<Target*> secondary_dependencies_; ///< The Targets that this Target depends on that aren't directly used in building.
     std::vector<std::string> filenames_; ///< The filenames of this Target.
     bool visiting_; ///< Whether or not this Target is in the process of being visited.
     int visited_revision_; ///< The visited revision the last time this Target was visited.
@@ -111,14 +112,18 @@ class Target
         void clear_implicit_dependencies();
         void add_ordering_dependency( Target* target );
         void clear_ordering_dependencies();
+        void add_secondary_dependency( Target* target );
+        void clear_secondary_dependencies();
         void remove_dependency( Target* target );
         bool is_explicit_dependency( Target* target ) const;
         bool is_implicit_dependency( Target* target ) const;
         bool is_ordering_dependency( Target* target ) const;
+        bool is_secondary_dependency( Target* target ) const;
         bool is_dependency( Target* target ) const;
         Target* explicit_dependency( int n ) const;
         Target* implicit_dependency( int n ) const;
         Target* ordering_dependency( int n ) const;
+        Target* secondary_dependency( int n ) const;
         Target* binding_dependency( int n ) const;
         Target* any_dependency( int n ) const;
 

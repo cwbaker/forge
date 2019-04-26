@@ -47,6 +47,7 @@ Target::Target()
   dependencies_(),
   implicit_dependencies_(),
   ordering_dependencies_(),
+  secondary_dependencies_(),
   filenames_(),
   visiting_( false ),
   visited_revision_( 0 ),
@@ -86,6 +87,7 @@ Target::Target( const std::string& id, Graph* graph )
   dependencies_(),
   implicit_dependencies_(),
   ordering_dependencies_(),
+  secondary_dependencies_(),
   filenames_(),
   visiting_( false ),
   visited_revision_( 0 ),
@@ -899,6 +901,57 @@ void Target::clear_ordering_dependencies()
 }
 
 /**
+// Add \e target as a secondary dependency of this Target.
+//
+// A secondary dependency is treated identically to an explicit dependency
+// except that it isn't returned when iterating dependencies or as an explicit
+// dependency when generating command lines for external build tools.
+//
+// Secondary dependencies are intended to be used for dependencies that should
+// cause a rebuild on change but that aren't used directly by build tools.  
+// Some examples are the Lua build scripts themselves.  Another example of a 
+// secondary dependency is a tool that is built within the source tree and 
+// then used to build further files in the same source tree -- this is a 
+// dependency but not one that is passed explicitly on the command line.
+//
+// If \e target is null or is already a secondary dependency of this Target 
+// then this function silently does nothing.  Calling code doesn't need to 
+// check for null and can add the same dependency multiple times if it needs
+// to.
+//
+// Dependencies that create cycles in the graph aren't checked here but are
+// detected and reported during graph traversal.  In these cases the graph 
+// traversal continues as if the cyclic dependency was built successfully
+// when it is visited for the second and subsequent times.
+//
+// @param target
+//  The Target to add as a secondary dependency.
+*/
+void Target::add_secondary_dependency( Target* target )
+{
+    bool able_to_add_secondary_dependency = 
+        target && 
+        target != this && 
+        !is_secondary_dependency( target )
+    ;
+    if ( able_to_add_secondary_dependency )
+    {
+        SWEET_ASSERT( target->graph() == graph() );
+        remove_dependency( target );
+        secondary_dependencies_.push_back( target );
+        bound_to_dependencies_ = false;
+    }
+}
+
+/**
+// Clear this Target's secondary dependencies.
+*/
+void Target::clear_secondary_dependencies()
+{
+    secondary_dependencies_.clear();
+}
+
+/**
 // Remove a dependency of this Target.
 //
 // If \e target is null or is not a dependency of this Target then this 
@@ -919,28 +972,36 @@ void Target::remove_dependency( Target* target )
     if ( target && target != this )
     {
         SWEET_ASSERT( target->graph() == graph() );
+        
         vector<Target*>::iterator i = find( dependencies_.begin(), dependencies_.end(), target );
         if ( i != dependencies_.end() )
         {
             dependencies_.erase( i );
             bound_to_dependencies_ = false;
+            return;
         }
-        else 
+
+        i = find( implicit_dependencies_.begin(), implicit_dependencies_.end(), target );
+        if ( i != implicit_dependencies_.end() )
         {
-            i = find( implicit_dependencies_.begin(), implicit_dependencies_.end(), target );
-            if ( i != implicit_dependencies_.end() )
-            {
-                implicit_dependencies_.erase( i );
-                bound_to_dependencies_ = false;
-            }
-            else 
-            {
-                i = find( ordering_dependencies_.begin(), ordering_dependencies_.end(), target );
-                if ( i != ordering_dependencies_.end() )
-                {
-                    ordering_dependencies_.erase( i );
-                }
-            }
+            implicit_dependencies_.erase( i );
+            bound_to_dependencies_ = false;
+            return;
+        }
+
+        i = find( secondary_dependencies_.begin(), secondary_dependencies_.end(), target );
+        if ( i != secondary_dependencies_.end() )
+        {
+            secondary_dependencies_.erase( i );
+            bound_to_dependencies_ = false;
+            return;
+        }
+
+        i = find( ordering_dependencies_.begin(), ordering_dependencies_.end(), target );
+        if ( i != ordering_dependencies_.end() )
+        {
+            ordering_dependencies_.erase( i );
+            return;
         }
     }
 }
@@ -988,6 +1049,20 @@ bool Target::is_ordering_dependency( Target* target ) const
 }
 
 /**
+// Is \e target a secondary dependency of this Target?
+//
+// @param target
+//  The Target to check for being a secondary dependency of this Target.
+//
+// @return
+//  True if \e target is a second dependency of this Target otherwise false.
+*/
+bool Target::is_secondary_dependency( Target* target ) const
+{
+    return find( secondary_dependencies_.begin(), secondary_dependencies_.end(), target ) != secondary_dependencies_.end();
+}
+
+/**
 // Is a Target a dependency of this Target?
 //
 // @param target
@@ -1002,7 +1077,8 @@ bool Target::is_dependency( Target* target ) const
     return 
         is_explicit_dependency( target ) ||
         is_implicit_dependency( target ) ||
-        is_ordering_dependency( target )
+        is_ordering_dependency( target ) ||
+        is_secondary_dependency( target )
     ;
 }
 
@@ -1050,7 +1126,7 @@ Target* Target::implicit_dependency( int n ) const
 // Get the nth ordering dependency of this Target.
 //
 // @param n
-//  The index of the ordering dependency to return (assume to be > 0).
+//  The index of the ordering dependency to return (assumed >= 0).
 //
 // @return
 //  The 'nth' ordering dependency of this Target or null if 'n' is outside the
@@ -1067,17 +1143,37 @@ Target* Target::ordering_dependency( int n ) const
 }
 
 /**
+// Get the nth secondary dependency of this Target.
+//
+// @param n
+//   The index of the secondary dependency to return (assumed >= 0);
+//
+// @return
+//  The 'nth' secondary dependency of this Target or null if 'n' is outside the
+//  range of secondary dependencies.
+*/
+Target* Target::secondary_dependency( int n ) const
+{
+    SWEET_ASSERT( n >= 0 );
+    if ( n >= 0 && n < int(secondary_dependencies_.size()) )
+    {
+        return secondary_dependencies_[n];
+    }
+    return nullptr;
+}
+
+/**
 // Get the 'nth' binding dependency of this Target.
 //
 // The index is resolved as per `Target::any_dependency()` except that 
 // ordering dependencies are ignored.
 //
-// Explict and implicit dependencies are binding dependencies because they
-// contribute to the calculation of whether or not a target is outdated and
-// a target's timestamp.  See `Target::bind_to_dependencies()`.
+// Explicit, implicit, and secondary dependencies are binding dependencies 
+// because they contribute to the calculation of whether or not a target is 
+// outdated and a target's timestamp.  See `Target::bind_to_dependencies()`.
 //
 // @param n
-//  The index of the binding dependency to return (assumed to be > 0).
+//  The index of the binding dependency to return (assumed >= 0).
 //
 // @return
 //  The 'nth' binding dependency.
@@ -1097,7 +1193,13 @@ Target* Target::binding_dependency( int n ) const
         return implicit_dependencies_[n];
     }
 
-    return NULL;
+    n -= int(implicit_dependencies_.size());
+    if ( n >= 0 && n < int(secondary_dependencies_.size()) )
+    {
+        return secondary_dependencies_[n];
+    }
+
+    return nullptr;
 }
 
 /**
@@ -1139,12 +1241,18 @@ Target* Target::any_dependency( int n ) const
     }
 
     n -= int(implicit_dependencies_.size());
+    if ( n >= 0 && n < int(secondary_dependencies_.size()) )
+    {
+        return secondary_dependencies_[n];
+    }
+
+    n -= int(secondary_dependencies_.size());
     if ( n >= 0 && n < int(ordering_dependencies_.size()) )
     {
         return ordering_dependencies_[n];
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -1162,7 +1270,7 @@ bool Target::buildable() const
         ++i;
         target = any_dependency( i );
     }
-    return target == NULL;
+    return target == nullptr;
 }
 
 /**
