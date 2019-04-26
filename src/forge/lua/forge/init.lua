@@ -193,6 +193,7 @@ function forge:FilePrototype( identifier, filename_modifier )
         target:set_filename( filename or target:path() );
         target:set_cleanable( true );
         target:add_ordering_dependency( forge:Directory(forge:branch(target)) );
+        target:add_secondary_dependency( self:current_buildfile() );
         return target;
     end;
     return file_prototype;
@@ -206,6 +207,7 @@ function forge:JavaStylePrototype( identifier, pattern )
         local output_directory = forge:root_relative():gsub( pattern, interpolate(forge, output_directory) );
         local target = forge:Target( forge:anonymous(), target_prototype );
         target:add_ordering_dependency( forge:Directory(output_directory) );
+        target:add_secondary_dependency( self:current_buildfile() );
         target:set_cleanable( true );
         return target;
     end
@@ -217,6 +219,7 @@ function forge:File( identifier, target_prototype )
     target:set_filename( target:path() );
     target:set_cleanable( true );
     target:add_ordering_dependency( self:Directory(self:branch(target)) );
+    target:add_secondary_dependency( self:current_buildfile() );
     return target;
 end
 
