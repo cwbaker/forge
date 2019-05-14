@@ -20,6 +20,13 @@
 #include <luaxx/luaxx.hpp>
 #include <assert/assert.hpp>
 #include <lua.hpp>
+#include <meow_hash/meow_intrinsics.h>
+#if defined BUILD_OS_MACOS
+// Ignore unused function warning for 'MeowHash_Accelerated'
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+#include <meow_hash/meow_hash.h>
+#include <meow_hash/more/meow_more.h>
 #include <string>
 
 using std::string;
@@ -89,6 +96,7 @@ void LuaForge::create( Forge* forge )
         { "stack_trace_enabled", &LuaForge::stack_trace_enabled },
         { "set_forge_hooks_library", &LuaForge::set_forge_hooks_library },
         { "forge_hooks_library", &LuaForge::forge_hooks_library },
+        { "hash", &LuaForge::hash },
         { "execute", &LuaForge::execute },
         { "print", &LuaForge::print },
         { nullptr, nullptr }
@@ -231,6 +239,20 @@ int LuaForge::forge_hooks_library( lua_State* lua_state )
     return 1;
 }
 
+int LuaForge::hash( lua_State* lua_state )
+{
+    const int TABLE = 2;
+    const int args = lua_gettop( lua_state );
+    lua_Integer hash = 0;
+    for ( int index = TABLE; index <= args; ++index )
+    {
+        luaL_checktype( lua_state, index, LUA_TTABLE );
+        hash ^= hash_recursively( lua_state, index, false );
+    }
+    lua_pushinteger( lua_state, hash );
+    return 1;
+}
+
 int LuaForge::execute( lua_State* lua_state )
 {
     try
@@ -354,4 +376,99 @@ int LuaForge::print( lua_State* lua_state )
     Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     forge->output( luaL_checkstring(lua_state, TEXT) );
     return 0;
+}
+
+lua_Integer LuaForge::hash_recursively( lua_State* lua_state, int table, bool hash_integer_keys )
+{
+    const char HASH_KEYWORD [] = "__forge_hash";
+    const size_t HASH_KEYWORD_LENGTH = sizeof(HASH_KEYWORD) - 1;
+
+    // Hashed and sealed tables store their hash value in "__forge_hash".  
+    // Checking for the presence of "__forge_hash" also prevents infinite
+    // recursion in the case of cyclic references in the tables.
+    lua_pushlstring( lua_state, HASH_KEYWORD, HASH_KEYWORD_LENGTH );
+    if ( lua_rawget(lua_state, table) != LUA_TNIL )
+    {
+        lua_Integer hash = luaL_checkinteger( lua_state, -1 );
+        lua_pop( lua_state, 1 );
+        return hash;
+    }
+
+    // Initiate iteration with the nil left on top of the stack by the call
+    // to `lua_getfield()` that failed to find a "__forge_hash" field.
+    lua_Integer hash = 0;
+    while ( lua_next(lua_state, table) )
+    {
+        meow_hash_state state;
+        MeowHashBegin( &state );
+
+        bool hash_value = false;
+        int type = lua_type( lua_state, -2 );
+        if ( type == LUA_TSTRING || (hash_integer_keys && type == LUA_TNUMBER) )
+        {
+            if ( type == LUA_TSTRING )
+            {
+                size_t length = 0;
+                const char* key = lua_tolstring( lua_state, -2, &length );
+                MeowHashAbsorb( &state, length, (void*) key );
+                hash_value = true;
+            }
+            else
+            {
+                lua_Integer key = lua_tointeger( lua_state, -2 );
+                MeowHashAbsorb( &state, sizeof(key), (void*) &key );
+                hash_value = true;
+            }
+
+            if ( lua_type(lua_state, -1) == LUA_TSTRING )
+            {
+                size_t length = 0;
+                const char* value = lua_tolstring( lua_state, -1, &length );
+                MeowHashAbsorb( &state, length, (void*) value );
+            }
+            else if ( lua_isinteger(lua_state, -1) )
+            {
+                lua_Integer value = lua_tointeger( lua_state, -1 );
+                MeowHashAbsorb( &state, sizeof(value), (void*) &value );
+            }
+            else if ( lua_isnumber(lua_state, -1) )
+            {
+                lua_Number value = lua_tonumber( lua_state, -1 );
+                MeowHashAbsorb( &state, sizeof(value), (void*) &value );
+            }
+            else if ( lua_isboolean(lua_state, -1) )
+            {
+                bool value = lua_toboolean( lua_state, -1 ) == 1;
+                MeowHashAbsorb( &state, sizeof(value), (void*) &value );
+            }
+            else if ( lua_istable(lua_state, -1) )
+            {
+                hash ^= hash_recursively( lua_state, lua_gettop(lua_state), true );
+            }
+
+            meow_hash working_hash = MeowHashEnd( &state, 0xc0dedbad );
+            hash ^= MeowU64From( working_hash, 0 );
+        }
+        lua_pop( lua_state, 1 );
+    }
+
+    // Recursively calculate hashes from fields in tables that this table
+    // inherits from.
+    int type = luaL_getmetafield( lua_state, table, "__index" );
+    if ( type != LUA_TNIL )
+    {
+        if ( type == LUA_TTABLE )
+        {
+            hash ^= hash_recursively( lua_state, lua_gettop(lua_state), false );
+        }
+        lua_pop( lua_state, 1 );
+    }
+
+    // Store the hash in the "__forge_hash" key in the table to make it
+    // available afterwards and to mark the table as hashed and sealed.
+    lua_pushstring( lua_state, HASH_KEYWORD );
+    lua_pushinteger( lua_state, hash );
+    lua_rawset( lua_state, table );
+
+    return hash;
 }

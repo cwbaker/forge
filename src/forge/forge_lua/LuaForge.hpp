@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <lua.hpp>
 
 struct lua_State;
 
@@ -50,8 +51,10 @@ private:
     static int stack_trace_enabled( lua_State* lua_state );
     static int set_forge_hooks_library( lua_State* lua_state );
     static int forge_hooks_library( lua_State* lua_state );
+    static int hash( lua_State* lua_state );
     static int execute( lua_State* lua_state );
     static int print( lua_State* lua_state );
+    static lua_Integer hash_recursively( lua_State* lua_state, int table, bool hash_integer_keys );
 };
     
 }
