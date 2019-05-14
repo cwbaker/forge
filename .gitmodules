@@ -4,3 +4,6 @@
 [submodule "src/lua"]
 	path = src/lua
 	url = https://github.com/cwbaker/lua.git
+[submodule "src/meow_hash"]
+	path = src/meow_hash
+	url = https://github.com/cwbaker/meow_hash.git
