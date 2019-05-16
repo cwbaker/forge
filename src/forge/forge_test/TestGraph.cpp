@@ -15,8 +15,10 @@ SUITE( TestGraph )
     TEST_FIXTURE( FileChecker, files_are_outdated_if_they_do_not_exist )
     {
         const char* script = 
-            "local foo_cpp = forge:file( 'foo.cpp' ); \n"
-            "local foo_obj = forge:file( 'foo.obj' ); \n"
+            "local foo_cpp = forge:add_target( 'foo.cpp' ); \n"
+            "foo_cpp:set_filename( foo_cpp:path() ); \n"
+            "local foo_obj = forge:add_target( 'foo.obj' ); \n"
+            "foo_obj:set_filename( foo_obj:path() ); \n"
             "foo_obj:add_dependency( foo_cpp ); \n"
             "forge:postorder( foo_obj, function() end ); \n"
             "assert( foo_obj:outdated() ); \n"
@@ -29,10 +31,12 @@ SUITE( TestGraph )
     TEST_FIXTURE( FileChecker, files_are_not_outdated_if_they_do_exist )
     {
         const char* script = 
-            "local SourceFile = forge:target_prototype( 'SourceFile' ); \n"
+            "local SourceFile = forge:add_target_prototype( 'SourceFile' ); \n"
             "local File = forge:target_prototype( 'File' ); \n"
             "local foo_cpp = forge:target( 'foo.cpp', SourceFile ); \n"
+            "foo_cpp:set_filename( foo_cpp:path() ); \n"
             "local foo_obj = forge:target( 'foo.obj', File ); \n"
+            "foo_obj:set_filename( foo_obj:path() ); \n"
             "foo_obj:add_dependency( foo_cpp ); \n"
             "forge:postorder( foo_obj, function() end ); \n"
             "assert( foo_obj:outdated() == false ); \n"
@@ -46,9 +50,12 @@ SUITE( TestGraph )
     TEST_FIXTURE( FileChecker, targets_are_outdated_if_their_dependencies_are_outdated )
     {
         const char* script = 
-            "local foo_cpp = forge:file( 'foo.cpp' ); \n"
-            "local foo_hpp = forge:file( 'foo.hpp' ); \n"
-            "local foo_obj = forge:file( 'foo.obj' ); \n"
+            "local foo_cpp = forge:add_target( 'foo.cpp' ); \n"
+            "foo_cpp:set_filename( foo_cpp:path() ); \n"
+            "local foo_hpp = forge:add_target( 'foo.hpp' ); \n"
+            "foo_hpp:set_filename( foo_hpp:path() ); \n"
+            "local foo_obj = forge:add_target( 'foo.obj' ); \n"
+            "foo_obj:set_filename( foo_obj:path() ); \n"
             "foo_cpp:add_dependency( foo_hpp ); \n"
             "foo_obj:add_dependency( foo_cpp ); \n"
             "forge:postorder( foo_obj, function() end ); \n"
