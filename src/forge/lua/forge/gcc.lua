@@ -247,6 +247,7 @@ function gcc.append_compile_flags( forge, target, flags )
     table.insert( flags, "-c" );
     table.insert( flags, gcc.flags_by_architecture[settings.architecture] );
     table.insert( flags, "-fpic" );
+    table.insert( flags, '-march=native' );
     
     local language = target.language or 'c++';
     if language then

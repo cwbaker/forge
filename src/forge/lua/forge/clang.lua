@@ -181,6 +181,7 @@ function clang.append_compile_flags( forge, target, flags )
 
     table.insert( flags, '-c' );
     table.insert( flags, ('-arch %s'):format(settings.architecture) );
+    table.insert( flags, '-maes' );
     table.insert( flags, '-fasm-blocks' );
     
     local language = target.language or 'c++';
