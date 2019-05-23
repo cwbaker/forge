@@ -34,6 +34,8 @@ Target::Target()
   prototype_( NULL ),
   timestamp_( 0 ),
   last_write_time_( 0 ),
+  hash_( 0 ),
+  pending_hash_( 0 ),
   outdated_( false ),
   changed_( false ),
   bound_to_file_( false ),
@@ -73,6 +75,8 @@ Target::Target( const std::string& id, Graph* graph )
   prototype_( NULL ),
   timestamp_( 0 ),
   last_write_time_( 0 ),
+  hash_( 0 ),
+  pending_hash_( 0 ),
   outdated_( false ),
   changed_( false ),
   bound_to_file_( false ),
@@ -227,6 +231,17 @@ bool Target::anonymous() const
 }
 
 /**
+// Get the 64-bit hash value set for this Target.
+//
+// @return
+//  The hash value or 0 if no hash value was set.
+*/
+uint64_t Target::hash() const
+{
+    return hash_;
+}
+
+/**
 // Get the Graph that this Target is part of.
 //
 // @return
@@ -321,14 +336,16 @@ void Target::bind_to_file()
             changed_ = last_write_time_ != earliest_last_write_time;
             timestamp_ = latest_last_write_time;
             last_write_time_ = earliest_last_write_time;
-            outdated_ = outdated;
+            outdated_ = outdated || hash_ != pending_hash_;
+            hash_ = pending_hash_;
         }
         else
         {
             changed_ = last_write_time_ != 0;
             timestamp_ = 0;
             last_write_time_ = 0;
-            outdated_ = !built_;
+            outdated_ = !built_ || hash_ != pending_hash_;
+            hash_ = pending_hash_;
         }
         
         bound_to_file_ = true;
@@ -373,6 +390,17 @@ void Target::bind_to_dependencies()
         set_outdated( outdated );
         bound_to_dependencies_ = true;
     }
+}
+
+/**
+// Set the settings hash for this Target.
+//
+// @param hash
+//  The hash value to set for this Target.
+*/
+void Target::set_hash( uint64_t hash )
+{
+    pending_hash_ = hash;
 }
 
 /**
@@ -1406,6 +1434,7 @@ void Target::write( GraphWriter& writer )
     writer.object_address( this );
     writer.value( id_ );
     writer.value( last_write_time_ );
+    writer.value( hash_ );
     writer.value( built_ );
     writer.value( filenames_ );
     writer.value( targets_ );
@@ -1423,6 +1452,7 @@ void Target::read( GraphReader& reader )
     reader.object_address( this );
     reader.value( &id_ );
     reader.value( &last_write_time_ );
+    reader.value( &hash_ );
     reader.value( &built_ );
     reader.value( &filenames_ );
     reader.value( &targets_ );

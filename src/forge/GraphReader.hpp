@@ -7,6 +7,7 @@
 #include <istream>
 #include <memory>
 #include <ctime>
+#include <stdint.h>
 
 namespace sweet
 {
@@ -28,7 +29,6 @@ class GraphReader
     std::istream* istream_;
     error::ErrorPolicy* error_policy_;
     std::map<const void*, void*> address_by_old_address_;
-    int version_;
 
 public:
     GraphReader( std::istream* ostream, error::ErrorPolicy* error_policy );
@@ -37,6 +37,7 @@ public:
     void object_address( void* address );
     void value( bool* value );
     void value( int* value );
+    void value( uint64_t* value );
     void value( std::time_t* value );
     void value( std::string* value );
     void value( char* value, size_t size );

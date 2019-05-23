@@ -4,6 +4,7 @@
 #include <ctime>
 #include <string>
 #include <vector>
+#include <stdint.h>
 
 namespace sweet
 {
@@ -29,6 +30,8 @@ class Target
     TargetPrototype* prototype_; ///< The TargetPrototype for this Target or null if this Target has no TargetPrototype.
     std::time_t timestamp_; ///< The timestamp for this Target.
     std::time_t last_write_time_; ///< The last write time of the file that this Target is bound to.
+    uint64_t hash_; ///< The hash for this Target the last time that it was built.
+    uint64_t pending_hash_; ///< The hash for this Target when it was created in the current run.
     bool outdated_; ///< Whether or not this Target is out of date.
     bool changed_; ///< Whether or not this Target's timestamp has changed since the last time it was bound to a file.
     bool bound_to_file_; ///< Whether or not this Target is bound to a file.
@@ -60,6 +63,7 @@ class Target
         const std::string& branch() const;
         Graph* graph() const;
         bool anonymous() const;
+        uint64_t hash() const;
 
         void set_prototype( TargetPrototype* target_prototype );
         TargetPrototype* prototype() const;
@@ -67,6 +71,8 @@ class Target
         void bind();
         void bind_to_file();
         void bind_to_dependencies();
+        void bind_to_hash();
+        void set_hash( uint64_t hash );
 
         void set_referenced_by_script( bool referenced_by_script );
         bool referenced_by_script() const;

@@ -6,6 +6,7 @@
 #include <ostream>
 #include <memory>
 #include <ctime>
+#include <stdint.h>
 
 namespace sweet
 {
@@ -25,6 +26,7 @@ public:
     void object_address( const void* address );
     void value( bool value );
     void value( int value );
+    void value( uint64_t value );
     void value( std::time_t value );
     void value( const std::string& value );
     void value( const char* value, size_t size );

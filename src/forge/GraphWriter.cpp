@@ -22,8 +22,8 @@ void GraphWriter::write( Target* root_target )
     SWEET_ASSERT( root_target );
     const char FORMAT [] = "Sweet Build Graph";
     value( &FORMAT[0], sizeof(FORMAT) );
-    int VERSION = 30;
-    value( VERSION   );
+    const int VERSION = 32;
+    value( VERSION );
     root_target->write( *this );
 }
 
@@ -38,6 +38,11 @@ void GraphWriter::value( bool value )
 }
 
 void GraphWriter::value( int value )
+{
+    ostream_->write( reinterpret_cast<const char*>(&value), sizeof(value) );
+}
+
+void GraphWriter::value( uint64_t value )
 {
     ostream_->write( reinterpret_cast<const char*>(&value), sizeof(value) );
 }

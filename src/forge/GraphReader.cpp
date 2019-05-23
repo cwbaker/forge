@@ -21,8 +21,7 @@ using namespace sweet::forge;
 GraphReader::GraphReader( std::istream* istream, error::ErrorPolicy* error_policy  )
 : istream_( istream ),
   error_policy_( error_policy ),
-  address_by_old_address_(),
-  version_( 0 )
+  address_by_old_address_()
 {
     SWEET_ASSERT( istream_ );
     SWEET_ASSERT( error_policy_ );
@@ -45,8 +44,16 @@ std::unique_ptr<Target> GraphReader::read( const std::string& filename )
         return unique_ptr<Target>();
     }
 
+    const int VERSION = 32;
+    int version = 0;
+    value( &version );
+    if ( version != VERSION )
+    {
+        error_policy_->print( "The file '%s' is version %d not version %d as expected", filename.c_str(), version, VERSION );
+        return unique_ptr<Target>();
+    }
+
     unique_ptr<Target> root_target;
-    value( &version_ );
     root_target.reset( new Target );
     root_target->read( *this );
     root_target->resolve( *this );
@@ -66,6 +73,11 @@ void GraphReader::value( bool* value )
 }
 
 void GraphReader::value( int* value )
+{
+    istream_->read( reinterpret_cast<char*>(value), sizeof(*value) );
+}
+
+void GraphReader::value( uint64_t* value )
 {
     istream_->read( reinterpret_cast<char*>(value), sizeof(*value) );
 }
