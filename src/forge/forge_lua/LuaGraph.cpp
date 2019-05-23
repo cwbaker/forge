@@ -94,6 +94,7 @@ int LuaGraph::add_target( lua_State* lua_state )
     const int FORGE = 1;
     const int IDENTIFIER = 2;
     const int TARGET_PROTOTYPE = 3;
+    const int HASH = 4;
     Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
     Context* context = forge->context();
     Graph* graph = forge->graph();
@@ -101,6 +102,7 @@ int LuaGraph::add_target( lua_State* lua_state )
     size_t identifier_length = 0;
     const char* identifier = luaL_checklstring( lua_state, IDENTIFIER, &identifier_length );
     luaL_argcheck( lua_state, identifier && identifier_length > 0, IDENTIFIER, "missing or empty identifier" );
+    const lua_Integer hash = luaL_optinteger( lua_state, HASH, 0 );
     TargetPrototype* target_prototype = (TargetPrototype*) luaxx_to( lua_state, TARGET_PROTOTYPE, TARGET_PROTOTYPE_TYPE );
     Target* target = graph->add_or_find_target( string(identifier, identifier_length), working_directory );
 
@@ -153,6 +155,8 @@ int LuaGraph::add_target( lua_State* lua_state )
         lua_getfield( lua_state, FORGE, "settings" );
         lua_setfield( lua_state, -2, "settings" );
         lua_pop( lua_state, 1 );
+
+        target->set_hash( hash );
     }
 
     luaxx_push( lua_state, target );    
