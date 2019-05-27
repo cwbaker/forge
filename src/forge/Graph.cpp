@@ -744,7 +744,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
             std::time_t timestamp = target->timestamp();
             struct tm* time = ::localtime( &timestamp );
-            printf( "'%s' %c%c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %s", 
+            printf( "'%s' %c%c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %llx %s", 
                 id(target),
                 target->outdated() ? 'O' : 'o',
                 target->changed() ? 'T' : 't',
@@ -758,6 +758,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                 time ? time->tm_hour : 99, 
                 time ? time->tm_min : 99, 
                 time ? time->tm_sec : 99,
+                target->hash(),
                 ordering ? "*" : ""
             );
 
@@ -765,7 +766,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             {
                 timestamp = target->last_write_time();
                 time = ::localtime( &timestamp );
-                printf( " %04d-%02d-%02d %02d:%02d:%02d", 
+                printf( "%04d-%02d-%02d %02d:%02d:%02d", 
                     time->tm_year + 1900, 
                     time->tm_mon + 1, 
                     time->tm_mday, 
