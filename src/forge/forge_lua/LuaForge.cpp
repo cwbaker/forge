@@ -90,10 +90,6 @@ void LuaForge::create( Forge* forge )
 
     static const luaL_Reg functions[] = 
     {
-        { "set_maximum_parallel_jobs", &LuaForge::set_maximum_parallel_jobs },
-        { "maximum_parallel_jobs", &LuaForge::maximum_parallel_jobs },
-        { "set_stack_trace_enabled", &LuaForge::set_stack_trace_enabled },
-        { "stack_trace_enabled", &LuaForge::stack_trace_enabled },
         { "set_forge_hooks_library", &LuaForge::set_forge_hooks_library },
         { "forge_hooks_library", &LuaForge::forge_hooks_library },
         { "hash", &LuaForge::hash },
@@ -180,44 +176,6 @@ void LuaForge::assign_global_variables( const std::vector<std::string>& assignme
             lua_setglobal( lua_state_, attribute.c_str() );
         }
     }
-}
-
-int LuaForge::set_maximum_parallel_jobs( lua_State* lua_state )
-{
-    const int FORGE = 1;
-    const int MAXIMUM_PARALLEL_JOBS = 2;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
-    int maximum_parallel_jobs = static_cast<int>( luaL_checkinteger(lua_state, MAXIMUM_PARALLEL_JOBS) );
-    forge->set_maximum_parallel_jobs( maximum_parallel_jobs );
-    return 0;
-}
-
-int LuaForge::maximum_parallel_jobs( lua_State* lua_state )
-{
-    const int FORGE = 1;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
-    int maximum_parallel_jobs = forge->maximum_parallel_jobs();
-    lua_pushinteger( lua_state, maximum_parallel_jobs );
-    return 1;
-}
-
-int LuaForge::set_stack_trace_enabled( lua_State* lua_state )
-{
-    const int FORGE = 1;
-    const int STACK_TRACE_ENABLED = 2;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
-    bool stack_trace_enabled = lua_toboolean( lua_state, STACK_TRACE_ENABLED ) != 0;
-    forge->set_stack_trace_enabled( stack_trace_enabled );
-    return 0;
-}
-
-int LuaForge::stack_trace_enabled( lua_State* lua_state )
-{
-    const int FORGE = 1;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
-    bool stack_trace_enabled = forge->stack_trace_enabled();
-    lua_pushboolean( lua_state, stack_trace_enabled ? 1 : 0 );
-    return 1;
 }
 
 int LuaForge::set_forge_hooks_library( lua_State* lua_state )

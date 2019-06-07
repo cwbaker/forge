@@ -45,10 +45,6 @@ public:
     void assign_global_variables( const std::vector<std::string>& assignments );
 
 private:
-    static int set_maximum_parallel_jobs( lua_State* lua_state );
-    static int maximum_parallel_jobs( lua_State* lua_state );
-    static int set_stack_trace_enabled( lua_State* lua_state );
-    static int stack_trace_enabled( lua_State* lua_state );
     static int set_forge_hooks_library( lua_State* lua_state );
     static int forge_hooks_library( lua_State* lua_state );
     static int hash( lua_State* lua_state );
