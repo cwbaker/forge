@@ -4,7 +4,6 @@
 //
 
 #include "LuaGraph.hpp"
-#include "LuaForge.hpp"
 #include "types.hpp"
 #include <forge/Context.hpp>
 #include <forge/Forge.hpp>
@@ -36,7 +35,6 @@ void LuaGraph::create( Forge* forge, lua_State* lua_state )
 {
     SWEET_ASSERT( forge );
     SWEET_ASSERT( lua_state );
-    SWEET_ASSERT( lua_istable(lua_state, -1) );
 
     destroy();
 
@@ -60,8 +58,10 @@ void LuaGraph::create( Forge* forge, lua_State* lua_state )
         { "save_binary", &LuaGraph::save_binary },
         { NULL, NULL }
     };
+    lua_pushglobaltable( lua_state );
     lua_pushlightuserdata( lua_state, forge );
     luaL_setfuncs( lua_state, functions, 1 );
+    lua_pop( lua_state, 1 );
 }
 
 void LuaGraph::destroy()
@@ -72,10 +72,10 @@ int LuaGraph::add_target_prototype( lua_State* lua_state )
 {
     try
     {
-        const int FORGE = 1;
-        const int IDENTIFIER = 2;
+        const int FORGE = lua_upvalueindex( 1 );
+        const int IDENTIFIER = 1;
         string id = luaL_checkstring( lua_state, IDENTIFIER );        
-        Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+        Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
         TargetPrototype* target_prototype = forge->graph()->add_target_prototype( id );
         forge->create_target_prototype_lua_binding( target_prototype );
         luaxx_push( lua_state, target_prototype );
@@ -91,11 +91,12 @@ int LuaGraph::add_target_prototype( lua_State* lua_state )
 
 int LuaGraph::add_target( lua_State* lua_state )
 {
-    const int FORGE = 1;
+    const int FORGE = lua_upvalueindex( 1 );
+    const int FORGE_SETTINGS = 1;
     const int IDENTIFIER = 2;
     const int TARGET_PROTOTYPE = 3;
     const int HASH = 4;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     Context* context = forge->context();
     Graph* graph = forge->graph();
     Target* working_directory = context->working_directory();
@@ -143,7 +144,7 @@ int LuaGraph::add_target( lua_State* lua_state )
     if ( update_target_prototype || update_working_directory || create_lua_binding )
     {
         luaxx_push( lua_state, target );
-        lua_pushvalue( lua_state, FORGE );
+        lua_pushvalue( lua_state, FORGE_SETTINGS );
         lua_setfield( lua_state, -2, "forge" );
         lua_pop( lua_state, 1 );
         target->set_hash( hash );
@@ -155,9 +156,9 @@ int LuaGraph::add_target( lua_State* lua_state )
 
 int LuaGraph::find_target( lua_State* lua_state )
 {
-    const int FORGE = 1;
-    const int IDENTIFIER = 2;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const int FORGE = lua_upvalueindex( 1 );
+    const int IDENTIFIER = 1;
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     Context* context = forge->context();
     const char* id = luaL_checkstring( lua_state, IDENTIFIER );
     Target* target = forge->graph()->find_target( string(id), context->working_directory() );
@@ -171,8 +172,8 @@ int LuaGraph::find_target( lua_State* lua_state )
 
 int LuaGraph::anonymous( lua_State* lua_state )
 {
-    const int FORGE = 1;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const int FORGE = lua_upvalueindex( 1 );
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     Context* context = forge->context();
     Target* working_directory = context->working_directory();
     char anonymous [256];
@@ -184,8 +185,8 @@ int LuaGraph::anonymous( lua_State* lua_state )
 
 int LuaGraph::current_buildfile( lua_State* lua_state )
 {
-    const int FORGE = 1;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const int FORGE = lua_upvalueindex( 1 );
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     Context* context = forge->context();
     Target* target = context->current_buildfile();
     if ( target && !target->referenced_by_script() )
@@ -198,8 +199,8 @@ int LuaGraph::current_buildfile( lua_State* lua_state )
 
 int LuaGraph::working_directory( lua_State* lua_state )
 {
-    const int FORGE = 1;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const int FORGE = lua_upvalueindex( 1 );
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     Context* context = forge->context();
     Target* target = context->working_directory();
     if ( target && !target->referenced_by_script() )
@@ -212,9 +213,9 @@ int LuaGraph::working_directory( lua_State* lua_state )
 
 int LuaGraph::buildfile( lua_State* lua_state )
 {
-    const int FORGE = 1;
-    const int FILENAME = 2;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const int FORGE = lua_upvalueindex( 1 );
+    const int FILENAME = 1;
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     const char* filename = luaL_checkstring( lua_state, FILENAME );
     int errors = forge->graph()->buildfile( string(filename) );
     if ( errors >= 0 )
@@ -227,11 +228,11 @@ int LuaGraph::buildfile( lua_State* lua_state )
 
 int LuaGraph::postorder( lua_State* lua_state )
 {
-    const int FORGE = 1;
-    const int TARGET = 2;
-    const int FUNCTION = 3;
+    const int FORGE = lua_upvalueindex( 1 );
+    const int TARGET = 1;
+    const int FUNCTION = 2;
 
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     Graph* graph = forge->graph();
     if ( graph->traversal_in_progress() )
     {
@@ -261,9 +262,9 @@ int LuaGraph::postorder( lua_State* lua_state )
 
 int LuaGraph::print_dependencies( lua_State* lua_state )
 {
-    const int FORGE = 1;
-    const int TARGET = 2;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const int FORGE = lua_upvalueindex( 1 );
+    const int TARGET = 1;
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     forge->graph()->print_dependencies( target, forge->context()->directory().string() );
     return 0;
@@ -271,9 +272,9 @@ int LuaGraph::print_dependencies( lua_State* lua_state )
 
 int LuaGraph::print_namespace( lua_State* lua_state )
 {
-    const int FORGE = 1;
-    const int TARGET = 2;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const int FORGE = lua_upvalueindex( 1 );
+    const int TARGET = 1;
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     forge->graph()->print_namespace( target );
     return 0;
@@ -281,16 +282,16 @@ int LuaGraph::print_namespace( lua_State* lua_state )
 
 int LuaGraph::wait( lua_State* lua_state )
 {
-    const int FORGE = 1;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const int FORGE = lua_upvalueindex( 1 );
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     forge->scheduler()->wait();
     return 0;
 }
 
 int LuaGraph::clear( lua_State* lua_state )
 {
-    const int FORGE = 1;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const int FORGE = lua_upvalueindex( 1 );
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     Context* context = forge->context();
     string working_directory = context->working_directory()->path();
     forge->graph()->clear();
@@ -300,9 +301,9 @@ int LuaGraph::clear( lua_State* lua_state )
 
 int LuaGraph::load_binary( lua_State* lua_state )
 {
-    const int FORGE = 1;
-    const int FILENAME = 2;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const int FORGE = lua_upvalueindex( 1 );
+    const int FILENAME = 1;
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     Context* context = forge->context();
     const char* filename = luaL_checkstring( lua_state, FILENAME );
     string working_directory = context->working_directory()->path();
@@ -318,8 +319,8 @@ int LuaGraph::load_binary( lua_State* lua_state )
 
 int LuaGraph::save_binary( lua_State* lua_state )
 {
-    const int FORGE = 1;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const int FORGE = lua_upvalueindex( 1 );
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     forge->graph()->save_binary();
     return 0;
 }

@@ -23,7 +23,7 @@ class LuaSystem;
 class LuaTarget;
 class LuaTargetPrototype;
 
-class LuaForge
+class Lua
 {
     Forge* forge_;
     lua_State* lua_state_;
@@ -35,8 +35,8 @@ class LuaForge
     LuaTargetPrototype* lua_target_prototype_;
 
 public:
-    LuaForge( Forge* forge );
-    ~LuaForge();
+    Lua( Forge* forge );
+    ~Lua();
     lua_State* lua_state() const;
     LuaTarget* lua_target() const;
     LuaTargetPrototype* lua_target_prototype() const;
@@ -45,12 +45,6 @@ public:
     void assign_global_variables( const std::vector<std::string>& assignments );
 
 private:
-    static int set_forge_hooks_library( lua_State* lua_state );
-    static int forge_hooks_library( lua_State* lua_state );
-    static int hash( lua_State* lua_state );
-    static int execute( lua_State* lua_state );
-    static int print( lua_State* lua_state );
-    static lua_Integer hash_recursively( lua_State* lua_state, int table, bool hash_integer_keys );
 };
     
 }

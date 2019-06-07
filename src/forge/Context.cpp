@@ -8,7 +8,6 @@
 #include "Forge.hpp"
 #include "Graph.hpp"
 #include "path_functions.hpp"
-#include <forge/forge_lua/LuaForge.hpp>
 #include <luaxx/luaxx.hpp>
 #include <lua.hpp>
 

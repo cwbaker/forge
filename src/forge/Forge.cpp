@@ -13,7 +13,7 @@
 #include "Target.hpp"
 #include "Context.hpp"
 #include "path_functions.hpp"
-#include <forge/forge_lua/LuaForge.hpp>
+#include <forge/forge_lua/Lua.hpp>
 #include <forge/forge_lua/LuaTarget.hpp>
 #include <forge/forge_lua/LuaTargetPrototype.hpp>
 #include <error/ErrorPolicy.hpp>
@@ -38,7 +38,7 @@ using namespace sweet::forge;
 Forge::Forge( const std::string& initial_directory, error::ErrorPolicy& error_policy, ForgeEventSink* event_sink )
 : error_policy_( error_policy ),
   event_sink_( event_sink ),
-  lua_forge_( NULL ),
+  lua_( NULL ),
   system_( NULL ),
   reader_( NULL ),
   graph_( NULL ),
@@ -57,7 +57,7 @@ Forge::Forge( const std::string& initial_directory, error::ErrorPolicy& error_po
     home_directory_ = make_drive_uppercase( system_->home() );
     executable_directory_ = make_drive_uppercase( system_->executable() ).parent_path();
 
-    lua_forge_ = new LuaForge( this );
+    lua_ = new Lua( this );
     system_ = new System;
     reader_ = new Reader( this );
     graph_ = new Graph( this );
@@ -89,7 +89,7 @@ Forge::~Forge()
     delete graph_;
     delete reader_;
     delete system_;
-    delete lua_forge_;
+    delete lua_;
 }
 
 /**
@@ -178,8 +178,8 @@ Context* Forge::context() const
 
 lua_State* Forge::lua_state() const
 {
-    SWEET_ASSERT( lua_forge_ );
-    return lua_forge_->lua_state();
+    SWEET_ASSERT( lua_ );
+    return lua_->lua_state();
 }
 
 const boost::filesystem::path& Forge::root() const
@@ -360,8 +360,8 @@ void Forge::set_root_directory( const std::string& root_directory )
 */
 void Forge::assign_global_variables( const std::vector<std::string>& assignments )
 {
-    SWEET_ASSERT( lua_forge_ );
-    lua_forge_->assign_global_variables( assignments );
+    SWEET_ASSERT( lua_ );
+    lua_->assign_global_variables( assignments );
 }
 
 /**
@@ -398,14 +398,14 @@ void Forge::script( const std::string& script )
 
 void Forge::create_target_lua_binding( Target* target )
 {
-    SWEET_ASSERT( lua_forge_ );
-    lua_forge_->lua_target()->create_target( target );
+    SWEET_ASSERT( lua_ );
+    lua_->lua_target()->create_target( target );
 }
 
 void Forge::update_target_lua_binding( Target* target )
 {
-    SWEET_ASSERT( lua_forge_ );
-    lua_forge_->lua_target()->update_target( target );
+    SWEET_ASSERT( lua_ );
+    lua_->lua_target()->update_target( target );
 }
 
 void Forge::destroy_target_lua_binding( Target* target )
@@ -413,20 +413,20 @@ void Forge::destroy_target_lua_binding( Target* target )
     SWEET_ASSERT( target );
     if ( target && target->referenced_by_script() )
     {
-        lua_forge_->lua_target()->destroy_target( target );
+        lua_->lua_target()->destroy_target( target );
     }
 }
 
 void Forge::create_target_prototype_lua_binding( TargetPrototype* target_prototype )
 {
-    SWEET_ASSERT( lua_forge_ );
-    lua_forge_->lua_target_prototype()->create_target_prototype( target_prototype );
+    SWEET_ASSERT( lua_ );
+    lua_->lua_target_prototype()->create_target_prototype( target_prototype );
 }
 
 void Forge::destroy_target_prototype_lua_binding( TargetPrototype* target_prototype )
 {
-    SWEET_ASSERT( lua_forge_ );
-    lua_forge_->lua_target_prototype()->destroy_target_prototype( target_prototype );
+    SWEET_ASSERT( lua_ );
+    lua_->lua_target_prototype()->destroy_target_prototype( target_prototype );
 }
 
 /**

@@ -5,7 +5,6 @@
 
 #include "LuaTargetPrototype.hpp"
 #include "LuaTarget.hpp"
-#include "LuaForge.hpp"
 #include "types.hpp"
 #include <forge/TargetPrototype.hpp>
 #include <luaxx/luaxx.hpp>

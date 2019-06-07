@@ -13,7 +13,6 @@
 #include "Reader.hpp"
 #include "Filter.hpp"
 #include "Arguments.hpp"
-#include <forge/forge_lua/LuaForge.hpp>
 #include <process/Environment.hpp>
 #include <luaxx/luaxx.hpp>
 #include <error/ErrorPolicy.hpp>

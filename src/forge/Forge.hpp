@@ -29,7 +29,7 @@ class System;
 class TargetPrototype;
 class Target;
 class Graph;
-class LuaForge;
+class Lua;
 
 /**
 // Forge library main class.
@@ -38,7 +38,7 @@ class Forge
 {
     error::ErrorPolicy& error_policy_;
     ForgeEventSink* event_sink_; ///< The EventSink for this Forge or null if this Forge has no EventSink.
-    LuaForge* lua_forge_; ///< The Lua bindings to the Forge library.
+    Lua* lua_; ///< The Lua bindings to the Forge library.
     System* system_; ///< The System that provides access to the operating system.
     Reader* reader_; ///< The reader that filters executable output and dependencies.
     Graph* graph_; ///< The dependency graph of targets used to determine which targets are outdated.

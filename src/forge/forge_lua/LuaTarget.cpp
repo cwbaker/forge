@@ -4,7 +4,6 @@
 //
 
 #include "LuaTarget.hpp"
-#include "LuaForge.hpp"
 #include "LuaGraph.hpp"
 #include "types.hpp"
 #include <forge/Target.hpp>

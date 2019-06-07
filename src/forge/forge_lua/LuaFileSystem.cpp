@@ -4,7 +4,6 @@
 //
 
 #include "LuaFileSystem.hpp"
-#include "LuaForge.hpp"
 #include "types.hpp"
 #include <forge/Forge.hpp>
 #include <luaxx/luaxx.hpp>
@@ -35,7 +34,6 @@ void LuaFileSystem::create( Forge* forge, lua_State* lua_state )
 {
     SWEET_ASSERT( forge );
     SWEET_ASSERT( lua_state );
-    SWEET_ASSERT( lua_istable(lua_state, -1) );
 
     destroy();
 
@@ -53,8 +51,10 @@ void LuaFileSystem::create( Forge* forge, lua_State* lua_state )
         { "touch", &LuaFileSystem::touch },
         { NULL, NULL }
     };
+    lua_pushglobaltable( lua_state );
     lua_pushlightuserdata( lua_state, forge );
     luaL_setfuncs( lua_state, functions, 1 );
+    lua_pop( lua_state, 1 );
 
     luaL_newmetatable( lua_state, DIRECTORY_ITERATOR_METATABLE );
     lua_pushstring( lua_state, "__gc" );
@@ -89,7 +89,7 @@ void LuaFileSystem::destroy()
 
 int LuaFileSystem::exists( lua_State* lua_state )
 {
-    const int PATH = 2;
+    const int PATH = 1;
     boost::filesystem::path path = absolute( lua_state, PATH );
     lua_pushboolean( lua_state, boost::filesystem::exists(path) ? 1 : 0 );
     return 1;
@@ -97,7 +97,7 @@ int LuaFileSystem::exists( lua_State* lua_state )
 
 int LuaFileSystem::is_file( lua_State* lua_state )
 {
-    const int PATH = 2;
+    const int PATH = 1;
     boost::filesystem::path path = absolute( lua_state, PATH );
     lua_pushboolean( lua_state, boost::filesystem::is_regular_file(path) ? 1 : 0 );
     return 1;
@@ -105,7 +105,7 @@ int LuaFileSystem::is_file( lua_State* lua_state )
 
 int LuaFileSystem::is_directory( lua_State* lua_state )
 {
-    const int PATH = 2;
+    const int PATH = 1;
     boost::filesystem::path path = absolute( lua_state, PATH );
     lua_pushboolean( lua_state, boost::filesystem::is_directory(path) ? 1 : 0 );
     return 1;
@@ -113,7 +113,7 @@ int LuaFileSystem::is_directory( lua_State* lua_state )
 
 int LuaFileSystem::ls( lua_State* lua_state )
 {
-    const int PATH = 2;
+    const int PATH = 1;
     boost::filesystem::path path = absolute( lua_state, PATH );
     LuaFileSystem::push_directory_iterator( lua_state, directory_iterator(path) );
     lua_pushcclosure( lua_state, &LuaFileSystem::ls_iterator, 1 );
@@ -122,7 +122,7 @@ int LuaFileSystem::ls( lua_State* lua_state )
 
 int LuaFileSystem::find( lua_State* lua_state )
 {
-    const int PATH = 2;
+    const int PATH = 1;
     boost::filesystem::path path = absolute( lua_state, PATH );
     LuaFileSystem::push_recursive_directory_iterator( lua_state, recursive_directory_iterator(path) );
     lua_pushcclosure( lua_state, &LuaFileSystem::find_iterator, 1 );
@@ -131,7 +131,7 @@ int LuaFileSystem::find( lua_State* lua_state )
 
 int LuaFileSystem::mkdir( lua_State* lua_state )
 {
-    const int PATH = 2;
+    const int PATH = 1;
     boost::filesystem::path path = absolute( lua_state, PATH );
     boost::filesystem::create_directories( path );
     return 0;
@@ -139,7 +139,7 @@ int LuaFileSystem::mkdir( lua_State* lua_state )
 
 int LuaFileSystem::rmdir( lua_State* lua_state )
 {
-    const int PATH = 2;
+    const int PATH = 1;
     boost::filesystem::path path = absolute( lua_state, PATH );
     boost::filesystem::remove_all( path );
     return 0;
@@ -147,8 +147,8 @@ int LuaFileSystem::rmdir( lua_State* lua_state )
 
 int LuaFileSystem::cp( lua_State* lua_state )
 {
-    const int TO = 2;
-    const int FROM = 3;
+    const int TO = 1;
+    const int FROM = 2;
     boost::filesystem::path to = absolute( lua_state, TO );
     boost::filesystem::path from = absolute( lua_state, FROM );
     boost::filesystem::copy_file( from, to );
@@ -157,7 +157,7 @@ int LuaFileSystem::cp( lua_State* lua_state )
 
 int LuaFileSystem::rm( lua_State* lua_state )
 {
-    const int PATH = 2;
+    const int PATH = 1;
     boost::filesystem::path path = absolute( lua_state, PATH );
     boost::filesystem::remove( path );
     return 0;
@@ -165,7 +165,7 @@ int LuaFileSystem::rm( lua_State* lua_state )
 
 int LuaFileSystem::touch( lua_State* lua_state )
 {
-    const int PATH = 2;
+    const int PATH = 1;
     boost::filesystem::path path = absolute( lua_state, PATH );
     boost::filesystem::last_write_time( path, std::time(nullptr) );
     return 0;
@@ -247,9 +247,9 @@ int LuaFileSystem::recursive_directory_iterator_gc( lua_State* lua_state )
 
 boost::filesystem::path LuaFileSystem::absolute( lua_State* lua_state, int index )
 {
-    const int FORGE = 1;
-    Forge* forge = (Forge*) luaxx_check( lua_state, FORGE, FORGE_TYPE );
+    const int FORGE = lua_upvalueindex( 1 );
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, index, &length );
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     return forge->absolute( string(path, length) );
 }

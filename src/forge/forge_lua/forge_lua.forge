@@ -19,7 +19,7 @@ for _, forge in forge:builds('cc.*') do
                 '_WIN32_WINNT=0x0a00',
                 'WIN32_LEAN_AND_MEAN'
             };
-            'LuaForge.cpp',
+            'Lua.cpp',
             'LuaContext.cpp',
             'LuaFileSystem.cpp',
             'LuaGraph.cpp',
