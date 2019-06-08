@@ -146,16 +146,6 @@ int LuaGraph::add_target( lua_State* lua_state )
         lua_pushvalue( lua_state, FORGE );
         lua_setfield( lua_state, -2, "forge" );
         lua_pop( lua_state, 1 );
-
-        // Set `target.settings` to the value of `forge.settings` from the 
-        // Forge object that created this target.  This seems, at the time of
-        // writing, like a temporary measure to allow build scripts to move to
-        // using `target.forge` to retrieve settings.
-        luaxx_push( lua_state, target );
-        lua_getfield( lua_state, FORGE, "settings" );
-        lua_setfield( lua_state, -2, "settings" );
-        lua_pop( lua_state, 1 );
-
         target->set_hash( hash );
     }
 
