@@ -15,6 +15,8 @@
 #include <assert/assert.hpp>
 #include <memory>
 #include <fstream>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 
 using std::list;
 using std::vector;
@@ -744,7 +746,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
             std::time_t timestamp = target->timestamp();
             struct tm* time = ::localtime( &timestamp );
-            printf( "'%s' %c%c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %llx %s", 
+            printf( "'%s' %c%c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %" PRIx64 " %s", 
                 id(target),
                 target->outdated() ? 'O' : 'o',
                 target->changed() ? 'T' : 't',
