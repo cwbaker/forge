@@ -3,7 +3,7 @@ local Xib = forge:FilePrototype( 'Xib' );
 
 function Xib.build( forge, target )
     local settings = forge.settings;
-    printf( forge:leaf(target) );
+    printf( leaf(target) );
     forge:system( settings.xcode.xcrun, {
         'xcrun';
         ('--sdk %s'):format( settings.sdkroot );

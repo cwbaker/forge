@@ -2,30 +2,30 @@
 -- Reference Lua build scripts from within the source tree rather than 
 -- relative to the build executable so that they can be edited in place during
 -- development and are versioned along with the code that they are building.
-package.path = forge:root('src/forge/lua/?.lua')..';'..forge:root('src/forge/lua/?/init.lua');
+package.path = root('src/forge/lua/?.lua')..';'..root('src/forge/lua/?/init.lua');
 
-variant = forge:lower( variant or 'debug' );
+variant = variant or 'debug';
 
 local forge = require 'forge.cc' {
     identifier = 'cc_${platform}_${architecture}';
-    platform = forge:operating_system();
-    bin = forge:root( ('%s/bin'):format(variant) );
-    lib = forge:root( ('%s/lib'):format(variant) );
-    obj = forge:root( ('%s/obj/cc_%s_x86_64'):format(variant, forge:operating_system()) );
+    platform = operating_system();
+    bin = root( ('%s/bin'):format(variant) );
+    lib = root( ('%s/lib'):format(variant) );
+    obj = root( ('%s/obj/cc_%s_x86_64'):format(variant, operating_system()) );
     include_directories = {
-        forge:root( 'src' );
-        forge:root( 'src/boost' );
-        forge:root( 'src/lua/src' );
-        forge:root( 'src/unittest-cpp' );
+        root( 'src' );
+        root( 'src/boost' );
+        root( 'src/lua/src' );
+        root( 'src/unittest-cpp' );
     };
     library_directories = {
-        forge:root( ('%s/lib'):format(variant) ),
+        root( ('%s/lib'):format(variant) ),
     };
     defines = {
-        ('BUILD_VARIANT_%s'):format( forge:upper(variant) );
+        ('BUILD_VARIANT_%s'):format( upper(variant) );
     };
     xcode = {
-        xcodeproj = forge:root( 'forge.xcodeproj' );
+        xcodeproj = root( 'forge.xcodeproj' );
     };
 
     architecture = 'x86_64';
@@ -73,10 +73,10 @@ forge:all {
 };
 
 function install()
-    prefix = prefix and forge:root( prefix ) or forge:home( 'forge' );
+    prefix = prefix and root( prefix ) or home( 'forge' );
     local failures = default();
     if failures == 0 then 
-        forge:cpdir( '${prefix}/bin', '${bin}' );
-        forge:cpdir( '${prefix}/lua', 'src/forge/lua' );
+        cpdir( '${prefix}/bin', '${bin}' );
+        cpdir( '${prefix}/lua', 'src/forge/lua' );
     end
 end

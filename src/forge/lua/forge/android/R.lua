@@ -5,7 +5,7 @@ local R = forge:JavaStylePrototype( 'R' );
 
 function R.build( forge, target )
     local android_manifest = target:dependency( 1 );
-    assertf( android_manifest and forge:leaf(android_manifest) == "AndroidManifest.xml", "Android R '%s' does not specify 'AndroidManifest.xml' as its first dependency", target:path() );
+    assertf( android_manifest and leaf(android_manifest) == "AndroidManifest.xml", "Android R '%s' does not specify 'AndroidManifest.xml' as its first dependency", target:path() );
 
     local command_line = {
         'aapt',
@@ -22,12 +22,12 @@ function R.build( forge, target )
     for _, dependency in target:dependencies( 2 ) do
         if dependency:prototype() == forge.Ivy then 
             for _, archive in dependency:implicit_dependencies() do
-                if forge:extension(archive) ~= '.jar' and forge:exists(('%s/res'):format(archive)) then 
+                if extension(archive) ~= '.jar' and exists(('%s/res'):format(archive)) then 
                     table.insert( command_line, ('-S "%s/res"'):format(archive) );
                 end
             end
         else
-            table.insert( command_line, ('-S "%s"'):format(forge:relative(dependency)) );
+            table.insert( command_line, ('-S "%s"'):format(relative(dependency)) );
         end
     end
 

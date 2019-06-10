@@ -22,9 +22,9 @@ end
 
 function gcc.validate( forge, gcc_settings )
     return 
-        forge:exists( gcc_settings.gcc ) and 
-        forge:exists( gcc_settings.gxx ) and 
-        forge:exists( gcc_settings.ar )
+        exists( gcc_settings.gcc ) and 
+        exists( gcc_settings.gxx ) and 
+        exists( gcc_settings.ar )
     ;
 end
 
@@ -100,14 +100,14 @@ function gcc.object_filename( forge, identifier )
 end
 
 function gcc.static_library_filename( forge, identifier )
-    local identifier = forge:absolute( forge:interpolate(identifier) );
-    local filename = ('%s/lib%s.a'):format( forge:branch(identifier), forge:leaf(identifier) );
+    local identifier = absolute( forge:interpolate(identifier) );
+    local filename = ('%s/lib%s.a'):format( branch(identifier), leaf(identifier) );
     return identifier, filename;
 end
 
 function gcc.dynamic_library_filename( forge, identifier )
-    local identifier = forge:absolute( forge:interpolate(identifier) );
-    local filename = ('%s/lib%s.so'):format( forge:branch(identifier), forge:leaf(identifier) );
+    local identifier = absolute( forge:interpolate(identifier) );
+    local filename = ('%s/lib%s.so'):format( branch(identifier), leaf(identifier) );
     return identifier, filename;
 end
 
@@ -132,8 +132,8 @@ function gcc.compile( forge, target )
     local dependencies = ('%s.d'):format( target );
     local source = target:dependency();
     local output = target:filename();
-    local input = forge:relative( source:filename() );
-    print( forge:leaf(source:id()) );
+    local input = relative( source:filename() );
+    print( leaf(source:id()) );
     target:clear_implicit_dependencies();
     forge:system( 
         gcc_, 
@@ -145,33 +145,33 @@ end
 
 -- Archive objects into a static library. 
 function gcc.archive( forge, target )
-    printf( forge:leaf(target) );
+    printf( leaf(target) );
     local settings = forge.settings;
-    forge:pushd( forge:obj_directory(target) );
+    pushd( forge:obj_directory(target) );
     local objects =  {};
     for _, object in forge:walk_dependencies( target ) do
         local prototype = object:prototype();
         if prototype ~= forge.Directory then
-            table.insert( objects, forge:relative(object) );
+            table.insert( objects, relative(object) );
         end
     end
     if #objects > 0 then
         local objects = table.concat( objects, '" "' );
         local ar = settings.gcc.ar;
         local environment = settings.gcc.environment;
-        forge:system( ar, ('ar -rcs "%s" "%s"'):format(forge:native(target), objects), environment );
+        forge:system( ar, ('ar -rcs "%s" "%s"'):format(native(target), objects), environment );
     end
-    forge:popd();
+    popd();
 end
 
 -- Link dynamic libraries and executables.
 function gcc.link( forge, target ) 
-    printf( forge:leaf(target) );
+    printf( leaf(target) );
 
     local objects = {};
     local libraries = {};
     local settings = forge.settings;
-    forge:pushd( forge:obj_directory(target) );
+    pushd( forge:obj_directory(target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
         if prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
@@ -183,7 +183,7 @@ function gcc.link( forge, target )
                 table.insert( libraries, '-Wl,--no-whole-archive' );
             end
         elseif prototype ~= forge.Directory then
-            table.insert( objects, forge:relative(dependency) );
+            table.insert( objects, relative(dependency) );
         end
     end
 
@@ -200,7 +200,7 @@ function gcc.link( forge, target )
         local environment = settings.gcc.environment;
         forge:system( gxx, ('g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
     end
-    forge:popd();
+    popd();
 end
 
 function gcc.append_defines( forge, target, flags )
@@ -230,7 +230,7 @@ function gcc.append_include_directories( forge, target, flags )
 
     if target.include_directories then
         for _, directory in ipairs(target.include_directories) do
-            table.insert( flags, ('-I "%s"'):format(forge:relative(directory)) );
+            table.insert( flags, ('-I "%s"'):format(relative(directory)) );
         end
     end
 
@@ -346,10 +346,10 @@ function gcc.append_link_flags( forge, target, flags )
     end
 
     if settings.exported_symbols_list then
-        table.insert( flags, ('-exported_symbols_list "%s"'):format(forge:absolute(settings.exported_symbols_list)) );
+        table.insert( flags, ('-exported_symbols_list "%s"'):format(absolute(settings.exported_symbols_list)) );
     end
 
-    table.insert( flags, ('-o "%s"'):format(forge:native(target:filename())) );
+    table.insert( flags, ('-o "%s"'):format(native(target:filename())) );
 end
 
 function gcc.append_link_libraries( forge, target, libraries )

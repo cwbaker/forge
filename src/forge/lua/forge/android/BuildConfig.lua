@@ -33,7 +33,7 @@ public final class BuildConfig {
     for index, package in ipairs(target.packages) do
         local filename = forge:interpolate( ('%s/%s/BuildConfig.java'):format(output_directory, package:gsub('%.', '/')) );
         target:add_filename( filename );
-        forge:mkdir( forge:branch(filename) );
+        mkdir( branch(filename) );
         local output_file = io.open( filename, 'wb' );
         assert( output_file, ('Opening "%s" to write generated text failed'):format(filename) );
         output_file:write( HEADER:format(package) );

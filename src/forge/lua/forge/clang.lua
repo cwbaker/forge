@@ -6,13 +6,13 @@ function clang.object_filename( forge, identifier )
 end
 
 function clang.static_library_filename( forge, identifier )
-    local identifier = forge:absolute( forge:interpolate(identifier) );
-    local filename = ('%s/lib%s.a'):format( forge:branch(identifier), forge:leaf(identifier) );
+    local identifier = absolute( forge:interpolate(identifier) );
+    local filename = ('%s/lib%s.a'):format( branch(identifier), leaf(identifier) );
     return identifier, filename;
 end
 
 function clang.dynamic_library_filename( forge, identifier )
-    local identifier = forge:absolute( forge:interpolate(identifier) );
+    local identifier = absolute( forge:interpolate(identifier) );
     local filename = ('%s.dylib'):format( identifier );
     return identifier, filename;
 end
@@ -35,10 +35,10 @@ function clang.compile( forge, target )
     local ccflags = table.concat( flags, ' ' );
     local xcrun = settings.xcrun;
     local source = target:dependency();
-    print( forge:leaf(source) );
+    print( leaf(source) );
     local dependencies = ('%s.d'):format( target );
     local output = target:filename();
-    local input = forge:absolute( source );
+    local input = absolute( source );
     forge:system( 
         xcrun, 
         ('xcrun --sdk %s clang %s -MMD -MF "%s" -o "%s" "%s"'):format(sdkroot, ccflags, dependencies, output, input)
@@ -53,12 +53,12 @@ function clang.archive( forge, target )
     };
 
     local settings = forge.settings;
-    forge:pushd( forge:obj_directory(target) );
+    pushd( forge:obj_directory(target) );
     local objects =  {};
     for _, object in forge:walk_dependencies( target ) do
         local prototype = object:prototype();
         if prototype ~= forge.Directory then
-            table.insert( objects, forge:relative(object) );
+            table.insert( objects, relative(object) );
         end
     end
     
@@ -66,9 +66,9 @@ function clang.archive( forge, target )
         local arflags = table.concat( flags, ' ' );
         local arobjects = table.concat( objects, '" "' );
         local xcrun = settings.xcrun;
-        forge:system( xcrun, ('xcrun --sdk macosx libtool %s -o "%s" "%s"'):format(arflags, forge:native(target), arobjects) );
+        forge:system( xcrun, ('xcrun --sdk macosx libtool %s -o "%s" "%s"'):format(arflags, native(target), arobjects) );
     end
-    forge:popd();
+    popd();
 end
 
 -- Link dynamic libraries and executables.
@@ -77,13 +77,13 @@ function clang.link( forge, target )
 
     local objects = {};
     local libraries = {};
-    forge:pushd( forge:obj_directory(target) );
+    pushd( forge:obj_directory(target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
         if prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
             table.insert( libraries, ('-l%s'):format(dependency:id()) );
         elseif prototype ~= forge.Directory then
-            table.insert( objects, forge:relative(dependency) );
+            table.insert( objects, relative(dependency) );
         end
     end
 
@@ -100,7 +100,7 @@ function clang.link( forge, target )
         local ldlibs = table.concat( libraries, ' ' );
         forge:system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
     end
-    forge:popd();
+    popd();
 end
 
 -- Register the clang C/C++ toolset in *forge*.
@@ -291,7 +291,7 @@ function clang.append_link_flags( forge, target, flags )
     end
     
     if settings.generate_map_file then
-        table.insert( flags, ('-Wl,-map,"%s"'):format(forge:native(('%s/%s.map'):format(forge:obj_directory(target), target:id()))) );
+        table.insert( flags, ('-Wl,-map,"%s"'):format(native(('%s/%s.map'):format(forge:obj_directory(target), target:id()))) );
     end
 
     if settings.strip and not settings.generate_dsym_bundle then
@@ -302,7 +302,7 @@ function clang.append_link_flags( forge, target, flags )
         table.insert( flags, ('-exported_symbols_list "%s"'):format(absolute(settings.exported_symbols_list)) );
     end
 
-    table.insert( flags, ('-o "%s"'):format(forge:native(target:filename())) );
+    table.insert( flags, ('-o "%s"'):format(native(target:filename())) );
 end
 
 function clang.append_link_libraries( forge, target, libraries )
@@ -337,7 +337,7 @@ function clang.parse_dependencies_file( forge, filename, object )
         local start, finish, path = dependencies:find( DEPENDENCY_PATTERN, finish + 1 );
         while start and finish do 
             local filename = path:gsub( "\\ ", " " );
-            local within_source_tree = forge:relative( forge:absolute(filename), forge:root() ):find( "..", 1, true ) == nil;
+            local within_source_tree = relative( absolute(filename), root() ):find( "..", 1, true ) == nil;
             if within_source_tree then 
                 local dependency = forge:SourceFile( path:gsub("\\ ", " ") );
                 object:add_implicit_dependency( dependency );

@@ -2,7 +2,7 @@
 -- Disable warnings on Linux to avoid unused variable warnings in Boost
 -- System library headers.
 local warning_level = 3;
-if forge:operating_system() == 'linux' then
+if operating_system() == 'linux' then
     warning_level = 0;
 end
 

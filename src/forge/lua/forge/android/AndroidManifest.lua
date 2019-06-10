@@ -6,7 +6,7 @@ function AndroidManifest.build( forge, target )
     for _, dependency in target:dependencies() do 
         if dependency:prototype() == forge.Ivy then 
             for _, archive in dependency:implicit_dependencies() do 
-                if forge:extension(archive) ~= '.jar' then
+                if extension(archive) ~= '.jar' then
                     table.insert( manifests, ('%s/AndroidManifest.xml'):format(archive) );
                 end
             end

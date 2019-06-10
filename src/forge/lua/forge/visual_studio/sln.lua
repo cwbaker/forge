@@ -21,7 +21,7 @@ EndProject
         local target = project.target;
         local name = target.project_name or target:id();
         local filename = ("%s/%s.vcxproj"):format( target:working_directory():path(), target:id(), name );
-        write( PROJECT, name, forge:native(forge:relative(filename)), project.uuid );
+        write( PROJECT, name, native(relative(filename)), project.uuid );
     end
 end
 
@@ -172,10 +172,10 @@ local function write_function( file )
 end
 
 function sln.generate( filename, projects, directories )
-    print( forge:leaf(filename) );
-    forge:pushd( forge:branch(forge:absolute(filename)) );
-    local file = io.open( forge:absolute(filename), "wb" );
-    assertf( file, "Opening '%s' to write solution failed", forge:absolute(filename) );
+    print( leaf(filename) );
+    pushd( branch(absolute(filename)) );
+    local file = io.open( absolute(filename), "wb" );
+    assertf( file, "Opening '%s' to write solution failed", absolute(filename) );
     local write = write_function( file );
     generate_header( write );
     generate_projects( write, projects );
@@ -189,7 +189,7 @@ function sln.generate( filename, projects, directories )
     generate_end_global( write );
     file:close();
     file = nil;
-    forge:popd();
+    popd();
 end
 
 return sln;

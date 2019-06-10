@@ -8,7 +8,7 @@ function Apk.build( forge, target )
     for _, dependency in target:dependencies() do 
         if dependency:prototype() == forge.Ivy then 
             for _, archive in dependency:implicit_dependencies() do 
-                if forge:extension(archive) ~= '.jar' and forge:exists(('%s/res'):format(archive)) then
+                if extension(archive) ~= '.jar' and exists(('%s/res'):format(archive)) then
                     table.insert( resources, ('-S "%s/res"'):format(archive) );
                 end
             end
@@ -24,7 +24,7 @@ function Apk.build( forge, target )
             end
         end
     end
-    assertf( android_manifest and forge:leaf(android_manifest:filename()) == "AndroidManifest.xml", "Android APK '%s' does not specify a manifest named 'AndroidManifest.xml'", target:path() );
+    assertf( android_manifest and leaf(android_manifest:filename()) == "AndroidManifest.xml", "Android APK '%s' does not specify a manifest named 'AndroidManifest.xml'", target:path() );
 
     local settings = forge.settings;
     local aapt = ("%s/aapt"):format( settings.android.build_tools_directory );
@@ -40,27 +40,27 @@ function Apk.build( forge, target )
         ('-F "%s.unaligned"'):format( target )
     } );
 
-    forge:pushd( ("%s/%s"):format(forge:branch(target), forge:basename(target)) );
+    pushd( ("%s/%s"):format(branch(target), basename(target)) );
     for _, dependency in ipairs(files) do 
         forge:system( aapt, {
             "aapt",
             'add',
-            ('-f "%s.unaligned"'):format( forge:relative(target) ),
-            ('"%s"'):format( forge:relative(dependency) )
+            ('-f "%s.unaligned"'):format( relative(target) ),
+            ('"%s"'):format( relative(dependency) )
         } );
     end
 
     local jarsigner = ("%s/bin/jarsigner"):format( settings.android.jdk_directory );
     local key = _G.key or "androiddebugkey";
     local keypass = _G.keypass or "android";
-    local keystore = _G.keystore or forge:relative( ("%s/debug.keystore"):format(target:working_directory():path()) );
+    local keystore = _G.keystore or relative( ("%s/debug.keystore"):format(target:working_directory():path()) );
     forge:system( jarsigner, {
         'jarsigner',
         '-sigalg MD5withRSA',
         '-digestalg SHA1',
         ('-keystore %s'):format( keystore ),
         ('-storepass %s'):format( keypass ),
-        ('%s.unaligned'):format( forge:relative(target) ),
+        ('%s.unaligned'):format( relative(target) ),
         ('%s'):format( key )
     } );
 
@@ -68,15 +68,15 @@ function Apk.build( forge, target )
     forge:system( zipalign, {
         'zipalign',
         '-f 4',
-        ('%s.unaligned'):format( forge:relative(target) ),
-        ('%s'):format( forge:relative(target) )
+        ('%s.unaligned'):format( relative(target) ),
+        ('%s'):format( relative(target) )
     } );
     forge:popd();
 end
 
 function Apk.clean( forge, target )
-    forge:rm( ("%s.unaligned"):format(target:filename()) );
-    forge:rm( target );
+    rm( ("%s.unaligned"):format(target:filename()) );
+    rm( target );
 end
 
 return Apk;

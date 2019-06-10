@@ -9,7 +9,7 @@ function Directory.create( forge, identifier )
 end
 
 function Directory.build( forge, target )
-    forge:mkdir( target );
+    mkdir( target );
 end
 
 function Directory.clean( forge, target )

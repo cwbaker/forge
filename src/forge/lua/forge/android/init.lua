@@ -10,7 +10,7 @@ local directory_by_architecture = {
 
 function android.configure( forge )
     local function autodetect_jdk_directory()
-        if forge:operating_system() == 'windows' then
+        if operating_system() == 'windows' then
             return 'C:/Program Files/Java/jdk1.6.0_39';
         else
             return '/Library/Java/Home';
@@ -18,43 +18,43 @@ function android.configure( forge )
     end
 
     local function autodetect_ndk_directory()
-        if forge:operating_system() == 'windows' then
+        if operating_system() == 'windows' then
             return 'C:/android/android-ndk';
         else
-            return forge:home( 'Library/Android/ndk' );
+            return home( 'Library/Android/ndk' );
         end
     end
 
     local function autodetect_sdk_directory()
-        if forge:operating_system() == 'windows' then
+        if operating_system() == 'windows' then
             return 'C:/Program Files (x86)/Android/android-sdk';
         else
-            return forge:home( 'Library/Android/sdk' );
+            return home( 'Library/Android/sdk' );
         end
     end
 
     local function autodetect_proguard_directory()
-        return forge:home( 'proguard-6.0.3' );
+        return home( 'proguard-6.0.3' );
     end
 
     local function autodetect_manifest_merger()
-        return forge:home( 'android-manifest-merger/target/manifest-merger-jar-with-dependencies.jar' );
+        return home( 'android-manifest-merger/target/manifest-merger-jar-with-dependencies.jar' );
     end
 
     local function autodetect_ivy()
-        if forge:operating_system() == 'windows' then 
+        if operating_system() == 'windows' then 
             return 'C:/Program Files/Apache Ivy/ivy-2.5.0-rc1.jar';
         else
-            return forge:home( 'apache-ivy-2.5.0-rc1/ivy-2.5.0-rc1.jar' );
+            return home( 'apache-ivy-2.5.0-rc1/ivy-2.5.0-rc1.jar' );
         end
     end
 
     local function autodetect_ivy_cache_directory() 
-        return forge:home( '.ivy2/cache' );
+        return home( '.ivy2/cache' );
     end
 
     local function autodetect_unzip() 
-        if forge:operating_system() == 'windows' then 
+        if operating_system() == 'windows' then 
             return 'unzip.exe';
         else 
             return '/usr/bin/unzip';
@@ -80,9 +80,9 @@ end
 
 function android.validate( forge, android_settings )
     return 
-        forge:exists( android_settings.ndk_directory ) and 
-        forge:exists( android_settings.sdk_directory ) and 
-        forge:exists( android_settings.jdk_directory )
+        exists( android_settings.ndk_directory ) and 
+        exists( android_settings.sdk_directory ) and 
+        exists( android_settings.jdk_directory )
     ;
 end
 
@@ -106,7 +106,7 @@ function android.initialize( forge )
         forge.Ivy = require 'forge.android.Ivy';
         forge.android_jar = android.android_jar;
 
-        if forge:operating_system() == 'windows' then
+        if operating_system() == 'windows' then
             local path = {
                 ('%s/bin'):format( android.toolchain_directory(settings, 'armv5') )
             };
@@ -155,7 +155,7 @@ function android.toolchain_directory( settings, architecture )
         android.ndk_directory, 
         toolchain_by_architecture [architecture], 
         android.toolchain_version, 
-        prebuilt_by_operating_system [forge:operating_system()]
+        prebuilt_by_operating_system [operating_system()]
     );
 end
 
@@ -247,7 +247,7 @@ function android.deploy( apk )
     if sdk_directory then 
         assertf( apk, "No android.Apk target to deploy" );
         local adb = ("%s/platform-tools/adb"):format( sdk_directory );
-        assertf( forge:is_file(adb), "No 'adb' executable found at '%s'", adb );
+        assertf( is_file(adb), "No 'adb' executable found at '%s'", adb );
 
         local device_connected = false;
         local function adb_get_state_filter( state )

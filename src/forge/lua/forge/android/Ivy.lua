@@ -6,7 +6,7 @@ function Ivy.build( forge, target )
 	local java = ('%s/bin/java'):format( settings.android.jdk_directory );
 	local ivy = settings.android.ivy;
 	local unzip = settings.android.unzip or '/usr/bin/unzip';
-	local pattern = ('^%s/([^/]*)/.*/[aj]ars/(.*)(%%.[^%%.]*)$'):format( settings.ivy_cache_directory or forge:home('.ivy2/cache') );
+	local pattern = ('^%s/([^/]*)/.*/[aj]ars/(.*)(%%.[^%%.]*)$'):format( settings.ivy_cache_directory or home('.ivy2/cache') );
 	local args = {
 		'java';
 		('-jar "%s"'):format( settings.android.ivy );
@@ -36,7 +36,7 @@ function Ivy.build( forge, target )
 				('"%s"'):format( aar );
 				('-d "%s"'):format( aar_directory );
 			};
-			forge:rmdir( aar_directory );
+			rmdir( aar_directory );
 			forge:system( unzip, args );
 			path = ('%s/%s/%s'):format( directory, organisation, artifact );
 			target:add_implicit_dependency( forge:Directory(path) );
@@ -49,7 +49,7 @@ function Ivy.build( forge, target )
 	-- Touch the generated classpath file so that its timestamp is later than
 	-- that of the *.aar* and *.jar* files added as implicit dependencies so
 	-- that this `Ivy` target isn't outdated after being built.
-	forge:touch( target );
+	touch( target );
 end
 
 return Ivy;

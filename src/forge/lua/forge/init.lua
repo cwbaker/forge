@@ -18,11 +18,6 @@ function errorf( format, ... )
     error( string.format(format, ...) );
 end
 
--- Provide global buildfile().
-function buildfile( ... )
-    return forge:buildfile( ... );
-end
-
 -- Provide global default command that calls through to `build()`.
 function default()
     return build();
@@ -30,35 +25,35 @@ end
 
 -- Provide global build command.
 function build()
-    local failures = forge:postorder( forge:find_initial_target(goal), forge:build_visit() );
+    local failures = postorder( forge:find_initial_target(goal), forge:build_visit() );
     forge:save();
-    printf( "forge: default (build)=%dms", math.ceil(forge:ticks()) );
+    printf( "forge: default (build)=%dms", math.ceil(ticks()) );
     return failures;
 end
 
 -- Provide global clean command.
 function clean()
-    local failures = forge:postorder( forge:find_initial_target(goal), forge:clean_visit() );
+    local failures = postorder( forge:find_initial_target(goal), forge:clean_visit() );
     forge:save();
-    printf( "forge: clean=%sms", tostring(math.ceil(forge:ticks())) );
+    printf( "forge: clean=%sms", tostring(math.ceil(ticks())) );
     return failures;
 end
 
 -- Provide global reconfigure command.
 function reconfigure()
-    forge:rm( forge:root('local_settings.lua') );
+    rm( root('local_settings.lua') );
     return 0;
 end
 
 -- Provide global dependencies command.
 function dependencies()
-    forge:print_dependencies( forge:find_initial_target(goal) );
+    print_dependencies( forge:find_initial_target(goal) );
     return 0;
 end
 
 -- Provide global namespace command.
 function namespace()
-    forge:print_namespace( forge:find_initial_target(goal) );
+    print_namespace( forge:find_initial_target(goal) );
     return 0;
 end
 
@@ -164,7 +159,7 @@ function forge:GroupElement( target_prototype, replacement_modifier, pattern )
     local pattern = pattern or '(.-([^\\/]-))%.?([^%.\\/]*)$';
     
     return function( forge, replacement )
-        local target = forge:Target( forge:anonymous(), target_prototype );
+        local target = forge:Target( anonymous(), target_prototype );
         local replacement = replacement_modifier( forge, replacement );
         return function( dependencies )
             forge:merge( target, dependencies );
@@ -181,7 +176,7 @@ function forge:GroupElement( target_prototype, replacement_modifier, pattern )
 end
 
 function forge:TargetPrototype( identifier )
-    return self:target_prototype( identifier );
+    return add_target_prototype( identifier );
 end
 
 function forge:FilePrototype( identifier, filename_modifier )
@@ -192,7 +187,7 @@ function forge:FilePrototype( identifier, filename_modifier )
         local target = forge:Target( identifier, target_prototype );
         target:set_filename( filename or target:path() );
         target:set_cleanable( true );
-        target:add_ordering_dependency( forge:Directory(forge:branch(target)) );
+        target:add_ordering_dependency( forge:Directory(branch(target)) );
         return target;
     end;
     return file_prototype;
@@ -204,7 +199,7 @@ function forge:JavaStylePrototype( identifier, pattern )
     local java_style_prototype = self:TargetPrototype( identifier );
     function java_style_prototype.create( forge, output_directory, target_prototype )
         local output_directory = forge:root_relative():gsub( pattern, interpolate(forge, output_directory) );
-        local target = forge:Target( forge:anonymous(), target_prototype );
+        local target = forge:Target( anonymous(), target_prototype );
         target:add_ordering_dependency( forge:Directory(output_directory) );
         target:set_cleanable( true );
         return target;
@@ -216,7 +211,7 @@ function forge:File( identifier, target_prototype )
     local target = self:Target( self:interpolate(identifier), target_prototype );
     target:set_filename( target:path() );
     target:set_cleanable( true );
-    target:add_ordering_dependency( self:Directory(self:branch(target)) );
+    target:add_ordering_dependency( self:Directory(branch(target)) );
     return target;
 end
 
@@ -273,7 +268,7 @@ function forge:system( command, arguments, environment, dependencies_filter, std
     if type(arguments) == 'table' then
         arguments = table.concat( arguments, ' ' );
     end
-    if self:execute(command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ...) ~= 0 then       
+    if execute(command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ...) ~= 0 then       
         error( ('%s failed'):format(arguments), 0 );
     end
 end
@@ -284,13 +279,13 @@ function forge:shell( arguments, dependencies_filter, stdout_filter, stderr_filt
     if type(arguments) == 'table' then 
         arguments = table.concat( arguments, ' ' );
     end
-    if self:operating_system() == 'windows' then
+    if operating_system() == 'windows' then
         local cmd = 'C:/windows/system32/cmd.exe';
-        local result = self:execute( cmd, ('cmd /c "%s"'):format(arguments), dependencies_filter, stdout_filter, stderr_filter, ... );
+        local result = execute( cmd, ('cmd /c "%s"'):format(arguments), dependencies_filter, stdout_filter, stderr_filter, ... );
         assertf( result == 0, '[[%s]] failed (result=%d)', arguments, result );
     else
         local sh = '/bin/sh';
-        local result = self:execute( sh, ('sh -c "%s"'):format(arguments), dependencies_filter, stdout_filter, stderr_filter, ... );
+        local result = execute( sh, ('sh -c "%s"'):format(arguments), dependencies_filter, stdout_filter, stderr_filter, ... );
         assertf( result == 0, '[[%s]] failed (result=%d)', arguments, tonumber(result) );
     end
 end
@@ -449,22 +444,22 @@ end
 -- is returned.
 function forge:find_initial_target( goal )
     if not goal or goal == '' then 
-        local goal = self:initial();
-        local all = self:find_target( ('%s/all'):format(goal) );
+        local goal = initial();
+        local all = find_target( ('%s/all'):format(goal) );
         while not all and goal ~= '' do 
-            goal = self:branch( goal );
-            all = self:find_target( ('%s/all'):format(goal) );
+            goal = branch( goal );
+            all = find_target( ('%s/all'):format(goal) );
         end
         return all;
     end
 
-    local goal = self:initial( goal );
-    local all = self:find_target( goal );
+    local goal = initial( goal );
+    local all = find_target( goal );
     if all and all:dependency() then 
         return all;
     end
 
-    local all = self:find_target( ('%s/all'):format(goal) );
+    local all = find_target( ('%s/all'):format(goal) );
     if all and all:dependency() then
         return all;
     end
@@ -476,15 +471,15 @@ function forge:save()
     local settings = self.settings;
     if self.local_settings and self.local_settings.updated then
         self.local_settings.updated = nil;
-        self:save_settings( self.local_settings, self:root('local_settings.lua') );
+        self:save_settings( self.local_settings, root('local_settings.lua') );
     end
-    self:mkdir( self:branch(forge.cache) );
-    self:save_binary();
+    mkdir( branch(forge.cache) );
+    save_binary();
 end
 
 -- Express *path* relative to the root directory.
 function forge:root_relative( path )
-    return self:relative( self:absolute(path), self:root() );
+    return relative( absolute(path), root() );
 end
 
 -- Visit a target by calling a member function "clean" if it exists or if
@@ -499,7 +494,7 @@ function forge:clean_visit( ... )
         elseif target:cleanable() then 
             for _, filename in target:filenames() do 
                 if filename ~= '' then
-                    forge:rm( filename );
+                    rm( filename );
                 end
             end
             target:clear_filenames();
@@ -539,7 +534,7 @@ function forge:dependencies_filter( target )
             local READ_PATTERN = "^== read '([^']*)'";
             local filename = line:match( READ_PATTERN );
             if filename then
-                local within_source_tree = self:relative( self:absolute(filename), self:root() ):find( '..', 1, true ) == nil;
+                local within_source_tree = relative( absolute(filename), root() ):find( '..', 1, true ) == nil;
                 if within_source_tree then 
                     local header = self:SourceFile( filename );
                     target:add_implicit_dependency( header );
@@ -561,7 +556,7 @@ function forge:filenames_filter( target )
             local READ_WRITE_PATTERN = "^== (%a+) '([^']*)'";
             local read_write, filename = line:match( READ_WRITE_PATTERN );
             if read_write and filename then
-                local within_source_tree = self:relative( self:absolute(filename), output_directory ):find( '..', 1, true ) == nil;
+                local within_source_tree = relative( absolute(filename), output_directory ):find( '..', 1, true ) == nil;
                 if within_source_tree then 
                     if read_write == 'write' then
                         target:add_filename( filename );
@@ -651,11 +646,11 @@ end
 -- Get the *all* target for the current working directory adding any 
 -- targets that are passed in as dependencies.
 function forge:all( dependencies )
-    local all = self:add_target( 'all' );
+    local all = add_target( self, 'all' );
     if dependencies then 
         for _, dependency in self:walk_tables(dependencies) do
             if type(dependency) == 'string' then 
-                dependency = self:add_target( self:interpolate(dependency) );
+                dependency = add_target( self, self:interpolate(dependency) );
             end
             all:add_dependency( dependency );
         end
@@ -683,7 +678,7 @@ end
 function forge:map_ls( target_prototype, replacement, pattern, settings )
     local targets = {};
     local settings = settings or self.settings;
-    for source_filename in self:ls('') do
+    for source_filename in ls('') do
         local source = forge:relative( source_filename );
         local filename, substitutions = source:gsub( pattern, replacement );
         if substitutions > 0 then    
@@ -700,8 +695,8 @@ end
 function forge:map_find( target_prototype, replacement, pattern, settings )
     local targets = {};
     local settings = self.settings;
-    for source_filename in self:find("") do
-        if self:is_file(source_filename) then
+    for source_filename in find("") do
+        if is_file(source_filename) then
             local source = forge:relative( source_filename );
             local filename, substitutions = source:gsub( pattern, replacement );
             if substitutions > 0 then
@@ -718,8 +713,8 @@ end
 
 -- Convert a target into the object directory that it should build to.
 function forge:obj_directory( target )
-    local relative_path = forge:relative( target:working_directory():path(), forge:root() );
-    return forge:absolute( relative_path, self.settings.obj );
+    local relative_path = relative( target:working_directory():path(), root() );
+    return absolute( relative_path, self.settings.obj );
 end
 
 -- Recursively copy files from *source* to *destination*.
@@ -727,16 +722,16 @@ function forge:cpdir( destination, source, settings )
     local settings = settings or self.settings;
     local destination = self:interpolate( destination, settings );
     local source = self:interpolate( source, settings );
-    self:pushd( source );
-    for source_filename in self:find('') do 
-        if self:is_file(source_filename) then
-            local filename = ('%s/%s'):format( destination, self:relative(source_filename) );
-            self:mkdir( self:branch(filename) );
-            self:rm( filename );
-            self:cp( filename, source_filename );
+    pushd( source );
+    for source_filename in find('') do 
+        if is_file(source_filename) then
+            local filename = ('%s/%s'):format( destination, relative(source_filename) );
+            mkdir( branch(filename) );
+            rm( filename );
+            cp( filename, source_filename );
         end
     end
-    self:popd();
+    popd();
 end
 
 -- Find first existing file named *filename* in *paths*.
@@ -757,21 +752,21 @@ function forge:which( filename, paths )
     local filename = self:interpolate( filename );
     local paths = paths or os.getenv( 'PATH' );
     local separator_pattern = '[^:]+';
-    if forge:operating_system() == 'windows' then 
+    if operating_system() == 'windows' then 
         separator_pattern = '[^;]+';
-        if forge:extension(filename) == '' then
+        if extension(filename) == '' then
             filename = ('%s.exe'):format( filename );
         end
     end
     if type(paths) == 'string' then
-        if self:is_absolute(filename) then
-            if self:exists(filename) then 
+        if is_absolute(filename) then
+            if exists(filename) then 
                 return filename;
             end
         else
             for directory in paths:gmatch(separator_pattern) do 
                 local path = ('%s/%s'):format( directory, filename );
-                if self:exists(path) then 
+                if exists(path) then 
                     return path;
                 end
             end
@@ -779,7 +774,7 @@ function forge:which( filename, paths )
     elseif type(paths) == 'table' then
         for _, directory in ipairs(paths) do 
             local path = ('%s/%s'):format( directory, filename );
-            if self:exists(path) then 
+            if exists(path) then 
                 return path;
             end
         end
@@ -807,16 +802,16 @@ forge.CopyDirectory = require 'forge.CopyDirectory';
 
 forge.settings = {};
 forge.builds_ = {};
-forge.local_settings = forge:exists( forge:root('local_settings.lua') ) and dofile( forge:root('local_settings.lua') ) or {};
-forge.cache = forge:root( '.forge' );
+forge.local_settings = exists( root('local_settings.lua') ) and dofile( root('local_settings.lua') ) or {};
+forge.cache = root( '.forge' );
 
 if variant or forge.variant then 
-    forge.cache = forge:root( ('%s/.forge'):format(variant or forge.variant) );
+    forge.cache = root( ('%s/.forge'):format(variant or forge.variant) );
 end
 
 -- Load dependency graph from the cache file, if it exists, and set the name
 -- of the cache file either way.
-forge:load_binary( forge.cache );
+load_binary( forge.cache );
 
 -- Copy local settings values through to settings
 forge:copy_settings( forge.settings, forge.local_settings );

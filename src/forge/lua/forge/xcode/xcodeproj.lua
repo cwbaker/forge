@@ -26,8 +26,8 @@ local function add_group( path )
         };
         groups[path] = group;
 
-        local directory = forge:branch( path );
-        if directory ~= "" and not string.find(forge:relative(directory, forge:root()), "..", 1, true) then
+        local directory = branch( path );
+        if directory ~= "" and not string.find(relative(directory, root()), "..", 1, true) then
             local parent = add_group( directory );
             table.insert( parent.children, group );
             group.parent = parent;
@@ -37,8 +37,8 @@ local function add_group( path )
 end
 
 local function add_file( filename )
-    local directory = forge:branch( filename );
-    if directory ~= "" and not string.find(forge:relative(filename, forge:root()), "..", 1, true) then
+    local directory = branch( filename );
+    if directory ~= "" and not string.find(relative(filename, root()), "..", 1, true) then
         local file = files[path];
         if not file then
             file = { 
@@ -77,11 +77,11 @@ local function add_legacy_target( target, platform, architectures )
     if not legacy_target then
         legacy_target = {
             uuid = uuid();
-            name = forge:leaf( filename );
+            name = leaf( filename );
             working_directory = working_directory;
             configuration_list = uuid();
             platform = platform;
-            forge = forge:executable( "forge" );
+            forge = executable( "forge" );
             path = filename;
             settings = settings;
             configurations = add_configurations( architectures, VARIANTS );
@@ -106,7 +106,7 @@ end;
 
 local function generate_files( xcodeproj, files )
     for path, file in pairs(files) do
-        local filename = forge:leaf( file.path );
+        local filename = leaf( file.path );
         xcodeproj:write(([[
         %s /* %s */ = { isa = PBXFileReference; lastKnownFileType = text; path = "%s"; sourceTree = "<group>"; };
 ]]):format(file.uuid, filename, filename)
@@ -131,11 +131,11 @@ local function generate_groups( xcodeproj, groups )
 
         table.sort( group.children, function(lhs, rhs) 
             local lhs_file = 0;
-            if forge:is_file(lhs.path) then
+            if is_file(lhs.path) then
                 lhs_file = 1;
             end
             local rhs_file = 0;
-            if forge:is_file(rhs.path) then
+            if is_file(rhs.path) then
                 rhs_file = 1;
             end
             return 
@@ -161,7 +161,7 @@ local function generate_groups( xcodeproj, groups )
             path = "%s";
             sourceTree = "<group>";
         };
-]]):format(forge:leaf(group.path), forge:relative(group.path, base))
+]]):format(leaf(group.path), relative(group.path, base))
         );
     end
 end
@@ -174,7 +174,7 @@ local function generate_legacy_targets( xcodeproj, legacy_targets )
     table.sort( sorted_targets, function(lhs, rhs) return lhs.path < rhs.path end );
 
     for _, legacy_target in ipairs(sorted_targets) do 
-        local name = forge:leaf( legacy_target.path );
+        local name = leaf( legacy_target.path );
         local template = [[
         ${uuid} /* ${name} */ = {
             isa = PBXLegacyTarget;
@@ -196,7 +196,7 @@ local function generate_legacy_targets( xcodeproj, legacy_targets )
 end
 
 local function generate_project( xcodeproj, groups )
-    local main_group = groups[forge:root()];
+    local main_group = groups[root()];
     assert( main_group, "The main group for the Xcode project wasn't found" );
 
     project_uuid = uuid();
@@ -230,7 +230,7 @@ local function generate_project( xcodeproj, groups )
     for _, target in ipairs(sorted_targets) do
         xcodeproj:write(([[
             %s /* %s */,
-]]):format(target.uuid, forge:leaf(target.path))
+]]):format(target.uuid, leaf(target.path))
         );
     end
     xcodeproj:write([[
@@ -331,7 +331,7 @@ local function generate_configuration_lists( xcodeproj, legacy_targets )
 
     generate_configuration_list( xcodeproj, project_configuration_list_uuid, project_id, project_configurations );
     for _, target in pairs(sorted_targets) do
-        generate_configuration_list( xcodeproj, target.configuration_list, forge:leaf(target.path), target.configurations );
+        generate_configuration_list( xcodeproj, target.configuration_list, leaf(target.path), target.configurations );
     end
 end
 
@@ -400,7 +400,7 @@ local function find_architectures_by_prototype( target, prototype_identifier, ar
 end
 
 local function included( filename, includes, excludes )
-    if forge:is_directory(filename) then 
+    if is_directory(filename) then 
         return false;
     end
 
@@ -425,7 +425,7 @@ local function included( filename, includes, excludes )
 end
 
 local function populate_source( source, includes, excludes )
-    for filename in forge:find( source ) do 
+    for filename in find( source ) do 
         if included(filename, includes, excludes) then 
             add_file( filename );
         end
@@ -433,12 +433,12 @@ local function populate_source( source, includes, excludes )
 end
 
 local function generate_xcodeproj( name, project )
-    project_root = forge:branch( name );
-    project_id = forge:leaf( forge:basename(name) );
+    project_root = branch( name );
+    project_id = leaf( basename(name) );
     project_configuration_list_uuid = uuid();
     project_configurations = add_configurations( nil, VARIANTS );
 
-    populate_source( forge:root('src'), {"^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java"}, {"^.*%.framework"} );
+    populate_source( root('src'), {"^.*%.cp?p?$", "^.*%.hp?p?$", "^.*%.mm?$", "^.*%.java"}, {"^.*%.framework"} );
 
     walk( project, function (target) 
         local forge = target.forge;
@@ -484,12 +484,12 @@ local function generate_xcodeproj( name, project )
     end );
 
     local xcodeproj_directory = name;
-    if forge:exists( xcodeproj_directory ) then
-        forge:rmdir( xcodeproj_directory );
+    if exists( xcodeproj_directory ) then
+        rmdir( xcodeproj_directory );
     end
-    forge:mkdir( xcodeproj_directory );
+    mkdir( xcodeproj_directory );
 
-    local filename = forge:absolute( "project.pbxproj", xcodeproj_directory );
+    local filename = absolute( "project.pbxproj", xcodeproj_directory );
     local xcodeproj = io.open( filename, "wb" );
     assertf( xcodeproj, "Opening '%s' to write Xcode project file failed", filename );
     header( xcodeproj, project );
@@ -505,8 +505,8 @@ end
 
 -- The "xcodeproj" command entry point (global).
 function xcodeproj()
-    local all = all or forge:find_target( forge:root('all') );
-    assertf( all, 'Missing target at "%s" to generate Xcode project from', forge:root() );
+    local all = all or find_target( root('all') );
+    assertf( all, 'Missing target at "%s" to generate Xcode project from', root() );
     local settings = forge.settings;
     assertf( settings.xcode, 'Missing Xcode settings in "settings.xcode"' );
     assertf( settings.xcode.xcodeproj, 'Missing Xcode project filename in "settings.xcode.xcodeproj"' );

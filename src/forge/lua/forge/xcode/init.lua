@@ -10,7 +10,7 @@ function xcode.configure( forge, xcode_settings )
         local sdk_build_version = '';
         local xcodebuild = '/usr/bin/xcodebuild';
         local arguments = ('xcodebuild -sdk %s -version'):format( sdk );
-        local result = forge:execute( xcodebuild, arguments, nil, nil, function(line)
+        local result = execute( xcodebuild, arguments, nil, nil, function(line)
             local key, value = line:match( '(%w+): ([^\n]+)' );
             if key and value then 
                 if key == 'ProductBuildVersion' then 
@@ -29,7 +29,7 @@ function xcode.configure( forge, xcode_settings )
         local xcode_build_version = '';
         local xcodebuild = '/usr/bin/xcodebuild';
         local arguments = 'xcodebuild -version';
-        local result = forge:execute( xcodebuild, arguments, nil, nil, function(line)
+        local result = execute( xcodebuild, arguments, nil, nil, function(line)
             local major, minor = line:match( 'Xcode (%d+)%.(%d+)' );
             if major and minor then 
                 xcode_version = ('%02d%02d'):format( tonumber(major), tonumber(minor) );
@@ -48,7 +48,7 @@ function xcode.configure( forge, xcode_settings )
         local os_version = '';
         local sw_vers = '/usr/bin/sw_vers';
         local arguments = 'sw_vers -buildVersion';
-        local result = forge:execute( sw_vers, arguments, nil, nil, function(line)
+        local result = execute( sw_vers, arguments, nil, nil, function(line)
             local version = line:match( '%w+' );
             if version then 
                 os_version = version;
@@ -183,13 +183,13 @@ function xcode.object_filename( forge, identifier )
 end
 
 function xcode.static_library_filename( forge, identifier )
-    local identifier = forge:absolute( forge:interpolate(identifier) );
-    local filename = ('%s/lib%s.a'):format( forge:branch(identifier), forge:leaf(identifier) );
+    local identifier = absolute( forge:interpolate(identifier) );
+    local filename = ('%s/lib%s.a'):format( branch(identifier), leaf(identifier) );
     return identifier, filename;
 end
 
 function xcode.dynamic_library_filename( forge, identifier )
-    local identifier = forge:absolute( forge:interpolate(identifier) );
+    local identifier = absolute( forge:interpolate(identifier) );
     local filename = ('%s.dylib'):format( identifier );
     return identifier, filename;
 end
@@ -214,10 +214,10 @@ function xcode.compile( forge, target )
     local ccflags = table.concat( flags, ' ' );
     local xcrun = settings.xcode.xcrun;
     local source = target:dependency();
-    print( forge:leaf(source) );
+    print( leaf(source) );
     local dependencies = ('%s.d'):format( target );
     local output = target:filename();
-    local input = forge:absolute( source );
+    local input = absolute( source );
     forge:system( 
         xcrun, 
         ('xcrun --sdk %s clang %s -MMD -MF "%s" -o "%s" "%s"'):format(sdkroot, ccflags, dependencies, output, input)
@@ -232,12 +232,12 @@ function xcode.archive( forge, target )
     };
 
     local settings = forge.settings;
-    forge:pushd( forge:obj_directory(target) );
+    pushd( forge:obj_directory(target) );
     local objects =  {};
     for _, object in forge:walk_dependencies( target ) do
         local prototype = object:prototype();
         if prototype ~= forge.Directory then
-            table.insert( objects, forge:relative(object) );
+            table.insert( objects, relative(object) );
         end
     end
     
@@ -246,10 +246,10 @@ function xcode.archive( forge, target )
         local arflags = table.concat( flags, ' ' );
         local arobjects = table.concat( objects, '" "' );
         local xcrun = settings.xcode.xcrun;
-        printf( '%s', forge:leaf(target) );
-        forge:system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, forge:native(target), arobjects) );
+        printf( '%s', leaf(target) );
+        forge:system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, native(target), arobjects) );
     end
-    forge:popd();
+    popd();
 end
 
 -- Link dynamic libraries and executables.
@@ -258,13 +258,13 @@ function xcode.link( forge, target )
 
     local objects = {};
     local libraries = {};
-    forge:pushd( forge:obj_directory(target) );
+    pushd( forge:obj_directory(target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
         if prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
             table.insert( libraries, ('-l%s'):format(dependency:id()) );
         elseif prototype ~= forge.Directory then
-            table.insert( objects, forge:relative(dependency) );
+            table.insert( objects, relative(dependency) );
         end
     end
 
@@ -280,10 +280,10 @@ function xcode.link( forge, target )
         local ldflags = table.concat( flags, ' ' );
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, ' ' );
-        printf( '%s', forge:leaf(target) );
+        printf( '%s', leaf(target) );
         forge:system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
     end
-    forge:popd();
+    popd();
 end
 
 -- Register the clang C/C++ toolset in *forge*.

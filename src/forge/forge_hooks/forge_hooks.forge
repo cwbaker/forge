@@ -1,5 +1,5 @@
 
-if forge:operating_system() == 'linux' then
+if operating_system() == 'linux' then
     for _, forge in forge:builds('cc.*') do
         forge:all {
             forge:DynamicLibrary '${bin}/forge_hooks' {
@@ -11,7 +11,7 @@ if forge:operating_system() == 'linux' then
     end
 end
 
-if forge:operating_system() == 'macos' then
+if operating_system() == 'macos' then
     for _, forge in forge:builds('cc.*') do
         forge:all {
             forge:DynamicLibrary '${bin}/forge_hooks' { 
@@ -23,7 +23,7 @@ if forge:operating_system() == 'macos' then
     end
 end
 
-if forge:operating_system() == 'windows' then
+if operating_system() == 'windows' then
     for _, forge in forge:builds('cc.*') do
         forge:all {
             forge:DynamicLibrary '${bin}/forge_hooks' {

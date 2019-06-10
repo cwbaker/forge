@@ -20,7 +20,7 @@ function App.build( forge, target )
             executable = dependency:filename();
         elseif identifier == 'Entitlements.xml' then 
             entitlements = dependency;
-        elseif forge:extension(identifier) == '.mobileprovision' then
+        elseif extension(identifier) == '.mobileprovision' then
             provisioning_profile = _G.provisioning_profile or dependency;
         end
     end
@@ -36,8 +36,8 @@ function App.build( forge, target )
 
     if provisioning_profile then
         local embedded_provisioning_profile = ("%s/embedded.mobileprovision"):format( target:ordering_dependency() );
-        forge:rm( embedded_provisioning_profile );
-        forge:cp( embedded_provisioning_profile, provisioning_profile );
+        rm( embedded_provisioning_profile );
+        cp( embedded_provisioning_profile, provisioning_profile );
     end
 
     local command_line = {

@@ -18,10 +18,10 @@ function Java.build( forge, target )
     for _, dependency in target:dependencies() do 
         local prototype = dependency:prototype();
         if prototype == forge.Jar then
-            table.insert( classpaths, forge:relative(dependency:filename()) );
+            table.insert( classpaths, relative(dependency:filename()) );
         elseif prototype == forge.Ivy then 
             for _, archive in dependency:implicit_dependencies() do 
-                if forge:extension(archive) == '.jar' then 
+                if extension(archive) == '.jar' then 
                     table.insert( classpaths, archive:filename() );
                 else
                     table.insert( classpaths, ('%s/classes.jar'):format(archive:filename()) );
@@ -30,7 +30,7 @@ function Java.build( forge, target )
         else
             for _, filename in dependency:filenames() do 
                 if filename ~= '' then
-                    table.insert( source_files, forge:relative(filename) );
+                    table.insert( source_files, relative(filename) );
                 end
             end
         end
@@ -71,8 +71,8 @@ function Java.build( forge, target )
 end
 
 function Java.clean( forge, target )
-    forge:rm( target );
-    forge:rmdir( target:ordering_dependency() );
+    rm( target );
+    rmdir( target:ordering_dependency() );
     target:set_built( false );
 end
 

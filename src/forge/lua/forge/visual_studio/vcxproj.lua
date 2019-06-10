@@ -91,19 +91,19 @@ local function generate_property_groups( target, write )
     <NMakeIncludeSearchPath>%s</NMakeIncludeSearchPath>
   </PropertyGroup>
 ]];
-    local build_tool = forge:native( forge:relative(forge:executable("forge.exe")) );
+    local build_tool = native( relative(executable("forge.exe")) );
     for _, platform in ipairs(target.settings.platforms) do
         for _, variant in ipairs(VARIANTS) do
             local variant_settings = target.settings.settings_by_variant[variant];
             
             local output = "";
             if target:prototype() == forge.Executable then
-                output = forge:native( forge:relative(target:filename()) );
+                output = native( relative(target:filename()) );
             end
             
             local defines = {
-                ('/DBUILD_PLATFORM_%s'):format( forge:upper(platform) );
-                ('/DBUILD_VARIANT_%s'):format( forge:upper(variant) );
+                ('/DBUILD_PLATFORM_%s'):format( upper(platform) );
+                ('/DBUILD_VARIANT_%s'):format( upper(variant) );
                 ('/DBUILD_LIBRARY_SUFFIX="\\"_%s.lib\\""'):format( target.architecture );
             };
             if variant_settings.defines then
@@ -120,12 +120,12 @@ local function generate_property_groups( target, write )
 
             local include_directories = {};
             for _, directory in ipairs(target.settings.include_directories) do
-                table.insert( include_directories, forge:native(directory) );
+                table.insert( include_directories, native(directory) );
             end
             include_directories = table.concat( include_directories, ";" );
 
-            local output_directory = forge:native( forge:relative(forge:root(("%s/obj"):format(variant))) );
-            local intermediate_directory = forge:native( forge:relative(forge:root(("%s/obj"):format(variant))) );
+            local output_directory = native( relative(root(("%s/obj"):format(variant))) );
+            local intermediate_directory = native( relative(root(("%s/obj"):format(variant))) );
             local build_command = ("%s variant=%s"):format( build_tool, variant );
 
             write( PROPERTY_GROUP, 
@@ -160,7 +160,7 @@ local function generate_files( target, write, files )
 
     write( START_FILES );
     for _, file in ipairs(files) do 
-        write( FILE, forge:relative(file) );
+        write( FILE, relative(file) );
     end
     write( FINISH_FILES );
 end
@@ -184,8 +184,8 @@ end
 -- Generate a Visual Studio `.vcxproj` project file for a target and files.
 function vcxproj.generate( target, files )
     local filename = ("%s/%s.vcxproj"):format( target:working_directory():path(), target:id() );
-    print( forge:leaf(filename) );
-    forge:pushd( target:working_directory():path() );
+    print( leaf(filename) );
+    pushd( target:working_directory():path() );
     local file = io.open( filename, "wb" )
     assertf( file, "Opening '%s' to write project failed", filename );
     local write = write_function( file );
@@ -200,7 +200,7 @@ function vcxproj.generate( target, files )
     generate_footer( target, write );
     file:close();
     file = nil;
-    forge:popd();
+    popd();
 end
 
 return vcxproj;

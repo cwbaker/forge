@@ -3,7 +3,7 @@
 -- System library headers.
 local warning_level = 3;
 local libraries = nil;
-if forge:operating_system() == 'linux' then
+if operating_system() == 'linux' then
     warning_level = 0;
     libraries = {
         'pthread';

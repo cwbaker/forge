@@ -8,7 +8,7 @@ function Lipo.build( forge, target )
     for _, executable in target:dependencies() do 
         table.insert( executables, executable:filename() );
     end
-    printf( forge:leaf(target) );
+    printf( leaf(target) );
     forge:system( xcrun, {
         'xcrun'; 
         ('--sdk %s'):format( settings.sdkroot );

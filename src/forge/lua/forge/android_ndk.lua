@@ -9,14 +9,14 @@ function android_ndk.object_filename( forge, identifier )
 end
 
 function android_ndk.static_library_filename( forge, identifier )
-    local identifier = forge:absolute( forge:interpolate(identifier) );
-    local filename = ('%s/lib%s.a'):format( forge:branch(identifier), forge:leaf(identifier) );
+    local identifier = absolute( forge:interpolate(identifier) );
+    local filename = ('%s/lib%s.a'):format( branch(identifier), leaf(identifier) );
     return identifier, filename;
 end
 
 function android_ndk.dynamic_library_filename( forge, identifier )
-    local identifier = forge:absolute( forge:interpolate(identifier) );
-    local filename = ('%s/lib%s.so'):format( forge:branch(identifier), forge:leaf(identifier) );
+    local identifier = absolute( forge:interpolate(identifier) );
+    local filename = ('%s/lib%s.so'):format( branch(identifier), leaf(identifier) );
     return identifier, filename;
 end
 
@@ -49,10 +49,10 @@ function android_ndk.dynamic_library( forge, identifier, target_prototype )
     local dynamic_library = forge:Target( identifier, target_prototype );
     dynamic_library:set_filename( filename or dynamic_library:path() );
     dynamic_library:set_cleanable( true );
-    local directory = forge:Directory( forge:branch(dynamic_library) );
+    local directory = forge:Directory( branch(dynamic_library) );
     dynamic_library:add_ordering_dependency( directory );
 
-    local group = forge:Target( forge:anonymous() );
+    local group = forge:Target( anonymous() );
     group:add_dependency( dynamic_library );
     group.depend = function( forge, group, ... )
         return dynamic_library.depend( dynamic_library.forge, dynamic_library, ... );
@@ -65,7 +65,7 @@ function android_ndk.dynamic_library( forge, identifier, target_prototype )
             local destination = ("%s/lib%s.so"):format( directory:filename(), runtime_library );
             for _, directory in ipairs(android.library_directories(settings, settings.architecture)) do
                 local source = ("%s/lib%s.so"):format( directory, runtime_library );
-                if forge:exists(source) then
+                if exists(source) then
                     group:add_dependency(
                         forge:Copy (destination) {
                             source
@@ -94,8 +94,8 @@ function android_ndk.compile( forge, target )
     local environment = android.environment;
     local source = target:dependency();
     local output = target:filename();
-    local input = forge:relative( source:filename() );
-    print( forge:leaf(source) );
+    local input = relative( source:filename() );
+    print( leaf(source) );
     target:clear_implicit_dependencies();
     forge:system( 
         gcc_, 
@@ -109,12 +109,12 @@ end
 function android_ndk.archive( forge, target )
     local settings = forge.settings;
 
-    forge:pushd( forge:obj_directory(target) );
+    pushd( forge:obj_directory(target) );
     local objects = {};
     for _, object in forge:walk_dependencies(target) do
         local prototype = object:prototype();
         if prototype == forge.Cc or prototype == forge.Cxx then
-            table.insert( objects, forge:relative(object) )
+            table.insert( objects, relative(object) )
         end
     end
     
@@ -122,10 +122,10 @@ function android_ndk.archive( forge, target )
         local arflags = '-rcs';
         local arobjects = table.concat( objects, '" "' );
         local ar = ('%s/bin/arm-linux-androideabi-ar'):format( android.toolchain_directory(settings, settings.architecture) );
-        printf( '%s', forge:leaf(target) );
-        forge:system( ar, ('ar %s "%s" "%s"'):format(arflags, forge:native(target:filename()), arobjects), android.environment );
+        printf( '%s', leaf(target) );
+        forge:system( ar, ('ar %s "%s" "%s"'):format(arflags, native(target:filename()), arobjects), android.environment );
     end
-    forge:popd();
+    popd();
 end
 
 -- Link dynamic libraries and executables.
@@ -134,11 +134,11 @@ function android_ndk.link( forge, target )
    
     local objects = {};
     local libraries = {};
-    forge:pushd( forge:obj_directory(target) );
+    pushd( forge:obj_directory(target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
         if prototype == forge.Cc or prototype == forge.Cxx then
-            table.insert( objects, forge:relative(dependency) );
+            table.insert( objects, relative(dependency) );
         elseif prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
             if dependency.whole_archive then
                 table.insert( libraries, ("-Wl,--whole-archive") );
@@ -157,15 +157,15 @@ function android_ndk.link( forge, target )
 
     if #objects > 0 then
         local ldflags = table.concat( flags, ' ' );
-        local ldoutput = forge:native( target );
+        local ldoutput = native( target );
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, ' ' );
         local environment = android.environment;
         local gxx = ('%s/bin/arm-linux-androideabi-g++'):format( android.toolchain_directory(settings, settings.architecture) );
-        printf( '%s', forge:leaf(target) );
+        printf( '%s', leaf(target) );
         forge:system( gxx, ('arm-linux-androideabi-g++ %s -o "%s" "%s" %s'):format(ldflags, ldoutput, ldobjects, ldlibs), environment );
     end
-    forge:popd();
+    popd();
 end
 
 function android_ndk.initialize( forge )
@@ -254,7 +254,7 @@ function android_ndk.append_include_directories( forge, target, flags )
     local settings = forge.settings;
 	gcc.append_include_directories( forge, target, flags );
     for _, directory in ipairs(android.include_directories(settings, settings.architecture)) do
-        assert( forge:exists(directory), ('The include directory "%s" does not exist'):format(directory) );
+        assert( exists(directory), ('The include directory "%s" does not exist'):format(directory) );
         table.insert( flags, ('-I"%s"'):format(directory) );
     end    
 end
