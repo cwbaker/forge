@@ -76,7 +76,7 @@ function install()
     prefix = prefix and root( prefix ) or home( 'forge' );
     local failures = default();
     if failures == 0 then 
-        cpdir( '${prefix}/bin', '${bin}' );
-        cpdir( '${prefix}/lua', 'src/forge/lua' );
+        forge:cpdir( '${prefix}/bin', '${bin}' );
+        forge:cpdir( '${prefix}/lua', 'src/forge/lua' );
     end
 end
