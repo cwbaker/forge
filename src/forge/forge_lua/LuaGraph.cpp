@@ -92,7 +92,7 @@ int LuaGraph::add_target_prototype( lua_State* lua_state )
 int LuaGraph::add_target( lua_State* lua_state )
 {
     const int FORGE = lua_upvalueindex( 1 );
-    const int FORGE_SETTINGS = 1;
+    const int TOOLSET = 1;
     const int IDENTIFIER = 2;
     const int TARGET_PROTOTYPE = 3;
     const int HASH = 4;
@@ -144,7 +144,11 @@ int LuaGraph::add_target( lua_State* lua_state )
     if ( update_target_prototype || update_working_directory || create_lua_binding )
     {
         luaxx_push( lua_state, target );
-        lua_pushvalue( lua_state, FORGE_SETTINGS );
+        lua_pushvalue( lua_state, TOOLSET );
+        lua_setfield( lua_state, -2, "toolset" );
+        // The `target.forge` field is set only for backwards compatibility 
+        // while toolsets are added.
+        lua_pushvalue( lua_state, TOOLSET );
         lua_setfield( lua_state, -2, "forge" );
         lua_pop( lua_state, 1 );
         target->set_hash( hash );

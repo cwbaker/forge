@@ -8,6 +8,7 @@ namespace forge
 {
     
 extern const char* FORGE_TYPE;
+extern const char* TOOLSET_TYPE;
 extern const char* TARGET_TYPE;
 extern const char* TARGET_PROTOTYPE_TYPE;
 

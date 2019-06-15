@@ -1,5 +1,5 @@
-#ifndef FORGE_LUAFORGE_HPP_INCLUDED
-#define FORGE_LUAFORGE_HPP_INCLUDED
+#ifndef FORGE_LUA_HPP_INCLUDED
+#define FORGE_LUA_HPP_INCLUDED
 
 #include <vector>
 #include <string>
@@ -22,6 +22,7 @@ class LuaGraph;
 class LuaSystem;
 class LuaTarget;
 class LuaTargetPrototype;
+class LuaToolset;
 
 class Lua
 {
@@ -33,6 +34,7 @@ class Lua
     LuaSystem* lua_system_;
     LuaTarget* lua_target_;
     LuaTargetPrototype* lua_target_prototype_;
+    LuaToolset* lua_toolset_;
 
 public:
     Lua( Forge* forge );

@@ -26,6 +26,7 @@ for _, forge in forge:builds('cc.*') do
             'LuaSystem.cpp',
             'LuaTarget.cpp',
             'LuaTargetPrototype.cpp',
+            'LuaToolset.cpp',
             'types.cpp'
         };
     };

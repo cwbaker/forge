@@ -951,13 +951,13 @@ int LuaTarget::vector_string_const_iterator_gc( lua_State* lua_state )
 */
 int LuaTarget::target_call_metamethod( lua_State* lua_state )
 {
-    const int TARGET  = 1;
-    const int FORGE = 2;
+    const int TARGET = 1;
+    const int TOOLSET = 2;
     const int IDENTIFIER = 3;
     const int VARARGS = 4;
     int args = lua_gettop( lua_state );
     lua_getfield( lua_state, TARGET, "create" );
-    lua_pushvalue( lua_state, FORGE );
+    lua_pushvalue( lua_state, TOOLSET );
     lua_pushvalue( lua_state, IDENTIFIER );
     for ( int i = VARARGS; i <= args; ++i )
     {
@@ -977,7 +977,7 @@ int LuaTarget::target_call_metamethod( lua_State* lua_state )
 // ~~~lua
 // function depend_call_metamethod( target, ... )
 //     local depend_function = target.depend;
-//     depend_function( target.forge, target, ... );
+//     depend_function( target.toolset, target, ... );
 //     return target;
 // end
 // ~~~
@@ -988,7 +988,7 @@ int LuaTarget::depend_call_metamethod( lua_State* lua_state )
     const int VARARGS = 2;
     int args = lua_gettop( lua_state );
     lua_getfield( lua_state, TARGET, "depend" );
-    lua_getfield( lua_state, TARGET, "forge" );
+    lua_getfield( lua_state, TARGET, "toolset" );
     lua_pushvalue( lua_state, TARGET );
     for ( int i = VARARGS; i <= args; ++i )
     {
