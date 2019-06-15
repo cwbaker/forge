@@ -9,7 +9,7 @@ function Lipo.build( forge, target )
         table.insert( executables, executable:filename() );
     end
     printf( leaf(target) );
-    forge:system( xcrun, {
+    system( xcrun, {
         'xcrun'; 
         ('--sdk %s'):format( settings.sdkroot );
         'lipo';

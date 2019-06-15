@@ -1,7 +1,7 @@
 
 local Copy = forge:FilePrototype( 'Copy' );
 
-function Copy.build( forge, target )
+function Copy.build( toolset, target )
     rm( target );
     cp( target, target:dependency() );
 end

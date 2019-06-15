@@ -1,16 +1,17 @@
 
-local forge = forge:build( 'cc.*' );
-forge:all {
-    forge:Executable '${bin}/cmdline_test' {
-        '${lib}/cmdline_${architecture}';
-        '${lib}/error_${architecture}';
-        '${lib}/assert_${architecture}';
-        '${lib}/UnitTest++_${architecture}';
-        
-        forge:Cxx '${obj}/%1' {
-            'main.cpp',
-            'TestParser.cpp',
-            'TestSplitter.cpp'
+for _, forge in toolsets('cc.*') do
+    forge:all {
+        forge:Executable '${bin}/cmdline_test' {
+            '${lib}/cmdline_${architecture}';
+            '${lib}/error_${architecture}';
+            '${lib}/assert_${architecture}';
+            '${lib}/UnitTest++_${architecture}';
+            
+            forge:Cxx '${obj}/%1' {
+                'main.cpp',
+                'TestParser.cpp',
+                'TestSplitter.cpp'
+            };
         };
     };
-};
+end

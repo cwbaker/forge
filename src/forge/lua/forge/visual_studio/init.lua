@@ -10,7 +10,7 @@ local function uuid()
     local target_to_provide_settings_hack = {settings = forge.settings};
     local uuidgen = msvc.windows_sdk_tool( target_to_provide_settings_hack, 'uuidgen.exe' );
     local arguments = "uuidgen";
-    forge:system( uuidgen, arguments, nil, nil, function(line)
+    system( uuidgen, arguments, nil, nil, function(line)
         local uuid = line:match( "[%w-_]+" );
         if uuid then 
             table.insert( uuids, uuid );

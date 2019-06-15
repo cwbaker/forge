@@ -4,7 +4,7 @@ local Plist = forge:FilePrototype( 'Plist' );
 function Plist.build( forge, plist )
 	local settings = forge.settings;
     local plutil = settings.xcode.plutil;
-    forge:system( plutil, {
+    system( plutil, {
         'plutil';
         '-convert binary1';
         ('-o "%s"'):format( plist );

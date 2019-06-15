@@ -33,7 +33,7 @@ function AndroidManifest.build( forge, target )
         table.insert( args, ('--libs "%s"'):format(table.concat(manifests, ':', 2)) );
 	end
 
-    forge:system( java, args );
+    system( java, args );
 end
 
 return AndroidManifest;

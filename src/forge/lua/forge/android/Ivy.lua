@@ -15,7 +15,7 @@ function Ivy.build( forge, target )
 		('-retrieve "%s/[organisation]/[artifact]-[revision].[ext]"'):format( target:directory() );
 		('-cachepath "%s"'):format( target );
 	};
-	forge:system( java, args );
+	system( java, args );
 
 	local file, error_message = io.open( target:filename(), 'rb' );
 	assertf( file, 'Opening "%s" to read Apache Ivy classpath failed - %s', error_message );
@@ -37,7 +37,7 @@ function Ivy.build( forge, target )
 				('-d "%s"'):format( aar_directory );
 			};
 			rmdir( aar_directory );
-			forge:system( unzip, args );
+			system( unzip, args );
 			path = ('%s/%s/%s'):format( directory, organisation, artifact );
 			target:add_implicit_dependency( forge:Directory(path) );
 		else

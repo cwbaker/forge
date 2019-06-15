@@ -97,7 +97,7 @@ function android_ndk.compile( forge, target )
     local input = relative( source:filename() );
     print( leaf(source) );
     target:clear_implicit_dependencies();
-    forge:system( 
+    system( 
         gcc_, 
         ('arm-linux-androideabi-gcc %s -o "%s" "%s"'):format(ccflags, output, input), 
         environment,
@@ -123,7 +123,7 @@ function android_ndk.archive( forge, target )
         local arobjects = table.concat( objects, '" "' );
         local ar = ('%s/bin/arm-linux-androideabi-ar'):format( android.toolchain_directory(settings, settings.architecture) );
         printf( '%s', leaf(target) );
-        forge:system( ar, ('ar %s "%s" "%s"'):format(arflags, native(target:filename()), arobjects), android.environment );
+        system( ar, ('ar %s "%s" "%s"'):format(arflags, native(target:filename()), arobjects), android.environment );
     end
     popd();
 end
@@ -163,7 +163,7 @@ function android_ndk.link( forge, target )
         local environment = android.environment;
         local gxx = ('%s/bin/arm-linux-androideabi-g++'):format( android.toolchain_directory(settings, settings.architecture) );
         printf( '%s', leaf(target) );
-        forge:system( gxx, ('arm-linux-androideabi-g++ %s -o "%s" "%s" %s'):format(ldflags, ldoutput, ldobjects, ldlibs), environment );
+        system( gxx, ('arm-linux-androideabi-g++ %s -o "%s" "%s" %s'):format(ldflags, ldoutput, ldobjects, ldlibs), environment );
     end
     popd();
 end
@@ -171,7 +171,7 @@ end
 function android_ndk.initialize( forge )
     local identifier = forge.settings.identifier;
     if identifier then 
-        forge:add_build( forge:interpolate(identifier), forge );
+        add_toolset( forge:interpolate(identifier), forge );
     end
 
     local Cc = forge:FilePrototype( 'Cc' );

@@ -21,7 +21,7 @@ function Dex.build( forge, target )
             local proguard = target:dependency( 1 );
             if proguard and proguard:id() == 'proguard.cfg' and settings.android.proguard_enabled then 
                 local proguard_sh = ('%s/bin/proguard.sh'):format( settings.android.proguard_directory );
-                forge:system( proguard_sh, {
+                system( proguard_sh, {
                     'proguard.sh',
                     ('-printmapping \"%s/%s.map\"'):format( classes, leaf(target) ),
                     ('"@%s"'):format( proguard ) 
@@ -48,7 +48,7 @@ function Dex.build( forge, target )
     if operating_system() == 'windows' then
         dx = ('%s.bat'):format( dx );
     end
-    forge:shell( {
+    shell( {
         ('"%s"'):format( dx ),
         '--dex',
         '--verbose',

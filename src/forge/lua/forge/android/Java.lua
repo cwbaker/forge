@@ -66,7 +66,7 @@ function Java.build( forge, target )
             ('-bootclasspath "%s"'):format(table.concat(bootclasspaths, ':')),
             ('%s'):format(table.concat(source_files, ' '))
         };
-        forge:system( javac, command_line, nil, forge:filenames_filter(target) );
+        system( javac, command_line, nil, forge:filenames_filter(target) );
     end
 end
 

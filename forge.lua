@@ -6,7 +6,7 @@ package.path = root('src/forge/lua/?.lua')..';'..root('src/forge/lua/?/init.lua'
 
 variant = variant or 'debug';
 
-local forge = require 'forge.cc' {
+local cc = require 'forge.cc' {
     identifier = 'cc_${platform}_${architecture}';
     platform = operating_system();
     bin = root( ('%s/bin'):format(variant) );
@@ -51,7 +51,7 @@ local forge = require 'forge.cc' {
 
 -- Bump the C++ standard to c++14 when building on Windows as that is the 
 -- closest standard supported by Microsoft Visual C++.
-local settings = forge.settings;
+local settings = cc.settings;
 if settings.platform == 'windows' then
     settings.standard = 'c++14';
 end
@@ -66,7 +66,7 @@ buildfile 'src/luaxx/luaxx.forge';
 buildfile 'src/process/process.forge';
 buildfile 'src/unittest-cpp/unittest-cpp.forge';
 
-forge:all {
+cc:all {
     'src/forge/forge/all';
     'src/forge/forge_hooks/all';
     'src/forge/forge_test/all';
@@ -76,7 +76,7 @@ function install()
     prefix = prefix and root( prefix ) or home( 'forge' );
     local failures = default();
     if failures == 0 then 
-        forge:cpdir( '${prefix}/bin', '${bin}' );
-        forge:cpdir( '${prefix}/lua', 'src/forge/lua' );
+        cc:cpdir( '${prefix}/bin', '${bin}' );
+        cc:cpdir( '${prefix}/lua', 'src/forge/lua' );
     end
 end

@@ -4,7 +4,7 @@ local Xib = forge:FilePrototype( 'Xib' );
 function Xib.build( forge, target )
     local settings = forge.settings;
     printf( leaf(target) );
-    forge:system( settings.xcode.xcrun, {
+    system( settings.xcode.xcrun, {
         'xcrun';
         ('--sdk %s'):format( settings.sdkroot );
         'ibtool';

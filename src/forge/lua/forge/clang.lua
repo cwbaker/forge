@@ -39,7 +39,7 @@ function clang.compile( forge, target )
     local dependencies = ('%s.d'):format( target );
     local output = target:filename();
     local input = absolute( source );
-    forge:system( 
+    system( 
         xcrun, 
         ('xcrun --sdk %s clang %s -MMD -MF "%s" -o "%s" "%s"'):format(sdkroot, ccflags, dependencies, output, input)
     );
@@ -66,7 +66,7 @@ function clang.archive( forge, target )
         local arflags = table.concat( flags, ' ' );
         local arobjects = table.concat( objects, '" "' );
         local xcrun = settings.xcrun;
-        forge:system( xcrun, ('xcrun --sdk macosx libtool %s -o "%s" "%s"'):format(arflags, native(target), arobjects) );
+        system( xcrun, ('xcrun --sdk macosx libtool %s -o "%s" "%s"'):format(arflags, native(target), arobjects) );
     end
     popd();
 end
@@ -98,7 +98,7 @@ function clang.link( forge, target )
         local ldflags = table.concat( flags, ' ' );
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, ' ' );
-        forge:system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
+        system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
     end
     popd();
 end

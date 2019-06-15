@@ -4,7 +4,7 @@ local xcodeproj = require 'forge.xcode.xcodeproj';
 
 local xcode = {};
 
-function xcode.configure( forge, xcode_settings )
+function xcode.configure( toolset, xcode_settings )
     local function autodetect_sdk_version( sdk )
         local sdk_version = '';
         local sdk_build_version = '';
@@ -82,59 +82,59 @@ function xcode.configure( forge, xcode_settings )
     };
 end
 
-function xcode.validate( forge, xcode_settings )
+function xcode.validate( toolset, xcode_settings )
     return xcode_settings.xcode_version ~= nil;
 end
 
-function xcode.initialize( forge )
-    if forge:configure( xcode, 'xcode' ) then 
-        local identifier = forge.settings.identifier;
+function xcode.initialize( toolset )
+    if toolset:configure( xcode, 'xcode' ) then 
+        local identifier = toolset.settings.identifier;
         if identifier then
-            forge:add_build( forge:interpolate(identifier), forge );
+            add_toolset( toolset:interpolate(identifier), toolset );
         end
 
-        local settings = forge.settings;
+        local settings = toolset.settings;
         if settings.platform == 'ios' then
-            forge.App = require 'forge.xcode.App';
+            toolset.App = require 'forge.xcode.App';
         end
-        forge.AssetCatalog = require 'forge.xcode.AssetCatalog';
-        forge.Plist = require 'forge.xcode.Plist';
-        forge.Lipo = require 'forge.xcode.Lipo';
-        forge.Xib = require 'forge.xcode.Xib';
+        toolset.AssetCatalog = require 'forge.xcode.AssetCatalog';
+        toolset.Plist = require 'forge.xcode.Plist';
+        toolset.Lipo = require 'forge.xcode.Lipo';
+        toolset.Xib = require 'forge.xcode.Xib';
 
         local Cc = forge:FilePrototype( 'Cc' );
         Cc.language = 'c';
         Cc.build = xcode.compile;
-        forge.Cc = forge:PatternElement( Cc, xcode.object_filename );
+        toolset.Cc = forge:PatternElement( Cc, xcode.object_filename );
 
         local Cxx = forge:FilePrototype( 'Cxx' );
         Cxx.language = 'c++';
         Cxx.build = xcode.compile;
-        forge.Cxx = forge:PatternElement( Cxx, xcode.object_filename );
+        toolset.Cxx = forge:PatternElement( Cxx, xcode.object_filename );
 
         local ObjC = forge:FilePrototype( 'ObjC' );
         ObjC.language = 'objective-c';
         ObjC.build = xcode.compile;
-        forge.ObjC = forge:PatternElement( ObjC, xcode.object_filename );
+        toolset.ObjC = forge:PatternElement( ObjC, xcode.object_filename );
 
         local ObjCxx = forge:FilePrototype( 'ObjCxx' );
         ObjCxx.language = 'objective-c++';
         ObjCxx.build = xcode.compile;
-        forge.ObjCxx = forge:PatternElement( ObjCxx, xcode.object_filename );
+        toolset.ObjCxx = forge:PatternElement( ObjCxx, xcode.object_filename );
 
         local StaticLibrary = forge:FilePrototype( 'StaticLibrary', xcode.static_library_filename );
         StaticLibrary.build = xcode.archive;
-        forge.StaticLibrary = StaticLibrary;
+        toolset.StaticLibrary = StaticLibrary;
 
         local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', xcode.dynamic_library_filename );
         DynamicLibrary.build = xcode.link;
-        forge.DynamicLibrary = DynamicLibrary;
+        toolset.DynamicLibrary = DynamicLibrary;
 
         local Executable = forge:FilePrototype( 'Executable', xcode.executable_filename );
         Executable.build = xcode.link;
-        forge.Executable = Executable;
+        toolset.Executable = Executable;
 
-        forge:defaults( forge.settings, {
+        toolset:defaults( toolset.settings, {
             architecture = 'x86_64';
             assertions = true;
             compile_as_c = false;
@@ -174,41 +174,41 @@ function xcode.initialize( forge )
             settings.sdkroot = 'iphoneos';
         end
 
-        return forge;
+        return toolset;
     end
 end
 
-function xcode.object_filename( forge, identifier )
+function xcode.object_filename( toolset, identifier )
     return ('%s.o'):format( identifier );
 end
 
-function xcode.static_library_filename( forge, identifier )
-    local identifier = absolute( forge:interpolate(identifier) );
+function xcode.static_library_filename( toolset, identifier )
+    local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s/lib%s.a'):format( branch(identifier), leaf(identifier) );
     return identifier, filename;
 end
 
-function xcode.dynamic_library_filename( forge, identifier )
-    local identifier = absolute( forge:interpolate(identifier) );
+function xcode.dynamic_library_filename( toolset, identifier )
+    local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s.dylib'):format( identifier );
     return identifier, filename;
 end
 
-function xcode.executable_filename( forge, identifier )
-    local identifier = forge:interpolate( identifier );
+function xcode.executable_filename( toolset, identifier )
+    local identifier = toolset:interpolate( identifier );
     local filename = identifier;
     return identifier, filename;
 end
 
 -- Compile C, C++, Objective-C, and Objective-C++.
-function xcode.compile( forge, target ) 
-    local settings = forge.settings;
+function xcode.compile( toolset, target ) 
+    local settings = toolset.settings;
 
     local flags = {};
-    xcode.append_defines( forge, target, flags );
-    xcode.append_include_directories( forge, target, flags );
-    xcode.append_compile_flags( forge, target, flags );
-    xcode.append_deployment_target_flags( forge, target, flags );
+    xcode.append_defines( toolset, target, flags );
+    xcode.append_include_directories( toolset, target, flags );
+    xcode.append_compile_flags( toolset, target, flags );
+    xcode.append_deployment_target_flags( toolset, target, flags );
 
     local sdkroot = settings.sdkroot;
     local ccflags = table.concat( flags, ' ' );
@@ -218,50 +218,50 @@ function xcode.compile( forge, target )
     local dependencies = ('%s.d'):format( target );
     local output = target:filename();
     local input = absolute( source );
-    forge:system( 
+    system( 
         xcrun, 
         ('xcrun --sdk %s clang %s -MMD -MF "%s" -o "%s" "%s"'):format(sdkroot, ccflags, dependencies, output, input)
     );
-    clang.parse_dependencies_file( forge, dependencies, target );
+    clang.parse_dependencies_file( toolset, dependencies, target );
 end
 
 -- Archive objects into a static library. 
-function xcode.archive( forge, target )
+function xcode.archive( toolset, target )
     local flags = {
         '-static'
     };
 
-    local settings = forge.settings;
-    pushd( forge:obj_directory(target) );
+    local settings = toolset.settings;
+    pushd( toolset:obj_directory(target) );
     local objects =  {};
     for _, object in forge:walk_dependencies( target ) do
         local prototype = object:prototype();
-        if prototype ~= forge.Directory then
+        if prototype ~= toolset.Directory then
             table.insert( objects, relative(object) );
         end
     end
     
     if #objects > 0 then
-        local sdkroot = forge.settings.sdkroot;
+        local sdkroot = toolset.settings.sdkroot;
         local arflags = table.concat( flags, ' ' );
         local arobjects = table.concat( objects, '" "' );
         local xcrun = settings.xcode.xcrun;
         printf( '%s', leaf(target) );
-        forge:system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, native(target), arobjects) );
+        system( xcrun, ('xcrun --sdk %s libtool %s -o "%s" "%s"'):format(sdkroot, arflags, native(target), arobjects) );
     end
     popd();
 end
 
 -- Link dynamic libraries and executables.
-function xcode.link( forge, target ) 
-    local settings = forge.settings;
+function xcode.link( toolset, target ) 
+    local settings = toolset.settings;
 
     local objects = {};
     local libraries = {};
-    pushd( forge:obj_directory(target) );
+    pushd( toolset:obj_directory(target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
-        if prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
+        if prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary then
             table.insert( libraries, ('-l%s'):format(dependency:id()) );
         elseif prototype ~= forge.Directory then
             table.insert( objects, relative(dependency) );
@@ -269,10 +269,10 @@ function xcode.link( forge, target )
     end
 
     local flags = {};
-    xcode.append_link_flags( forge, target, flags );
-    xcode.append_library_directories( forge, target, flags );
-    xcode.append_link_libraries( forge, target, libraries );
-    xcode.append_deployment_target_flags( forge, target, flags );
+    xcode.append_link_flags( toolset, target, flags );
+    xcode.append_library_directories( toolset, target, flags );
+    xcode.append_link_libraries( toolset, target, libraries );
+    xcode.append_deployment_target_flags( toolset, target, flags );
 
     if #objects > 0 then
         local xcrun = settings.xcode.xcrun;
@@ -281,21 +281,21 @@ function xcode.link( forge, target )
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, ' ' );
         printf( '%s', leaf(target) );
-        forge:system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
+        system( xcrun, ('xcrun --sdk %s clang++ %s "%s" %s'):format(sdkroot, ldflags, ldobjects, ldlibs) );
     end
     popd();
 end
 
 -- Register the clang C/C++ toolset in *forge*.
-function xcode.register( forge )
+function xcode.register( toolset )
 end
 
-function xcode.append_defines( forge, target, flags )
-	clang.append_defines( forge, target, flags );
+function xcode.append_defines( toolset, target, flags )
+	clang.append_defines( toolset, target, flags );
 end
 
-function xcode.append_include_directories( forge, target, flags )
-	clang.append_include_directories( forge, target, flags );
+function xcode.append_include_directories( toolset, target, flags )
+	clang.append_include_directories( toolset, target, flags );
 
     if target.framework_directories then 
         for _, directory in ipairs(target.framework_directories) do
@@ -303,7 +303,7 @@ function xcode.append_include_directories( forge, target, flags )
         end
     end
 
-    local settings = forge.settings;
+    local settings = toolset.settings;
     if settings.framework_directories then 
         for _, directory in ipairs(settings.framework_directories) do
             table.insert( flags, ('-F "%s"'):format(directory) );
@@ -311,12 +311,12 @@ function xcode.append_include_directories( forge, target, flags )
     end
 end
 
-function xcode.append_compile_flags( forge, target, flags )
-	clang.append_compile_flags( forge, target, flags );
+function xcode.append_compile_flags( toolset, target, flags )
+	clang.append_compile_flags( toolset, target, flags );
 end
 
-function xcode.append_library_directories( forge, target, library_directories )
-    clang.append_library_directories( forge, target, library_directories );
+function xcode.append_library_directories( toolset, target, library_directories )
+    clang.append_library_directories( toolset, target, library_directories );
     
     if target.framework_directories then 
         for _, directory in ipairs(target.framework_directories) do
@@ -324,7 +324,7 @@ function xcode.append_library_directories( forge, target, library_directories )
         end
     end
     
-    local settings = forge.settings;
+    local settings = toolset.settings;
     if settings.framework_directories then 
         for _, directory in ipairs(settings.framework_directories) do
             table.insert( library_directories, ('-F "%s"'):format(directory) );
@@ -332,8 +332,8 @@ function xcode.append_library_directories( forge, target, library_directories )
     end
 end
 
-function xcode.append_deployment_target_flags( forge, target, flags )
-    local settings = forge.settings;
+function xcode.append_deployment_target_flags( toolset, target, flags )
+    local settings = toolset.settings;
     local sdkroot = settings.sdkroot;
     if sdkroot == 'macosx' then 
         local macos_deployment_target = settings.macos_deployment_target;
@@ -348,8 +348,8 @@ function xcode.append_deployment_target_flags( forge, target, flags )
     end
 end
 
-function xcode.append_link_flags( forge, target, flags )
-    clang.append_link_flags( forge, target, flags );
+function xcode.append_link_flags( toolset, target, flags )
+    clang.append_link_flags( toolset, target, flags );
 
     local rpaths = target.rpaths;
     if rpaths then 
@@ -359,10 +359,10 @@ function xcode.append_link_flags( forge, target, flags )
     end
 end
 
-function xcode.append_link_libraries( forge, target, libraries )
-	clang.append_link_libraries( forge, target, libraries );
+function xcode.append_link_libraries( toolset, target, libraries )
+	clang.append_link_libraries( toolset, target, libraries );
 
-    local settings = forge.settings;
+    local settings = toolset.settings;
     if settings.frameworks then 
         for _, framework in ipairs(settings.frameworks) do
             table.insert( libraries, ('-framework "%s"'):format(framework) );
@@ -378,8 +378,8 @@ end
 
 setmetatable( xcode, {
     __call = function( xcode, settings )
-        local forge = require( 'forge' ):clone( settings );
-        return xcode.initialize( forge );
+        local toolset = require( 'forge' ):clone( settings );
+        return xcode.initialize( toolset );
     end
 } );
 

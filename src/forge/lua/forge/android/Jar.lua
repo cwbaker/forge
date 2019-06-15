@@ -11,7 +11,7 @@ function Jar.build( forge, target )
             table.insert( classes, relative(filename, directory) );
         end
         if #classes > 0 then
-            forge:system( jar, ('jar %s "%s" "%s"'):format(arguments, target, table.concat(classes, '" "')) );
+            system( jar, ('jar %s "%s" "%s"'):format(arguments, target, table.concat(classes, '" "')) );
             arguments = 'uvf';
         end
         popd();

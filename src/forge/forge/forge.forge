@@ -14,34 +14,36 @@ if operating_system() == 'linux' then
     };
 end
 
-local forge = forge:build( 'cc.*' ):inherit {
-    subsystem = 'CONSOLE'; 
-    stack_size = 32768;
-    warning_level = warning_level;    
-};
-
-forge:all {
-    forge:Executable '${bin}/forge' {
-        '${lib}/forge_${architecture}';
-        '${lib}/forge_lua_${architecture}';
-        '${lib}/process_${architecture}';
-        '${lib}/luaxx_${architecture}';
-        '${lib}/cmdline_${architecture}';
-        '${lib}/error_${architecture}';
-        '${lib}/assert_${architecture}';
-        '${lib}/liblua_${architecture}';
-        '${lib}/boost_filesystem_${architecture}';
-        '${lib}/boost_system_${architecture}';
-
-        libraries = libraries;
-        
-        forge:Cxx '${obj}/%1' {
-            defines = {    
-                'BOOST_ALL_NO_LIB'; -- Disable automatic linking to Boost libraries.
-                ('BUILD_VERSION="\\"%s\\""'):format( version );
-            };
-            'Application.cpp', 
-            'main.cpp'
-        };    
+for _, forge in toolsets('cc.*') do
+    local forge = forge:inherit {
+        subsystem = 'CONSOLE'; 
+        stack_size = 32768;
+        warning_level = warning_level;    
     };
-};
+
+    forge:all {
+        forge:Executable '${bin}/forge' {
+            '${lib}/forge_${architecture}';
+            '${lib}/forge_lua_${architecture}';
+            '${lib}/process_${architecture}';
+            '${lib}/luaxx_${architecture}';
+            '${lib}/cmdline_${architecture}';
+            '${lib}/error_${architecture}';
+            '${lib}/assert_${architecture}';
+            '${lib}/liblua_${architecture}';
+            '${lib}/boost_filesystem_${architecture}';
+            '${lib}/boost_system_${architecture}';
+
+            libraries = libraries;
+            
+            forge:Cxx '${obj}/%1' {
+                defines = {    
+                    'BOOST_ALL_NO_LIB'; -- Disable automatic linking to Boost libraries.
+                    ('BUILD_VERSION="\\"%s\\""'):format( version );
+                };
+                'Application.cpp', 
+                'main.cpp'
+            };    
+        };
+    };
+end

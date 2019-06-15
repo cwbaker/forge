@@ -10,7 +10,7 @@ function Aidl.build( forge, target )
         ('"%s"'):format( target:dependency() )
     };
     local aidl = ('%s/aidl'):format( settings.android.build_tools_directory );
-    forge:system( 
+    system( 
         aidl, 
         command_line,
         nil,

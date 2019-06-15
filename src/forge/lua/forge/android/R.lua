@@ -32,7 +32,7 @@ function R.build( forge, target )
     end
 
     local aapt = ('%s/aapt'):format( forge.settings.android.build_tools_directory );
-    forge:system( aapt, command_line, nil, forge:filenames_filter(target) );
+    system( aapt, command_line, nil, forge:filenames_filter(target) );
 end
 
 return R;

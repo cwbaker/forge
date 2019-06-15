@@ -29,7 +29,7 @@ function Apk.build( forge, target )
     local settings = forge.settings;
     local aapt = ("%s/aapt"):format( settings.android.build_tools_directory );
     local android_jar = ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
-    forge:system( aapt, {
+    system( aapt, {
         'aapt',
         'package',
         '--auto-add-overlay',
@@ -42,7 +42,7 @@ function Apk.build( forge, target )
 
     pushd( ("%s/%s"):format(branch(target), basename(target)) );
     for _, dependency in ipairs(files) do 
-        forge:system( aapt, {
+        system( aapt, {
             "aapt",
             'add',
             ('-f "%s.unaligned"'):format( relative(target) ),
@@ -54,7 +54,7 @@ function Apk.build( forge, target )
     local key = _G.key or "androiddebugkey";
     local keypass = _G.keypass or "android";
     local keystore = _G.keystore or relative( ("%s/debug.keystore"):format(target:working_directory():path()) );
-    forge:system( jarsigner, {
+    system( jarsigner, {
         'jarsigner',
         '-sigalg MD5withRSA',
         '-digestalg SHA1',
@@ -65,7 +65,7 @@ function Apk.build( forge, target )
     } );
 
     local zipalign = ("%s/zipalign"):format( settings.android.build_tools_directory );
-    forge:system( zipalign, {
+    system( zipalign, {
         'zipalign',
         '-f 4',
         ('%s.unaligned'):format( relative(target) ),

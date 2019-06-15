@@ -6,7 +6,7 @@ if operating_system() == 'linux' then
     warning_level = 0;
 end
 
-for _, forge in forge:builds('cc.*') do
+for _, forge in toolsets('cc.*') do
     local forge = forge:inherit {
         warning_level = warning_level;
     };

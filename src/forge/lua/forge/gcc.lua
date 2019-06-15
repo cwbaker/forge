@@ -8,19 +8,19 @@ gcc.flags_by_architecture = {
     x86_64 = '';
 };
 
-function gcc.configure( forge, gcc_settings )
+function gcc.configure( toolset, gcc_settings )
     local paths = os.getenv( 'PATH' );
     return {
-        gcc = forge:which( gcc_settings.gcc or os.getenv('CC') or 'gcc', paths );
-        gxx = forge:which( gcc_settings.gxx or os.getenv('CXX') or 'g++', paths );
-        ar = forge:which( gcc_settings.ar or os.getenv('AR') or 'ar', paths );
+        gcc = toolset:which( gcc_settings.gcc or os.getenv('CC') or 'gcc', paths );
+        gxx = toolset:which( gcc_settings.gxx or os.getenv('CXX') or 'g++', paths );
+        ar = toolset:which( gcc_settings.ar or os.getenv('AR') or 'ar', paths );
         environment = gcc_settings.environment or {
             PATH = '/usr/bin';
         };
     };
 end
 
-function gcc.validate( forge, gcc_settings )
+function gcc.validate( toolset, gcc_settings )
     return 
         exists( gcc_settings.gcc ) and 
         exists( gcc_settings.gxx ) and 
@@ -28,36 +28,36 @@ function gcc.validate( forge, gcc_settings )
     ;
 end
 
-function gcc.initialize( forge )
-    if forge:configure(gcc, 'gcc') then
-        local identifier = forge.settings.identifier;
+function gcc.initialize( toolset )
+    if toolset:configure(gcc, 'gcc') then
+        local identifier = toolset.settings.identifier;
         if identifier then
-            forge:add_build( forge:interpolate(identifier), forge );
+            add_toolset( toolset:interpolate(identifier), toolset );
         end
 
         local Cc = forge:FilePrototype( 'Cc' );
         Cc.language = 'c';
         Cc.build = gcc.compile;
-        forge.Cc = forge:PatternElement( Cc, gcc.object_filename );
+        toolset.Cc = forge:PatternElement( Cc, gcc.object_filename );
 
         local Cxx = forge:FilePrototype( 'Cxx' );
         Cxx.language = 'c++';
         Cxx.build = gcc.compile;
-        forge.Cxx = forge:PatternElement( Cxx, gcc.object_filename );
+        toolset.Cxx = forge:PatternElement( Cxx, gcc.object_filename );
 
         local StaticLibrary = forge:FilePrototype( 'StaticLibrary', gcc.static_library_filename );
         StaticLibrary.build = gcc.archive;
-        forge.StaticLibrary = StaticLibrary;
+        toolset.StaticLibrary = StaticLibrary;
 
         local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', gcc.dynamic_library_filename );
         DynamicLibrary.build = gcc.link;
-        forge.DynamicLibrary = DynamicLibrary;
+        toolset.DynamicLibrary = DynamicLibrary;
 
         local Executable = forge:FilePrototype( 'Executable', gcc.executable_filename );
         Executable.build = gcc.link;
-        forge.Executable = Executable;
+        toolset.Executable = Executable;
 
-        forge:defaults( forge.settings, {
+        toolset:defaults( toolset.settings, {
             architecture = 'x86_64';
             assertions = true;
             compile_as_c = false;
@@ -91,40 +91,40 @@ function gcc.initialize( forge )
             warnings_as_errors = true;
         } );
 
-        return gcc;
+        return toolset;
     end
 end
 
-function gcc.object_filename( forge, identifier )
+function gcc.object_filename( toolset, identifier )
     return ('%s.o'):format( identifier );
 end
 
-function gcc.static_library_filename( forge, identifier )
-    local identifier = absolute( forge:interpolate(identifier) );
+function gcc.static_library_filename( toolset, identifier )
+    local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s/lib%s.a'):format( branch(identifier), leaf(identifier) );
     return identifier, filename;
 end
 
-function gcc.dynamic_library_filename( forge, identifier )
-    local identifier = absolute( forge:interpolate(identifier) );
+function gcc.dynamic_library_filename( toolset, identifier )
+    local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s/lib%s.so'):format( branch(identifier), leaf(identifier) );
     return identifier, filename;
 end
 
-function gcc.executable_filename( forge, identifier )
-    local identifier = forge:interpolate( identifier );
+function gcc.executable_filename( toolset, identifier )
+    local identifier = toolset:interpolate( identifier );
     local filename = identifier;
     return identifier, filename;
 end
 
 -- Compile C, C++, Objective-C, and Objective-C++.
-function gcc.compile( forge, target ) 
-    local settings = forge.settings;
+function gcc.compile( toolset, target ) 
+    local settings = toolset.settings;
 
     local flags = {};
-    gcc.append_defines( forge, target, flags );
-    gcc.append_include_directories( forge, target, flags );
-    gcc.append_compile_flags( forge, target, flags );
+    gcc.append_defines( toolset, target, flags );
+    gcc.append_include_directories( toolset, target, flags );
+    gcc.append_compile_flags( toolset, target, flags );
     
     local gcc_ = settings.gcc.gcc;
     local environment = settings.gcc.environment;
@@ -135,23 +135,23 @@ function gcc.compile( forge, target )
     local input = relative( source:filename() );
     print( leaf(source:id()) );
     target:clear_implicit_dependencies();
-    forge:system( 
+    system( 
         gcc_, 
         ('gcc %s -MMD -MF "%s" -o "%s" "%s"'):format(ccflags, dependencies, output, input), 
         environment,
-        forge:dependencies_filter(target)
+        toolset:dependencies_filter(target)
     );
 end
 
 -- Archive objects into a static library. 
-function gcc.archive( forge, target )
+function gcc.archive( toolset, target )
     printf( leaf(target) );
-    local settings = forge.settings;
-    pushd( forge:obj_directory(target) );
+    local settings = toolset.settings;
+    pushd( toolset:obj_directory(target) );
     local objects =  {};
     for _, object in forge:walk_dependencies( target ) do
         local prototype = object:prototype();
-        if prototype ~= forge.Directory then
+        if prototype ~= toolset.Directory then
             table.insert( objects, relative(object) );
         end
     end
@@ -159,22 +159,22 @@ function gcc.archive( forge, target )
         local objects = table.concat( objects, '" "' );
         local ar = settings.gcc.ar;
         local environment = settings.gcc.environment;
-        forge:system( ar, ('ar -rcs "%s" "%s"'):format(native(target), objects), environment );
+        system( ar, ('ar -rcs "%s" "%s"'):format(native(target), objects), environment );
     end
     popd();
 end
 
 -- Link dynamic libraries and executables.
-function gcc.link( forge, target ) 
+function gcc.link( toolset, target ) 
     printf( leaf(target) );
 
     local objects = {};
     local libraries = {};
-    local settings = forge.settings;
-    pushd( forge:obj_directory(target) );
+    local settings = toolset.settings;
+    pushd( toolset:obj_directory(target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
-        if prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
+        if prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary then
             if dependency.whole_archive then 
                 table.insert( libraries, '-Wl,--whole-archive' );
             end
@@ -182,15 +182,15 @@ function gcc.link( forge, target )
             if dependency.whole_archive then 
                 table.insert( libraries, '-Wl,--no-whole-archive' );
             end
-        elseif prototype ~= forge.Directory then
+        elseif prototype ~= toolset.Directory then
             table.insert( objects, relative(dependency) );
         end
     end
 
     local flags = {};
-    gcc.append_link_flags( forge, target, flags );
-    gcc.append_library_directories( forge, target, flags );
-    gcc.append_link_libraries( forge, target, libraries );
+    gcc.append_link_flags( toolset, target, flags );
+    gcc.append_library_directories( toolset, target, flags );
+    gcc.append_link_libraries( toolset, target, libraries );
 
     if #objects > 0 then
         local ldflags = table.concat( flags, ' ' );
@@ -198,13 +198,13 @@ function gcc.link( forge, target )
         local ldlibs = table.concat( libraries, ' ' );
         local gxx = settings.gcc.gxx;
         local environment = settings.gcc.environment;
-        forge:system( gxx, ('g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+        system( gxx, ('g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
     end
     popd();
 end
 
-function gcc.append_defines( forge, target, flags )
-    local settings = forge.settings;
+function gcc.append_defines( toolset, target, flags )
+    local settings = toolset.settings;
 
     if not settings.assertions then 
         table.insert( flags, '-DNDEBUG' );
@@ -225,8 +225,8 @@ function gcc.append_defines( forge, target, flags )
     end
 end
 
-function gcc.append_include_directories( forge, target, flags )
-    local settings = forge.settings;
+function gcc.append_include_directories( toolset, target, flags )
+    local settings = toolset.settings;
 
     if target.include_directories then
         for _, directory in ipairs(target.include_directories) do
@@ -241,8 +241,8 @@ function gcc.append_include_directories( forge, target, flags )
     end
 end
 
-function gcc.append_compile_flags( forge, target, flags )
-    local settings = forge.settings;
+function gcc.append_compile_flags( toolset, target, flags )
+    local settings = toolset.settings;
 
     table.insert( flags, "-c" );
     table.insert( flags, gcc.flags_by_architecture[settings.architecture] );
@@ -301,8 +301,8 @@ function gcc.append_compile_flags( forge, target, flags )
     end
 end
 
-function gcc.append_library_directories( forge, target, library_directories )
-    local settings = forge.settings;
+function gcc.append_library_directories( toolset, target, library_directories )
+    local settings = toolset.settings;
 
     if target.library_directories then
         for _, directory in ipairs(target.library_directories) do
@@ -317,13 +317,13 @@ function gcc.append_library_directories( forge, target, library_directories )
     end
 end
 
-function gcc.append_link_flags( forge, target, flags )
-    local settings = forge.settings;
+function gcc.append_link_flags( toolset, target, flags )
+    local settings = toolset.settings;
 
     table.insert( flags, gcc.flags_by_architecture[settings.architecture] );
     table.insert( flags, "-std=c++11" );
 
-    if target:prototype() == forge.DynamicLibrary then
+    if target:prototype() == toolset.DynamicLibrary then
         table.insert( flags, "-shared" );
     end
     
@@ -352,8 +352,8 @@ function gcc.append_link_flags( forge, target, flags )
     table.insert( flags, ('-o "%s"'):format(native(target:filename())) );
 end
 
-function gcc.append_link_libraries( forge, target, libraries )
-    local settings = forge.settings;
+function gcc.append_link_libraries( toolset, target, libraries )
+    local settings = toolset.settings;
 
     if settings.libraries then 
         for _, library in ipairs(settings.libraries) do 

@@ -1,17 +1,17 @@
 
 local Target = forge.Target;
 
-function Target.create( forge, identifier, target_prototype )
-    local target = add_target( forge, identifier, target_prototype, hash(forge.settings) );
-    target.settings = forge.settings;
+function Target.create( toolset, identifier, target_prototype )
+    local target = add_target( toolset, identifier, target_prototype, hash(toolset.settings) );
+    target.settings = toolset.settings;
     return target;
 end
 
-function Target.depend( forge, target, dependencies )
+function Target.depend( toolset, target, dependencies )
     assert( type(dependencies) == 'table', 'Target.depend() parameter not a table as expected' );
-    forge:merge( target, dependencies );
+    toolset:merge( target, dependencies );
     for _, value in forge:walk_tables(dependencies) do 
-        local source_file = forge:SourceFile( value );
+        local source_file = toolset:SourceFile( value );
         target:add_dependency( source_file );
     end
 end

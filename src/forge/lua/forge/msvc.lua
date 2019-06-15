@@ -1,7 +1,7 @@
 
 local msvc = {};
 
-function msvc.configure( forge, local_settings )
+function msvc.configure( toolset, msvc_settings )
     local function vswhere()
         local vswhere = 'C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe';
         if exists( vswhere ) then 
@@ -10,14 +10,14 @@ function msvc.configure( forge, local_settings )
                 SystemRoot = getenv( 'SystemRoot' );
             };
             local values = {};
-            forge:system( vswhere, 'vswhere -latest', environment, nil, function(line)
+            system( vswhere, 'vswhere -latest', environment, nil, function(line)
                 local key, value = line:match( '([%w_]+): ([^\n\r]+)' );
                 if key and value then 
                     values[key] = value;
                 end
             end );
             if #values == 0 then 
-                forge:system( vswhere, 'vswhere -products Microsoft.VisualStudio.Product.BuildTools', environment, nil, function(line)
+                system( vswhere, 'vswhere -products Microsoft.VisualStudio.Product.BuildTools', environment, nil, function(line)
                     local key, value = line:match( '([%w_]+): ([^\n\r]+)' );
                     if key and value then 
                         values[key] = value;
@@ -40,7 +40,7 @@ function msvc.configure( forge, local_settings )
         local values = {};
         local reg = "C:/Windows/system32/reg.exe";
         local arguments = ('reg query "%s"'):format( key );
-        forge:system( reg, arguments, nil, nil, function(line)
+        system( reg, arguments, nil, nil, function(line)
             local REG_QUERY_PATTERN = "%s* ([%w_]+) %s* ([%w_]+) %s* ([^\n\r]+)";
             local key, type_, value = line:match( REG_QUERY_PATTERN );
             if key and type_ and value then 
@@ -128,7 +128,7 @@ function msvc.configure( forge, local_settings )
     };
 end
 
-function msvc.validate( forge, msvc_settings )
+function msvc.validate( toolset, msvc_settings )
     return 
         operating_system() == 'windows' and 
         msvc_settings.toolset_version ~= nil and 
@@ -136,11 +136,11 @@ function msvc.validate( forge, msvc_settings )
     ;
 end
 
-function msvc.initialize( forge )
-    if forge:configure(msvc, 'msvc') then 
-        local identifier = forge.settings.identifier;
+function msvc.initialize( toolset )
+    if toolset:configure(msvc, 'msvc') then 
+        local identifier = toolset.settings.identifier;
         if identifier then
-            forge:add_build( forge:interpolate(identifier), forge );
+            add_toolset( toolset:interpolate(identifier), toolset );
         end
 
         -- Make sure that the environment variable VS_UNICODE_OUTPUT is not set.
@@ -153,7 +153,7 @@ function msvc.initialize( forge )
         -- See http://blogs.msdn.com/freik/archive/2006/04/05/569025.aspx.
         -- putenv( "VS_UNICODE_OUTPUT", "" );
 
-        local settings = forge.settings;
+        local settings = toolset.settings;
         local toolset_version = settings.msvc.toolset_version;
         local visual_studio_directory = settings.msvc.visual_studio_directory;
         local visual_cxx_directory = settings.msvc.visual_cxx_directory;
@@ -253,27 +253,26 @@ function msvc.initialize( forge )
         local Cc = forge:TargetPrototype( 'Cc' );
         Cc.language = 'c';
         Cc.build = msvc.compile;
-        forge.Cc = forge:GroupElement( Cc, msvc.object_filename );
+        toolset.Cc = forge:GroupElement( Cc, msvc.object_filename );
 
         local Cxx = forge:TargetPrototype( 'Cxx' );
         Cxx.language = 'c++';
         Cxx.build = msvc.compile;
-        forge.Cxx = forge:GroupElement( Cxx, msvc.object_filename );
+        toolset.Cxx = forge:GroupElement( Cxx, msvc.object_filename );
 
         local StaticLibrary = forge:FilePrototype( 'StaticLibrary', msvc.static_library_filename );
         StaticLibrary.build = msvc.archive;
-        forge.StaticLibrary = StaticLibrary;
+        toolset.StaticLibrary = StaticLibrary;
 
         local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', msvc.dynamic_library_filename );
         DynamicLibrary.build = msvc.link;
-        forge.DynamicLibrary = DynamicLibrary;
+        toolset.DynamicLibrary = DynamicLibrary;
 
         local Executable = forge:FilePrototype( 'Executable', msvc.executable_filename );
         Executable.build = msvc.link;
-        forge.Executable = Executable;
+        toolset.Executable = Executable;
 
-        local settings = forge.settings;
-        forge:defaults( forge.settings, {
+        toolset:defaults( toolset.settings, {
             architecture = 'x86_64';
             assertions = true;
             compile_as_c = false;
@@ -307,40 +306,40 @@ function msvc.initialize( forge )
             warnings_as_errors = true;
         } );
 
-        return msvc;
+        return toolset;
     end
 end
 
-function msvc.object_filename( forge, identifier )
+function msvc.object_filename( toolset, identifier )
     return ('%s.obj'):format( identifier );
 end
 
-function msvc.static_library_filename( forge, identifier )
-    local identifier = absolute( forge:interpolate(identifier) );
+function msvc.static_library_filename( toolset, identifier )
+    local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s.lib'):format( identifier );
     return identifier, filename;
 end
 
-function msvc.dynamic_library_filename( forge, identifier )
-    local identifier = absolute( forge:interpolate(identifier) );
+function msvc.dynamic_library_filename( toolset, identifier )
+    local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s.dll'):format( identifier );
     return identifier, filename;
 end
 
-function msvc.executable_filename( forge, identifier )
-    local identifier = forge:interpolate( identifier );
+function msvc.executable_filename( toolset, identifier )
+    local identifier = toolset:interpolate( identifier );
     local filename = ('%s.exe'):format( identifier );
     return identifier, filename;
 end
 
 -- Compile C and C++.
-function msvc.compile( forge, target ) 
-    local settings = forge.settings;    
+function msvc.compile( toolset, target ) 
+    local settings = toolset.settings;    
 
     local flags = {};
-    msvc.append_defines( forge, target, flags );
-    msvc.append_include_directories( forge, target, flags );
-    msvc.append_compile_flags( forge, target, flags );
+    msvc.append_defines( toolset, target, flags );
+    msvc.append_include_directories( toolset, target, flags );
+    msvc.append_compile_flags( toolset, target, flags );
 
     local objects_by_source = {};
     local sources_by_directory = {};
@@ -365,22 +364,22 @@ function msvc.compile( forge, target )
             -- Make sure that the output directory has a trailing slash so
             -- that Visual C++ doesn't interpret it as a file when a single
             -- source file is compiled.
-            local output_directory = native( ('%s/%s'):format(forge:obj_directory(target), relative(directory)) );
+            local output_directory = native( ('%s/%s'):format(toolset:obj_directory(target), relative(directory)) );
             if output_directory:sub(-1) ~= '\\' then 
                 output_directory = ('%s\\'):format( output_directory );
             end
 
             local ccflags = table.concat( flags, ' ' );
             local source = table.concat( sources, '" "' );
-            local cl = msvc.visual_cxx_tool( forge, 'cl.exe' );
+            local cl = msvc.visual_cxx_tool( toolset, 'cl.exe' );
             local environment = msvc.environments_by_architecture[settings.architecture];
             pushd( directory );
-            forge:system( 
+            system( 
                 cl, 
                 ('cl %s /Fo%s "%s"'):format(ccflags, output_directory, source), 
                 environment, 
                 nil,
-                msvc.dependencies_filter(output_directory, absolute(directory))
+                msvc.dependencies_filter(toolset, output_directory, absolute(directory))
             );
             popd();
         end
@@ -392,10 +391,10 @@ function msvc.compile( forge, target )
 end
 
 -- Archive objects into a static library. 
-function msvc.archive( forge, target ) 
+function msvc.archive( toolset, target ) 
     printf( leaf(target) );
 
-    local settings = forge.settings;
+    local settings = toolset.settings;
 
     local flags = {
         '/nologo'
@@ -405,11 +404,11 @@ function msvc.archive( forge, target )
         table.insert( flags, '/ltcg' );
     end
     
-    pushd( forge:obj_directory(target) );
+    pushd( toolset:obj_directory(target) );
     local objects = {};
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype ~= forge.Directory then
+        if prototype ~= toolset.Directory then
             for _, object in dependency:dependencies() do
                 table.insert( objects, relative(object:filename()) );
             end
@@ -419,26 +418,26 @@ function msvc.archive( forge, target )
     if #objects > 0 then
         local arflags = table.concat( flags, ' ' );
         local arobjects = table.concat( objects, '" "' );
-        local msar = msvc.visual_cxx_tool( forge, 'lib.exe' );
+        local msar = msvc.visual_cxx_tool( toolset, 'lib.exe' );
         local environment = msvc.environments_by_architecture[settings.architecture];
-        forge:system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:filename()), arobjects), environment );
+        system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:filename()), arobjects), environment );
     end
     popd();
 end
 
 -- Link dynamic libraries and executables.
-function msvc.link( forge, target ) 
+function msvc.link( toolset, target ) 
     printf( leaf(target) );
 
     local objects = {};
     local libraries = {};
-    local settings = forge.settings;
-    pushd( forge:obj_directory(target) );
+    local settings = toolset.settings;
+    pushd( toolset:obj_directory(target) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
+        if prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary then
             table.insert( libraries, ('%s.lib'):format(basename(dependency:filename())) );
-        elseif prototype ~= forge.Directory then
+        elseif prototype ~= toolset.Directory then
             assertf( target.architecture == dependency.architecture, "Architectures for '%s' (%s) and '%s' (%s) don't match", target:path(), tostring(target.architecture), dependency:path(), tostring(dependency.architecture) );
             for _, object in dependency:dependencies() do
                 if object:prototype() == nil then
@@ -449,15 +448,15 @@ function msvc.link( forge, target )
     end
 
     local flags = {};
-    msvc.append_link_flags( forge, target, flags );
-    msvc.append_library_directories( forge, target, flags );
-    msvc.append_link_libraries( forge, target, libraries );
+    msvc.append_link_flags( toolset, target, flags );
+    msvc.append_library_directories( toolset, target, flags );
+    msvc.append_link_libraries( toolset, target, libraries );
 
     if #objects > 0 then
-        local msld = msvc.visual_cxx_tool( forge, "link.exe" );
-        local msmt = msvc.windows_sdk_tool( forge, "mt.exe" );
-        local msrc = msvc.windows_sdk_tool( forge, "rc.exe" );
-        local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( forge:obj_directory(target), target:id() );
+        local msld = msvc.visual_cxx_tool( toolset, "link.exe" );
+        local msmt = msvc.windows_sdk_tool( toolset, "mt.exe" );
+        local msrc = msvc.windows_sdk_tool( toolset, "rc.exe" );
+        local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( toolset:obj_directory(target), target:id() );
 
         if settings.incremental_linking then
             local embedded_manifest = ("%s_embedded.manifest"):format( target:id() );
@@ -482,9 +481,9 @@ function msvc.link( forge, target )
             local environment = msvc.environments_by_architecture[settings.architecture];
 
             if exists(embedded_manifest) ~= true then
-                forge:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
-                forge:system( msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest), environment );
-                forge:system( msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
+                system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+                system( msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest), environment );
+                system( msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
             end
 
             table.insert( objects, embedded_manifest_res );
@@ -492,10 +491,10 @@ function msvc.link( forge, target )
             local ldflags = table.concat( flags, ' ' );
             local ldobjects = table.concat( objects, '" "' );
 
-            forge:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
-            forge:system( msmt, ('mt /nologo /out:"%s" /manifest %s'):format(embedded_manifest, intermediate_manifest), environment );
-            forge:system( msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
-            forge:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+            system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+            system( msmt, ('mt /nologo /out:"%s" /manifest %s'):format(embedded_manifest, intermediate_manifest), environment );
+            system( msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
+            system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
         else
             table.insert( flags, "/incremental:no" );
 
@@ -504,16 +503,16 @@ function msvc.link( forge, target )
             local ldobjects = table.concat( objects, '" "' );
             local environment = msvc.environments_by_architecture[settings.architecture];
 
-            forge:system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+            system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
             sleep( 100 );
-            forge:system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(native(target:filename()), intermediate_manifest), environment );
+            system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(native(target:filename()), intermediate_manifest), environment );
         end
     end
     popd();
 end
 
-function msvc.visual_cxx_tool( forge, tool )
-    local settings = forge.settings;
+function msvc.visual_cxx_tool( toolset, tool )
+    local settings = toolset.settings;
     local msvc = settings.msvc;
     if msvc.toolset_version >= 15 then 
         if settings.architecture == 'x86_64' then
@@ -530,8 +529,8 @@ function msvc.visual_cxx_tool( forge, tool )
     end
 end
 
-function msvc.windows_sdk_tool( forge, tool )
-    local settings = forge.settings;
+function msvc.windows_sdk_tool( toolset, tool )
+    local settings = toolset.settings;
     local directory = settings.msvc.windows_sdk_directory;
     local version = settings.msvc.windows_sdk_version;
     if settings.architecture == "x86_64" then
@@ -541,8 +540,8 @@ function msvc.windows_sdk_tool( forge, tool )
     end
 end
 
-function msvc.append_defines( forge, target, flags )
-    local settings = forge.settings;
+function msvc.append_defines( toolset, target, flags )
+    local settings = toolset.settings;
 
     if not settings.assertions then
         table.insert( flags, '/DNDEBUG' );
@@ -561,12 +560,12 @@ function msvc.append_defines( forge, target, flags )
     end
 end
 
-function msvc.append_include_directories( forge, target, flags )
-    local settings = forge.settings;
+function msvc.append_include_directories( toolset, target, flags )
+    local settings = toolset.settings;
 
     if target.include_directories then
         for _, directory in ipairs(target.include_directories) do
-            table.insert( flags, ('/I "%s"'):format(forge:relative(directory)) );
+            table.insert( flags, ('/I "%s"'):format(relative(directory)) );
         end
     end
 
@@ -577,8 +576,8 @@ function msvc.append_include_directories( forge, target, flags )
     end
 end
 
-function msvc.append_compile_flags( forge, target, flags )
-    local settings = forge.settings;
+function msvc.append_compile_flags( toolset, target, flags )
+    local settings = toolset.settings;
 
     table.insert( flags, '/nologo' );
     table.insert( flags, '/FS' );
@@ -617,7 +616,7 @@ function msvc.append_compile_flags( forge, target, flags )
     end
     
     if settings.debug then
-        local pdb = ('%s/%s.pdb'):format(forge:obj_directory(target), target:working_directory():id() );
+        local pdb = ('%s/%s.pdb'):format(toolset:obj_directory(target), target:working_directory():id() );
         table.insert( flags, ('/Zi /Fd%s'):format(native(pdb)) );
     end
 
@@ -655,8 +654,8 @@ function msvc.append_compile_flags( forge, target, flags )
     end
 end
 
-function msvc.append_library_directories( forge, target, flags )
-    local settings = forge.settings;
+function msvc.append_library_directories( toolset, target, flags )
+    local settings = toolset.settings;
 
     if target.library_directories then
         for _, directory in ipairs(target.library_directories) do
@@ -671,12 +670,12 @@ function msvc.append_library_directories( forge, target, flags )
     end    
 end
 
-function msvc.append_link_flags( forge, target, flags )
-    local settings = forge.settings;
+function msvc.append_link_flags( toolset, target, flags )
+    local settings = toolset.settings;
 
     table.insert( flags, "/nologo" );
 
-    local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( forge:obj_directory(target), target:id() );
+    local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( toolset:obj_directory(target), target:id() );
     table.insert( flags, '/manifest' );
     table.insert( flags, ('/manifestfile:%s'):format(intermediate_manifest) );
     
@@ -685,7 +684,7 @@ function msvc.append_link_flags( forge, target, flags )
     end
 
     table.insert( flags, ('/out:%s'):format(native(target:filename())) );
-    if target:prototype() == forge.DynamicLibrary then
+    if target:prototype() == toolset.DynamicLibrary then
         table.insert( flags, '/dll' );
         table.insert( flags, ('/implib:%s'):format(native(('%s/%s.lib'):format(settings.lib, target:id()))) );
     end
@@ -696,7 +695,7 @@ function msvc.append_link_flags( forge, target, flags )
     
     if settings.debug then
         table.insert( flags, '/debug' );
-        local pdb = ('%s/%s.pdb'):format( forge:obj_directory(target), target:id() );
+        local pdb = ('%s/%s.pdb'):format( toolset:obj_directory(target), target:id() );
         table.insert( flags, ('/pdb:%s'):format(native(pdb)) );
     end
 
@@ -705,7 +704,7 @@ function msvc.append_link_flags( forge, target, flags )
     end
 
     if settings.generate_map_file then
-        local map = ('%s/%s.map'):format( forge:obj_directory(target), target:id() );
+        local map = ('%s/%s.map'):format( toolset:obj_directory(target), target:id() );
         table.insert( flags, ('/map:%s'):format(native(map)) );
     end
 
@@ -719,8 +718,8 @@ function msvc.append_link_flags( forge, target, flags )
     end
 end
 
-function msvc.append_link_libraries( forge, target, flags )
-    local settings = forge.settings;
+function msvc.append_link_libraries( toolset, target, flags )
+    local settings = toolset.settings;
 
     if settings.libraries then
         for _, library in ipairs(settings.libraries) do
@@ -735,7 +734,7 @@ function msvc.append_link_libraries( forge, target, flags )
     end
 end
 
-function msvc.dependencies_filter( output_directory, source_directory )
+function msvc.dependencies_filter( toolset, output_directory, source_directory )
     local object;
     local current_directory = source_directory;
     local directories = { source_directory };
@@ -779,7 +778,7 @@ function msvc.dependencies_filter( output_directory, source_directory )
             local relative_path = relative( path, root() );
             local within_source_tree = is_relative( relative_path ) and relative_path:find( '..', 1, true ) == nil;
             if within_source_tree then
-                local header = forge:SourceFile( path );
+                local header = toolset:SourceFile( path );
                 object:add_implicit_dependency( header );
             end
             current_directory = branch( path );
@@ -788,7 +787,7 @@ function msvc.dependencies_filter( output_directory, source_directory )
             local start, finish = line:find( SOURCE_FILE_PATTERN );
             if start and finish then 
                 local obj_name = function( name ) return ("%s.obj"):format( basename(name) ); end;
-                object = forge:File( ("%s/%s"):format(output_directory, obj_name(line)) );
+                object = toolset:File( ("%s/%s"):format(output_directory, obj_name(line)) );
                 object:clear_implicit_dependencies();
             end
             printf( '%s', line );
@@ -799,9 +798,8 @@ end
 
 setmetatable( msvc, {
     __call = function( msvc, settings )
-        local forge = require( 'forge' ):clone( settings );
-        msvc.initialize( forge );
-        return forge;
+        local toolset = require( 'forge' ):clone( settings );
+        return msvc.initialize( toolset );
     end
 } );
 

@@ -91,7 +91,7 @@ function android.initialize( forge )
         local settings = forge.settings;
         local identifier = forge.settings.identifier;
         if identifier then
-            forge:add_build( forge:interpolate(identifier), forge );
+            add_toolset( forge:interpolate(identifier), forge );
         end
         
         local Aidl = require 'forge.android.Aidl';
@@ -253,9 +253,9 @@ function android.deploy( apk )
         local function adb_get_state_filter( state )
             device_connected = string.find( state, "device" ) ~= nil;
         end
-        forge:system( adb, ('adb get-state'), android.environment, nil, adb_get_state_filter );
+        system( adb, ('adb get-state'), android.environment, nil, adb_get_state_filter );
         if device_connected then
-            forge:system( adb, ('adb install -r "%s"'):format(apk:filename()), android.environment );
+            system( adb, ('adb install -r "%s"'):format(apk:filename()), android.environment );
         end
     end
 end

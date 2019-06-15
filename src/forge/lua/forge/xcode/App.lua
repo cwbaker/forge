@@ -28,9 +28,9 @@ function App.build( forge, target )
     local settings = forge.settings;
     if settings.generate_dsym_bundle and executable then 
         local xcrun = settings.xcode.xcrun;
-        forge:system( xcrun, ('xcrun dsymutil -o "%s.dSYM" "%s"'):format(target:ordering_dependency(), executable) );
+        system( xcrun, ('xcrun dsymutil -o "%s.dSYM" "%s"'):format(target:ordering_dependency(), executable) );
         if target.settings.strip then 
-            forge:system( xcrun, ('xcrun strip "%s"'):format(executable) );
+            system( xcrun, ('xcrun strip "%s"'):format(executable) );
         end
     end
 
@@ -54,7 +54,7 @@ function App.build( forge, target )
     end
 
     local codesign = settings.xcode.codesign;
-    forge:system( codesign, table.concat(command_line, ' '), environment );
+    system( codesign, table.concat(command_line, ' '), environment );
 end
 
 return App;

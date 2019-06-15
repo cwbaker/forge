@@ -53,7 +53,7 @@ function AssetCatalog.build( forge, assets )
 
 	table.insert( args, assets:dependency():filename() );
 
-    forge:system( xcrun, args );
+    system( xcrun, args );
 end
 
 return AssetCatalog;
