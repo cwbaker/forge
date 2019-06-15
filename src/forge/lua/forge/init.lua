@@ -231,37 +231,6 @@ function forge:SourceDirectory( identifier, settings )
     return self:SourceFile( identifier, settings );
 end
 
--- Convert a version string into a date table (assuming that the version 
--- string is of the form '%Y.%m.%d.%H%M').
-function forge:version_date( version )
-    version = version or _G.version;
-    local _, _, year, month, day, hour, minute = string.find( version, "(%d%d%d%d)%.(%d%d)%.(%d%d)%.(%d%d)(%d%d)" );
-    return {
-        year = year;
-        month = month;
-        day = day;
-        hour = hour;
-        min = min;
-        sec = 0;
-    };
-end
-
--- Convert a version string into a time (assuming that the version string is
--- of the form '%Y.%m.%d.%H%M').
-function forge:version_time( version )
-    return os.time( self:version_date(version) );
-end
-
--- Convert a version string into the number of half days passed since 
--- *reference_time* or since 2012/01/01 00:00 if *reference_time* is not 
--- provided (assuming that the version string is of the form '%Y.%m.%d.%H%M').
-function forge:version_code( version, reference_time )
-    reference_time = reference_time or os.time( {year = 2012; month = 1; day = 1; hour = 0; min = 0; sec = 0} );
-    local SECONDS_PER_HALF_DAY = 12 * 60 * 60;
-    local version_time = self:version_time( version );
-    return math.ceil( os.difftime(version_time, reference_time) / SECONDS_PER_HALF_DAY );
-end
-
 -- Execute command with arguments and optional filter and raise an error if 
 -- it doesn't return 0.
 function forge:system( command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... )
