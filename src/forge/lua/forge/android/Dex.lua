@@ -1,7 +1,7 @@
 
 local Dex = forge:FilePrototype( 'Dex' );
 
-function Dex.build( forge, target )
+function Dex.build( toolset, target )
     local function add_jars( jars, other_jars )
         if other_jars then 
             for _, jar in ipairs(other_jars) do 
@@ -11,12 +11,12 @@ function Dex.build( forge, target )
     end
 
     local jars = {};
-    local settings = forge.settings;
+    local settings = toolset.settings;
     for _, dependency in target:dependencies() do 
         local prototype = dependency:prototype();
-        if prototype == forge.Jar then 
+        if prototype == toolset.Jar then 
             table.insert( jars, relative(dependency:filename()) );
-        elseif prototype == forge.Java then 
+        elseif prototype == toolset.Java then 
             local classes = dependency:ordering_dependency():filename();
             local proguard = target:dependency( 1 );
             if proguard and proguard:id() == 'proguard.cfg' and settings.android.proguard_enabled then 
@@ -26,11 +26,11 @@ function Dex.build( forge, target )
                     ('-printmapping \"%s/%s.map\"'):format( classes, leaf(target) ),
                     ('"@%s"'):format( proguard ) 
                 } );
-                table.insert( jars, ('\"%s/classes.jar\"'):format(classes) );
+                table.insert( jars, ('%s/classes.jar'):format(classes) );
             else
                 table.insert( jars, classes );
             end
-        elseif prototype == forge.Ivy then 
+        elseif prototype == toolset.Ivy then 
             for _, archive in dependency:implicit_dependencies() do 
                 if extension(archive) == '.jar' then 
                     table.insert( jars, archive:filename() );
@@ -48,6 +48,7 @@ function Dex.build( forge, target )
     if operating_system() == 'windows' then
         dx = ('%s.bat'):format( dx );
     end
+
     shell( {
         ('"%s"'):format( dx ),
         '--dex',

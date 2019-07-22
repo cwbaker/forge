@@ -9,17 +9,17 @@ local function append( destination, source )
     end
 end
 
-function Java.build( forge, target )
-    local settings = forge.settings;
+function Java.build( toolset, target )
+    local settings = toolset.settings;
 
     local source_files = {};
     local classpaths = {};
 
     for _, dependency in target:dependencies() do 
         local prototype = dependency:prototype();
-        if prototype == forge.Jar then
+        if prototype == toolset.Jar then
             table.insert( classpaths, relative(dependency:filename()) );
-        elseif prototype == forge.Ivy then 
+        elseif prototype == toolset.Ivy then 
             for _, archive in dependency:implicit_dependencies() do 
                 if extension(archive) == '.jar' then 
                     table.insert( classpaths, archive:filename() );
@@ -37,7 +37,7 @@ function Java.build( forge, target )
     end
 
     if #source_files > 0 then
-        local javac = ('%s/bin/javac'):format( forge.settings.android.jdk_directory );
+        local javac = ('%s/bin/javac'):format( toolset.settings.android.jdk_directory );
         local output_directory = target:ordering_dependency():filename();
 
         append( classpaths, target.jars );
@@ -66,11 +66,11 @@ function Java.build( forge, target )
             ('-bootclasspath "%s"'):format(table.concat(bootclasspaths, ':')),
             ('%s'):format(table.concat(source_files, ' '))
         };
-        system( javac, command_line, nil, forge:filenames_filter(target) );
+        system( javac, command_line, nil, toolset:filenames_filter(target) );
     end
 end
 
-function Java.clean( forge, target )
+function Java.clean( toolset, target )
     rm( target );
     rmdir( target:ordering_dependency() );
     target:set_built( false );

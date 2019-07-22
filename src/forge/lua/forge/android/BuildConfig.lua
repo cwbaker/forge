@@ -1,7 +1,7 @@
 
 local BuildConfig = forge:JavaStylePrototype( 'BuildConfig' );
 
-function BuildConfig.build( forge, target )
+function BuildConfig.build( toolset, target )
     local HEADER = [[
 /** Automatically generated file. DO NOT MODIFY */
 package %s;
@@ -31,14 +31,14 @@ public final class BuildConfig {
 
     local output_directory = target:ordering_dependency():filename();
     for index, package in ipairs(target.packages) do
-        local filename = forge:interpolate( ('%s/%s/BuildConfig.java'):format(output_directory, package:gsub('%.', '/')) );
+        local filename = toolset:interpolate( ('%s/%s/BuildConfig.java'):format(output_directory, package:gsub('%.', '/')) );
         target:add_filename( filename );
         mkdir( branch(filename) );
         local output_file = io.open( filename, 'wb' );
         assert( output_file, ('Opening "%s" to write generated text failed'):format(filename) );
         output_file:write( HEADER:format(package) );
         if target.DEBUG == nil then 
-            output_file:write( BOOLEAN_BODY:format('DEBUG', tostring(forge.settings.debug or false)) );
+            output_file:write( BOOLEAN_BODY:format('DEBUG', tostring(toolset.settings.debug or false)) );
         end
         for key, value in pairs(target) do 
             if type(value) == 'boolean' then

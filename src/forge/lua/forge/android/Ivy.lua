@@ -1,8 +1,8 @@
 
 local Ivy = forge:FilePrototype( 'Ivy' );
 
-function Ivy.build( forge, target )
-	local settings = target.settings;
+function Ivy.build( toolset, target )
+	local settings = toolset.settings;
 	local java = ('%s/bin/java'):format( settings.android.jdk_directory );
 	local ivy = settings.android.ivy;
 	local unzip = settings.android.unzip or '/usr/bin/unzip';
@@ -39,10 +39,10 @@ function Ivy.build( forge, target )
 			rmdir( aar_directory );
 			system( unzip, args );
 			path = ('%s/%s/%s'):format( directory, organisation, artifact );
-			target:add_implicit_dependency( forge:Directory(path) );
+			target:add_implicit_dependency( toolset:Directory(path) );
 		else
 			path = ('%s/%s/%s%s'):format( directory, organisation, artifact, extension );
-			target:add_implicit_dependency( forge:File(path) );
+			target:add_implicit_dependency( toolset:File(path) );
 		end
 	end
 

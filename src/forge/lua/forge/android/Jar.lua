@@ -1,9 +1,9 @@
 
 local Jar = forge:FilePrototype( 'Jar' );
 
-function Jar.build( forge, target )
+function Jar.build( toolset, target )
     local arguments = 'cvf';
-    local jar = native( ('%s/bin/jar'):format(forge.settings.android.jdk_directory) );
+    local jar = native( ('%s/bin/jar'):format(toolset.settings.android.jdk_directory) );
     for _, dependency in target:dependencies() do 
         local classes = {};
         pushd( dependency:ordering_dependency() );

@@ -1,12 +1,12 @@
 
 local Apk = forge:FilePrototype( 'Apk' );
 
-function Apk.build( forge, target )
+function Apk.build( toolset, target )
     local files = {};
     local resources = {};
     local android_manifest;
     for _, dependency in target:dependencies() do 
-        if dependency:prototype() == forge.Ivy then 
+        if dependency:prototype() == toolset.Ivy then 
             for _, archive in dependency:implicit_dependencies() do 
                 if extension(archive) ~= '.jar' and exists(('%s/res'):format(archive)) then
                     table.insert( resources, ('-S "%s/res"'):format(archive) );
@@ -26,7 +26,7 @@ function Apk.build( forge, target )
     end
     assertf( android_manifest and leaf(android_manifest:filename()) == "AndroidManifest.xml", "Android APK '%s' does not specify a manifest named 'AndroidManifest.xml'", target:path() );
 
-    local settings = forge.settings;
+    local settings = toolset.settings;
     local aapt = ("%s/aapt"):format( settings.android.build_tools_directory );
     local android_jar = ("%s/platforms/%s/android.jar"):format( settings.android.sdk_directory, settings.android.sdk_platform );
     system( aapt, {
@@ -71,10 +71,10 @@ function Apk.build( forge, target )
         ('%s.unaligned'):format( relative(target) ),
         ('%s'):format( relative(target) )
     } );
-    forge:popd();
+    popd();
 end
 
-function Apk.clean( forge, target )
+function Apk.clean( toolset, target )
     rm( ("%s.unaligned"):format(target:filename()) );
     rm( target );
 end

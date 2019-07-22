@@ -8,7 +8,7 @@ local directory_by_architecture = {
     ["x86"] = "x86";
 };
 
-function android.configure( forge )
+function android.configure( toolset, android_settings )
     local function autodetect_jdk_directory()
         if operating_system() == 'windows' then
             return 'C:/Program Files/Java/jdk1.6.0_39';
@@ -78,7 +78,7 @@ function android.configure( forge )
     };
 end
 
-function android.validate( forge, android_settings )
+function android.validate( toolset, android_settings )
     return 
         exists( android_settings.ndk_directory ) and 
         exists( android_settings.sdk_directory ) and 
@@ -86,25 +86,25 @@ function android.validate( forge, android_settings )
     ;
 end
 
-function android.initialize( forge )
-    if forge:configure(android, 'android') then
-        local settings = forge.settings;
-        local identifier = forge.settings.identifier;
+function android.initialize( toolset )
+    if toolset:configure(android, 'android') then
+        local settings = toolset.settings;
+        local identifier = settings.identifier;
         if identifier then
-            add_toolset( forge:interpolate(identifier), forge );
+            add_toolset( toolset:interpolate(identifier), toolset );
         end
         
         local Aidl = require 'forge.android.Aidl';
-        forge.Aidl = forge:PatternElement( Aidl );
-        forge.AndroidManifest = require 'forge.android.AndroidManifest';
-        forge.Apk = require 'forge.android.Apk';
-        forge.BuildConfig = require 'forge.android.BuildConfig';
-        forge.Dex = require 'forge.android.Dex';
-        forge.R = require 'forge.android.R';
-        forge.Jar = require 'forge.android.Jar';
-        forge.Java = require 'forge.android.Java';
-        forge.Ivy = require 'forge.android.Ivy';
-        forge.android_jar = android.android_jar;
+        toolset.Aidl = forge:PatternElement( Aidl );
+        toolset.AndroidManifest = require 'forge.android.AndroidManifest';
+        toolset.Apk = require 'forge.android.Apk';
+        toolset.BuildConfig = require 'forge.android.BuildConfig';
+        toolset.Dex = require 'forge.android.Dex';
+        toolset.R = require 'forge.android.R';
+        toolset.Jar = require 'forge.android.Jar';
+        toolset.Java = require 'forge.android.Java';
+        toolset.Ivy = require 'forge.android.Ivy';
+        toolset.android_jar = android.android_jar;
 
         if operating_system() == 'windows' then
             local path = {
@@ -124,9 +124,9 @@ function android.initialize( forge )
             };
         end
 
-        forge:defaults( forge.settings, {
-            classes = forge:root( ('%s/classes/android'):format(variant) );
-            gen = forge:root( ('%s/gen/android'):format(variant) );
+        toolset:defaults( toolset.settings, {
+            classes = root( ('%s/classes/android'):format(variant) );
+            gen = root( ('%s/gen/android'):format(variant) );
             bootclasspaths = {
                 ('%s/platforms/%s/android.jar'):format( settings.android.sdk_directory, settings.android.sdk_platform );
             };
@@ -135,7 +135,7 @@ function android.initialize( forge )
 
         settings.android.proguard_enabled = settings.android.proguard_enabled or variant == 'shipping';
 
-        return forge;
+        return toolset;
     end
 end
 
@@ -224,17 +224,17 @@ function android.library_directories( settings, architecture )
 end
 
 -- Return the full path to the Android system JAR.
-function android.android_jar( forge )
-    local settings = forge.settings;
+function android.android_jar( toolset )
+    local settings = toolset.settings;
     return ('%s/platforms/%s/android.jar'):format( settings.android.sdk_directory, settings.android.sdk_platform );
 end
 
 -- Find the first Android .apk package found in the dependencies of the
 -- passed in directory.
 function android.find_apk( directory )
-    local directory = directory or forge:find_target( forge:initial("all") );
+    local directory = directory or find_target( initial('all') );
     for _, dependency in directory:dependencies() do
-        if dependency:prototype() == forge.Apk then 
+        if dependency:prototype() == toolset.Apk then 
             return dependency;
         end
     end
@@ -242,8 +242,8 @@ end
 
 -- Deploy the fist Android .apk package found in the dependencies of the 
 -- current working directory.
-function android.deploy( apk )
-    local sdk_directory = forge.settings.android.sdk_directory;
+function android.deploy( toolset, apk )
+    local sdk_directory = toolset.settings.android.sdk_directory;
     if sdk_directory then 
         assertf( apk, "No android.Apk target to deploy" );
         local adb = ("%s/platform-tools/adb"):format( sdk_directory );

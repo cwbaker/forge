@@ -4,24 +4,24 @@ local android = require 'forge.android';
 
 local android_ndk = {};
 
-function android_ndk.object_filename( forge, identifier )
+function android_ndk.object_filename( toolset, identifier )
     return ('%s.o'):format( identifier );
 end
 
-function android_ndk.static_library_filename( forge, identifier )
-    local identifier = absolute( forge:interpolate(identifier) );
+function android_ndk.static_library_filename( toolset, identifier )
+    local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s/lib%s.a'):format( branch(identifier), leaf(identifier) );
     return identifier, filename;
 end
 
-function android_ndk.dynamic_library_filename( forge, identifier )
-    local identifier = absolute( forge:interpolate(identifier) );
+function android_ndk.dynamic_library_filename( toolset, identifier )
+    local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s/lib%s.so'):format( branch(identifier), leaf(identifier) );
     return identifier, filename;
 end
 
-function android_ndk.executable_filename( forge, identifier )
-    local identifier = forge:interpolate( identifier );
+function android_ndk.executable_filename( toolset, identifier )
+    local identifier = toolset:interpolate( identifier );
     local filename = identifier;
     return identifier, filename;
 end
@@ -44,21 +44,21 @@ end
 -- because the dependency walk terminates at the first target that has a 
 -- filename, i.e. the dynamic library, and thus never reaches the copied C++
 -- runtime dynamic library.
-function android_ndk.dynamic_library( forge, identifier, target_prototype )
-    local identifier, filename = android_ndk.dynamic_library_filename( forge, identifier );
-    local dynamic_library = forge:Target( identifier, target_prototype );
+function android_ndk.dynamic_library( toolset, identifier, target_prototype )
+    local identifier, filename = android_ndk.dynamic_library_filename( toolset, identifier );
+    local dynamic_library = toolset:Target( identifier, target_prototype );
     dynamic_library:set_filename( filename or dynamic_library:path() );
     dynamic_library:set_cleanable( true );
-    local directory = forge:Directory( branch(dynamic_library) );
+    local directory = toolset:Directory( branch(dynamic_library) );
     dynamic_library:add_ordering_dependency( directory );
 
-    local group = forge:Target( anonymous() );
+    local group = toolset:Target( anonymous() );
     group:add_dependency( dynamic_library );
-    group.depend = function( forge, group, ... )
-        return dynamic_library.depend( dynamic_library.forge, dynamic_library, ... );
+    group.depend = function( toolset, group, ... )
+        return dynamic_library.depend( dynamic_library.toolset, dynamic_library, ... );
     end
 
-    local settings = forge.settings;
+    local settings = toolset.settings;
     local runtime_library = settings.runtime_library;
     if runtime_library then 
         if runtime_library:match(".*_shared") then 
@@ -67,7 +67,7 @@ function android_ndk.dynamic_library( forge, identifier, target_prototype )
                 local source = ("%s/lib%s.so"):format( directory, runtime_library );
                 if exists(source) then
                     group:add_dependency(
-                        forge:Copy (destination) {
+                        toolset:Copy (destination) {
                             source
                         }
                     );
@@ -106,14 +106,14 @@ function android_ndk.compile( forge, target )
 end
 
 -- Archive objects into a static library. 
-function android_ndk.archive( forge, target )
-    local settings = forge.settings;
+function android_ndk.archive( toolset, target )
+    local settings = toolset.settings;
 
-    pushd( forge:obj_directory(target) );
+    pushd( toolset:obj_directory(target) );
     local objects = {};
     for _, object in forge:walk_dependencies(target) do
         local prototype = object:prototype();
-        if prototype == forge.Cc or prototype == forge.Cxx then
+        if prototype ~= toolset.Directory then
             table.insert( objects, relative(object) )
         end
     end
@@ -129,17 +129,15 @@ function android_ndk.archive( forge, target )
 end
 
 -- Link dynamic libraries and executables.
-function android_ndk.link( forge, target ) 
-    local settings = forge.settings;
+function android_ndk.link( toolset, target ) 
+    local settings = toolset.settings;
    
     local objects = {};
     local libraries = {};
-    pushd( forge:obj_directory(target) );
+    pushd( toolset:obj_directory(target) );
     for _, dependency in forge:walk_dependencies(target) do
         local prototype = dependency:prototype();
-        if prototype == forge.Cc or prototype == forge.Cxx then
-            table.insert( objects, relative(dependency) );
-        elseif prototype == forge.StaticLibrary or prototype == forge.DynamicLibrary then
+        if prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary then
             if dependency.whole_archive then
                 table.insert( libraries, ("-Wl,--whole-archive") );
             end
@@ -147,13 +145,15 @@ function android_ndk.link( forge, target )
             if dependency.whole_archive then
                 table.insert( libraries, ("-Wl,--no-whole-archive") );
             end
+        elseif prototype ~= forge.Directory then
+            table.insert( objects, relative(dependency) );
         end
     end
 
     local flags = {};
-    android_ndk.append_link_flags( forge, target, flags );
-    android_ndk.append_library_directories( forge, target, flags );
-    android_ndk.append_link_libraries( forge, target, libraries );
+    android_ndk.append_link_flags( toolset, target, flags );
+    android_ndk.append_library_directories( toolset, target, flags );
+    android_ndk.append_link_libraries( toolset, target, libraries );
 
     if #objects > 0 then
         local ldflags = table.concat( flags, ' ' );
@@ -168,30 +168,30 @@ function android_ndk.link( forge, target )
     popd();
 end
 
-function android_ndk.initialize( forge )
-    local identifier = forge.settings.identifier;
+function android_ndk.initialize( toolset )
+    local identifier = toolset.settings.identifier;
     if identifier then 
-        add_toolset( forge:interpolate(identifier), forge );
+        add_toolset( toolset:interpolate(identifier), toolset );
     end
 
     local Cc = forge:FilePrototype( 'Cc' );
     Cc.language = 'c';
     Cc.build = android_ndk.compile;
-    forge.Cc = forge:PatternElement( Cc, android_ndk.object_filename );
+    toolset.Cc = forge:PatternElement( Cc, android_ndk.object_filename );
 
     local Cxx = forge:FilePrototype( 'Cxx' );
     Cxx.language = 'c++';
     Cxx.build = android_ndk.compile;
-    forge.Cxx = forge:PatternElement( Cxx, android_ndk.object_filename );
+    toolset.Cxx = forge:PatternElement( Cxx, android_ndk.object_filename );
 
     local StaticLibrary = forge:FilePrototype( 'StaticLibrary', android_ndk.static_library_filename );
     StaticLibrary.build = android_ndk.archive;
-    forge.StaticLibrary = StaticLibrary;
+    toolset.StaticLibrary = StaticLibrary;
 
     local DynamicLibrary = forge:TargetPrototype( 'DynamicLibrary' );
     DynamicLibrary.create = android_ndk.dynamic_library;
     DynamicLibrary.build = android_ndk.link;
-    forge.DynamicLibrary = DynamicLibrary;
+    toolset.DynamicLibrary = DynamicLibrary;
 
     local directory_by_architecture = {
         ['armv5'] = 'armeabi';
@@ -201,8 +201,8 @@ function android_ndk.initialize( forge )
         ['x86'] = 'x86';
     };
 
-    local settings = forge.settings;
-    forge:defaults( 
+    local settings = toolset.settings;
+    toolset:defaults( 
         settings, {
         architecture = 'armv7';
         arch_directory = directory_by_architecture[settings.architecture or 'armv7'];
@@ -238,11 +238,11 @@ function android_ndk.initialize( forge )
         warnings_as_errors = true;
     } );
 
-    return forge;
+    return toolset;
 end
 
-function android_ndk.append_defines( forge, target, flags )
-	gcc.append_defines( forge, target, flags );
+function android_ndk.append_defines( toolset, target, flags )
+	gcc.append_defines( toolset, target, flags );
     table.insert( flags, '-D__ARM_ARCH_5__' );
     table.insert( flags, '-D__ARM_ARCH_5T__' );
     table.insert( flags, '-D__ARM_ARCH_5E__' );
@@ -250,17 +250,17 @@ function android_ndk.append_defines( forge, target, flags )
     table.insert( flags, '-DANDROID' );
 end
 
-function android_ndk.append_include_directories( forge, target, flags )
-    local settings = forge.settings;
-	gcc.append_include_directories( forge, target, flags );
+function android_ndk.append_include_directories( toolset, target, flags )
+    local settings = toolset.settings;
+	gcc.append_include_directories( toolset, target, flags );
     for _, directory in ipairs(android.include_directories(settings, settings.architecture)) do
         assert( exists(directory), ('The include directory "%s" does not exist'):format(directory) );
         table.insert( flags, ('-I"%s"'):format(directory) );
     end    
 end
 
-function android_ndk.append_compile_flags( forge, target, flags )
-    local settings = forge.settings;
+function android_ndk.append_compile_flags( toolset, target, flags )
+    local settings = toolset.settings;
     table.insert( flags, ('--sysroot=%s'):format(android.platform_directory(settings, settings.architecture)) );
     table.insert( flags, '-ffunction-sections' );
     table.insert( flags, '-funwind-tables' );
@@ -279,19 +279,19 @@ function android_ndk.append_compile_flags( forge, target, flags )
         end
     end
 
-    gcc.append_compile_flags( forge, target, flags );
+    gcc.append_compile_flags( toolset, target, flags );
 end
 
-function android_ndk.append_library_directories( forge, target, library_directories )
-    local settings = forge.settings;
+function android_ndk.append_library_directories( toolset, target, library_directories )
+    local settings = toolset.settings;
     for _, directory in ipairs(android.library_directories(settings, settings.architecture)) do
         table.insert( library_directories, ('-L"%s"'):format(directory) );
     end
-    gcc.append_library_directories( forge, target, library_directories );
+    gcc.append_library_directories( toolset, target, library_directories );
 end
 
-function android_ndk.append_link_flags( forge, target, flags )
-    local settings = forge.settings;
+function android_ndk.append_link_flags( toolset, target, flags )
+    local settings = toolset.settings;
     table.insert( flags, ('--sysroot=%s'):format( android.platform_directory(settings, settings.architecture) ) );
     table.insert( flags, '-shared' );
     table.insert( flags, '-no-canonical-prefixes' );
@@ -299,22 +299,22 @@ function android_ndk.append_link_flags( forge, target, flags )
     table.insert( flags, '-Wl,-z,noexecstack' );
     table.insert( flags, '-Wl,-z,relro' );
     table.insert( flags, '-Wl,-z,now' );
-    gcc.append_link_flags( forge, target, flags );
+    gcc.append_link_flags( toolset, target, flags );
 end
 
-function android_ndk.append_link_libraries( forge, target, libraries )
-    local settings = forge.settings;
+function android_ndk.append_link_libraries( toolset, target, libraries )
+    local settings = toolset.settings;
     local runtime_library = settings.runtime_library;
     if runtime_library then 
         table.insert( libraries, ('-l%s'):format(runtime_library) );
     end
-	gcc.append_link_libraries( forge, target, libraries );
+	gcc.append_link_libraries( toolset, target, libraries );
 end
 
 setmetatable( android_ndk, {
     __call = function( android_ndk, settings )
-        local forge = require( 'forge' ):clone( settings );
-        return android_ndk.initialize( forge );
+        local toolset = require( 'forge' ):clone( settings );
+        return android_ndk.initialize( toolset );
     end
 } );
 

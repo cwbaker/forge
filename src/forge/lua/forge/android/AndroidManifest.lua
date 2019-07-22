@@ -1,10 +1,10 @@
 
 local AndroidManifest = forge:FilePrototype( 'AndroidManifest' );
 
-function AndroidManifest.build( forge, target )
+function AndroidManifest.build( toolset, target )
     local manifests = {};
     for _, dependency in target:dependencies() do 
-        if dependency:prototype() == forge.Ivy then 
+        if dependency:prototype() == toolset.Ivy then 
             for _, archive in dependency:implicit_dependencies() do 
                 if extension(archive) ~= '.jar' then
                     table.insert( manifests, ('%s/AndroidManifest.xml'):format(archive) );
@@ -18,7 +18,7 @@ function AndroidManifest.build( forge, target )
     end
 	assertf( #manifests > 0, 'Missing main "AndroidManifest.xml" as first dependency of AndroidManifest "%s"', target:path() );
 
-    local settings = forge.settings;
+    local settings = toolset.settings;
     local java = ('%s/bin/java'):format( settings.android.jdk_directory );
     local manifest_merger_jar = settings.android.manifest_merger;
     local args = {

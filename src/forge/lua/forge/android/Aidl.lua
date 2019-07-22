@@ -1,8 +1,8 @@
 
 local Aidl = forge:JavaStylePrototype( 'Aidl' );
 
-function Aidl.build( forge, target )
-    local settings = forge.settings;
+function Aidl.build( toolset, target )
+    local settings = toolset.settings;
     local command_line = {
         'aidl',
         ('-p%s'):format( ('%s/platforms/%s/framework.aidl'):format(settings.android.sdk_directory, settings.android.sdk_platform) ),
@@ -14,7 +14,7 @@ function Aidl.build( forge, target )
         aidl, 
         command_line,
         nil,
-        forge:filenames_filter(target)
+        toolset:filenames_filter(target)
     );
 end
 
