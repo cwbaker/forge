@@ -116,17 +116,25 @@ function add_toolset( identifier, toolset )
     return toolset;
 end
 
-function toolsets( pattern )
-    return coroutine.wrap( function() 
-        local index = 1;
-        for _, identifier_toolset in ipairs(toolsets_) do 
-            local identifier = identifier_toolset[1];
-            if pattern == nil or pattern == '' or identifier:find(pattern) then 
-                coroutine.yield( index, identifier_toolset[2] );
-                index = index + 1;
+function toolsets( ... )
+    local toolsets_iterator = coroutine.wrap( function(...) 
+        coroutine.yield();
+        for index = 1, select('#', ...) do
+            local pattern = select( index, ... );
+            for _, identifier_toolset in ipairs(toolsets_) do
+                local identifier = identifier_toolset[1];
+                if pattern == nil or pattern == '' or identifier:find(pattern) then
+                    coroutine.yield( index, identifier_toolset[2] );
+                end
             end
-        end        
+        end
     end );
+
+    -- Resume the coroutine with the variable length arguments passed to this
+    -- function.  It yields immediately, the coroutine is returned, and 
+    -- then subsequent yields return toolsets to the caller in a loop.
+    toolsets_iterator( ... );
+    return toolsets_iterator;
 end
 
 -- Execute command with arguments and optional filter and raise an error if 
