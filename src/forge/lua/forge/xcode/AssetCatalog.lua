@@ -1,16 +1,16 @@
 
 local AssetCatalog = forge:TargetPrototype( 'AssetCatalog' );
 
-function AssetCatalog.create( forge, identifier, target_prototype, partial_info_plist )
-	local assets = forge:File( ('%s/Assets.car'):format(identifier), AssetCatalog );
+function AssetCatalog.create( toolset, identifier, target_prototype, partial_info_plist )
+	local assets = toolset:File( ('%s/Assets.car'):format(identifier), AssetCatalog );
 	if partial_info_plist then 
-		assets:set_filename( absolute(partial_info_plist), 2 );
+		assets:set_filename( toolset:interpolate(partial_info_plist), 2 );
 	end
 	return assets;
 end
 
-function AssetCatalog.build( forge, assets )
-	local settings = forge.settings;
+function AssetCatalog.build( toolset, assets )
+	local settings = toolset.settings;
     local sdkroot = settings.sdkroot;
     local xcrun = settings.xcode.xcrun;
 
