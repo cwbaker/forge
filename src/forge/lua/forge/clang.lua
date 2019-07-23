@@ -181,8 +181,13 @@ function clang.append_compile_flags( forge, target, flags )
 
     table.insert( flags, '-c' );
     table.insert( flags, ('-arch %s'):format(settings.architecture) );
-    table.insert( flags, '-maes' );
     table.insert( flags, '-fasm-blocks' );
+
+    -- Set "-maes" when compiling for x86_64 only to use Meow hash when 
+    -- building Forge itself.  This should be passed through settings.
+    if settings.architecture == 'x86_64' then
+        table.insert( flags, '-maes' );
+    end
     
     local language = target.language or 'c++';
     if language then
