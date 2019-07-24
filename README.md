@@ -21,12 +21,12 @@
 Copy `foo.in` to `foo.out`:
 
 ~~~lua
-local forge = require 'forge' {
-    output = forge:root( 'output' ); 
+local toolset = require 'forge' {
+    output = root( 'output' ); 
 };
 
-forge:all {
-    forge:Copy '${output}/foo.out' {
+toolset:all {
+    toolset:Copy '${output}/foo.out' {
         'foo.in'
     };    
 };
@@ -37,9 +37,9 @@ The Lua script that defines the `Copy` target used in the Lua-based domain speci
 ~~~lua
 local Copy = forge:FilePrototype( 'Copy' );
 
-function Copy.build( forge, target )
-    forge:rm( target );
-    forge:cp( target, target:dependency() );
+function Copy.build( toolset, target )
+    rm( target );
+    cp( target, target:dependency() );
 end
 
 return Copy;
@@ -112,10 +112,10 @@ To remove generated files run a *clean* build:
 $ forge clean
 ~~~
 
-To rebuild everything run *clean* followed by *default* (the default action being to build):
+To rebuild everything run *clean* followed by *build*:
 
 ~~~bash
-$ forge clean default
+$ forge clean build
 ~~~
 
 Make assignments on the command line to assign values to global variables in Lua before the build scripts are run to configure things such as variant and platform.
