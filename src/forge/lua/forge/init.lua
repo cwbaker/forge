@@ -396,7 +396,6 @@ function forge:load()
     end
 
     load_binary( self.cache );
-    return forge.Toolset( forge.local_settings );
 end
 
 -- Save the dependency graph and local settings.
@@ -456,4 +455,17 @@ function forge:save()
     save_binary();
 end
 
-return forge:load();
+function forge:clone( settings )
+    local toolset = forge.Toolset( forge.local_settings );
+    return toolset:clone( settings );
+end
+
+setmetatable( forge, {
+    __call = function( forge, settings )
+        local toolset = forge.Toolset( forge.local_settings );
+        return toolset:clone( settings );
+    end
+} );
+
+forge:load();
+return forge;
