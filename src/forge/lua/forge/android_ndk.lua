@@ -207,7 +207,6 @@ function android_ndk.initialize( toolset )
         architecture = 'armv7';
         arch_directory = directory_by_architecture[settings.architecture or 'armv7'];
         assertions = true;
-        compile_as_c = false;
         debug = true;
         debuggable = true;
         exceptions = true;

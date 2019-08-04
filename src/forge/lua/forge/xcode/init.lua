@@ -137,7 +137,6 @@ function xcode.initialize( toolset )
         toolset:defaults( toolset.settings, {
             architecture = 'x86_64';
             assertions = true;
-            compile_as_c = false;
             debug = true;
             debuggable = true;
             exceptions = true;
