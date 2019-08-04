@@ -4,5 +4,5 @@ if operating_system() == 'windows' then
 elseif operating_system() == 'linux' then 
     return require 'forge.gcc';
 elseif operating_system() == 'macos' then
-    return require 'forge.xcode';
+    return require 'forge.clang';
 end
