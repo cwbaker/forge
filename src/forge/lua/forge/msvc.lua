@@ -294,7 +294,6 @@ function msvc.initialize( toolset )
             run_time_checks = true;
             runtime_library = 'static_debug';
             run_time_type_info = true;
-            sse2 = true;
             stack_size = 1048576;
             standard = 'c++17';
             string_pooling = false;
