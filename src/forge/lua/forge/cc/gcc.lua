@@ -130,7 +130,7 @@ function gcc.compile( toolset, target )
     local dependencies = ('%s.d'):format( target );
     local source = target:dependency();
     local output = target:filename();
-    local input = relative( source:filename() );
+    local input = absolute( source:filename() );
     print( leaf(source:id()) );
     target:clear_implicit_dependencies();
     system( 
