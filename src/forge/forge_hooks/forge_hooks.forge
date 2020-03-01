@@ -3,6 +3,9 @@ if operating_system() == 'linux' then
     for _, forge in toolsets('cc.*') do
         forge:all {
             forge:DynamicLibrary '${bin}/forge_hooks' {
+                libraries = {
+                    'dl';
+                };
                 forge:Cxx '${obj}/%1' {
                     'forge_hooks_linux.cpp'
                 };
