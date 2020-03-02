@@ -21,7 +21,7 @@ cxx() {
         echo $file...
         local DEFINES="-DBUILD_VARIANT_DEBUG -DBUILD_VERSION=\"bootstrap\" -DBOOST_ALL_NO_LIB -D_WIN32_WINNT=0x0a00"
         local INCLUDE_DIRS="-I $SRC -I $SRC/lua/src -I $SRC/boost"
-        local FLAGS="-x c++ -std=c++11 -fexceptions -frtti -fPIC -g -Wno-deprecated-declarations"
+        local FLAGS="-x c++ -std=c++11 -fexceptions -frtti -fPIC -march=native -g -Wno-deprecated-declarations"
         $CXX $DEFINES $INCLUDE_DIRS $FLAGS -o $file.o -c $file
     done
 }
