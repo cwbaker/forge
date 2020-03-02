@@ -1,5 +1,8 @@
 rem @echo off
 
+echo Running bootstrap-windows.bat...
+call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" amd64
+
 set SRC=%~dp0src
 set OBJ=%~dp0bootstrap
 set LIBS=%~dp0bootstrap\lib

@@ -6,7 +6,7 @@ os:
 script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then bash ./bootstrap-linux.bash ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then bash ./bootstrap-macos.bash ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then cmd.exe /C '"C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" amd64 && bootstrap-windows.bat' ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then ./bootstrap-windows.bat ; fi
   - bootstrap/bin/forge variant=release
   - release/bin/forge_test
 before_deploy:
