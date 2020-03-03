@@ -30,25 +30,25 @@ function clang.initialize( toolset )
 
         local settings = toolset.settings;
 
-        local Cc = forge:FilePrototype( 'Cc' );
+        local Cc = forge:PatternPrototype( 'Cc', clang.object_filename );
         Cc.language = 'c';
         Cc.build = clang.compile;
-        toolset.Cc = forge:PatternElement( Cc, clang.object_filename );
+        toolset.Cc = Cc;
 
-        local Cxx = forge:FilePrototype( 'Cxx' );
+        local Cxx = forge:PatternPrototype( 'Cxx', clang.object_filename );
         Cxx.language = 'c++';
         Cxx.build = clang.compile;
-        toolset.Cxx = forge:PatternElement( Cxx, clang.object_filename );
+        toolset.Cxx = Cxx;
 
-        local ObjC = forge:FilePrototype( 'ObjC' );
+        local ObjC = forge:PatternPrototype( 'ObjC', clang.object_filename );
         ObjC.language = 'objective-c';
         ObjC.build = clang.compile;
-        toolset.ObjC = forge:PatternElement( ObjC, clang.object_filename );
+        toolset.ObjC = ObjC;
 
-        local ObjCxx = forge:FilePrototype( 'ObjCxx' );
+        local ObjCxx = forge:PatternPrototype( 'ObjCxx', clang.object_filename );
         ObjCxx.language = 'objective-c++';
         ObjCxx.build = clang.compile;
-        toolset.ObjCxx = forge:PatternElement( ObjCxx, clang.object_filename );
+        toolset.ObjCxx = ObjCxx;
 
         local StaticLibrary = forge:FilePrototype( 'StaticLibrary', clang.static_library_filename );
         StaticLibrary.build = clang.archive;
