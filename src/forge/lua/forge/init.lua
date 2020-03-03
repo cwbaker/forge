@@ -267,7 +267,7 @@ function forge:FilePrototype( identifier, filename_modifier )
         target:set_cleanable( true );
         target:add_ordering_dependency( toolset:Directory(branch(target)) );
         return target;
-    end;
+    end
     return file_prototype;
 end
 
@@ -285,47 +285,60 @@ function forge:JavaStylePrototype( identifier, pattern )
     return java_style_prototype;
 end
 
-function forge:PatternElement( target_prototype, replacement_modifier, pattern )
-    local target_prototype = target_prototype or forge.Toolset.File;
+function forge:PatternPrototype( identifier, replacement_modifier, pattern )
     local replacement_modifier = replacement_modifier or forge.Toolset.interpolate;
     local pattern = pattern or '(.-([^\\/]-))%.?([^%.\\/]*)$';
-    return function( toolset, replacement )
+    local pattern_prototype = forge:TargetPrototype( identifier );
+    pattern_prototype.create = function( toolset, replacement )
         local targets = {};
         local replacement = replacement_modifier( toolset, replacement );
-        return function( dependencies )
-            local attributes = toolset:merge( {}, dependencies );
-            for _, filename in forge:walk_tables(dependencies) do
-                local source_file = toolset:SourceFile( filename );
-                local identifier = root_relative( source_file ):gsub( pattern, replacement );
-                local target = target_prototype( toolset, identifier );
-                target:add_dependency( source_file );
-                toolset:merge( target, attributes );
-                table.insert( targets, target );
+        local targets_metatable = {
+            __call = function( targets, dependencies )
+                local attributes = toolset:merge( {}, dependencies );
+                for _, filename in forge:walk_tables(dependencies) do
+                    local source_file = toolset:SourceFile( filename );
+                    local identifier = root_relative( source_file ):gsub( pattern, replacement );
+                    local target = toolset:File( identifier, pattern_prototype );
+                    target:add_dependency( source_file );
+                    toolset:merge( target, attributes );
+                    table.insert( targets, target );
+                end
+                return targets;
             end
-            return targets;
-        end
-    end    
+        };
+        setmetatable( targets, targets_metatable );
+        return targets;
+    end
+    return pattern_prototype;
 end
 
-function forge:GroupElement( target_prototype, replacement_modifier, pattern )
-    local target_prototype = target_prototype or forge.Toolset.File;
+function forge:GroupPrototype( identifier, replacement_modifier, pattern )
     local replacement_modifier = replacement_modifier or forge.Toolset.interpolate;
     local pattern = pattern or '(.-([^\\/]-))%.?([^%.\\/]*)$';
-    return function( toolset, replacement )
-        local target = forge.Target( toolset, anonymous(), target_prototype );
+    local group_prototype = forge:TargetPrototype( identifier );
+    group_prototype.create = function( toolset, replacement )
+        local targets = {};
         local replacement = replacement_modifier( toolset, replacement );
-        return function( dependencies )
-            toolset:merge( target, dependencies );
-            for _, filename in forge:walk_tables(dependencies) do
-                local source_file = toolset:SourceFile( filename );
-                local identifier = root_relative( source_file ):gsub( pattern, replacement );
-                local file = toolset:File( identifier );
-                file:add_dependency( source_file );
-                target:add_dependency( file );
+        local targets_metatable = {
+            __call = function( targets, dependencies )
+                local target = targets[1];
+                toolset:merge( target, dependencies );
+                for _, filename in forge:walk_tables(dependencies) do
+                    local source_file = toolset:SourceFile( filename );
+                    local identifier = root_relative( source_file ):gsub( pattern, replacement );
+                    local file = toolset:File( identifier );
+                    file:add_dependency( source_file );
+                    target:add_dependency( file );
+                end
+                return targets;
             end
-            return target;
-        end
+        };
+        local target = forge.Target( toolset, anonymous(), group_prototype );
+        table.insert( targets, target );
+        setmetatable( targets, targets_metatable );
+        return targets;
     end
+    return group_prototype;
 end
 
 -- Recursively walk the dependencies of *target* until a target with a 
