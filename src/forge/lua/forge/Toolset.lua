@@ -276,7 +276,7 @@ Toolset.Target = require 'forge.Target';
 
 Toolset.Directory = require 'forge.Directory';
 
-Toolset.Copy = forge:PatternElement( require('forge.Copy') );
+Toolset.Copy = require 'forge.Copy';
 
 Toolset.CopyDirectory = require 'forge.CopyDirectory';
 
