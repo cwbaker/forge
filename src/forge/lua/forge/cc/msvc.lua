@@ -250,15 +250,15 @@ function msvc.initialize( toolset )
             };
         };
 
-        local Cc = forge:TargetPrototype( 'Cc' );
+        local Cc = forge:GroupPrototype( 'Cc', msvc.object_filename );
         Cc.language = 'c';
         Cc.build = msvc.compile;
-        toolset.Cc = forge:GroupElement( Cc, msvc.object_filename );
+        toolset.Cc = Cc;
 
-        local Cxx = forge:TargetPrototype( 'Cxx' );
+        local Cxx = forge:GroupPrototype( 'Cxx', msvc.object_filename );
         Cxx.language = 'c++';
         Cxx.build = msvc.compile;
-        toolset.Cxx = forge:GroupElement( Cxx, msvc.object_filename );
+        toolset.Cxx = Cxx;
 
         local StaticLibrary = forge:FilePrototype( 'StaticLibrary', msvc.static_library_filename );
         StaticLibrary.build = msvc.archive;
