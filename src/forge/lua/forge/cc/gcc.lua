@@ -35,21 +35,21 @@ function gcc.initialize( toolset )
             add_toolset( toolset:interpolate(identifier), toolset );
         end
 
-        local Cc = forge:FilePrototype( 'Cc' );
+        local Cc = forge:PatternPrototype( 'Cc', gcc.object_filename );
         Cc.language = 'c';
         Cc.build = gcc.compile;
-        toolset.Cc = forge:PatternElement( Cc, gcc.object_filename );
+        toolset.Cc = Cc;
 
-        local Cxx = forge:FilePrototype( 'Cxx' );
+        local Cxx = forge:PatternPrototype( 'Cxx', gcc.object_filename );
         Cxx.language = 'c++';
         Cxx.build = gcc.compile;
-        toolset.Cxx = forge:PatternElement( Cxx, gcc.object_filename );
+        toolset.Cxx = Cxx;
 
         local StaticLibrary = forge:FilePrototype( 'StaticLibrary', gcc.static_library_filename );
         StaticLibrary.build = gcc.archive;
         toolset.StaticLibrary = StaticLibrary;
 
-        local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', gcc.dynamic_library_filename );
+        local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', gcc.dynamic_library_filename );;
         DynamicLibrary.build = gcc.link;
         toolset.DynamicLibrary = DynamicLibrary;
 
@@ -116,7 +116,7 @@ function gcc.executable_filename( toolset, identifier )
 end
 
 -- Compile C, C++, Objective-C, and Objective-C++.
-function gcc.compile( toolset, target ) 
+function gcc.compile( toolset, target )
     local settings = toolset.settings;
 
     local flags = {};
