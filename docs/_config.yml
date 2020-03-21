@@ -35,3 +35,5 @@ plugins:
 - jekyll-remote-theme
 - jekyll-sitemap
 - jemoji
+
+theme: jekyll-theme-minimal
