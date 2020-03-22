@@ -20,7 +20,7 @@ author:
   name: 'Charles Baker'
 
 # Custom vars
-version: 0.0.4
+version: 0.0.5
 
 plugins:
 - jekyll-mentions
