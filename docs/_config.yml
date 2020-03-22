@@ -2,7 +2,8 @@
 # highlighter: pygments
 markdown: kramdown
 
-remote_theme: cwbaker/doc
+# remote_theme: cwbaker/doc
+remote_theme: poole/hyde
 
 kramdown:
   parse_block_html: true
@@ -22,12 +23,8 @@ author:
 # Custom vars
 version: 0.0.4
 
-github:
-  repo: https://github.com/cwbaker/forge
-
 plugins:
 - jekyll-mentions
-- jekyll-paginate
 - jekyll-redirect-from
 - jekyll-remote-theme
 - jekyll-sitemap
