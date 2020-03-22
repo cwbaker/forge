@@ -19,8 +19,6 @@ baseurl: /
 author:
   name: 'Charles Baker'
 
-repository: cwbaker/forge
-
 # Custom vars
 version: 0.0.4
 
@@ -28,7 +26,6 @@ github:
   repo: https://github.com/cwbaker/forge
 
 plugins:
-- jekyll-github-metadata
 - jekyll-mentions
 - jekyll-paginate
 - jekyll-redirect-from
