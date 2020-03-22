@@ -2,8 +2,7 @@
 # highlighter: pygments
 markdown: kramdown
 
-# remote_theme: cwbaker/doc
-remote_theme: poole/hyde
+remote_theme: cwbaker/doc
 
 kramdown:
   parse_block_html: true
