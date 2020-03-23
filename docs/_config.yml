@@ -15,7 +15,7 @@ title: forge
 tagline: 'Fast, simple, file-based, Lua-scriptable build tool'
 description: 'A fast and simple build tool based on file timestamps and scriptable in Lua.'
 url: https://cwbaker.github.io
-baseurl: /
+baseurl: 
 author:
   name: 'Charles Baker'
 
