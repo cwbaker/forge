@@ -43,8 +43,8 @@ void LuaToolset::create( lua_State* lua_state )
     luaL_setfuncs( lua_state_, functions, 0 );
     lua_pop( lua_state_, 1 );
 
-    // Set the metatable for `Toolset` to redirect calls to create new forges 
-    // in `Toolset.create()` via `LuaToolset::create_call_metamethod()`.
+    // Set the metatable for `Toolset` to redirect calls to create new
+    // toolsets in `Toolset.create()`.
     luaxx_push( lua_state_, this );
     lua_newtable( lua_state_ );
     lua_pushcfunction( lua_state_, &LuaToolset::create_call_metamethod );
@@ -52,9 +52,8 @@ void LuaToolset::create( lua_State* lua_state )
     lua_setmetatable( lua_state_, -2 );
     lua_pop( lua_state_, 1 );
 
-    // Create a metatable for forges that redirects index operations to 
-    // `Toolset` and calls to `Toolset.inherit()` via 
-    // `LuaToolset::inherit_call_metamethod()`.
+    // Create a metatable for toolsets that redirects index operations to
+    // `Toolset` and calls to `Toolset.inherit()`.
     luaL_newmetatable( lua_state_, TOOLSET_METATABLE );
     luaxx_push( lua_state_, this );
     lua_setfield( lua_state_, -2, "__index" );

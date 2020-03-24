@@ -15,7 +15,7 @@ class Forge;
 
 class LuaToolset
 {
-    lua_State* lua_state_; ///< The main Lua virtual machine to create the target API in.
+    lua_State* lua_state_; ///< The main Lua virtual machine to create the toolset API in.
 
 public:
     static const char* TOOLSET_METATABLE;
