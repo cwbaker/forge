@@ -4,9 +4,15 @@ title: Installation
 nav_order: 2
 ---
 
-Install Forge by building it from source and adding a symbolic link to the executable `${HOME}/forge/bin/forge` to a directory in your path.
+## Download
 
-Change the default install location from `${HOME}/forge` by passing `prefix=${install-directory}` on the command line where `install-directory` is the full path to the directory to install to.  For example `forge prefix=D:\\forge variant=shipping install` on Windows or `forge prefix=/usr/local/forge variant=shipping install` on Linux or macOS.
+Download the latest Forge binary and build scripts from the [GitHub releases](https://github.com/cwbaker/forge/releases) page, unzip it, and then add a symbolic link to the executable `.../forge/bin/forge` from a directory in your path.
+
+## Compile
+
+Install Forge by building it from source and adding a symbolic link to the executable `${HOME}/forge/bin/forge` from a directory in your path.
+
+The install location is changed by passing `prefix=${install-directory}` on the command line replacing `${install-directory}` with the full path to the directory to install *Forge* to.  For example `forge prefix=D:\\forge variant=shipping install` on Windows or `forge prefix=/usr/local/forge variant=shipping install` on Linux or macOS.
 
 **Linux:**
 
@@ -32,7 +38,7 @@ From a shell with the Xcode command line tools installed:
 
 **Windows:**
 
-From a Visual C++ command prompt:
+From a Visual C++ x64 Native Tools command prompt:
 
 - `git clone git@github.com:cwbaker/forge.git forge`
 - `cd forge`
