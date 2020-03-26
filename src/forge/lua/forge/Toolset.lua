@@ -54,15 +54,14 @@ function Toolset:merge( destination, source )
     return destination;
 end
 
--- Set fields in that aren't set in *destination* to values in *source*.
-function Toolset:defaults( destination, source )
-    local destination = destination or {};
+function Toolset:defaults( source )
+    local settings = self.settings;
     for key, value in pairs(source) do 
-        if type(key) == 'string' and destination[key] == nil then 
-            destination[key] = value;
+        if type(key) == 'string' and settings[key] == nil then
+            settings[key] = value;
         end
     end
-    return destination;
+    return settings;
 end
 
 function Toolset:copy_settings( destination, source )
