@@ -403,6 +403,7 @@ function forge:load()
     self.local_settings = exists( root('local_settings.lua') ) and dofile( root('local_settings.lua') ) or {};
     self.cache = root( '.forge' );
     self.Toolset = require 'forge.Toolset';
+    self.Module = require 'forge.Module';
 
     if variant or self.variant then 
         self.cache = root( ('%s/.forge'):format(variant or self.variant) );
