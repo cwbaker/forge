@@ -1,4 +1,6 @@
 
+require 'forge';
+
 local operating_system = _G.operating_system();
 if operating_system == 'windows' then
     return require 'forge.cc.msvc';

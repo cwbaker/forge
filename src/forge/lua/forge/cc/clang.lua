@@ -1,5 +1,5 @@
 
-local clang = {};
+local clang = forge:Module( 'clang' );
 
 function clang.configure( toolset, clang_settings )
     local paths = os.getenv( 'PATH' );
@@ -22,78 +22,71 @@ function clang.validate( toolset, clang_settings )
 end
 
 function clang.initialize( toolset )
-    if toolset:configure( clang, 'clang' ) then 
-        local identifier = toolset.settings.identifier;
-        if identifier then
-            add_toolset( toolset:interpolate(identifier), toolset );
-        end
+    local settings = toolset.settings;
 
-        local settings = toolset.settings;
+    local Cc = forge:PatternPrototype( 'Cc', clang.object_filename );
+    Cc.language = 'c';
+    Cc.build = clang.compile;
+    toolset.Cc = Cc;
 
-        local Cc = forge:PatternPrototype( 'Cc', clang.object_filename );
-        Cc.language = 'c';
-        Cc.build = clang.compile;
-        toolset.Cc = Cc;
+    local Cxx = forge:PatternPrototype( 'Cxx', clang.object_filename );
+    Cxx.language = 'c++';
+    Cxx.build = clang.compile;
+    toolset.Cxx = Cxx;
 
-        local Cxx = forge:PatternPrototype( 'Cxx', clang.object_filename );
-        Cxx.language = 'c++';
-        Cxx.build = clang.compile;
-        toolset.Cxx = Cxx;
+    local ObjC = forge:PatternPrototype( 'ObjC', clang.object_filename );
+    ObjC.language = 'objective-c';
+    ObjC.build = clang.compile;
+    toolset.ObjC = ObjC;
 
-        local ObjC = forge:PatternPrototype( 'ObjC', clang.object_filename );
-        ObjC.language = 'objective-c';
-        ObjC.build = clang.compile;
-        toolset.ObjC = ObjC;
+    local ObjCxx = forge:PatternPrototype( 'ObjCxx', clang.object_filename );
+    ObjCxx.language = 'objective-c++';
+    ObjCxx.build = clang.compile;
+    toolset.ObjCxx = ObjCxx;
 
-        local ObjCxx = forge:PatternPrototype( 'ObjCxx', clang.object_filename );
-        ObjCxx.language = 'objective-c++';
-        ObjCxx.build = clang.compile;
-        toolset.ObjCxx = ObjCxx;
+    local StaticLibrary = forge:FilePrototype( 'StaticLibrary', clang.static_library_filename );
+    StaticLibrary.build = clang.archive;
+    toolset.StaticLibrary = StaticLibrary;
 
-        local StaticLibrary = forge:FilePrototype( 'StaticLibrary', clang.static_library_filename );
-        StaticLibrary.build = clang.archive;
-        toolset.StaticLibrary = StaticLibrary;
+    local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', clang.dynamic_library_filename );
+    DynamicLibrary.build = clang.link;
+    toolset.DynamicLibrary = DynamicLibrary;
 
-        local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', clang.dynamic_library_filename );
-        DynamicLibrary.build = clang.link;
-        toolset.DynamicLibrary = DynamicLibrary;
+    local Executable = forge:FilePrototype( 'Executable', clang.executable_filename );
+    Executable.build = clang.link;
+    toolset.Executable = Executable;
 
-        local Executable = forge:FilePrototype( 'Executable', clang.executable_filename );
-        Executable.build = clang.link;
-        toolset.Executable = Executable;
+    toolset:defaults {
+        architecture = 'x86_64';
+        assertions = true;
+        debug = true;
+        debuggable = true;
+        exceptions = true;
+        fast_floating_point = false;
+        generate_map_file = true;
+        incremental_linking = true;
+        link_time_code_generation = false;
+        minimal_rebuild = true;
+        objc_arc = true;
+        objc_modules = true;
+        optimization = false;
+        pre_compiled_headers = true;
+        preprocess = false;
+        profiling = false;
+        run_time_checks = true;
+        runtime_library = 'static_debug';
+        run_time_type_info = true;
+        stack_size = 1048576;
+        standard = 'c++17';
+        standard_library = 'libc++';
+        string_pooling = false;
+        strip = false;
+        verbose_linking = false;
+        warning_level = 3;
+        warnings_as_errors = true;
+    };
 
-        toolset:defaults( toolset.settings, {
-            architecture = 'x86_64';
-            assertions = true;
-            debug = true;
-            debuggable = true;
-            exceptions = true;
-            fast_floating_point = false;
-            generate_map_file = true;
-            incremental_linking = true;
-            link_time_code_generation = false;
-            minimal_rebuild = true;
-            objc_arc = true;
-            objc_modules = true;
-            optimization = false;
-            pre_compiled_headers = true;
-            preprocess = false;
-            profiling = false;
-            run_time_checks = true;
-            runtime_library = 'static_debug';
-            run_time_type_info = true;
-            stack_size = 1048576;
-            standard = 'c++17';
-            standard_library = 'libc++';
-            string_pooling = false;
-            strip = false;
-            verbose_linking = false;
-            warning_level = 3;
-            warnings_as_errors = true;
-        } );
-
-        return toolset;
-    end
+    return true;
 end
 
 function clang.object_filename( forge, identifier )
@@ -432,12 +425,5 @@ function clang.parse_dependencies_file( toolset, filename, object )
         end
     end
 end
-
-setmetatable( clang, {
-    __call = function( clang, settings )
-        local toolset = require( 'forge' ):clone( settings );
-        return clang.initialize( toolset );
-    end
-} );
 
 return clang;

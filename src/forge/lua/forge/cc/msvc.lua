@@ -1,5 +1,5 @@
 
-local msvc = {};
+local msvc = forge:Module( 'msvc' );
 
 function msvc.configure( toolset, msvc_settings )
     local function vswhere()
@@ -137,175 +137,168 @@ function msvc.validate( toolset, msvc_settings )
 end
 
 function msvc.initialize( toolset )
-    if toolset:configure(msvc, 'msvc') then 
-        local identifier = toolset.settings.identifier;
-        if identifier then
-            add_toolset( toolset:interpolate(identifier), toolset );
-        end
+    -- Make sure that the environment variable VS_UNICODE_OUTPUT is not set.
+    --
+    -- Visual Studio sets this to signal its tools to communicate back to 
+    -- Visual Studio using named pipes rather than stdout so that unicode output 
+    -- works better but this then prevents the build tool from intercepting
+    -- and collating this output.
+    --
+    -- See http://blogs.msdn.com/freik/archive/2006/04/05/569025.aspx.
+    -- putenv( "VS_UNICODE_OUTPUT", "" );
 
-        -- Make sure that the environment variable VS_UNICODE_OUTPUT is not set.
-        --
-        -- Visual Studio sets this to signal its tools to communicate back to 
-        -- Visual Studio using named pipes rather than stdout so that unicode output 
-        -- works better but this then prevents the build tool from intercepting
-        -- and collating this output.
-        --
-        -- See http://blogs.msdn.com/freik/archive/2006/04/05/569025.aspx.
-        -- putenv( "VS_UNICODE_OUTPUT", "" );
+    local settings = toolset.settings;
+    local toolset_version = settings.msvc.toolset_version;
+    local visual_studio_directory = settings.msvc.visual_studio_directory;
+    local visual_cxx_directory = settings.msvc.visual_cxx_directory;
 
-        local settings = toolset.settings;
-        local toolset_version = settings.msvc.toolset_version;
-        local visual_studio_directory = settings.msvc.visual_studio_directory;
-        local visual_cxx_directory = settings.msvc.visual_cxx_directory;
+    local path_i386, path_x86_64, lib_i386, lib_x86_64, include;
 
-        local path_i386, path_x86_64, lib_i386, lib_x86_64, include;
-
-        if toolset_version >= 15 then 
-            path_i386 = {
-                ('%s\\bin\\Hostx64\\x86'):format( visual_cxx_directory ),
-                ('%s\\Common7\\IDE'):format( visual_studio_directory ),
-                ('%s\\Common7\\Tools'):format( visual_studio_directory ),
-            };
-
-            path_x86_64 = {
-                ('%s\\bin\\Hostx64\\x64'):format( visual_cxx_directory ),
-                ('%s\\Common7\\IDE'):format( visual_studio_directory ),
-                ('%s\\Common7\\Tools'):format( visual_studio_directory ),
-            };
-            
-            lib_i386 = {
-                ('%s\\atlmfc\\lib\\x86'):format( visual_cxx_directory ),
-                ('%s\\lib\\x86'):format( visual_cxx_directory )
-            };
-
-            lib_x86_64 = {
-                ('%s\\VC\\atlmfc\\lib\\x64'):format( visual_cxx_directory ),
-                ('%s\\lib\\x64'):format( visual_cxx_directory )
-            };
-
-            include = {
-                ('%s\\atlmfc\\include'):format( visual_cxx_directory ),
-                ('%s\\include'):format( visual_cxx_directory ),
-            };
-        else
-            path_i386 = {
-                ('%s\\VC\\bin\\amd64_x86'):format( visual_studio_directory ),
-                ('%s\\Common7\\IDE'):format( visual_studio_directory ),
-                ('%s\\Common7\\Tools'):format( visual_studio_directory ),
-                ('%s\\VC\\vcpackages'):format( visual_studio_directory ),
-            };
-
-            path_x86_64 = {
-                ('%s\\VC\\bin\\amd64'):format( visual_studio_directory ),
-                ('%s\\Common7\\IDE'):format( visual_studio_directory ),
-                ('%s\\Common7\\Tools'):format( visual_studio_directory ),
-                ('%s\\VC\\vcpackages'):format( visual_studio_directory ),
-            };
-            
-            lib_i386 = {
-                ('%s\\VC\\atlmfc\\lib'):format( visual_studio_directory ),
-                ('%s\\VC\\lib'):format( visual_studio_directory )
-            };
-
-            lib_x86_64 = {
-                ('%s\\VC\\atlmfc\\lib\\amd64'):format( visual_studio_directory ),
-                ('%s\\VC\\lib\\amd64'):format( visual_studio_directory )
-            };
-
-            include = {
-                ('%s\\VC\\atlmfc\\include'):format( visual_studio_directory ),
-                ('%s\\VC\\include'):format( visual_studio_directory ),
-            };
-        end
-        
-        local sdk_directory = settings.msvc.windows_sdk_directory;
-        local sdk_version = settings.msvc.windows_sdk_version;
-        if sdk_directory then 
-            table.insert( include, ('%s\\Include\\%s\\ucrt'):format(sdk_directory, sdk_version) );
-            table.insert( include, ('%s\\Include\\%s\\um'):format(sdk_directory, sdk_version) );
-            table.insert( include, ('%s\\Include\\%s\\shared'):format(sdk_directory, sdk_version) );
-            table.insert( include, ('%s\\Include\\%s\\winrt'):format(sdk_directory, sdk_version) );
-            table.insert( lib_i386, ('%s\\Lib\\%s\\um\\x86'):format(sdk_directory, sdk_version) );
-            table.insert( lib_i386, ('%s\\Lib\\%s\\ucrt\\x86'):format(sdk_directory, sdk_version) );
-            table.insert( lib_x86_64, ('%s\\Lib\\%s\\um\\x64'):format(sdk_directory, sdk_version) );
-            table.insert( lib_x86_64, ('%s\\Lib\\%s\\ucrt\\x64'):format(sdk_directory, sdk_version) );
-        end
-
-        msvc.environments_by_architecture = {
-            ['i386'] = {
-                PATH = table.concat( path_i386, ';' );
-                LIB = table.concat( lib_i386, ';' );
-                LIBPATH = table.concat( lib_i386, ';' );
-                INCLUDE = table.concat( include, ';' );
-                SYSTEMROOT = os.getenv( 'SYSTEMROOT' );
-                TMP = os.getenv( 'TMP' );
-            };
-            ['x86_64'] = {
-                PATH = table.concat( path_x86_64, ';' );
-                LIB = table.concat( lib_x86_64, ';' );
-                LIBPATH = table.concat( lib_x86_64, ';' );
-                INCLUDE = table.concat( include, ';' );
-                SYSTEMROOT = os.getenv( 'SYSTEMROOT' );
-                TMP = os.getenv( 'TMP' );
-            };
+    if toolset_version >= 15 then 
+        path_i386 = {
+            ('%s\\bin\\Hostx64\\x86'):format( visual_cxx_directory ),
+            ('%s\\Common7\\IDE'):format( visual_studio_directory ),
+            ('%s\\Common7\\Tools'):format( visual_studio_directory ),
         };
 
-        local Cc = forge:GroupPrototype( 'Cc', msvc.object_filename );
-        Cc.language = 'c';
-        Cc.build = msvc.compile;
-        toolset.Cc = Cc;
+        path_x86_64 = {
+            ('%s\\bin\\Hostx64\\x64'):format( visual_cxx_directory ),
+            ('%s\\Common7\\IDE'):format( visual_studio_directory ),
+            ('%s\\Common7\\Tools'):format( visual_studio_directory ),
+        };
+        
+        lib_i386 = {
+            ('%s\\atlmfc\\lib\\x86'):format( visual_cxx_directory ),
+            ('%s\\lib\\x86'):format( visual_cxx_directory )
+        };
 
-        local Cxx = forge:GroupPrototype( 'Cxx', msvc.object_filename );
-        Cxx.language = 'c++';
-        Cxx.build = msvc.compile;
-        toolset.Cxx = Cxx;
+        lib_x86_64 = {
+            ('%s\\VC\\atlmfc\\lib\\x64'):format( visual_cxx_directory ),
+            ('%s\\lib\\x64'):format( visual_cxx_directory )
+        };
 
-        local StaticLibrary = forge:FilePrototype( 'StaticLibrary', msvc.static_library_filename );
-        StaticLibrary.build = msvc.archive;
-        toolset.StaticLibrary = StaticLibrary;
+        include = {
+            ('%s\\atlmfc\\include'):format( visual_cxx_directory ),
+            ('%s\\include'):format( visual_cxx_directory ),
+        };
+    else
+        path_i386 = {
+            ('%s\\VC\\bin\\amd64_x86'):format( visual_studio_directory ),
+            ('%s\\Common7\\IDE'):format( visual_studio_directory ),
+            ('%s\\Common7\\Tools'):format( visual_studio_directory ),
+            ('%s\\VC\\vcpackages'):format( visual_studio_directory ),
+        };
 
-        local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', msvc.dynamic_library_filename );
-        DynamicLibrary.build = msvc.link;
-        toolset.DynamicLibrary = DynamicLibrary;
+        path_x86_64 = {
+            ('%s\\VC\\bin\\amd64'):format( visual_studio_directory ),
+            ('%s\\Common7\\IDE'):format( visual_studio_directory ),
+            ('%s\\Common7\\Tools'):format( visual_studio_directory ),
+            ('%s\\VC\\vcpackages'):format( visual_studio_directory ),
+        };
+        
+        lib_i386 = {
+            ('%s\\VC\\atlmfc\\lib'):format( visual_studio_directory ),
+            ('%s\\VC\\lib'):format( visual_studio_directory )
+        };
 
-        local Executable = forge:FilePrototype( 'Executable', msvc.executable_filename );
-        Executable.build = msvc.link;
-        toolset.Executable = Executable;
+        lib_x86_64 = {
+            ('%s\\VC\\atlmfc\\lib\\amd64'):format( visual_studio_directory ),
+            ('%s\\VC\\lib\\amd64'):format( visual_studio_directory )
+        };
 
-        toolset:defaults( toolset.settings, {
-            architecture = 'x86_64';
-            assertions = true;
-            debug = true;
-            debuggable = true;
-            exceptions = true;
-            fast_floating_point = false;
-            framework_directories = {};
-            generate_dsym_bundle = false;
-            generate_map_file = true;
-            incremental_linking = true;
-            link_time_code_generation = false;
-            minimal_rebuild = true;
-            objc_arc = true;
-            objc_modules = true;
-            optimization = false;
-            pre_compiled_headers = true;
-            preprocess = false;
-            profiling = false;
-            run_time_checks = true;
-            runtime_library = 'static_debug';
-            run_time_type_info = true;
-            stack_size = 1048576;
-            standard = 'c++17';
-            string_pooling = false;
-            strip = false;
-            subsystem = 'CONSOLE';
-            verbose_linking = false;
-            warning_level = 3;
-            warnings_as_errors = true;
-        } );
-
-        return toolset;
+        include = {
+            ('%s\\VC\\atlmfc\\include'):format( visual_studio_directory ),
+            ('%s\\VC\\include'):format( visual_studio_directory ),
+        };
     end
+    
+    local sdk_directory = settings.msvc.windows_sdk_directory;
+    local sdk_version = settings.msvc.windows_sdk_version;
+    if sdk_directory then 
+        table.insert( include, ('%s\\Include\\%s\\ucrt'):format(sdk_directory, sdk_version) );
+        table.insert( include, ('%s\\Include\\%s\\um'):format(sdk_directory, sdk_version) );
+        table.insert( include, ('%s\\Include\\%s\\shared'):format(sdk_directory, sdk_version) );
+        table.insert( include, ('%s\\Include\\%s\\winrt'):format(sdk_directory, sdk_version) );
+        table.insert( lib_i386, ('%s\\Lib\\%s\\um\\x86'):format(sdk_directory, sdk_version) );
+        table.insert( lib_i386, ('%s\\Lib\\%s\\ucrt\\x86'):format(sdk_directory, sdk_version) );
+        table.insert( lib_x86_64, ('%s\\Lib\\%s\\um\\x64'):format(sdk_directory, sdk_version) );
+        table.insert( lib_x86_64, ('%s\\Lib\\%s\\ucrt\\x64'):format(sdk_directory, sdk_version) );
+    end
+
+    msvc.environments_by_architecture = {
+        ['i386'] = {
+            PATH = table.concat( path_i386, ';' );
+            LIB = table.concat( lib_i386, ';' );
+            LIBPATH = table.concat( lib_i386, ';' );
+            INCLUDE = table.concat( include, ';' );
+            SYSTEMROOT = os.getenv( 'SYSTEMROOT' );
+            TMP = os.getenv( 'TMP' );
+        };
+        ['x86_64'] = {
+            PATH = table.concat( path_x86_64, ';' );
+            LIB = table.concat( lib_x86_64, ';' );
+            LIBPATH = table.concat( lib_x86_64, ';' );
+            INCLUDE = table.concat( include, ';' );
+            SYSTEMROOT = os.getenv( 'SYSTEMROOT' );
+            TMP = os.getenv( 'TMP' );
+        };
+    };
+
+    local Cc = forge:GroupPrototype( 'Cc', msvc.object_filename );
+    Cc.language = 'c';
+    Cc.build = msvc.compile;
+    toolset.Cc = Cc;
+
+    local Cxx = forge:GroupPrototype( 'Cxx', msvc.object_filename );
+    Cxx.language = 'c++';
+    Cxx.build = msvc.compile;
+    toolset.Cxx = Cxx;
+
+    local StaticLibrary = forge:FilePrototype( 'StaticLibrary', msvc.static_library_filename );
+    StaticLibrary.build = msvc.archive;
+    toolset.StaticLibrary = StaticLibrary;
+
+    local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', msvc.dynamic_library_filename );
+    DynamicLibrary.build = msvc.link;
+    toolset.DynamicLibrary = DynamicLibrary;
+
+    local Executable = forge:FilePrototype( 'Executable', msvc.executable_filename );
+    Executable.build = msvc.link;
+    toolset.Executable = Executable;
+
+    toolset:defaults {
+        architecture = 'x86_64';
+        assertions = true;
+        debug = true;
+        debuggable = true;
+        exceptions = true;
+        fast_floating_point = false;
+        framework_directories = {};
+        generate_dsym_bundle = false;
+        generate_map_file = true;
+        incremental_linking = true;
+        link_time_code_generation = false;
+        minimal_rebuild = true;
+        objc_arc = true;
+        objc_modules = true;
+        optimization = false;
+        pre_compiled_headers = true;
+        preprocess = false;
+        profiling = false;
+        run_time_checks = true;
+        runtime_library = 'static_debug';
+        run_time_type_info = true;
+        stack_size = 1048576;
+        standard = 'c++17';
+        string_pooling = false;
+        strip = false;
+        subsystem = 'CONSOLE';
+        verbose_linking = false;
+        warning_level = 3;
+        warnings_as_errors = true;
+    };
+
+    return true;
 end
 
 function msvc.object_filename( toolset, identifier )
@@ -793,12 +786,5 @@ function msvc.dependencies_filter( toolset, output_directory, source_directory )
     end
     return dependencies_filter;
 end
-
-setmetatable( msvc, {
-    __call = function( msvc, settings )
-        local toolset = require( 'forge' ):clone( settings );
-        return msvc.initialize( toolset );
-    end
-} );
 
 return msvc;

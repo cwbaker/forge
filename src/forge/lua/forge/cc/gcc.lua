@@ -1,5 +1,5 @@
 
-local gcc = {};
+local gcc = forge:Module( 'gcc' );
 
 gcc.flags_by_architecture = {
     armv5 = '-march=armv5te -mtune=xscale -mthumb';
@@ -29,68 +29,61 @@ function gcc.validate( toolset, gcc_settings )
 end
 
 function gcc.initialize( toolset )
-    if toolset:configure(gcc, 'gcc') then
-        local identifier = toolset.settings.identifier;
-        if identifier then
-            add_toolset( toolset:interpolate(identifier), toolset );
-        end
+    local Cc = forge:PatternPrototype( 'Cc', gcc.object_filename );
+    Cc.language = 'c';
+    Cc.build = gcc.compile;
+    toolset.Cc = Cc;
 
-        local Cc = forge:PatternPrototype( 'Cc', gcc.object_filename );
-        Cc.language = 'c';
-        Cc.build = gcc.compile;
-        toolset.Cc = Cc;
+    local Cxx = forge:PatternPrototype( 'Cxx', gcc.object_filename );
+    Cxx.language = 'c++';
+    Cxx.build = gcc.compile;
+    toolset.Cxx = Cxx;
 
-        local Cxx = forge:PatternPrototype( 'Cxx', gcc.object_filename );
-        Cxx.language = 'c++';
-        Cxx.build = gcc.compile;
-        toolset.Cxx = Cxx;
+    local StaticLibrary = forge:FilePrototype( 'StaticLibrary', gcc.static_library_filename );
+    StaticLibrary.build = gcc.archive;
+    toolset.StaticLibrary = StaticLibrary;
 
-        local StaticLibrary = forge:FilePrototype( 'StaticLibrary', gcc.static_library_filename );
-        StaticLibrary.build = gcc.archive;
-        toolset.StaticLibrary = StaticLibrary;
+    local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', gcc.dynamic_library_filename );
+    DynamicLibrary.build = gcc.link;
+    toolset.DynamicLibrary = DynamicLibrary;
 
-        local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', gcc.dynamic_library_filename );;
-        DynamicLibrary.build = gcc.link;
-        toolset.DynamicLibrary = DynamicLibrary;
+    local Executable = forge:FilePrototype( 'Executable', gcc.executable_filename );
+    Executable.build = gcc.link;
+    toolset.Executable = Executable;
 
-        local Executable = forge:FilePrototype( 'Executable', gcc.executable_filename );
-        Executable.build = gcc.link;
-        toolset.Executable = Executable;
+    toolset:defaults {
+        architecture = 'x86_64';
+        assertions = true;
+        debug = true;
+        debuggable = true;
+        exceptions = true;
+        fast_floating_point = false;
+        framework_directories = {};
+        generate_dsym_bundle = false;
+        generate_map_file = true;
+        incremental_linking = true;
+        link_time_code_generation = false;
+        minimal_rebuild = true;
+        objc_arc = true;
+        objc_modules = true;
+        optimization = false;
+        pre_compiled_headers = true;
+        preprocess = false;
+        profiling = false;
+        run_time_checks = true;
+        runtime_library = 'static_debug';
+        run_time_type_info = true;
+        stack_size = 1048576;
+        standard = 'c++17';
+        string_pooling = false;
+        strip = false;
+        subsystem = 'CONSOLE';
+        verbose_linking = false;
+        warning_level = 3;
+        warnings_as_errors = true;
+    };
 
-        toolset:defaults( toolset.settings, {
-            architecture = 'x86_64';
-            assertions = true;
-            debug = true;
-            debuggable = true;
-            exceptions = true;
-            fast_floating_point = false;
-            framework_directories = {};
-            generate_dsym_bundle = false;
-            generate_map_file = true;
-            incremental_linking = true;
-            link_time_code_generation = false;
-            minimal_rebuild = true;
-            objc_arc = true;
-            objc_modules = true;
-            optimization = false;
-            pre_compiled_headers = true;
-            preprocess = false;
-            profiling = false;
-            run_time_checks = true;
-            runtime_library = 'static_debug';
-            run_time_type_info = true;
-            stack_size = 1048576;
-            standard = 'c++17';
-            string_pooling = false;
-            strip = false;
-            subsystem = 'CONSOLE';
-            verbose_linking = false;
-            warning_level = 3;
-            warnings_as_errors = true;
-        } );
-
-        return toolset;
-    end
+    return true;
 end
 
 function gcc.object_filename( toolset, identifier )
@@ -364,13 +357,5 @@ function gcc.append_link_libraries( toolset, target, libraries )
         end
     end
 end
-
-setmetatable( gcc, {
-    __call = function( gcc, settings )
-        local forge = require( 'forge' ):clone( settings );
-        gcc.initialize( forge );
-        return forge;
-    end
-} );
 
 return gcc;
