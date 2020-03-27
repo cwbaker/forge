@@ -54,7 +54,7 @@ local module_metatable = {
 };
 
 setmetatable( Module, {
-    __call = function( module, id )
+    __call = function( module, _forge, id )
         local module = {
             id = id;
         };
