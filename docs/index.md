@@ -20,16 +20,18 @@ Forge is a Lua scriptable build tool that tracks dependencies between files, use
 
 ## Example
 
-Copy `foo.in` to `foo.out`:
+Copy `{bar,baz,foo}.in` to `output/{bar,baz,foo}.out`:
 
 ~~~lua
 local toolset = require 'forge' {
-    output = root( 'output' ); 
+    output = root( 'output' );
 };
 
 toolset:all {
-    toolset:Copy '${output}/foo.out' {
-        'foo.in'
+    toolset:Copy '${output}/%1.out' {
+        'bar.in';
+        'baz.in';
+        'foo.in';
     };    
 };
 ~~~
@@ -37,7 +39,7 @@ toolset:all {
 The Lua script that defines the `Copy` target used in the Lua-based domain specific language above is defined as follows:
 
 ~~~lua
-local Copy = forge:FilePrototype( 'Copy' );
+local Copy = forge:PatternPrototype( 'Copy' );
 
 function Copy.build( toolset, target )
     rm( target );
@@ -47,7 +49,7 @@ end
 return Copy;
 ~~~
 
-Copy outdated or non-existing files by running `forge` from the directory containing the above Lua script in a file named *forge.lua*:
+Execute the build by running `forge` from a directory within the project:
 
 ~~~bash
 $ forge

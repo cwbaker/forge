@@ -5,7 +5,7 @@ parent: Tutorials
 nav_order: 1
 ---
 
-A simple introduction to Forge that sets up a build to copy a file to an output directory if the output file doesn't exist or if the source file is newer.
+A simple example that copies the files `{bar,baz,foo}.in` to `output/{bar,baz,foo}.out` if the input files have changed since they were last built or the output files don't exist:
 
 The root build script, *forge.lua*, that sets up the build is the following:
 

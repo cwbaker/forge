@@ -18,16 +18,18 @@
 
 ## Example
 
-Copy `foo.in` to `foo.out`:
+Copy `{bar,baz,foo}.in` to `output/{bar,baz,foo}.out`:
 
 ~~~lua
 local toolset = require 'forge' {
-    output = root( 'output' ); 
+    output = root( 'output' );
 };
 
 toolset:all {
-    toolset:Copy '${output}/foo.out' {
-        'foo.in'
+    toolset:Copy '${output}/%1.out' {
+        'bar.in';
+        'baz.in';
+        'foo.in';
     };    
 };
 ~~~
@@ -35,7 +37,7 @@ toolset:all {
 The Lua script that defines the `Copy` target used in the Lua-based domain specific language above is defined as follows:
 
 ~~~lua
-local Copy = forge:FilePrototype( 'Copy' );
+local Copy = forge:PatternPrototype( 'Copy' );
 
 function Copy.build( toolset, target )
     rm( target );
@@ -45,7 +47,7 @@ end
 return Copy;
 ~~~
 
-Copy outdated or non-existing files by running `forge` from the directory containing the above Lua script in a file named *forge.lua*:
+Execute the build by running `forge` from a directory within the project:
 
 ~~~bash
 $ forge
@@ -53,7 +55,7 @@ $ forge
 
 ## Documentation
 
-See [https://cwbaker.github.io/forge/](https://cwbaker.github.io/forge/) for more documentation including information on [installation](https://cwbaker.github.io/forge/installation/), [usage](https://cwbaker.github.io/forge/getting-started/running-forge/), and [compiling and linking C++](https://cwbaker.github.io/forge/tutorials/compile-and-link-cxx/).
+See [https://cwbaker.github.io/forge/](https://cwbaker.github.io/forge/) for more documentation.
 
 ## Contributions
 
