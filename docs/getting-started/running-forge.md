@@ -5,7 +5,10 @@ parent: Getting Started
 nav_order: 1
 ---
 
-## Usage
+- TOC
+{:toc}
+
+### Usage
 
 ~~~sh
 Usage: forge [options] [variable=value] [command] ...
@@ -26,17 +29,23 @@ Commands:
   namespace          Print targets by namespace hierarchy.
 ~~~
 
-When run from a directory within the source tree of the project being built Forge searches up from the current working directory to the root of the file system looking for files named *forge.lua*.  The *forge.lua* file found in the highest directory in the hierarchy is the root build script executed to define and run the build.  The directory that contains the root build script becomes the root directory of the project.
+Run `forge` from a directory within the project to build.  Forge will search up from that directory to the root of the file system looking for files named *forge.lua*.  The *forge.lua* file found in the highest directory is the root build script that is executed to define the build.  The directory containing the root build script becomes the root directory for the project.
 
-The initial working directory is the directory that Forge is run from.  By default the target named *all* in this directory is built.  Building in the root directory of the project typically builds all useful outputs for a project.  Building in sub-directories of the project typically builds targets defined in that directory only.
+The directory that `forge` is run from becomes the initial working directory.  By default the target named *all* in this directory is built.  Building in the root directory of the project typically builds all useful outputs for a project.  Building in sub-directories of the project typically builds targets defined in that directory only.
 
-Pass commands (e.g. *clean*, *build*, *dependencies*, etc) to determine what the build does and in what order.  The default, when no other command is passed, is *build* which typically brings all files up to date by building them.
+### Commands
 
-Multiple commands passed on the same command line are executed in order.  The dependency graph is restored between commands so passing multiple commands to one invocation is functionally the same as passing the same commands to separate invocations.  Duplicate commands are executed multiple times.
+Pass commands (e.g. *clean*, *build*, *dependencies*, etc) on the command line to determine what the build does and in what order.  The default, when no other command is passed, is *build* which typically brings all files up to date by building them.
+
+Multiple commands passed on the same command line are executed in order.  All state is restored between commands so passing multiple commands to one invocation is functionally the same as passing the same commands to separate invocations.  Duplicate commands are executed multiple times.
+
+### Variables 
 
 Assign values to variables (e.g. *variant={debug, release, shipping}*) on the command line to configure the build.  All assignments are made to global variables in Lua before the root build script and any actions are executed.  Typically this is used to configure variant, target to build, and/or install location.
 
 Later assignments override earlier ones in the case of duplicate variables.  However because all assignments are made before any commands are executed interleaving assignments and commands is not generally useful.
+
+### Examples
 
 Build useful outputs by running from the project's root directory:
 
