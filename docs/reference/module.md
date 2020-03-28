@@ -27,7 +27,7 @@ A table with a metatable and `__call` metamethod that implements functionality f
 ### Constructor
 
 ~~~lua
-function ( module, settings )
+function Module( module, settings )
 ~~~
 
 Calling a module creates and registers a new toolset initialized to use the toolset provided by the module.
