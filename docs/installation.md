@@ -12,7 +12,7 @@ Download the latest Forge binary and build scripts from the [GitHub releases](ht
 
 Install Forge by building it from source and adding a symbolic link to the executable `${HOME}/forge/bin/forge` from a directory in your path.
 
-The install location is changed by passing `prefix=${install-directory}` on the command line replacing `${install-directory}` with the full path to the directory to install *Forge* to.  For example `forge prefix=D:\\forge variant=shipping install` on Windows or `forge prefix=/usr/local/forge variant=shipping install` on Linux or macOS.
+Change the install location by passing `prefix=${install-directory}` on the command line.  For example `forge prefix=D:\\forge variant=shipping install` on Windows or `forge prefix=/usr/local/forge variant=shipping install` on Linux or macOS.
 
 **Linux:**
 
