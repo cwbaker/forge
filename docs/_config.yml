@@ -20,7 +20,9 @@ author:
   name: 'Charles Baker'
 
 # Custom vars
-version: 0.0.5
+github_project: cwbaker/forge
+downloads: https://github.com/cwbaker/forge/releases
+version: 0.0.4
 
 plugins:
 - jekyll-mentions
