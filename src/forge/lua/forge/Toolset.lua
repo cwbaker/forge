@@ -11,6 +11,50 @@ function Toolset:create( settings )
     return toolset;
 end
 
+function Toolset.configure( toolset, module_settings )
+    return {};
+end
+
+function Toolset.validate( toolset, module_settings )
+    return true;
+end
+
+function Toolset.initialize( toolset )
+    return true;
+end
+
+function Toolset.install( toolset )
+    local module_settings;
+    local configure = toolset.configure;
+    if configure then
+        local id = toolset.prototype.id;
+        local local_settings = forge.local_settings;
+        module_settings = local_settings[id];
+        if not module_settings then
+            local settings = toolset.settings;
+            module_settings = configure( toolset, settings[id] or {} );
+            settings[id] = module_settings;
+            local_settings[id] = module_settings;
+            local_settings.updated = true;
+        end
+    end
+
+    local validate = toolset.validate;
+    if validate and not validate( toolset, module_settings ) then
+        return;
+    end
+
+    local initialize = toolset.initialize;
+    if initialize and not initialize( toolset ) then
+        return;
+    end
+
+    local identifier = toolset.settings.identifier;
+    if identifier then
+        add_toolset( toolset:interpolate(identifier), toolset );
+    end
+end
+
 function Toolset:clone( settings_to_apply )
     local settings = {};
     self:copy_settings( settings, self.settings );
@@ -216,20 +260,6 @@ end
 -- in *paths* or nothing if no existing file is found.
 function Toolset:which( filename, paths )
     return which( self:interpolate(filename), paths );
-end
-
-function Toolset:configure( module, identifier )
-    local local_settings = forge.local_settings;
-    local module_settings = local_settings[identifier];
-    if not module_settings then
-        local settings = self.settings;
-        module_settings = module.configure( self, settings[identifier] or {} );
-        settings[identifier] = module_settings;
-        local_settings[identifier] = module_settings;
-        local_settings.updated = true;
-    end
-    local validate = module.validate;
-    return validate == nil or validate( self, module_settings );
 end
 
 -- Get the *all* target for the current working directory adding any 
