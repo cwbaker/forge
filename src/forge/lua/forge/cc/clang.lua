@@ -1,5 +1,5 @@
 
-local clang = forge:Module( 'clang' );
+local clang = forge:ToolsetPrototype( 'clang' );
 
 function clang.configure( toolset, clang_settings )
     local paths = os.getenv( 'PATH' );
