@@ -15,6 +15,7 @@ namespace forge
 
 class Target;
 class TargetPrototype;
+class ToolsetPrototype;
 class Forge;
 class LuaFileSystem;
 class LuaContext;
@@ -23,6 +24,7 @@ class LuaSystem;
 class LuaTarget;
 class LuaTargetPrototype;
 class LuaToolset;
+class LuaToolsetPrototype;
 
 class Lua
 {
@@ -35,6 +37,7 @@ class Lua
     LuaTarget* lua_target_;
     LuaTargetPrototype* lua_target_prototype_;
     LuaToolset* lua_toolset_;
+    LuaToolsetPrototype* lua_toolset_prototype_;
 
 public:
     Lua( Forge* forge );
@@ -42,11 +45,11 @@ public:
     lua_State* lua_state() const;
     LuaTarget* lua_target() const;
     LuaTargetPrototype* lua_target_prototype() const;
+    LuaToolset* lua_toolset() const;
+    LuaToolsetPrototype* lua_toolset_prototype() const;
     void create( Forge* forge );
     void destroy();
     void assign_global_variables( const std::vector<std::string>& assignments );
-
-private:
 };
     
 }

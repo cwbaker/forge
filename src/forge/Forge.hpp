@@ -27,6 +27,8 @@ class Executor;
 class Scheduler;
 class System;
 class TargetPrototype;
+class ToolsetPrototype;
+class Toolset;
 class Target;
 class Graph;
 class Lua;
@@ -89,8 +91,12 @@ class Forge
         void create_target_lua_binding( Target* target );
         void update_target_lua_binding( Target* target );
         void destroy_target_lua_binding( Target* target );
+        void create_toolset_lua_binding( Toolset* toolset );
+        void destroy_toolset_lua_binding( Toolset* toolset );
         void create_target_prototype_lua_binding( TargetPrototype* target_prototype );
         void destroy_target_prototype_lua_binding( TargetPrototype* target_prototype );
+        void create_toolset_prototype_lua_binding( ToolsetPrototype* toolset_prototype );
+        void destroy_toolset_prototype_lua_binding( ToolsetPrototype* toolset_prototype );
 
         void outputf( const char* format, ... );
         void errorf( const char* format, ... );

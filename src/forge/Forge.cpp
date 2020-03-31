@@ -10,12 +10,15 @@
 #include "Executor.hpp"
 #include "Reader.hpp"
 #include "Graph.hpp"
+#include "Toolset.hpp"
 #include "Target.hpp"
 #include "Context.hpp"
 #include "path_functions.hpp"
 #include <forge/forge_lua/Lua.hpp>
 #include <forge/forge_lua/LuaTarget.hpp>
 #include <forge/forge_lua/LuaTargetPrototype.hpp>
+#include <forge/forge_lua/LuaToolset.hpp>
+#include <forge/forge_lua/LuaToolsetPrototype.hpp>
 #include <error/ErrorPolicy.hpp>
 #include <assert/assert.hpp>
 
@@ -417,6 +420,24 @@ void Forge::destroy_target_lua_binding( Target* target )
     }
 }
 
+void Forge::create_toolset_lua_binding( Toolset* toolset )
+{
+    SWEET_ASSERT( toolset );
+    if ( toolset )
+    {
+        lua_->lua_toolset()->create_toolset( toolset );
+    }
+}
+
+void Forge::destroy_toolset_lua_binding( Toolset* toolset )
+{
+    SWEET_ASSERT( toolset );
+    if ( toolset )
+    {
+        lua_->lua_toolset()->destroy_toolset( toolset );
+    }
+}
+
 void Forge::create_target_prototype_lua_binding( TargetPrototype* target_prototype )
 {
     SWEET_ASSERT( lua_ );
@@ -427,6 +448,18 @@ void Forge::destroy_target_prototype_lua_binding( TargetPrototype* target_protot
 {
     SWEET_ASSERT( lua_ );
     lua_->lua_target_prototype()->destroy_target_prototype( target_prototype );
+}
+
+void Forge::create_toolset_prototype_lua_binding( ToolsetPrototype* toolset_prototype )
+{
+    SWEET_ASSERT( lua_ );
+    lua_->lua_toolset_prototype()->create_toolset_prototype( toolset_prototype );
+}
+
+void Forge::destroy_toolset_prototype_lua_binding( ToolsetPrototype* toolset_prototype )
+{
+    SWEET_ASSERT( lua_ );
+    lua_->lua_toolset_prototype()->destroy_toolset_prototype( toolset_prototype );
 }
 
 /**

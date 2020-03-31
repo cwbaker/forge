@@ -9,6 +9,7 @@
 #include "LuaContext.hpp"
 #include "LuaGraph.hpp"
 #include "LuaTargetPrototype.hpp"
+#include "LuaToolsetPrototype.hpp"
 #include "LuaTarget.hpp"
 #include "LuaToolset.hpp"
 #include "types.hpp"
@@ -32,7 +33,8 @@ Lua::Lua( Forge* forge )
   lua_system_( nullptr ),
   lua_target_( nullptr ),
   lua_target_prototype_( nullptr ),
-  lua_toolset_( nullptr )
+  lua_toolset_( nullptr ),
+  lua_toolset_prototype_( nullptr )
 {
     create( forge );
 }
@@ -60,6 +62,18 @@ LuaTargetPrototype* Lua::lua_target_prototype() const
     return lua_target_prototype_;
 }
 
+LuaToolset* Lua::lua_toolset() const
+{
+    SWEET_ASSERT( lua_toolset_ );
+    return lua_toolset_;
+}
+
+LuaToolsetPrototype* Lua::lua_toolset_prototype() const
+{
+    SWEET_ASSERT( lua_toolset_prototype_ );
+    return lua_toolset_prototype_;
+}
+
 void Lua::create( Forge* forge )
 {
     SWEET_ASSERT( forge );
@@ -74,6 +88,7 @@ void Lua::create( Forge* forge )
     lua_system_ = new LuaSystem;
     lua_target_ = new LuaTarget;
     lua_target_prototype_ = new LuaTargetPrototype;
+    lua_toolset_prototype_ = new LuaToolsetPrototype;
     lua_toolset_ = new LuaToolset;
 
     luaxx_create( lua_state_, forge, FORGE_TYPE );
@@ -81,6 +96,7 @@ void Lua::create( Forge* forge )
     lua_target_->create( lua_state_ );
     lua_target_prototype_->create( lua_state_, lua_target_ );
     lua_toolset_->create( lua_state_ );
+    lua_toolset_prototype_->create( lua_state_, lua_toolset_ );
     lua_setglobal( lua_state_, "forge" );
 
     lua_context_->create( forge, lua_state_ );
@@ -102,6 +118,9 @@ void Lua::create( Forge* forge )
 
 void Lua::destroy()
 {
+    delete lua_toolset_prototype_;
+    lua_toolset_prototype_ = nullptr;
+
     delete lua_toolset_;
     lua_toolset_ = nullptr;
 
