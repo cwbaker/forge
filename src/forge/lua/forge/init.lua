@@ -469,11 +469,6 @@ function forge:save()
     save_binary();
 end
 
-function forge:clone( settings )
-    local toolset = forge.Toolset( forge.local_settings );
-    return toolset:clone( settings );
-end
-
 setmetatable( forge, {
     __call = function( forge, settings )
         local toolset = forge.Toolset( forge.local_settings );
