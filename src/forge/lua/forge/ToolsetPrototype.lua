@@ -12,7 +12,7 @@ setmetatable( ToolsetPrototype, {
         };
         local toolset_prototype_metatable = {
             __call = function( module, settings )
-                local toolset = require( 'forge' ):clone( settings );
+                local toolset = forge.Toolset( forge.local_settings ):clone( settings );
                 toolset.prototype = toolset_prototype;
                 setmetatable( toolset, toolset_metatable );
                 toolset:install();
