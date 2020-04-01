@@ -3,12 +3,34 @@ local Toolset = forge.Toolset or {};
 
 function Toolset:create( settings )
     local toolset = {
-        settings = settings or {};
+        settings = settings or forge.Settings( forge.local_settings );
     };
-    setmetatable( toolset, {
-        __index = self;
-    } );
+    setmetatable( toolset, {__index = self} );
     return toolset;
+end
+
+function Toolset:clone( values )
+    local settings = forge.Settings();
+    settings:apply( self.settings );
+    settings:apply( values );
+    return self:create( settings );
+end
+
+function Toolset:inherit( values )
+    local settings = self.settings:inherit( values );
+    return self:create( settings );
+end
+
+function Toolset:apply( values )
+    local settings = self.settings;
+    settings:apply( values );
+    return self;
+end
+
+function Toolset:defaults( values )
+    local settings = self.settings;
+    settings:defaults( values );
+    return self;
 end
 
 function Toolset.configure( toolset, module_settings )
@@ -53,64 +75,6 @@ function Toolset.install( toolset )
     if identifier then
         add_toolset( toolset:interpolate(identifier), toolset );
     end
-end
-
-function Toolset:clone( settings_to_apply )
-    local settings = {};
-    self:copy_settings( settings, self.settings );
-    self:copy_settings( settings, settings_to_apply );
-    return self:create( settings );
-end
-
-function Toolset:inherit( settings )
-    local settings = settings or {};
-    setmetatable( settings, {
-        __index = self.settings;
-    } );
-    return self:create( settings );
-end
-
--- Merge fields with string keys from /source/ to /destination/.
-function Toolset:merge( destination, source )
-    local destination = destination or {};
-    for key, value in pairs(source) do
-        if type(key) == 'string' then
-            if type(value) == 'table' then
-                local values = destination[key] or {};
-                for _, other_value in ipairs(value) do 
-                    table.insert( values, other_value );
-                end
-                destination[key] = values;
-            else
-                destination[key] = value;
-            end
-        end
-    end
-    return destination;
-end
-
-function Toolset:defaults( source )
-    local settings = self.settings;
-    for key, value in pairs(source) do 
-        if type(key) == 'string' and settings[key] == nil then
-            settings[key] = value;
-        end
-    end
-    return settings;
-end
-
-function Toolset:copy_settings( destination, source )
-    if source then
-        local copy_settings = self.copy_settings;
-        for key, value in pairs(source) do 
-            if type(value) ~= 'table' then 
-                destination[key] = value;
-            else
-                destination[key] = copy_settings( self, destination[key] or {}, value );
-            end
-        end
-    end
-    return destination;
 end
 
 -- Provide GNU Make like string substitution.

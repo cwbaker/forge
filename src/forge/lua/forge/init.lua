@@ -421,6 +421,7 @@ end
 function forge:load()
     self.local_settings = exists( root('local_settings.lua') ) and dofile( root('local_settings.lua') ) or {};
     self.cache = root( '.forge' );
+    self.Settings = require 'forge.Settings';
     self.Toolset = require 'forge.Toolset';
     self.ToolsetPrototype = require 'forge.ToolsetPrototype';
 
