@@ -294,13 +294,13 @@ function forge:PatternPrototype( identifier, replacement_modifier, pattern )
         local replacement = replacement_modifier( toolset, replacement );
         local targets_metatable = {
             __call = function( targets, dependencies )
-                local attributes = toolset:merge( {}, dependencies );
+                local attributes = self:merge( {}, dependencies );
                 for _, filename in forge:walk_tables(dependencies) do
                     local source_file = toolset:SourceFile( filename );
                     local identifier = root_relative( source_file ):gsub( pattern, replacement );
                     local target = toolset:File( identifier, pattern_prototype );
                     target:add_dependency( source_file );
-                    toolset:merge( target, attributes );
+                    self:merge( target, attributes );
                     table.insert( targets, target );
                 end
                 return targets;
@@ -322,7 +322,7 @@ function forge:GroupPrototype( identifier, replacement_modifier, pattern )
         local targets_metatable = {
             __call = function( targets, dependencies )
                 local target = targets[1];
-                toolset:merge( target, dependencies );
+                self:merge( target, dependencies );
                 for _, filename in forge:walk_tables(dependencies) do
                     local source_file = toolset:SourceFile( filename );
                     local identifier = root_relative( source_file ):gsub( pattern, replacement );
@@ -387,6 +387,25 @@ function forge:walk_tables( dependencies )
     return coroutine.wrap( function()
         walk( dependencies );
     end );
+end
+
+-- Merge fields with string keys from /source/ to /destination/.
+function forge:merge( destination, source )
+    local destination = destination or {};
+    for key, value in pairs(source) do
+        if type(key) == 'string' then
+            if type(value) == 'table' then
+                local values = destination[key] or {};
+                for _, other_value in ipairs(value) do 
+                    table.insert( values, other_value );
+                end
+                destination[key] = values;
+            else
+                destination[key] = value;
+            end
+        end
+    end
+    return destination;
 end
 
 -- Load cached dependencies and local settings.
