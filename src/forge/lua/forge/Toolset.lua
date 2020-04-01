@@ -70,26 +70,17 @@ function Toolset:inherit( settings )
     return self:create( settings );
 end
 
--- Append values from /value/ to /values/.
-function Toolset:append( values, value )
-    local values = values or {};
-    if type(value) == "table" then 
-        for _, other_value in ipairs(value) do 
-            table.insert( values, other_value );
-        end
-    else
-        table.insert( values, value );
-    end
-    return values;
-end
-
 -- Merge fields with string keys from /source/ to /destination/.
 function Toolset:merge( destination, source )
     local destination = destination or {};
     for key, value in pairs(source) do
         if type(key) == 'string' then
             if type(value) == 'table' then
-                destination[key] = self:append( destination[key], value );
+                local values = destination[key] or {};
+                for _, other_value in ipairs(value) do 
+                    table.insert( values, other_value );
+                end
+                destination[key] = values;
             else
                 destination[key] = value;
             end
