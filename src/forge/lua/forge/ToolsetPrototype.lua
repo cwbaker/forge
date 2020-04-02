@@ -7,18 +7,15 @@ setmetatable( ToolsetPrototype, {
         local toolset_prototype = {
             id = id;
         };
-        local toolset_metatable = {
-            __index = toolset_prototype;
-        };
+        toolset_prototype.__index = toolset_prototype;
         local toolset_prototype_metatable = {
-            __call = function( module, settings )
-                local toolset = forge.Toolset():apply( settings );
-                toolset.prototype = toolset_prototype;
-                setmetatable( toolset, toolset_metatable );
-                toolset:install();
-                return toolset;
-            end;
             __index = Toolset;
+            __call = function( _, values )
+                return Toolset.new( toolset_prototype, values );
+            end;
+            __tostring = function( toolset_prototype )
+                return toolset_prototype.id;
+            end;
         };
         setmetatable( toolset_prototype, toolset_prototype_metatable );
         return toolset_prototype;

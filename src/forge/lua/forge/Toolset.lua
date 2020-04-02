@@ -1,24 +1,32 @@
 
 local Toolset = forge.Toolset or {};
 
-function Toolset:create( settings )
+function Toolset.new( toolset_prototype, values )
+    local settings = forge.Settings():apply( values );
+    local identifier = Toolset.interpolate( Toolset, values.identifier, values );
+    local toolset = add_toolset( identifier, toolset_prototype );
+    toolset.settings = settings;
+    toolset:install();
+    return toolset;
+end
+
+function Toolset:clone( values )
     local toolset = {
-        settings = settings or forge.Settings( forge.local_settings );
+        settings = forge.Settings()
+            :apply( self.settings )
+            :apply( values )
+        ;
     };
     setmetatable( toolset, {__index = self} );
     return toolset;
 end
 
-function Toolset:clone( values )
-    local settings = forge.Settings();
-    settings:apply( self.settings );
-    settings:apply( values );
-    return self:create( settings );
-end
-
 function Toolset:inherit( values )
-    local settings = self.settings:inherit( values );
-    return self:create( settings );
+    local toolset = {
+        settings = self.settings:inherit( values );
+    };
+    setmetatable( toolset, {__index = self} );
+    return toolset;
 end
 
 function Toolset:apply( values )
@@ -49,7 +57,7 @@ function Toolset.install( toolset )
     local module_settings;
     local configure = toolset.configure;
     if configure then
-        local id = toolset.prototype.id;
+        local id = tostring(toolset:prototype());
         local local_settings = forge.local_settings;
         module_settings = local_settings[id];
         if not module_settings then
@@ -69,11 +77,6 @@ function Toolset.install( toolset )
     local initialize = toolset.initialize;
     if initialize and not initialize( toolset ) then
         return;
-    end
-
-    local identifier = toolset.settings.identifier;
-    if identifier then
-        add_toolset( toolset:interpolate(identifier), toolset );
     end
 end
 
