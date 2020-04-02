@@ -4,7 +4,9 @@
 //
 
 #include "Graph.hpp"
+#include "ToolsetPrototype.hpp"
 #include "TargetPrototype.hpp"
+#include "Toolset.hpp"
 #include "Target.hpp"
 #include "Forge.hpp"
 #include "Scheduler.hpp"
@@ -31,7 +33,9 @@ using namespace sweet::forge;
 */
 Graph::Graph()
 : forge_( nullptr ),
+  toolset_prototypes_(),
   target_prototypes_(),
+  toolsets_(),
   filename_(),
   root_target_( nullptr ),
   cache_target_( nullptr ),
@@ -49,7 +53,9 @@ Graph::Graph()
 */
 Graph::Graph( Forge* forge )
 : forge_( forge ),
+  toolset_prototypes_(),
   target_prototypes_(),
+  toolsets_(),
   filename_(),
   root_target_(),
   cache_target_(),
@@ -63,11 +69,34 @@ Graph::Graph( Forge* forge )
 
 Graph::~Graph()
 {
+    while ( !toolsets_.empty() )
+    {
+        delete toolsets_.back();
+        toolsets_.pop_back();
+    }
+
     while ( !target_prototypes_.empty() )
     {
         delete target_prototypes_.back();
         target_prototypes_.pop_back();
     }
+
+    while ( !toolset_prototypes_.empty() )
+    {
+        delete toolset_prototypes_.back();
+        toolset_prototypes_.pop_back();
+    }
+}
+
+/**
+// Get the toolsets that have been added to this graph.
+//
+// @return
+//  The toolsets in this graph.
+*/
+const std::vector<Toolset*> Graph::toolsets() const
+{
+    return toolsets_;
 }
 
 /**
@@ -92,7 +121,7 @@ Target* Graph::cache_target() const
 {
     return cache_target_;
 }
-        
+
 /**
 // Get the Forge that this Graph is part of.
 //
@@ -179,6 +208,22 @@ int Graph::successful_revision() const
 }
 
 /**
+// Create a new toolset prototype.
+//
+// @param id
+//  The identifier of the toolset prototype to create.
+//
+// @return
+//  The ToolsetPrototype.
+*/
+ToolsetPrototype* Graph::add_toolset_prototype( const std::string& id )
+{   
+    unique_ptr<ToolsetPrototype> toolset_prototype( new ToolsetPrototype(id, forge_) );
+    toolset_prototypes_.push_back( toolset_prototype.get() );
+    return toolset_prototype.release();
+}
+
+/**
 // Create a new target prototype.
 //
 // @param id
@@ -192,6 +237,13 @@ TargetPrototype* Graph::add_target_prototype( const std::string& id )
     unique_ptr<TargetPrototype> target_prototype( new TargetPrototype(id, forge_) );
     target_prototypes_.push_back( target_prototype.get() );
     return target_prototype.release();
+}
+
+Toolset* Graph::add_toolset( const std::string& id, ToolsetPrototype* toolset_prototype )
+{
+    unique_ptr<Toolset> toolset( new Toolset(id, toolset_prototype, this) );
+    toolsets_.push_back( toolset.get() );
+    return toolset.release();
 }
 
 Target* Graph::target( const std::string& id )
