@@ -40,6 +40,7 @@ for _, forge in toolsets('cc.*') do
             'System.cpp',
             'Target.cpp',
             'TargetPrototype.cpp',
+            'Toolset.cpp',
             'ToolsetPrototype.cpp',
             'path_functions.cpp'
         };
