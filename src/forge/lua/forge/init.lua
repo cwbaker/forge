@@ -109,25 +109,24 @@ Commands:
     ]];
 end
 
-local toolsets_ = {};
-
-function add_toolset( identifier, toolset )
-    table.insert( toolsets_, {toolset:interpolate(identifier), toolset} );
-    return toolset;
-end
-
 function toolsets( ... )
     local toolsets_iterator = coroutine.wrap( function(...) 
         coroutine.yield();
-        for index = 1, select('#', ...) do
-            local pattern = select( index, ... );
-            for _, identifier_toolset in ipairs(toolsets_) do
-                local identifier = identifier_toolset[1];
-                if pattern == nil or pattern == '' or identifier:find(pattern) then
-                    coroutine.yield( index, identifier_toolset[2] );
+        for i = 1, select('#', ...) do
+            local pattern = select( i, ... );
+            if pattern and pattern ~= '' then
+                for _, toolset, identifier in all_toolsets() do
+                    if identifier:find(pattern) then
+                        coroutine.yield( i, toolset );
+                    end
+                end
+            else
+                for _, toolset, identifier in all_toolsets() do
+                    coroutine.yield( i, toolset );
                 end
             end
         end
+
     end );
 
     -- Resume the coroutine with the variable length arguments passed to this
@@ -423,7 +422,7 @@ function forge:load()
     self.cache = root( '.forge' );
     self.Settings = require 'forge.Settings';
     self.Toolset = require 'forge.Toolset';
-    self.ToolsetPrototype = require 'forge.ToolsetPrototype';
+    self.ToolsetPrototype = forge.ToolsetPrototype or require 'forge.ToolsetPrototype';
 
     if variant or self.variant then 
         self.cache = root( ('%s/.forge'):format(variant or self.variant) );
