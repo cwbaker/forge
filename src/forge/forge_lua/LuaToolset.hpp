@@ -11,7 +11,7 @@ namespace sweet
 namespace forge
 {
 
-class Forge;
+class Toolset;
 
 class LuaToolset
 {
@@ -25,7 +25,12 @@ public:
 
     void create( lua_State* lua_state );
     void destroy();
+    void create_toolset( Toolset* toolset );
+    void update_toolset( Toolset* toolset );
+    void destroy_toolset( Toolset* toolset );
 
+    static int id( lua_State* lua_state );
+    static int prototype( lua_State* lua_state );
     static int create_call_metamethod( lua_State* lua_state );
     static int inherit_call_metamethod( lua_State* lua_state );
 };
