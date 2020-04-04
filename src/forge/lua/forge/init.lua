@@ -422,7 +422,6 @@ function forge:load()
     self.cache = root( '.forge' );
     self.Settings = require 'forge.Settings';
     self.Toolset = require 'forge.Toolset';
-    self.ToolsetPrototype = forge.ToolsetPrototype or require 'forge.ToolsetPrototype';
 
     if variant or self.variant then 
         self.cache = root( ('%s/.forge'):format(variant or self.variant) );
