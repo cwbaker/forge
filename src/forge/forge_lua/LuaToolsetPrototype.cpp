@@ -179,7 +179,7 @@ int LuaToolsetPrototype::create_call_metamethod( lua_State* lua_state )
     return continue_create_call_metamethod( lua_state, LUA_OK, 0 );
 }
 
-int LuaToolsetPrototype::continue_create_call_metamethod( lua_State* lua_state, int /*status*/, lua_KContext /*context*/ )
+int LuaToolsetPrototype::continue_create_call_metamethod( lua_State* /*lua_state*/, int /*status*/, lua_KContext /*context*/ )
 {
     return 1;
 }
