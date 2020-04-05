@@ -2,6 +2,7 @@
 #define FORGE_LUATOOLSET_HPP_INCLUDED
 
 #include <ctime>
+#include <lua.hpp>
 
 struct lua_State;
 
@@ -31,6 +32,8 @@ public:
 
     static int id( lua_State* lua_state );
     static int prototype( lua_State* lua_state );
+    static int create_call_metamethod( lua_State* lua_state );
+    static int continue_create_call_metamethod( lua_State* lua_state, int /*status*/, lua_KContext /*context*/ );
 };
 
 }

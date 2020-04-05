@@ -145,15 +145,15 @@ int LuaToolset::prototype( lua_State* lua_state )
 }
 
 /**
-// Redirect calls made on `forge.Toolset()` to `Toolset.create()`.
+// Redirect calls made on `forge.Toolset()` to `Toolset.new()`.
 //
 // Removes the `Toolset` table, passed as part of the metamethod call, from
-// the stack and calls through to `Toolset.create()` passing through 
-// the identifier, target prototype, and any other arguments.
+// the stack and calls through to `Toolset.new()` passing through 
+// the identifier and any other arguments.
 //
 // ~~~lua
-// function target_call_metamethod( _, forge, identifier, target_prototype, ... )
-//     return forge:target( identifier, target_prototype, ... );
+// function target_call_metamethod( _, forge, identifier, ... )
+//     return Toolset.new( identifier, ... );
 // end
 // ~~~
 */
@@ -162,12 +162,23 @@ int LuaToolset::create_call_metamethod( lua_State* lua_state )
     const int TOOLSET = 1;
     const int VARARGS = 2;
     int args = lua_gettop( lua_state );
-    lua_getfield( lua_state, TOOLSET, "create" );
+    lua_getfield( lua_state, TOOLSET, "new" );
     lua_pushvalue( lua_state, TOOLSET );
     for ( int i = VARARGS; i <= args; ++i )
     {
         lua_pushvalue( lua_state, i );
     }
-    lua_call( lua_state, args, 1 );
+    lua_callk( lua_state, args, 1, 0, &LuaToolset::continue_create_call_metamethod );
+    return continue_create_call_metamethod( lua_state, LUA_OK, 0 );
+}
+
+/**
+// Continue create call metamethods that yield.
+//
+// @return
+//  Returns 1.
+*/
+int LuaToolset::continue_create_call_metamethod( lua_State* lua_state, int /*status*/, lua_KContext /*context*/ )
+{
     return 1;
 }
