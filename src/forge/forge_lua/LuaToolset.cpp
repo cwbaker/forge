@@ -64,8 +64,6 @@ void LuaToolset::create( lua_State* lua_state )
     lua_setfield( lua_state_, -2, "__index" );
     lua_pushcfunction( lua_state_, &LuaToolset::id );
     lua_setfield( lua_state_, -2, "__tostring" );
-    lua_pushcfunction( lua_state_, &LuaToolset::inherit_call_metamethod );
-    lua_setfield( lua_state_, -2, "__call" );
     lua_pop( lua_state_, 1 );
 
     // Set `forge.Toolset` to this object.
@@ -171,34 +169,5 @@ int LuaToolset::create_call_metamethod( lua_State* lua_state )
         lua_pushvalue( lua_state, i );
     }
     lua_call( lua_state, args, 1 );
-    return 1;
-}
-
-/**
-// Redirect calls made on forge objects to `Toolset.inherit()`.
-//
-// The call to `Toolset.inherit()` may be overridden by providing `inherit()`
-// methods on `Toolset` and/or individual forge objects.
-//
-// ~~~lua
-// function inherit_call_metamethod( forge, ... )
-//     local inherit_function = forge.inherit;
-//     inherit_function( forge, ... );
-//     return forge;
-// end
-// ~~~
-*/
-int LuaToolset::inherit_call_metamethod( lua_State* lua_state )
-{
-    const int TOOLSET = 1;
-    const int VARARGS = 2;
-    int args = lua_gettop( lua_state );
-    lua_getfield( lua_state, TOOLSET, "inherit" );
-    lua_pushvalue( lua_state, TOOLSET );
-    for ( int i = VARARGS; i <= args; ++i )
-    {
-        lua_pushvalue( lua_state, i );
-    }
-    lua_call( lua_state, args + 1, 1 );
     return 1;
 }

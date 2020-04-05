@@ -31,8 +31,6 @@ public:
 
     static int id( lua_State* lua_state );
     static int prototype( lua_State* lua_state );
-    static int create_call_metamethod( lua_State* lua_state );
-    static int inherit_call_metamethod( lua_State* lua_state );
 };
 
 }
