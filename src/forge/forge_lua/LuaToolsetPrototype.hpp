@@ -1,7 +1,7 @@
 #ifndef FORGE_LUATOOLSETPROTOTYPE_HPP_INCLUDED
 #define FORGE_LUATOOLSETPROTOTYPE_HPP_INCLUDED
 
-struct lua_State;
+#include <lua.hpp>
 
 namespace sweet
 {
@@ -26,6 +26,7 @@ public:
     static int id( lua_State* lua_state );
     static int toolset_prototype_call_metamethod( lua_State* lua_state );
     static int create_call_metamethod( lua_State* lua_state );
+    static int continue_create_call_metamethod( lua_State* lua_state, int /*status*/, lua_KContext /*context*/ );
 };
     
 }
