@@ -178,7 +178,7 @@ int LuaToolset::create_call_metamethod( lua_State* lua_state )
 // @return
 //  Returns 1.
 */
-int LuaToolset::continue_create_call_metamethod( lua_State* lua_state, int /*status*/, lua_KContext /*context*/ )
+int LuaToolset::continue_create_call_metamethod( lua_State* /*lua_state*/, int /*status*/, lua_KContext /*context*/ )
 {
     return 1;
 }
