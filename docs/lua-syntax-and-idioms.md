@@ -42,6 +42,8 @@ a hidden first parameter named "`self`".
 
 - The behaviour of targets in the build system is also defined using prototypes.  In this case each target has its own target prototype and the target prototype defines the functions that specify which actions are taken for that type of target in a traversal of the dependency graph.
 
+- Default values are provided for variables that are optionally set on the command line using a Lua idiom of assigning a value to itself or a default value.  In Lua the `or` operator returns its first argument if it is not false; otherwise it will return its second argument.  Unassigned variables evaluate to `nil` which is interpreted as false.  Thus the effect here is to preserve any value that may have been set on the command line or provide a sensible default otherwise.
+
 ---
 
 - The root build script, *forge.lua*, that sets up the build for the copy file tutorial is the following:
