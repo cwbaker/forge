@@ -8,6 +8,32 @@ nav_order: 8
 - TOC
 {:toc}
 
+Targets are the nodes in the dependency graph.  Typically each target represents a single file but targets can also represent a single directory, multiple files, multiple directories, and even groups of targets that are useful to build together but aren't directly related to anything on disk (e.g. the *all* targets in the root and other directories).
+
+Create targets by passing an identifier to one of the target creation functions `forge:SourceFile()`, `forge:File()`, or `forge:Target()` to create targets representing source files, intermediate files, or targets that will be defined later.
+
+The identifier used to create a target is considered a relative path to the target to create.  The relative paths is considered relative to Forge's notion of the current working directory set to the path of the file currently being executed by Forge (e.g. the root build script of the currently executing buildfile).
+
+Targets exist in a hierarchical namespace with the same semantics as operating system paths.  Targets have an identifier, a parent, and zero or more children.  Targets are referred to via `/` delimited paths by using `.` and `..` to refer to the current target and parent target respectively.
+
+The hierarchical namespace is similar but not identical to the hierarchy of directories and files on disk.  Targets are often bound to files on disk in quite separate locations from their location in the target namespace or even not bound to files at all.
+
+Referring to a target with the same identifier always returns the same target.  This allows late binding in the case of depending targets that refer to their dependencies before those dependencies are fully defined.
+
+Anonymous targets can be created using the `anonymous()` function to generate a unique identifier for the target instead of passing a specific identifier.
+
+The order in which targets are built is specified implicitly by the dependencies between targets.  Dependencies of each target are built before the target itself.  Cyclic dependencies are lazily detected at build-time and generate a warning (but not an error).
+
+Target paths and system paths always use `/` as a delimiter.  Convert paths to native paths prior to passing them to external tools if needed with the `native()` function.
+
+Although targets usually bind to a single file it is possible to create targets with no associated file (i.e. Make's phony targets) or with multiple associated files (i.e. tools that generate multiple output files in one invocation).
+
+The string passed to create a target is that target's identifier or is used to generate the identifier for multiple targets.  A target's identifier is often different from its filename.  In the example above the static library target's identifier is `hello_world` but it will build to a file named *libhello_world.a* or *hello_world.lib* when built with Unix and Windows toolchains respectively.
+
+Create dependencies conditionally by storing a target in a local variable and making further dependency calls on it.  Alternatively passing the same identifier (after string substitution) will return an already created target.  So really all that needs to happen is the dependency call is made conditionally onto the same target.
+
+Create dependencies dynamically using the same pattern as for conditional dependencies of storing a target in a local variable or reusing an existing identifier.  A typical example of dynamic dependencies is looping over all toolsets to build executables to be combined into a macOS or iOS fat binary.
+
 ### id
 
 ~~~lua
