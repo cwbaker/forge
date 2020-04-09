@@ -98,6 +98,12 @@ function postorder( visitor, target )
 
 Perform a postorder traversal of targets calling the *visitor* function for each target visited.  Returns the number of visited targets that failed because they generated an error during their visitation.
 
+Postorder traversal visits each target's dependencies before it visits that target.  This ordering ensures that dependencies are built before the targets that depend on them.
+
+Targets are only visited once per traversal even if they are depended upon by more than one depending target.  It is assumed that the first visit brings the target up to date and that subsequent visits are unnecessary.
+
+Cyclic references are quietly ignored.
+
 Errors are reported by calling the standard Lua `error()` function passing a string that describes the error that has occured.  This displays the error message on the console and causes the current processing to fail.
 
 Errors that occur while visiting a target mark the target and any dependent targets as failing.  The dependent targets are not visited (although an error message is displayed for each dependent target that is not visited).  Processing of other targets that aren't part of the same dependency chain continues.
