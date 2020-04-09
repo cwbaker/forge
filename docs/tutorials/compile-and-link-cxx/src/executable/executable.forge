@@ -1,9 +1,20 @@
 
-for _, toolset in toolsets('cc.*') do
-    toolset:all {
-        toolset:Executable '${bin}/hello_world' {
+-- Set the version as date/time YYYY.mm.dd.
+local version = ('%s'):format( os.date('%Y.%m.%d') );
+
+for _, cc in toolsets('^cc.*') do
+    local cc = cc:inherit {
+        subsystem = 'CONSOLE'; 
+        stack_size = 32768;
+    };
+
+    cc:all {
+        cc:Executable '${bin}/hello_world' {
             '${lib}/hello_world';
-            toolset:Cxx '${obj}/%1' {
+            cc:Cxx '${obj}/%1' {
+                defines = {    
+                    ('VERSION="\\"%s\\""'):format( version );
+                };
                 'main.cpp';
             };
         };

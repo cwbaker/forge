@@ -1,7 +1,7 @@
 
 variant = variant or 'debug';
 
-local toolset = require 'forge.cc' {
+local cc = require 'forge.cc' {
     identifier = 'cc_${platform}_${architecture}';
     platform = operating_system();
     architecture = 'x86_64';
@@ -18,7 +18,7 @@ local toolset = require 'forge.cc' {
     debug = variant ~= 'shipping';
 };
 
-toolset:all {
+cc:all {
     'src/executable/all';
 };
 
