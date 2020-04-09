@@ -135,6 +135,8 @@ The `bin`, `lib`, and `obj` settings have no special meaning in Forge.  They are
 
 Other settings are used internally by the C/C++ module.  They provide control of features such as which architecture to build for, whether or not to generate debug information, which optimization level to use, etc.  Refer to the *cc* module reference for more details.
 
+Paths appearing in the root build script and buildfiles always use `/` as a delimiter.  Convert paths to native paths prior to passing them to external tools if needed with the `native()` function.  Otherwise always use the portable form with forward slashes.
+
 ### Default Targets
 
 Targets built when Forge is invoked from the root directory of the project are specified by making them dependencies of the special "all" target in the root directory through a call to `Toolset.all()` passing the paths to the targets to add as dependencies:

@@ -8,141 +8,68 @@ nav_order: 3
 - TOC
 {:toc}
 
-Buildfiles specify the targets and dependencies that make up the dependency graph for a project.  They have the *.forge* extension and appear throughout the directory hierarchy of a project.
+Buildfiles are plain Lua scripts that specify the targets and dependencies making up the dependency graph for a build.  They have the extension *.forge* and appear throughout directory hierarchy of a project.
 
-The separation of configuration (in the root build script, *forge.lua*) and the dependency graph definition (in the buildfiles, *\*.forge* throughout the project hierarchy) allows the components of a project to be built in a modular and reusable way.
+The `buildfile()` function temporarily changes the working directory to the directory containing the buildfile while the buildfile is executed.  This has the effect of making relative paths in buildfiles relative to the containing directory.
 
-Looking back and continuing on from our previous use of the Forge project as an example we can see that the first buildfile that is loaded to define the dependency graph for the Forge project is *assert.forge* as follows:
+Having buildfiles with paths relative to the containing directory leads naturally to having a buildfile per directory with buildfiles in parent directories loading buildfiles from any directories beneath their own.
+
+### Accessing Toolsets
+
+Buildfiles retrieve toolsets defined in the root build script by looping over toolsets with identifiers that match a pattern.  Multiple toolsets are useful when building for multiple architectures (e.g. armv7, arm64, etc) for Android or iOS.
 
 ~~~lua
--- ...
-buildfile 'src/assert/assert.forge';
--- ...
+for _, cc in toolsets('^cc.*') do
+    -- Define targets using the `cc` toolset here.
+end
 ~~~
 
-The `buildfile()` function loads a buildfile.  The working directory is temporarily changed to the directory containing the buildfile and then the buildfile is executed.  Relative paths expressed within the buildfile become relative to the directory containing the buildfile by default.  The working directory is restored once the buildfile has been loaded.
+The loop over `toolsets('^cc.*')` iterates over the toolsets that were registered in *forge.lua* with identifiers that start with `cc`.  This pattern is a Lua pattern not a regular expression.  See [6.4.1 Patterns](https://www.lua.org/manual/5.3/manual.html#6.4.1) in the Lua manual.
 
-The contents of the buildfile *src/assert/assert.forge*:
+### Targets and Dependencies
+
+Targets are the nodes in the dependency graph.  Typically each target has an associated file that it builds, a target prototype to define its behavior, and a list of dependencies that must be built first.
+
+Create targets by calling the target prototypes defined on a toolset like the calls made to `cc:StaticLibrary` and `cc:Cxx` below.  Identifiers are interpolated with settings and functions from the toolset, global variables and functions, and environment variables.
+
+Add dependencies by making a call on the depending target passing the dependencies in a table.  Strings passed in this call are implicitly converted into targets representing source files also with interpolation.
 
 ~~~lua
-for _, forge in toolsets('^cc.*') do
-    forge:StaticLibrary '${lib}/assert_${architecture}' {
-        forge:Cc '${obj}/%1' {
-            'assert.cpp'
+for _, cc in toolsets('^cc.*') do
+    cc:StaticLibrary '${lib}/hello_world' {
+        cc:Cxx '${obj}/%1' {
+            'hello_world.cpp';
         };
     };
 end
 ~~~
 
-### Multiple Toolsets
+Target creation and dependency calls are usually chained together.  You will often see, as in this example, C++ source files being compiled to object files as `Cxx` targets being passed straight to a `StaticLibrary` target to be archived into a static library.
 
-The loop over `toolsets('^cc.*')` iterates over all toolsets that were registered in *forge.lua* with identifiers that match the Lua pattern `^cc.*` (the toolsets with identifiers that start with `cc`).
+### Buildfile Specific Settings
 
-This looping allows for components to be built multiple times with different settings.  For example the *assert* library might being built for multiple architectures for Android or iOS (e.g. armv7, arm64, etc).  
-
-It is possible to build multiple variants using multiple toolsets but that is uncommon.  Variants are usually separated to keep the dependency graph smaller and build faster.
-
-### String Interpolation
-
-The strings passed as identifiers in the buildfile are interpolated with the variables coming from the toolset settings specified in *forge.lua* when the toolset was created, the toolset itself, global variables, and finally environment variables.
-
-The `lib`, `obj`, and `architecture` variables resolve to values set when the toolset was created in *forge.lua*.  The `lib` and `obj` are set only so that they can be referenced later in buildfiles.  The `architecture` variable is used to determine the architecture to compile as well as adding to the name of the file the static library is built to.
-
-String interpolated variables can resolve to functions defined on the toolset.  In this case the function is called passing the toolset and any whitespace separated values following the identifier before the closing brace as arguments.  For example `${foo a b c}` calls the function `foo( toolset, a, b, c)` when used to interpolate a string on a toolset.
-
-The `%1` in `forge:Cc '${obj}/%1'` generates names for the object files using string substitution.  The `%1` represents the first capture that is matched in the pattern; in this case the portion of the path relative to the project root directory without its extension.
-
-Other replacement values for the default pattern are `%0` the root relative path including extension, `%1` the root relative path excluding extension, `%2` the filename excluding extension, and `%3` the extension without any leading dot.
-
-### Linking
-
-The buildfile that builds the Forge executable references the *assert* library built in the previous example:
+Apply setting specific to a buildfile by inheriting settings from a toolset into a new, temporary toolset and overriding those settings that need to change.
 
 ~~~lua
--- Set the version as date/time YYYY.mm.dd HH:MM:SS and variant.
-local version = ('%s %s'):format( os.date('%Y.%m.%d %H:%M:%S'), variant or 'debug' );
-
--- Disable warnings on Linux to avoid unused variable warnings in Boost
--- System library headers.
-local libraries;
-local warning_level = 3;
-if operating_system() == 'linux' then
-    warning_level = 0;
-    libraries = { 
-        'pthread', 
-        'dl' 
-    };
-end
-
-for _, forge in toolsets('^cc.*') do
-    local forge = forge:inherit {
+for _, cc in toolsets('^cc.*') do
+    local cc = cc:inherit {
         subsystem = 'CONSOLE'; 
         stack_size = 32768;
-        warning_level = warning_level;    
     };
-
-    forge:all {
-        forge:Executable '${bin}/forge' {
-            '${lib}/forge_${architecture}';
-            '${lib}/forge_lua_${architecture}';
-            '${lib}/process_${architecture}';
-            '${lib}/luaxx_${architecture}';
-            '${lib}/cmdline_${architecture}';
-            '${lib}/error_${architecture}';
-            '${lib}/assert_${architecture}';
-            '${lib}/liblua_${architecture}';
-            '${lib}/boost_filesystem_${architecture}';
-            '${lib}/boost_system_${architecture}';
-
-            libraries = libraries;
-            
-            forge:Cxx '${obj}/%1' {
-                defines = {    
-                    'BOOST_ALL_NO_LIB'; -- Disable automatic linking to Boost libraries.
-                    ('BUILD_VERSION="\\"%s\\""'):format( version );
-                };
-                'Application.cpp', 
-                'main.cpp'
-            };    
-        };
-    };
+    -- Define targets using the inherited `cc` toolset here.
 end
 ~~~
 
-### Versioning
+### Default Targets
 
-Generating version numbers for built components can be rolled any which way you like.  Here the current date, time, and variant is used.  Other possibilities include passing version on the command line if you already have an external means of generating a version number, executing external processes from within the buildfile, or generating a version number from a Lua program running within Forge.
-
-~~~lua
-local version = ('%s %s'):format( os.date('%Y.%m.%d %H:%M:%S'), variant or 'debug' );
-~~~
-
-The generated version number is passed into the build later as a pre-processor macro.
-
-### Buildfile Specific Settings and Inheritance
-
-Platform specific settings that apply only to a single buildfile are defined using setting inheritance.
+Buildfiles communicate their entry-point/root-level targets by adding them as dependencies of a special target "all" in their directory.  The root build script for a project can then add these "all" targets to the "all" target in the root directory so that building from the root directory defaults to building all important targets for the project.
 
 ~~~lua
--- Disable warnings on Linux to avoid unused variable warnings in Boost
--- System library headers.
-local libraries;
-local warning_level = 3;
-if operating_system() == 'linux' then
-    warning_level = 0;
-    libraries = { 
-        'pthread', 
-        'dl' 
+for _, cc in toolsets('^cc.*') do
+    cc:all {
+        -- Define or list default targets here.
     };
 end
-
-for _, forge in toolsets('^cc.*') do
-    local forge = forge:inherit {
-        subsystem = 'CONSOLE'; 
-        stack_size = 32768;
-        warning_level = warning_level;    
-    };
--- ...
 ~~~
 
 ### Linking Libraries
@@ -150,36 +77,60 @@ for _, forge in toolsets('^cc.*') do
 Libraries are linked into an executable or dynamic library by listing them as dependencies of the executable target.  String values appearing as dependencies are interpolated so that `${lib}/assert_${architecture}` is expanded appropriately.
 
 ~~~lua
-    forge:all {
-        forge:Executable '${bin}/forge' {
-            '${lib}/forge_${architecture}';
-            '${lib}/forge_lua_${architecture}';
-            '${lib}/process_${architecture}';
-            '${lib}/luaxx_${architecture}';
-            '${lib}/cmdline_${architecture}';
-            '${lib}/error_${architecture}';
-            '${lib}/assert_${architecture}';
-            '${lib}/liblua_${architecture}';
-            '${lib}/boost_filesystem_${architecture}';
-            '${lib}/boost_system_${architecture}';
-
-            libraries = libraries;
-            
+for _, cc in toolsets('^cc.*') do
+    cc:all {
+        cc:Executable '${bin}/hello_world' {
+            '${lib}/hello_world';
+            cc:Cxx '${obj}/%1' {
+                'main.cpp';
+            };
+        };
+    };
+end
 ~~~
 
-Libraries that exist outside of the project and build are passed as a list in the `library` attribute of dependencies.  In this case the libraries are the system libraries *pthread* and *dl* for thread and dynamic linking support on Linux.  Other scenarios might be third-party libraries that are not provided in source form.
+### Linking Third-Party Libraries
+
+Third party libraries that exist outside of the project can be passed as a list in the `library` attribute of the dependencies call.  In this case the libraries are the system libraries *pthread* and *dl* for thread and dynamic linking support on Linux.  Other scenarios might be third-party libraries that are not provided in source form.
+
+~~~lua
+local libraries;
+if operating_system() == 'linux' then
+    libraries = { 
+        'pthread', 
+        'dl' 
+    };
+end
+
+-- ...
+
+for _, cc in toolsets('^cc.*') do
+    cc:all {
+        cc:Executable '${bin}/forge' {
+            '${lib}/forge_${architecture}';
+            libraries = libraries;
+            -- ...
+        };
+    };
+end
+~~~
 
 ### Preprocessor Macros
 
-Pre-processor macros are passed as a list in the `defines` attribute of dependencies and settings.  The list specified in settings is combined with the lists specified in dependencies so that all listed macros are defined.  Multi
+Pre-processor macros are specified by settings the `defines` attribute of the dependencies call to for a `Cc` or `Cxx` target.  Consecutive calls are cumulative with each other and with defines specified in the settings.
 
 ~~~lua
+local version = ('%s'):format( os.date('%Y.%m.%d') );
+
+-- ...
+
 forge:Cxx '${obj}/%1' {
     defines = {    
-        'BOOST_ALL_NO_LIB'; -- Disable automatic linking to Boost libraries.
         ('BUILD_VERSION="\\"%s\\""'):format( version );
     };
     'Application.cpp', 
     'main.cpp'
-};    
+}; 
+
+-- ...
 ~~~
