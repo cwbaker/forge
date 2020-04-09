@@ -12,54 +12,6 @@ The root build script is the file named *forge.lua* in the project's root direct
 
 A build is defined in two logical steps.  The first step creates one or more toolsets to encapsulate the tools and settings used in the build.  The second step uses those toolsets to create targets representing the files, dependencies, and actions in the build.
 
-### Copying Files
-
-Consider the following root build script for a build that copies the files `{bar,baz,foo}.in` to `output/{bar,baz,foo}.out`:
-
-~~~lua
-local toolset = require 'forge' {
-    output = root( 'output' );
-};
-
-toolset:all {
-    toolset:Copy '${output}/%1.out' {
-        'bar.in';
-        'baz.in';
-        'foo.in';
-    };    
-};
-~~~
-
-This is a plain Lua script.  The syntax may appear a little foreign if you aren't familiar with Lua's syntactic sugar that allows parentheses to be left out for function arguments with tables and string literals and "method" calls made with the colon syntax.
-
-From the Lua Manual - [3.4.10 Function Calls](https://www.lua.org/manual/5.3/manual.html#3.4.10):
-
-> A call v:name(args) is syntactic sugar for v.name(v,args), except that v is evaluated only once.
-
-> A call of the form f{fields} is syntactic sugar for f({fields}); that is, the argument list is a single new table. A call of the form f'string' (or f"string" or f[[string]]) is syntactic sugar for f('string'); that is, the argument list is a single literal string.
-
-Adding the omitted parentheses and parameters makes the function calls and their arguments a little clearer:
-
-~~~lua
-local toolset = require( 'forge' )( {
-    output = root( 'output' );
-} );
-
-toolset.all( toolset, {
-    toolset.Copy( toolset, '${output}/%1.out' )( {
-        'bar.in';
-        'baz.in';
-        'foo.in';
-    } );
-} );
-~~~
-
-With syntax explained we can work through what this script actually means in the context of a build.  The logical split into two steps is quite clear with the first step being the creation of the toolset and the second step the calls to create targets and specify dependencies.
-
-The toolset is created by requiring the `forge` module and then making a call on it passing the settings for apply to the toolset as the sole argument (recall that calls with a single table argument may omit parentheses).  The required module acts as a prototype for toolsets and calling it creates a toolset with behavior defined by that prototype.
-
-The toolset is then used to define the dependency graph of files and actions in the build.  The call to `toolset.all()` makes the output files dependencies of the special "all" target so that they are built by default when `forge` is run from that directory.  The `toolset.Copy()` call creates targets that copy the source files into the output directory using pattern matching and replacement to generate the output filenames from the inputs.
-
 ### Simple C++ Project
 
 A more interesting root build script is that for a simple C++ project build that compiles and links a static library and executable:

@@ -19,12 +19,12 @@ Options:
   -f, --file         Set the name of the root build script.
   -s, --stack-trace  Enable stack traces in error messages.
 Variables:
-  goal               Target to build (relative to working directory).
+  goal               Target to build.
   variant            Variant built (debug, release, shipping).
 Commands:
   build              Build outdated targets.
   clean              Clean all targets.
-  reconfigure        Regenerate per-machine configuration settings.
+  reconfigure        Regenerate configuration settings.
   dependencies       Print targets by dependency hierarchy.
   namespace          Print targets by namespace hierarchy.
 ~~~
@@ -38,14 +38,6 @@ The directory that `forge` is run from is the initial working directory.  By def
 Pass commands (e.g. *clean*, *build*, *dependencies*, etc) on the command line to determine what the build does and in what order.  The default, when no other command is passed, is *build* which typically brings all files up to date by building them.
 
 Multiple commands passed on the same command line are executed in order.  All state is restored between commands so passing multiple commands to one invocation is functionally the same as passing the same commands to separate invocations.  Duplicate commands are executed multiple times.
-
-### Variables 
-
-Assign values to variables (e.g. *variant={debug, release, shipping}*) on the command line to configure the build.  All assignments are made to global variables in Lua before the root build script and any actions are executed.  Typically this is used to configure variant, target to build, and/or install location.
-
-Later assignments override earlier ones in the case of duplicate variables.  However because all assignments are made before any commands are executed interleaving assignments and commands is not generally useful.
-
-### Examples
 
 Build useful outputs by running from the project's root directory:
 
@@ -65,6 +57,18 @@ Rebuild by running the *clean* and *build* commands in the same invocation:
 $ forge clean build
 ~~~
 
+Regenerate settings for the local machine by running *reconfigure*:
+
+~~~bash
+$ forge reconfigure
+~~~
+
+### Variables 
+
+Assign values to variables (e.g. *variant={debug, release, shipping}*) on the command line to configure the build.  All assignments are made to global variables in Lua before the root build script and any actions are executed.  Typically this is used to configure variant, target to build, and/or install location.
+
+Later assignments override earlier ones in the case of duplicate variables.  However because all assignments are made before any commands are executed interleaving assignments and commands is not generally useful.
+
 Build the *release* variant by setting `variant=release`:
 
 ~~~bash
@@ -75,12 +79,6 @@ Clean the *release* variant by setting `variant=release` with the *clean* comman
 
 ~~~bash
 $ forge variant=release clean
-~~~
-
-Regenerate settings for the local machine by running *reconfigure*:
-
-~~~bash
-$ forge reconfigure
 ~~~
 
 List the dependency graph for the *release* variant:
