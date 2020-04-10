@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Buildfiles
+title: Writing Buildfiles
 parent: Getting Started
 nav_order: 3
 ---
@@ -8,11 +8,50 @@ nav_order: 3
 - TOC
 {:toc}
 
-Buildfiles are plain Lua scripts that specify the targets and dependencies making up the dependency graph for a build.  They have the extension *.forge* and appear throughout directory hierarchy of a project.
+Buildfiles are the plain Lua scripts that specify the targets and dependencies for a build.  They have the extension *.forge* and appear throughout the directory hierarchy of a project.
 
-The `buildfile()` function temporarily changes the working directory to the directory containing the buildfile while the buildfile is executed.  This has the effect of making relative paths in buildfiles relative to the containing directory.
+The `buildfile()` function, used to load a buildfile, temporarily updates the working directory to the directory containing the buildfile and then executes the buildfile.  This makes relative paths in the buildfile relative to the buildfile.
 
-Having buildfiles with paths relative to the containing directory leads naturally to having a buildfile per directory with buildfiles in parent directories loading buildfiles from any directories beneath their own.
+Having buildfile relative paths leads naturally to having a buildfile per source containing directory with buildfiles in parent directories loading buildfiles from any directories beneath their own.
+
+### Buildfiles
+
+From *src/library/library.forge* a C++ static library implementing the classic "Hello World!" is compiled and archived:
+
+~~~lua
+for _, cc in toolsets('^cc.*') do
+    cc:StaticLibrary '${lib}/hello_world' {
+        cc:Cxx '${obj}/%1' {
+            'hello_world.cpp';
+        };
+    };
+end
+~~~
+
+From *src/executable/executable.forge* a C++ executable is linked that uses the library above to print "Hello World!":
+
+~~~lua
+local version = ('%s'):format( os.date('%Y.%m.%d') );
+
+for _, cc in toolsets('^cc.*') do
+    local cc = cc:inherit {
+        subsystem = 'CONSOLE'; 
+        stack_size = 32768;
+    };
+
+    cc:all {
+        cc:Executable '${bin}/hello_world' {
+            '${lib}/hello_world';
+            cc:Cxx '${obj}/%1' {
+                defines = {    
+                    ('VERSION="\\"%s\\""'):format( version );
+                };
+                'main.cpp';
+            };
+        };
+    };
+end
+~~~
 
 ### Accessing Toolsets
 
@@ -30,7 +69,7 @@ The loop over `toolsets('^cc.*')` iterates over the toolsets that were registere
 
 Targets are the nodes in the dependency graph.  Typically each target has an associated file that it builds, a target prototype to define its behavior, and a list of dependencies that must be built first.
 
-Create targets by calling the target prototypes defined on a toolset like the calls made to `cc:StaticLibrary` and `cc:Cxx` below.  Identifiers are interpolated with settings and functions from the toolset, global variables and functions, and environment variables.
+Create targets by calling the target prototypes defined on a toolset like the calls made to `cc:StaticLibrary` and `cc:Cxx` below.  Identifiers are interpolated with settings or functions looked up from the toolset, global variables, and environment variables in that order.
 
 Add dependencies by making a call on the depending target passing the dependencies in a table.  Strings passed in this call are implicitly converted into targets representing source files also with interpolation.
 
@@ -115,9 +154,11 @@ for _, cc in toolsets('^cc.*') do
 end
 ~~~
 
-### Preprocessor Macros
+### Per-Target Settings
 
-Pre-processor macros are specified by settings the `defines` attribute of the dependencies call to for a `Cc` or `Cxx` target.  Consecutive calls are cumulative with each other and with defines specified in the settings.
+Some settings are available to be set on each target by passing fields with string keys in a dependency call.  See the documentation for each target prototype for the exact settings that this is available for.
+
+For example pre-processor macros are specified by setting the `defines` attribute of the dependencies call to for a `Cc` or `Cxx` target.  Consecutive calls are cumulative with each other and with defines specified in the settings.
 
 ~~~lua
 local version = ('%s'):format( os.date('%Y.%m.%d') );
@@ -126,7 +167,7 @@ local version = ('%s'):format( os.date('%Y.%m.%d') );
 
 forge:Cxx '${obj}/%1' {
     defines = {    
-        ('BUILD_VERSION="\\"%s\\""'):format( version );
+        ('VERSION="\\"%s\\""'):format( version );
     };
     'Application.cpp', 
     'main.cpp'
