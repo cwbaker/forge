@@ -16,6 +16,8 @@ Having buildfile relative paths leads naturally to having a buildfile per source
 
 ### Buildfiles
 
+Here we continue the example of the previous section building a C++ static library and executable to print the classic "Hello World!".  The two buildfiles involved are listed fully below and significant features described in the following paragraphs.
+
 From *src/library/library.forge* a C++ static library implementing the classic "Hello World!" is compiled and archived:
 
 ~~~lua
@@ -31,7 +33,7 @@ end
 From *src/executable/executable.forge* a C++ executable is linked that uses the library above to print "Hello World!":
 
 ~~~lua
-local version = ('%s'):format( os.date('%Y.%m.%d') );
+local version = os.date( '%Y.%m.%d' );
 
 for _, cc in toolsets('^cc.*') do
     local cc = cc:inherit {
@@ -113,10 +115,11 @@ end
 
 ### Linking Libraries
 
-Libraries are linked into an executable or dynamic library by listing them as dependencies of the executable target.  String values appearing as dependencies are interpolated so that `${lib}/assert_${architecture}` is expanded appropriately.
+Libraries are linked into an executable or dynamic library by listing them as dependencies of the executable target.  String values appearing as dependencies are interpolated so that `${lib}/hello_world` is expanded appropriately.
 
 ~~~lua
 for _, cc in toolsets('^cc.*') do
+    -- ...
     cc:all {
         cc:Executable '${bin}/hello_world' {
             '${lib}/hello_world';

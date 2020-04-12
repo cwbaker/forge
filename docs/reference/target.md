@@ -8,6 +8,8 @@ nav_order: 8
 - TOC
 {:toc}
 
+## Overview
+
 Targets are the nodes in the dependency graph.  Typically each target represents a single file but targets can also represent a single directory, multiple files, multiple directories, and even groups of targets that are useful to build together but aren't directly related to anything on disk (e.g. the *all* targets in the root and other directories).
 
 Create targets by passing an identifier to one of the target creation functions `forge:SourceFile()`, `forge:File()`, or `forge:Target()` to create targets representing source files, intermediate files, or targets that will be defined later.
@@ -33,6 +35,8 @@ The string passed to create a target is that target's identifier or is used to g
 Create dependencies conditionally by storing a target in a local variable and making further dependency calls on it.  Alternatively passing the same identifier (after string substitution) will return an already created target.  So really all that needs to happen is the dependency call is made conditionally onto the same target.
 
 Create dependencies dynamically using the same pattern as for conditional dependencies of storing a target in a local variable or reusing an existing identifier.  A typical example of dynamic dependencies is looping over all toolsets to build executables to be combined into a macOS or iOS fat binary.
+
+## Functions
 
 ### id
 
