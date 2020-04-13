@@ -1,9 +1,4 @@
 
--- Reference Lua build scripts from within the source tree rather than 
--- relative to the build executable so that they can be edited in place during
--- development and are versioned along with the code that they are building.
-package.path = ('/home/charles/source/forge/src/forge/lua/?.lua')..';'..('/home/charles/source/forge/src/forge/lua/?/init.lua');
-
 -- Initialize Forge and configure the output directory to *output* relative
 -- to the root directory that contains *forge.lua*.
 local toolset = require 'forge' {
