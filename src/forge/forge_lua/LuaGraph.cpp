@@ -103,17 +103,12 @@ int LuaGraph::add_toolset( lua_State* lua_state )
         const int IDENTIFIER = 1;
         const int TOOLSET_PROTOTYPE = 2;
         Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
-        string id = luaL_checkstring( lua_state, IDENTIFIER );
+        string id = luaL_optstring( lua_state, IDENTIFIER, "" );
         ToolsetPrototype* toolset_prototype = (ToolsetPrototype*) luaxx_to( lua_state, TOOLSET_PROTOTYPE, TOOLSET_PROTOTYPE_TYPE );
-        luaL_argcheck( lua_state, toolset_prototype, TOOLSET_PROTOTYPE, "nil toolset prototype" );
-        if ( toolset_prototype )
-        {
-            Toolset* toolset = forge->graph()->add_toolset( id, toolset_prototype );
-            forge->create_toolset_lua_binding( toolset );
-            luaxx_push( lua_state, toolset );
-            return 1;
-        }
-        return 0;
+        Toolset* toolset = forge->graph()->add_toolset( id, toolset_prototype );
+        forge->create_toolset_lua_binding( toolset );
+        luaxx_push( lua_state, toolset );
+        return 1;
     }
 
     catch ( const std::exception& exception )

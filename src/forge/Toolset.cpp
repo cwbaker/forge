@@ -17,7 +17,6 @@ Toolset::Toolset( const std::string& id, ToolsetPrototype* toolset_prototype, Gr
   graph_( graph ),
   prototype_( toolset_prototype )
 {
-    SWEET_ASSERT( !id_.empty() );
     SWEET_ASSERT( graph_ );
 }
 

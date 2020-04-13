@@ -3,7 +3,7 @@ local Toolset = forge.Toolset or {};
 
 function Toolset.new( toolset_prototype, values )
     local settings = forge.Settings():apply( values );
-    local identifier = Toolset.interpolate( Toolset, values.identifier, values );
+    local identifier = Toolset.interpolate( Toolset, values.identifier or '', values );
     local toolset = add_toolset( identifier, toolset_prototype );
     toolset.settings = settings;
     toolset:install();
@@ -56,7 +56,7 @@ end
 function Toolset.install( toolset )
     local module_settings;
     local configure = toolset.configure;
-    if configure then
+    if configure and toolset:prototype() then
         local id = tostring(toolset:prototype());
         local local_settings = forge.local_settings;
         module_settings = local_settings[id];

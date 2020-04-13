@@ -91,7 +91,6 @@ void LuaToolset::create_toolset( Toolset* toolset )
 void LuaToolset::update_toolset( Toolset* toolset )
 {
     ToolsetPrototype* toolset_prototype = toolset->prototype();
-    SWEET_ASSERT( toolset_prototype );
     if ( toolset_prototype )
     {
         luaxx_push( lua_state_, toolset );
