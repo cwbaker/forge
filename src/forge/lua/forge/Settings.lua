@@ -42,7 +42,7 @@ end
 
 function Settings.defaults( self, values )
     for key, value in pairs(values) do 
-        if type(key) == 'string' and values[key] == nil then
+        if type(key) == 'string' and self[key] == nil then
             self[key] = value;
         end
     end
