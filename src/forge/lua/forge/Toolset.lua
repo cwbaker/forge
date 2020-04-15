@@ -53,29 +53,31 @@ function Toolset.initialize( toolset )
     return true;
 end
 
-function Toolset.install( toolset )
+function Toolset:install( toolset_prototype )
+    local id = toolset_prototype and tostring( toolset_prototype ) or tostring( self:prototype() );
+    local toolset_prototype = toolset_prototype or self;
+
     local module_settings;
-    local configure = toolset.configure;
-    if configure and toolset:prototype() then
-        local id = tostring(toolset:prototype());
+    local configure = toolset_prototype.configure;
+    if configure and self:prototype() then
         local local_settings = forge.local_settings;
         module_settings = local_settings[id];
         if not module_settings then
-            local settings = toolset.settings;
-            module_settings = configure( toolset, settings[id] or {} );
+            local settings = self.settings;
+            module_settings = configure( self, settings[id] or {} );
             settings[id] = module_settings;
             local_settings[id] = module_settings;
             local_settings.updated = true;
         end
     end
 
-    local validate = toolset.validate;
-    if validate and not validate( toolset, module_settings ) then
+    local validate = toolset_prototype.validate;
+    if validate and not validate( self, module_settings ) then
         return;
     end
 
-    local initialize = toolset.initialize;
-    if initialize and not initialize( toolset ) then
+    local initialize = toolset_prototype.initialize;
+    if initialize and not initialize( self ) then
         return;
     end
 end
