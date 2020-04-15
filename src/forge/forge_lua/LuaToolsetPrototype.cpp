@@ -40,8 +40,7 @@ void LuaToolsetPrototype::create( lua_State* lua_state, LuaToolset* lua_toolset 
     luaxx_create( lua_state_, this, TOOLSET_PROTOTYPE_TYPE );
 
     // Set the metatable for `ToolsetPrototype` to redirect calls to create
-    // new toolset prototypes via `LuaToolsetPrototype::toolset_prototype_call_metamethod()`
-    // and string conversion to return the toolset prototype's identifier.
+    // new toolset prototypes via `LuaToolsetPrototype::toolset_prototype_call_metamethod()`.
     luaxx_push( lua_state_, this );
     lua_newtable( lua_state_ );
     lua_pushcfunction( lua_state_, &LuaToolsetPrototype::toolset_prototype_call_metamethod );
