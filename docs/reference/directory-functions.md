@@ -2,7 +2,7 @@
 layout: page
 title: Directory Functions
 parent: Reference
-nav_order: 3
+nav_order: 1
 ---
 
 - TOC

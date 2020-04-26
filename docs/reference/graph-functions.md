@@ -2,7 +2,7 @@
 layout: page
 title: Graph Functions
 parent: Reference
-nav_order: 5
+nav_order: 3
 ---
 
 - TOC
