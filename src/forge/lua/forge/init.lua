@@ -301,6 +301,10 @@ function forge:PatternPrototype( identifier, replacement_modifier, pattern )
                     target:add_dependency( source_file );
                     self:merge( target, attributes );
                     table.insert( targets, target );
+                    local created = target.created;
+                    if created then
+                        created( toolset, target );
+                    end
                 end
                 return targets;
             end
