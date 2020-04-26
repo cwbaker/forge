@@ -2,7 +2,7 @@
 layout: page
 title: Target
 parent: Reference
-nav_order: 8
+nav_order: 7
 ---
 
 - TOC
@@ -36,7 +36,51 @@ Create dependencies conditionally by storing a target in a local variable and ma
 
 Create dependencies dynamically using the same pattern as for conditional dependencies of storing a target in a local variable or reusing an existing identifier.  A typical example of dynamic dependencies is looping over all toolsets to build executables to be combined into a macOS or iOS fat binary.
 
-## Functions
+## Overrides
+
+### create
+
+~~~lua
+function Target.create( toolset, identifier, target_prototype )
+~~~
+
+The `create()` function is called whenever a target for that target prototype is created by calling the target prototype table returned from `build.TargetPrototype()`.
+
+The parameters passed are the toolset that the target is being created with, the identifier that was specified, and the target prototype that was used to create the target (possibly nil).
+
+### depend
+
+~~~lua
+function Target.depend( toolset, target, dependencies )
+~~~
+
+The `depend()` function is called whenever a call is made on a target for that target prototype.  Typically this captures the use of calls of the form *target* **{** *dependencies* **}** to add dependencies or further define a target.
+
+The parameters passed are the toolset that the target was created with, the target itself, and the dependencies that were passed in.
+
+### build
+
+~~~lua
+function Target.build( toolset, target )
+~~~
+
+The `build()` function is called whenever an outdated target is visited as part of a build traversal.  The function should carry out whatever actions are necessary to build the file(s) that it represents up to date.
+
+The parameters passed in are the toolset that the target was created with and the target itself.
+
+### clean
+
+~~~lua
+function Target.clean( toolset, target )
+~~~
+
+The `clean()` function is called whenever a target is visited as part of a clean traversal.  The function should carry out whatever actions are necessary to remove files that were generated during a build traversal.
+
+Default behavior when visiting a cleanable target is to remove any files that the target is bound to.  Custom clean behavior is only needed if removing all of the built files is not desired.
+
+The parameters passed in are the toolset that the target was created with and the target itself.
+
+## Methods
 
 ### id
 
