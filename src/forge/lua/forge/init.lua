@@ -48,7 +48,7 @@ local function build_visit( target )
     if target:outdated() then
         local build_function = target.build;
         if build_function then 
-            local success, error_message = pcall( build_function, target.forge, target );
+            local success, error_message = pcall( build_function, target.toolset, target );
             target:set_built( success );
             if not success then 
                 clean_visit( target );
