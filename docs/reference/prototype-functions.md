@@ -10,6 +10,8 @@ nav_order: 5
 
 ## Overview
 
+These functions create target and toolset prototypes on which you can define functions to provide behavior for types of targets and toolsets.
+
 ## Functions
 
 ### FilePrototype
