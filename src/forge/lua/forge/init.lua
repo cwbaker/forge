@@ -265,6 +265,10 @@ function forge:FilePrototype( identifier, filename_modifier )
         target:set_filename( filename or target:path() );
         target:set_cleanable( true );
         target:add_ordering_dependency( toolset:Directory(branch(target)) );
+        local created = target.created;
+        if created then
+            created( toolset, target );
+        end
         return target;
     end
     return file_prototype;
@@ -277,8 +281,12 @@ function forge:JavaStylePrototype( identifier, pattern )
     function java_style_prototype.create( toolset, output_directory, target_prototype )
         local output_directory = root_relative():gsub( pattern, output_directory_modifier(toolset, output_directory) );
         local target = forge.Target( toolset, anonymous(), target_prototype );
-        target:add_ordering_dependency( toolset:Directory(output_directory) );
         target:set_cleanable( true );
+        target:add_ordering_dependency( toolset:Directory(output_directory) );
+        local created = target.created;
+        if created then
+            created( toolset, target );
+        end
         return target;
     end
     return java_style_prototype;
@@ -298,13 +306,13 @@ function forge:PatternPrototype( identifier, replacement_modifier, pattern )
                     local source_file = toolset:SourceFile( filename );
                     local identifier = root_relative( source_file ):gsub( pattern, replacement );
                     local target = toolset:File( identifier, pattern_prototype );
-                    target:add_dependency( source_file );
                     self:merge( target, attributes );
-                    table.insert( targets, target );
                     local created = target.created;
                     if created then
                         created( toolset, target );
                     end
+                    target:add_dependency( source_file );
+                    table.insert( targets, target );
                 end
                 return targets;
             end
@@ -331,6 +339,10 @@ function forge:GroupPrototype( identifier, replacement_modifier, pattern )
                     local identifier = root_relative( source_file ):gsub( pattern, replacement );
                     local file = toolset:File( identifier );
                     file:add_dependency( source_file );
+                    local created = target.created;
+                    if created then
+                        created( toolset, target );
+                    end
                     target:add_dependency( file );
                 end
                 return targets;
