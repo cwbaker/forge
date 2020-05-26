@@ -8,19 +8,27 @@ nav_order: 6
 - TOC
 {:toc}
 
+## Overview
+
+
+
 ## Functions
 
 ### execute
 
 ~~~lua
-function execute( command, arguments, filter )
+function execute( command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... )
 ~~~
 
-Executes `command` passing `arguments` as the command line and optionally using `filter` to process the output. 
+Executes `command` passing `arguments` as the command line and optionally using `dependencies_filter`, `stdout_filter`, and `stderr_filter` to process the output.
 
-The command will be executed in a thread and processing of any jobs that can be performed in parallel continues.  Returns the value returned by command when it exits.  The `filter` parameter is optional and can be nil to pass the output through to the console unchanged.
+Any other arguments are passed as extra arguments to the filter functions when they process a line of output.
 
-The `execute()` function suspends execution of the Lua coroutine that it is called on until the executed process finishes.  This leads to race conditions when the results of multiple `execute()` calls update shared data without proper synchronization (e.g. calling `wait()`).  This usually occurs when using `execute()` outside of a traversal.
+The command will be executed in a thread and processing of any jobs that can be performed in parallel continues.  Returns the value returned by command when it exits.
+
+The filter parameters are optional.  Passing nil for the dependency filter disables automatic dependency detection.  Passing nil to the stdout and/or stderr filters passes output to the appropriate console unchanged.
+
+The `execute()` call suspends processing on the Lua coroutine that it is made on until the executed process completes.  This leads to race conditions when the results of multiple `execute()` calls update shared data without proper synchronization (i.e. calling `wait()`).  This usually occurs when using `execute()` to generate local settings.
 
 Note that use of `execute()` within a traversal orders by dependencies and has barriers in place to ensure that targets aren't visited until all of their dependencies have been successfully visited.  So long as shared data isn't updated (uncommon during a traversal) there should be no problem.
 
