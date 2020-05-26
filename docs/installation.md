@@ -4,15 +4,9 @@ title: Installation
 nav_order: 2
 ---
 
-## Download
+Install Forge by building it from source and linking to the executable `${HOME}/forge/bin/forge` from your path.
 
-Download the latest Forge binary and build scripts from the [GitHub releases](https://github.com/cwbaker/forge/releases) page, unzip it, and then add a symbolic link to the executable `.../forge/bin/forge` from a directory in your path.
-
-## Compile
-
-Install Forge by building it from source and adding a symbolic link to the executable `${HOME}/forge/bin/forge` from a directory in your path.
-
-Change the install location by passing `prefix=${install-directory}` on the command line.  For example `forge prefix=D:\\forge variant=shipping install` on Windows or `forge prefix=/usr/local/forge variant=shipping install` on Linux or macOS.
+Change the install location by passing `prefix=${install-directory}` on the command line.  For example `forge prefix=D:\\forge variant=shipping install` or `forge prefix=/usr/local/forge variant=shipping install`.
 
 **Linux:**
 
