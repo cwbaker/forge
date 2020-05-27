@@ -10,7 +10,7 @@ nav_order: 3
 
 ## Overview
 
-Forge allows direct manipuation of the dependency graph used to track targets and dependencies.  These functions are described here.
+Forge allows direct manipulation of the dependency graph used to track targets and dependencies.  These functions are described here.
 
 ## Functions
 
