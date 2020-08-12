@@ -97,24 +97,44 @@ function msvc.configure( toolset, msvc_settings )
         end
     end
 
+    local REGISTRY_ROOTS = {
+        'HKLM\\SOFTWARE\\Wow6432Node';
+        'HKCU\\SOFTWARE\\Wow6432Node';
+        'HKLM\\SOFTWARE';
+        'HKCU\\SOFTWARE';
+    };
+
     local function autodetect_windows_sdk_directory()
-        local windows_sdk = registry( [[HKLM\SOFTWARE\Microsoft\Windows Kits\Installed Roots]] );
-        if windows_sdk.KitsRoot10 then 
-            return windows_sdk.KitsRoot10;
+        for _, root in ipairs(REGISTRY_ROOTS) do
+            local windows_sdk = registry( ([[%s\Microsoft\Microsoft SDKs\Windows\v10.0]]):format(root) );
+            if windows_sdk.InstallationFolder then 
+                return windows_sdk.InstallationFolder;
+            end
+        end
+    end
+
+    local function autodetect_ucrt_directory()
+        for _, root in ipairs(REGISTRY_ROOTS) do
+            local windows_sdk = registry( ([[%s\Microsoft\Windows Kits\Installed Roots]]):format(root) );
+            if windows_sdk.KitsRoot10 then 
+                return windows_sdk.KitsRoot10;
+            end
         end
     end
 
     local function autodetect_windows_sdk_version()
-        local windows_sdk = registry( [[HKLM\SOFTWARE\Microsoft\Windows Kits\Installed Roots]] );
-        if windows_sdk.KitsRoot10 then 
-            local latest_version;
-            for filename in ls(('%s/bin'):format(windows_sdk.KitsRoot10)) do
-                local version = leaf( filename ):match('10%.%d+%.%d+%.%d+');
-                if version then
-                    latest_version = version;
+        for _, root in ipairs(REGISTRY_ROOTS) do
+            local windows_sdk = registry( ([[%s\Microsoft\Windows Kits\Installed Roots]]):format(root) );
+            if windows_sdk.KitsRoot10 then
+                local latest_version;
+                for filename in ls(('%s/bin'):format(windows_sdk.KitsRoot10)) do
+                    local version = leaf( filename ):match('10%.%d+%.%d+%.%d+');
+                    if version then
+                        latest_version = version;
+                    end
                 end
+                return latest_version;
             end
-            return latest_version;
         end
     end
 
@@ -125,6 +145,7 @@ function msvc.configure( toolset, msvc_settings )
         visual_cxx_directory = autodetect_visual_cxx_directory( toolset_version );
         windows_sdk_directory = autodetect_windows_sdk_directory();
         windows_sdk_version = autodetect_windows_sdk_version();
+        ucrt_directory = autodetect_ucrt_directory();
     };
 end
 
@@ -214,15 +235,16 @@ function msvc.initialize( toolset )
     
     local sdk_directory = settings.msvc.windows_sdk_directory;
     local sdk_version = settings.msvc.windows_sdk_version;
+    local ucrt_directory = settings.msvc.ucrt_directory;
     if sdk_directory then 
-        table.insert( include, ('%s\\Include\\%s\\ucrt'):format(sdk_directory, sdk_version) );
+        table.insert( include, ('%s\\Include\\%s\\ucrt'):format(ucrt_directory, sdk_version) );
         table.insert( include, ('%s\\Include\\%s\\um'):format(sdk_directory, sdk_version) );
         table.insert( include, ('%s\\Include\\%s\\shared'):format(sdk_directory, sdk_version) );
         table.insert( include, ('%s\\Include\\%s\\winrt'):format(sdk_directory, sdk_version) );
         table.insert( lib_i386, ('%s\\Lib\\%s\\um\\x86'):format(sdk_directory, sdk_version) );
-        table.insert( lib_i386, ('%s\\Lib\\%s\\ucrt\\x86'):format(sdk_directory, sdk_version) );
+        table.insert( lib_i386, ('%s\\Lib\\%s\\ucrt\\x86'):format(ucrt_directory, sdk_version) );
         table.insert( lib_x86_64, ('%s\\Lib\\%s\\um\\x64'):format(sdk_directory, sdk_version) );
-        table.insert( lib_x86_64, ('%s\\Lib\\%s\\ucrt\\x64'):format(sdk_directory, sdk_version) );
+        table.insert( lib_x86_64, ('%s\\Lib\\%s\\ucrt\\x64'):format(ucrt_directory, sdk_version) );
     end
 
     msvc.environments_by_architecture = {
