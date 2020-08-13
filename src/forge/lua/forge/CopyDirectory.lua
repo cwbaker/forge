@@ -27,7 +27,7 @@ function CopyDirectory.depend( toolset, target, dependencies )
                 local copy = toolset:Copy (filename) {
                     source_filename;
                 };
-                target:add_dependency( copy );
+                target:add_dependency( copy[1] );
             elseif is_directory(source_filename) then 
                 local directory = toolset:SourceDirectory( source_filename );
                 cache:add_dependency( directory );
