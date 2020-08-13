@@ -12,8 +12,8 @@ permalink: pretty
 
 # Setup
 title: forge
-tagline: 'Fast, simple, file-based, Lua-scriptable build tool'
-description: 'A fast and simple build tool based on file timestamps and scriptable in Lua.'
+tagline: 'Lua-scriptable, file-based build tool'
+description: 'Lua-scriptable, file-based build tool'
 url: https://cwbaker.github.io
 baseurl: 
 author:
