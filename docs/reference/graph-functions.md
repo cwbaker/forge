@@ -10,7 +10,21 @@ nav_order: 3
 
 ## Overview
 
-Forge allows direct manipulation of the dependency graph used to track targets and dependencies.  These functions are described here.
+Forge's core data structure is a dependency graph.  The nodes and connections in the graph are targets and the dependencies between them respectively.
+
+Targets exist in a hierarchical namespace with POSIX path like semantics.  Each target has an identifier, a parent, and zero or more children.  A target path consists of one or more identifiers separated by the "/" character.  The special elements "." and ".." refer to the current working directory and parent of the working directory respectively.  Relative target paths are relative to the current working directory.
+
+Add or find targets in the dependency graph with the `add_target()` and `find_target()` functions.  When no existing target is found `add_target()` function will add one and return it while `find_target()` will simply return nil.  Buildfiles usually call domain specific language functions like `Executable`, `StaticLibrary`, etc to create targets rather than calling `add_target()` and `find_target()` directly.
+
+Add target prototypes with the `add_target_prototype()` function.  Target prototypes are usually created through the higher level functions `TargetPrototype()`, `PatternProtoype()`, and `GroupPrototype()`.
+
+Run a build by visiting the targets in a post-order traversal with `postorder()`.  This visits and builds all dependencies before the targets that depend on them.  Each target is visited by calling a short Lua script that typically calls a function like `build` or `clean` defined on the target prototype of each visited target.
+
+Define the dependency graph by loading buildfiles with `buildfile()`.  This sets the working directory to the directory containing the buildfile then loads and executes the buildfile as a Lua script.
+
+Load, save, and clear the dependency graph with `load_binary()`, `save_binary()`, and `clear()`.  These functions save target metadata and implicit dependencies that are required for builds to run correctly.
+
+Debug builds by printing the dependency graph with `print_dependencies()` function or the target namespace with the `print_namespace()`.  The dependency information is useful when determining why targets are being built when they shouldn't and vice versa.
 
 ## Functions
 
@@ -20,20 +34,20 @@ Forge allows direct manipulation of the dependency graph used to track targets a
 function add_target( id, [target_prototype] )
 ~~~
 
-Create or return an existing target.
+Find an existing or create a new target.
 
-The `id` parameter specifies a target path that uniquely identifies the target to create or return.  If `id` specifies a relative path then it is considered relative to the current working directory.  If `id` is the empty string or nil then an anonymous target is created using a unique identifier to create a target in the current working directory.
+The `id` parameter specifies a target path that uniquely identifies the target to find or create.  Relative paths are considered relative to the current working directory.  If `id` is the empty string or nil then an anonymous target is created using an identifier unique within the current working directory.
 
-The `target_prototype` parameter specifies the target prototype to use when creating the target.  It is an error for the same target to be created with more than one target prototype.  If the _target_prototype_ parameter is omitted or nil then a target without any target prototype is created.
+The `target_prototype` parameter specifies the target prototype to use when creating the target.  It is an error for the same target to be created with more than one target prototype.  If `target_prototype` is omitted or nil then a target without any target prototype is created.
 
 **Parameters:**
 
-- `id` the identifier of the target to create or find
+- `id` the identifier of the target to find or create (optional)
 - `target_prototype` the target prototype of the target to create (optional)
 
 **Returns:**
 
-The newly created or found target.
+The existing or newly created target identified by `id`. 
 
 ### add_target_prototype
 
@@ -61,6 +75,8 @@ function anonymous()
 
 Generate an anonymous identifier that is unique within the current working directory.
 
+Anonymous targets are created by passing an empty string as their identifier.  This creates a target using a uniquely generated identifier.  Use anonymous targets to create targets that don't bind to files and don't need to be referred to by identifier.  This is useful for grouping targets that need to be passed to a single invocation of a tool (e.g. the Microsoft C++ compiler can compile multiple source files in one invocation).
+
 **Returns:**
 
 The next anonymous identifier for the current working directory.
@@ -83,7 +99,7 @@ The working directory is always restored after executing the buildfile.  It is g
 
 **Returns:**
 
-The number of errors that occured when loading the buildfile (e.g. returns 0 on success).
+The number of errors that occurred loading the buildfile (e.g. returns 0 on success).
 
 ### clear
 
@@ -187,7 +203,13 @@ Targets are only visited once per traversal even if they are depended upon by mo
 
 Cyclic references are quietly ignored.
 
-Report an errors in the visit by calling the standard Lua `error()` function and passing a string that describes the error that has occured.  This displays the error message on the console and causes the current visit to be counted as a failure.
+The working directory of a target is whatever the current working directory 
+was when the target was created.  Usually this is the directory that contains
+the buildfile that indirectly constructed the target (for targets constructed 
+in a buildfile) or the current working directory at the time the target was 
+created (for targets created at other times).
+
+Report any errors during the visit by calling the standard Lua `error()` function and passing a string that describes the error that has occurred.  This displays the error message on the console and causes the current visit to be counted as a failure.
 
 Errors that occur while visiting a target mark the target and any dependent targets as failing.  The dependent targets are not visited (although an error message is displayed for each dependent target that is not visited).  Processing of other targets that aren't part of the same dependency chain continues.
 
@@ -265,20 +287,6 @@ If `target` is nil then the namespace of the entire dependency graph is printed 
 
 Nothing.
 
-### wait
-
-~~~lua
-function wait()
-~~~
-
-Wait for all currently executing processes to finish.
-
-Not useful outside of waiting for processes executed to read back configuration settings to complete before attempting to use those settings.
-
-**Returns:**
-
-Nothing.
-
 ### working_directory
 
 ~~~lua
@@ -287,10 +295,10 @@ function working_directory()
 
 Get the target representing the current working directory.
 
-Depending on the target representing the current working directory or, generally any directory, is useful to force a rebuild when the contents of that directory change.
+Depending on the target representing the current working directory is useful to force a rebuild when the contents of that directory change.  This is true of depending on directories in general.
 
-Any target whose dependencies are generated entirely or part through directory scanning via `ls()` or `find()` should also depend on the scanned directories.  The depending target will be outdated when files or directories are added to or removed from the scanned directories.
+Any target whose dependencies are generated entirely or in part by directory scanning with `ls()` or `find()` should depend on the scanned directories.  The depending target will become outdated when files or directories are added to or removed from the scanned directories.
 
 **Returns:**
 
-The target that represents the current working directory.
+The target representing the current working directory.

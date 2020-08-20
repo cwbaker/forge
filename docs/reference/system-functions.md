@@ -10,8 +10,6 @@ nav_order: 6
 
 ## Overview
 
-
-
 ## Functions
 
 ### execute
@@ -97,3 +95,17 @@ function ticks()
 ~~~
 
 Return the number of ticks elapsed since Forge started.
+
+### wait
+
+~~~lua
+function wait()
+~~~
+
+Wait for all currently executing processes to finish.
+
+Not useful outside of waiting for processes executed to read back configuration settings to complete before attempting to use those settings.
+
+**Returns:**
+
+Nothing.
