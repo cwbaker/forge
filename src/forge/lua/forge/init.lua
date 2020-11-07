@@ -13,11 +13,6 @@ function assertf( condition, format, ... )
     end
 end
 
--- Provide formatted error().
-function errorf( format, ... )
-    error( string.format(format, ...) );
-end
-
 -- Provide global default command that calls through to `build()`.
 function default()
     return build();
