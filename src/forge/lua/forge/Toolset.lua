@@ -99,9 +99,9 @@ function Toolset:interpolate( template, variables )
         local parameters = split( interpolate(self, word:sub(2, -2), variables) );
         local identifier = parameters[1];
         local index = 1;
-        local substitute = variables[identifier];
+        local substitute = variables and variables[identifier];
         if not substitute then 
-            substitute = settings[identifier];
+            substitute = settings and settings[identifier];
         end
         if not substitute then
             substitute = self[identifier];
