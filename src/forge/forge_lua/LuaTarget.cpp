@@ -1005,10 +1005,6 @@ int LuaTarget::target_call_metamethod( lua_State* lua_state )
         luaxx_push( lua_state, target );
         lua_pushvalue( lua_state, TOOLSET );
         lua_setfield( lua_state, -2, "toolset" );
-        // The `target.forge` field is set only for backwards compatibility 
-        // while toolsets are added.
-        lua_pushvalue( lua_state, TOOLSET );
-        lua_setfield( lua_state, -2, "forge" );
         lua_pop( lua_state, 1 );
 
         lua_getglobal( lua_state, "hash" );
