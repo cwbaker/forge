@@ -387,15 +387,27 @@ end
 function clang.append_link_libraries( toolset, target, libraries )
     local settings = toolset.settings;
 
+    if settings.frameworks then
+        for _, framework in ipairs(settings.frameworks) do
+            table.insert( libraries, ('-framework %s'):format(framework) );
+        end
+    end
+
     if settings.libraries then
         for _, library in ipairs(settings.libraries) do
-            table.insert( libraries, ("-l%s"):format(library) );
+            table.insert( libraries, ('-l%s'):format(library) );
+        end
+    end
+
+    if target.frameworks then
+        for _, framework in ipairs(target.frameworks) do
+            table.insert( libraries, ('-framework %s'):format(framework) );
         end
     end
 
     if target.libraries then
         for _, library in ipairs(target.libraries) do
-            table.insert( libraries, ("-l%s"):format(library) );
+            table.insert( libraries, ('-l%s'):format(library) );
         end
     end
 end
