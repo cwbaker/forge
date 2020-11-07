@@ -13,7 +13,7 @@ SUITE( TestPostorder )
     {
         const char* script = 
             "local ErrorInPostorderVisit = add_target_prototype( 'ErrorInPostorderVisit' ); \n"
-            "local error_in_postorder_visit = add_target( forge, 'error_in_postorder_visit', ErrorInPostorderVisit ); \n"
+            "local error_in_postorder_visit = forge.Target( forge, 'error_in_postorder_visit', ErrorInPostorderVisit ); \n"
             "postorder( error_in_postorder_visit, function(target) error('Error in postorder visit') end ); \n"
         ;        
         test( script );
@@ -26,7 +26,7 @@ SUITE( TestPostorder )
     {
         const char* script = 
             "local UnexpectedErrorInPostorderVisit = add_target_prototype( 'UnexpectedErrorInPostorderVisit' ); \n"
-            "local unexpected_error_in_postorder_visit = add_target( forge, 'unexpected_error_in_postorder_visit', UnexpectedErrorInPostorderVisit ); \n"
+            "local unexpected_error_in_postorder_visit = forge.Target( forge, 'unexpected_error_in_postorder_visit', UnexpectedErrorInPostorderVisit ); \n"
             "postorder( unexpected_error_in_postorder_visit, function(target) foo.bar = 2; end ); \n"
         ;        
         test( script );
@@ -42,7 +42,7 @@ SUITE( TestPostorder )
     {
         const char* script = 
             "local RecursivePostorderError = add_target_prototype( 'RecursivePostorderError' ); \n"
-            "local recursive_postorder_error = add_target( forge, 'recursive_postorder_error', RecursivePostorderError ); \n"
+            "local recursive_postorder_error = forge.Target( forge, 'recursive_postorder_error', RecursivePostorderError ); \n"
             "postorder( recursive_postorder_error, function(target) postorder(function(target) end, recursive_postorder_error) end ); \n"
         ;
         test( script );
@@ -58,7 +58,7 @@ SUITE( TestPostorder )
     {
         const char* script = 
             "local RecursivePostorderError = add_target_prototype( 'RecursivePostorderError' ); \n"
-            "local recursive_postorder_error = add_target( forge, 'recursive_postorder_error', RecursivePostorderError ); \n"
+            "local recursive_postorder_error = forge.Target( forge, 'recursive_postorder_error', RecursivePostorderError ); \n"
             "postorder( recursive_postorder_error, function(target) postorder(function(target) end, recursive_postorder_error) end ); \n"
         ;
         test( script );
