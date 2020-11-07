@@ -26,7 +26,6 @@ private:
     static int all_toolsets_iterator( lua_State* lua_state );
     static int all_toolsets( lua_State* lua_state );
     static int add_target_prototype( lua_State* lua_state );
-    static int add_target( lua_State* lua_state );
     static int find_target( lua_State* lua_state );
     static int anonymous( lua_State* lua_state );
     static int current_buildfile( lua_State* lua_state );

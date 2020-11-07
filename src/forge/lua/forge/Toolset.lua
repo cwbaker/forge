@@ -226,11 +226,11 @@ end
 -- Get the *all* target for the current working directory adding any 
 -- targets that are passed in as dependencies.
 function Toolset:all( dependencies )
-    local all = add_target( self, 'all' );
+    local all = forge.Target( self, 'all' );
     if dependencies then 
         for _, dependency in forge:walk_tables(dependencies) do
             if type(dependency) == 'string' then 
-                dependency = add_target( self, self:interpolate(dependency) );
+                dependency = forge.Target( self, self:interpolate(dependency) );
             end
             all:add_dependency( dependency );
         end

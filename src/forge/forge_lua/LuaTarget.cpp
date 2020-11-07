@@ -8,12 +8,16 @@
 #include "types.hpp"
 #include <forge/Target.hpp>
 #include <forge/TargetPrototype.hpp>
+#include <forge/Context.hpp>
+#include <forge/Forge.hpp>
+#include <forge/Graph.hpp>
 #include <luaxx/luaxx.hpp>
 #include <assert/assert.hpp>
 #include <lua.hpp>
 #include <algorithm>
 
 using std::min;
+using std::max;
 using std::string;
 using std::vector;
 using namespace sweet;
@@ -33,8 +37,9 @@ LuaTarget::~LuaTarget()
     destroy();
 }
 
-void LuaTarget::create( lua_State* lua_state )
+void LuaTarget::create( Forge* forge, lua_State* lua_state )
 {
+    SWEET_ASSERT( forge );
     SWEET_ASSERT( lua_state );
 
     destroy();
@@ -92,11 +97,11 @@ void LuaTarget::create( lua_State* lua_state )
     luaL_setfuncs( lua_state_, implicit_creation_functions, 1 );    
     lua_pop( lua_state_, 1 );
 
-    // Set the metatable for `Target` to redirect calls to create new targets 
-    // in `LuaGraph::add_target()` via `LuaTarget::target_call_metamethod()`.
+    // Set the metatable for `Target` to redirect calls to create new targets.
     luaxx_push( lua_state_, this );
     lua_newtable( lua_state_ );
-    lua_pushcfunction( lua_state_, &LuaTarget::target_call_metamethod );
+    lua_pushlightuserdata( lua_state, forge );
+    lua_pushcclosure( lua_state_, &LuaTarget::target_call_metamethod, 1 );
     lua_setfield( lua_state_, -2, "__call" );
     lua_setmetatable( lua_state_, -2 );
     lua_pop( lua_state_, 1 );
@@ -937,33 +942,94 @@ int LuaTarget::vector_string_const_iterator_gc( lua_State* lua_state )
 }
 
 /**
-// Redirect calls made on `forge.Target` to the `Target.create` function.
-//
-// Removes the `Target` table, passed as part of the metamethod call, from
-// the stack and calls through to `Target.create()` passing through 
-// the identifier, target prototype, and any other arguments.
-//
-// ~~~lua
-// function target_call_metamethod( _, forge, identifier, target_prototype, ... )
-//     return forge:target( identifier, target_prototype, ... );
-// end
-// ~~~
+// Create a new target (as metamethod for calls made on `forge.Target`).
 */
 int LuaTarget::target_call_metamethod( lua_State* lua_state )
 {
+    const int FORGE = lua_upvalueindex( 1 );
     const int TARGET = 1;
     const int TOOLSET = 2;
     const int IDENTIFIER = 3;
-    const int VARARGS = 4;
-    int args = lua_gettop( lua_state );
-    lua_getfield( lua_state, TARGET, "create" );
-    lua_pushvalue( lua_state, TOOLSET );
-    lua_pushvalue( lua_state, IDENTIFIER );
-    for ( int i = VARARGS; i <= args; ++i )
+    const int TARGET_PROTOTYPE = 4;
+
+    // Ignore `Target` passed in the metamethod call to create a target.
+    (void) TARGET;
+
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
+    Context* context = forge->context();
+    Graph* graph = forge->graph();
+    Target* working_directory = context->working_directory();
+    size_t identifier_length = 0;
+    const char* identifier = luaL_checklstring( lua_state, IDENTIFIER, &identifier_length );
+    luaL_argcheck( lua_state, identifier && identifier_length > 0, IDENTIFIER, "missing or empty identifier" );
+    TargetPrototype* target_prototype = (TargetPrototype*) luaxx_to( lua_state, TARGET_PROTOTYPE, TARGET_PROTOTYPE_TYPE );
+
+    Target* target = graph->add_or_find_target( string(identifier, identifier_length), working_directory );
+
+    bool update_target_prototype = target_prototype && !target->prototype();
+    if ( update_target_prototype )
     {
-        lua_pushvalue( lua_state, i );
+        target->set_prototype( target_prototype );
+        target->set_working_directory( working_directory );
     }
-    lua_call( lua_state, args - 1, 1 );
+
+    bool update_working_directory = !target->working_directory();
+    if ( update_working_directory )
+    {
+        target->set_working_directory( working_directory );
+    }
+
+    if ( target_prototype && target->prototype() != target_prototype )
+    {
+        forge->errorf( "The target '%s' has been created with prototypes '%s' and '%s'", identifier, target->prototype()->id().c_str(), target_prototype ? target_prototype->id().c_str() : "none" );
+    }
+
+    bool create_lua_binding = !target->referenced_by_script();
+    if ( create_lua_binding )
+    {
+        forge->create_target_lua_binding( target );
+    }
+
+    // Set `target.forge` to the value of the Forge object that created 
+    // this target.  The Forge object is used later on to provide the 
+    // correct Forge object and settings when visiting targets in a 
+    // postorder traversal.
+    //
+    // This also happens when the target prototype is set for the first time
+    // so that targets that are lazily defined after they have been created by
+    // another target depending on them have access to the Forge instance they
+    // are defined in rather than just the first Forge instance that first 
+    // referenced them which is difficult to control and typically incorrect.
+    if ( update_target_prototype || update_working_directory || create_lua_binding )
+    {
+        luaxx_push( lua_state, target );
+        lua_pushvalue( lua_state, TOOLSET );
+        lua_setfield( lua_state, -2, "toolset" );
+        // The `target.forge` field is set only for backwards compatibility 
+        // while toolsets are added.
+        lua_pushvalue( lua_state, TOOLSET );
+        lua_setfield( lua_state, -2, "forge" );
+        lua_pop( lua_state, 1 );
+
+        lua_getglobal( lua_state, "hash" );
+        lua_getfield( lua_state, TOOLSET, "settings" );
+        if ( lua_istable(lua_state, -1) )
+        {
+            lua_call( lua_state, 1, 1 );
+            const lua_Integer hash = luaL_checkinteger( lua_state, -1 );
+            target->set_hash( hash );
+        }
+        lua_pop( lua_state, 1 );
+
+        // The following calculation of the hash of the settings table without
+        // calling into the Lua API so much should work but crashes for some
+        // reason I don't understand.
+        // lua_getfield( lua_state, TOOLSET, "settings" );
+        // lua_Integer hash = LuaSystem::hash_recursively( lua_state, -1, false );
+        // lua_pop( lua_state, 1 );
+    }
+
+    luaxx_push( lua_state, target );    
     return 1;
 }
 

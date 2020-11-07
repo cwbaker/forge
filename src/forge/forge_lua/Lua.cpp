@@ -93,7 +93,7 @@ void Lua::create( Forge* forge )
 
     luaxx_create( lua_state_, forge, FORGE_TYPE );
     luaxx_push( lua_state_, forge );
-    lua_target_->create( lua_state_ );
+    lua_target_->create( forge, lua_state_ );
     lua_target_prototype_->create( lua_state_, lua_target_ );
     lua_toolset_->create( lua_state_ );
     lua_toolset_prototype_->create( lua_state_, lua_toolset_ );
