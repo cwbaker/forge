@@ -104,6 +104,7 @@ Commands:
     ]];
 end
 
+-- Iterate over toolsets that match patterns.
 function toolsets( ... )
     local toolsets_iterator = coroutine.wrap( function(...) 
         coroutine.yield();
@@ -131,8 +132,7 @@ function toolsets( ... )
     return toolsets_iterator;
 end
 
--- Execute command with arguments and optional filter and raise an error if 
--- it doesn't return 0.
+-- Execute command raising an error if it doesn't return 0.
 function system( command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... )
     if type(arguments) == 'table' then
         arguments = table.concat( arguments, ' ' );

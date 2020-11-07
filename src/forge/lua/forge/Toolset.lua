@@ -168,6 +168,7 @@ function Toolset:filenames_filter( target )
     end
 end
 
+-- Return true if this toolset's platform matches any passed in pattern.
 function Toolset:platform_matches( ... )
     local platform = self.settings.platform;
     if platform == nil or platform == '' then 
