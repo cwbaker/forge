@@ -2,9 +2,7 @@
 local Target = forge.Target;
 
 function Target.create( toolset, identifier, target_prototype )
-    local target = add_target( toolset, identifier, target_prototype, hash(toolset.settings) );
-    target.settings = toolset.settings;
-    return target;
+    return add_target( toolset, identifier, target_prototype, hash(toolset.settings) );
 end
 
 function Target.depend( toolset, target, dependencies )
