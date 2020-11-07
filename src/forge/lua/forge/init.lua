@@ -24,7 +24,7 @@ end
 local function clean_visit( target )
     local clean_function = target.clean;
     if clean_function then 
-        clean_function( target.forge, target );
+        clean_function( target.toolset, target );
     elseif target:cleanable() then 
         for _, filename in target:filenames() do 
             if filename ~= '' then
