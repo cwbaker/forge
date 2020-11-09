@@ -1,12 +1,12 @@
 
 local Copy = require 'forge.Copy';
 
-local CopyDirectory = forge:TargetPrototype( 'CopyDirectory' );
+local CopyDirectory = TargetPrototype( 'CopyDirectory' );
 
 function CopyDirectory.create( toolset, identifier )
     local settings = toolset.settings;
     local identifier = toolset:interpolate( identifier, settings );
-    local copy_directory = forge.Target( toolset, anonymous(), CopyDirectory );
+    local copy_directory = Target( toolset, anonymous(), CopyDirectory );
     copy_directory:add_ordering_dependency( toolset:Directory(absolute(identifier)) );
     copy_directory.settings = settings;
     return copy_directory;

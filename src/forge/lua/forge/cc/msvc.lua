@@ -266,25 +266,25 @@ function msvc.initialize( toolset )
         };
     };
 
-    local Cc = forge:GroupPrototype( 'Cc', msvc.object_filename );
+    local Cc = GroupPrototype( 'Cc', msvc.object_filename );
     Cc.language = 'c';
     Cc.build = msvc.compile;
     toolset.Cc = Cc;
 
-    local Cxx = forge:GroupPrototype( 'Cxx', msvc.object_filename );
+    local Cxx = GroupPrototype( 'Cxx', msvc.object_filename );
     Cxx.language = 'c++';
     Cxx.build = msvc.compile;
     toolset.Cxx = Cxx;
 
-    local StaticLibrary = forge:FilePrototype( 'StaticLibrary', msvc.static_library_filename );
+    local StaticLibrary = FilePrototype( 'StaticLibrary', msvc.static_library_filename );
     StaticLibrary.build = msvc.archive;
     toolset.StaticLibrary = StaticLibrary;
 
-    local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', msvc.dynamic_library_filename );
+    local DynamicLibrary = FilePrototype( 'DynamicLibrary', msvc.dynamic_library_filename );
     DynamicLibrary.build = msvc.link;
     toolset.DynamicLibrary = DynamicLibrary;
 
-    local Executable = forge:FilePrototype( 'Executable', msvc.executable_filename );
+    local Executable = FilePrototype( 'Executable', msvc.executable_filename );
     Executable.build = msvc.link;
     toolset.Executable = Executable;
 

@@ -247,16 +247,12 @@ function find_initial_target( goal )
     return nil;
 end
 
-function forge:TargetPrototype( identifier )
-    return add_target_prototype( identifier );
-end
-
-function forge:FilePrototype( identifier, filename_modifier )
-    local filename_modifier = filename_modifier or forge.Toolset.interpolate;
-    local file_prototype = forge:TargetPrototype( identifier );
+function FilePrototype( identifier, filename_modifier )
+    local filename_modifier = filename_modifier or Toolset.interpolate;
+    local file_prototype = TargetPrototype( identifier );
     file_prototype.create = function( toolset, identifier, target_prototype )
         local identifier, filename = filename_modifier( toolset, identifier );
-        local target = forge.Target( toolset, identifier, target_prototype );
+        local target = Target( toolset, identifier, target_prototype );
         target:set_filename( filename or target:path() );
         target:set_cleanable( true );
         target:add_ordering_dependency( toolset:Directory(branch(target)) );
@@ -269,13 +265,13 @@ function forge:FilePrototype( identifier, filename_modifier )
     return file_prototype;
 end
 
-function forge:JavaStylePrototype( identifier, pattern )
-    local output_directory_modifier = forge.Toolset.interpolate;
+function JavaStylePrototype( identifier, pattern )
+    local output_directory_modifier = Toolset.interpolate;
     local pattern = pattern or '(.-([^\\/]-))%.?([^%.\\/]*)$';
-    local java_style_prototype = forge:TargetPrototype( identifier );
+    local java_style_prototype = TargetPrototype( identifier );
     function java_style_prototype.create( toolset, output_directory, target_prototype )
         local output_directory = root_relative():gsub( pattern, output_directory_modifier(toolset, output_directory) );
-        local target = forge.Target( toolset, anonymous(), target_prototype );
+        local target = Target( toolset, anonymous(), target_prototype );
         target:set_cleanable( true );
         target:add_ordering_dependency( toolset:Directory(output_directory) );
         local created = target.created;
@@ -287,21 +283,21 @@ function forge:JavaStylePrototype( identifier, pattern )
     return java_style_prototype;
 end
 
-function forge:PatternPrototype( identifier, replacement_modifier, pattern )
-    local replacement_modifier = replacement_modifier or forge.Toolset.interpolate;
+function PatternPrototype( identifier, replacement_modifier, pattern )
+    local replacement_modifier = replacement_modifier or Toolset.interpolate;
     local pattern = pattern or '(.-([^\\/]-))%.?([^%.\\/]*)$';
-    local pattern_prototype = forge:TargetPrototype( identifier );
+    local pattern_prototype = TargetPrototype( identifier );
     pattern_prototype.create = function( toolset, replacement )
         local targets = {};
         local replacement = replacement_modifier( toolset, replacement );
         local targets_metatable = {
             __call = function( targets, dependencies )
-                local attributes = self:merge( {}, dependencies );
+                local attributes = forge:merge( {}, dependencies );
                 for _, filename in forge:walk_tables(dependencies) do
                     local source_file = toolset:SourceFile( filename );
                     local identifier = root_relative( source_file ):gsub( pattern, replacement );
                     local target = toolset:File( identifier, pattern_prototype );
-                    self:merge( target, attributes );
+                    forge:merge( target, attributes );
                     local created = target.created;
                     if created then
                         created( toolset, target );
@@ -318,17 +314,17 @@ function forge:PatternPrototype( identifier, replacement_modifier, pattern )
     return pattern_prototype;
 end
 
-function forge:GroupPrototype( identifier, replacement_modifier, pattern )
-    local replacement_modifier = replacement_modifier or forge.Toolset.interpolate;
+function GroupPrototype( identifier, replacement_modifier, pattern )
+    local replacement_modifier = replacement_modifier or Toolset.interpolate;
     local pattern = pattern or '(.-([^\\/]-))%.?([^%.\\/]*)$';
-    local group_prototype = forge:TargetPrototype( identifier );
+    local group_prototype = TargetPrototype( identifier );
     group_prototype.create = function( toolset, replacement )
         local targets = {};
         local replacement = replacement_modifier( toolset, replacement );
         local targets_metatable = {
             __call = function( targets, dependencies )
                 local target = targets[1];
-                self:merge( target, dependencies );
+                forge:merge( target, dependencies );
                 for _, filename in forge:walk_tables(dependencies) do
                     local source_file = toolset:SourceFile( filename );
                     local identifier = root_relative( source_file ):gsub( pattern, replacement );
@@ -343,7 +339,7 @@ function forge:GroupPrototype( identifier, replacement_modifier, pattern )
                 return targets;
             end
         };
-        local target = forge.Target( toolset, anonymous(), group_prototype );
+        local target = Target( toolset, anonymous(), group_prototype );
         table.insert( targets, target );
         setmetatable( targets, targets_metatable );
         return targets;
@@ -500,7 +496,7 @@ end
 
 setmetatable( forge, {
     __call = function( forge, settings )
-        local toolset = forge.Toolset( forge.local_settings );
+        local toolset = Toolset( forge.local_settings );
         return toolset:clone( settings );
     end
 } );

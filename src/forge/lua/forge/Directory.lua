@@ -1,5 +1,5 @@
 
-local Directory = forge:TargetPrototype( 'Directory' );
+local Directory = TargetPrototype( 'Directory' );
 
 function Directory.create( toolset, identifier )
     local target = toolset:Target( toolset:interpolate(identifier), Directory );

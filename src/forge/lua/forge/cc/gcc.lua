@@ -29,25 +29,25 @@ function gcc.validate( toolset, gcc_settings )
 end
 
 function gcc.initialize( toolset )
-    local Cc = forge:PatternPrototype( 'Cc', gcc.object_filename );
+    local Cc = PatternPrototype( 'Cc', gcc.object_filename );
     Cc.language = 'c';
     Cc.build = gcc.compile;
     toolset.Cc = Cc;
 
-    local Cxx = forge:PatternPrototype( 'Cxx', gcc.object_filename );
+    local Cxx = PatternPrototype( 'Cxx', gcc.object_filename );
     Cxx.language = 'c++';
     Cxx.build = gcc.compile;
     toolset.Cxx = Cxx;
 
-    local StaticLibrary = forge:FilePrototype( 'StaticLibrary', gcc.static_library_filename );
+    local StaticLibrary = FilePrototype( 'StaticLibrary', gcc.static_library_filename );
     StaticLibrary.build = gcc.archive;
     toolset.StaticLibrary = StaticLibrary;
 
-    local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', gcc.dynamic_library_filename );
+    local DynamicLibrary = FilePrototype( 'DynamicLibrary', gcc.dynamic_library_filename );
     DynamicLibrary.build = gcc.link;
     toolset.DynamicLibrary = DynamicLibrary;
 
-    local Executable = forge:FilePrototype( 'Executable', gcc.executable_filename );
+    local Executable = FilePrototype( 'Executable', gcc.executable_filename );
     Executable.build = gcc.link;
     toolset.Executable = Executable;
 
@@ -328,7 +328,7 @@ function gcc.append_link_flags( toolset, target, flags )
     -- The latest GCC with Android (or clang with iOS) doesn't recognize 
     -- '-Wl,map' to specify the path to output a mapfile.
     -- if settings.generate_map_file then
-    --     table.insert( flags, ('-Wl,-Map,"%s"'):format(forge:native(("%s.map"):format(target:filename()))) );
+    --     table.insert( flags, ('-Wl,-Map,"%s"'):format(native(("%s.map"):format(target:filename()))) );
     -- end
 
     if settings.strip and not settings.generate_dsym_bundle then

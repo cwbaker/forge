@@ -1,5 +1,5 @@
 
-local Toolset = forge.Toolset or {};
+local Toolset = _G.Toolset or {};
 
 function Toolset.new( toolset_prototype, values )
     local settings = forge.Settings():apply( values );
@@ -226,11 +226,11 @@ end
 -- Get the *all* target for the current working directory adding any 
 -- targets that are passed in as dependencies.
 function Toolset:all( dependencies )
-    local all = forge.Target( self, 'all' );
+    local all = Target( self, 'all' );
     if dependencies then 
         for _, dependency in forge:walk_tables(dependencies) do
             if type(dependency) == 'string' then 
-                dependency = forge.Target( self, self:interpolate(dependency) );
+                dependency = Target( self, self:interpolate(dependency) );
             end
             all:add_dependency( dependency );
         end
@@ -239,7 +239,7 @@ function Toolset:all( dependencies )
 end
 
 function Toolset:File( identifier, target_prototype )
-    local target = forge.Target( self, self:interpolate(identifier), target_prototype );
+    local target = Target( self, self:interpolate(identifier), target_prototype );
     target:set_filename( target:path() );
     target:set_cleanable( true );
     target:add_ordering_dependency( self:Directory(branch(target)) );
@@ -249,7 +249,7 @@ end
 function Toolset:SourceFile( identifier )
     local target = identifier;
     if type(target) == 'string' then 
-        target = forge.Target( self, self:interpolate(identifier) );
+        target = Target( self, self:interpolate(identifier) );
         if target:filename() == '' then 
             target:set_filename( target:path() );
         end

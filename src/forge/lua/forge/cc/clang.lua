@@ -24,35 +24,35 @@ end
 function clang.initialize( toolset )
     local settings = toolset.settings;
 
-    local Cc = forge:PatternPrototype( 'Cc', clang.object_filename );
+    local Cc = PatternPrototype( 'Cc', clang.object_filename );
     Cc.language = 'c';
     Cc.build = clang.compile;
     toolset.Cc = Cc;
 
-    local Cxx = forge:PatternPrototype( 'Cxx', clang.object_filename );
+    local Cxx = PatternPrototype( 'Cxx', clang.object_filename );
     Cxx.language = 'c++';
     Cxx.build = clang.compile;
     toolset.Cxx = Cxx;
 
-    local ObjC = forge:PatternPrototype( 'ObjC', clang.object_filename );
+    local ObjC = PatternPrototype( 'ObjC', clang.object_filename );
     ObjC.language = 'objective-c';
     ObjC.build = clang.compile;
     toolset.ObjC = ObjC;
 
-    local ObjCxx = forge:PatternPrototype( 'ObjCxx', clang.object_filename );
+    local ObjCxx = PatternPrototype( 'ObjCxx', clang.object_filename );
     ObjCxx.language = 'objective-c++';
     ObjCxx.build = clang.compile;
     toolset.ObjCxx = ObjCxx;
 
-    local StaticLibrary = forge:FilePrototype( 'StaticLibrary', clang.static_library_filename );
+    local StaticLibrary = FilePrototype( 'StaticLibrary', clang.static_library_filename );
     StaticLibrary.build = clang.archive;
     toolset.StaticLibrary = StaticLibrary;
 
-    local DynamicLibrary = forge:FilePrototype( 'DynamicLibrary', clang.dynamic_library_filename );
+    local DynamicLibrary = FilePrototype( 'DynamicLibrary', clang.dynamic_library_filename );
     DynamicLibrary.build = clang.link;
     toolset.DynamicLibrary = DynamicLibrary;
 
-    local Executable = forge:FilePrototype( 'Executable', clang.executable_filename );
+    local Executable = FilePrototype( 'Executable', clang.executable_filename );
     Executable.build = clang.link;
     toolset.Executable = Executable;
 

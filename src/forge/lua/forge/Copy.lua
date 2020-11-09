@@ -1,5 +1,5 @@
 
-local Copy = forge:PatternPrototype( 'Copy' );
+local Copy = PatternPrototype( 'Copy' );
 
 function Copy.build( toolset, target )
     rm( target );
