@@ -9,8 +9,8 @@ local warning_level = 3;
 if operating_system() == 'linux' then
     warning_level = 0;
     libraries = { 
-        'pthread', 
-        'dl' 
+        'pthread';
+        'dl';
     };
 end
 

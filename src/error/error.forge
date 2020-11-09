@@ -4,7 +4,7 @@ buildfile 'error_test/error_test.forge';
 for _, forge in toolsets('cc.*') do 
     forge:StaticLibrary '${lib}/error_${architecture}' {
         defines = {
-            -- Define POSIX_C_SOURCE=200112L to get the correct beahvior from
+            -- Define POSIX_C_SOURCE=200112L to get the correct behavior from
             -- `strerror_r()` in `Error::format()` for Linux.  See 
             -- `man strerror_r` for more details.
             'POSIX_C_SOURCE=200112L'
