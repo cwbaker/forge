@@ -37,10 +37,10 @@ LuaTarget::~LuaTarget()
     destroy();
 }
 
-void LuaTarget::create( Forge* forge, lua_State* lua_state )
+void LuaTarget::create( lua_State* lua_state, Forge* forge )
 {
-    SWEET_ASSERT( forge );
     SWEET_ASSERT( lua_state );
+    SWEET_ASSERT( forge );
 
     destroy();
 
@@ -129,6 +129,10 @@ void LuaTarget::create( Forge* forge, lua_State* lua_state )
     const int FORGE = 1;
     luaxx_push( lua_state_, this );
     lua_setfield( lua_state_, FORGE, "Target" );
+
+    // Set global `Target` to this object.
+    luaxx_push( lua_state_, this );
+    lua_setglobal( lua_state_, "Target" );
 }
 
 void LuaTarget::destroy()
@@ -952,7 +956,7 @@ int LuaTarget::target_call_metamethod( lua_State* lua_state )
     const int IDENTIFIER = 3;
     const int TARGET_PROTOTYPE = 4;
 
-    // Ignore `Target` passed in the metamethod call to create a target.
+    // Ignore `Target` passed as first parameter.
     (void) TARGET;
 
     Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
@@ -990,10 +994,9 @@ int LuaTarget::target_call_metamethod( lua_State* lua_state )
         forge->create_target_lua_binding( target );
     }
 
-    // Set `target.forge` to the value of the Forge object that created 
-    // this target.  The Forge object is used later on to provide the 
-    // correct Forge object and settings when visiting targets in a 
-    // postorder traversal.
+    // Set `target.toolset` to the toolset that created this target.  The
+    // toolset is used to provide the correct toolset and settings when
+    // visiting targets in a postorder traversal.
     //
     // This also happens when the target prototype is set for the first time
     // so that targets that are lazily defined after they have been created by

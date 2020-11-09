@@ -64,6 +64,10 @@ void LuaToolsetPrototype::create( lua_State* lua_state, LuaToolset* lua_toolset 
     const int FORGE = 1;
     luaxx_push( lua_state_, this );
     lua_setfield( lua_state_, FORGE, "ToolsetPrototype" );
+
+    // Set global `ToolsetPrototype` to this object.
+    luaxx_push( lua_state_, this );
+    lua_setglobal( lua_state_, "ToolsetPrototype" );
 }
 
 void LuaToolsetPrototype::destroy()

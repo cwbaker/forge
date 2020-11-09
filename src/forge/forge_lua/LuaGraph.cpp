@@ -46,8 +46,6 @@ void LuaGraph::create( Forge* forge, lua_State* lua_state )
         { "new_toolset", &LuaGraph::add_toolset },
         { "add_toolset", &LuaGraph::add_toolset },
         { "all_toolsets", &LuaGraph::all_toolsets },
-        { "target_prototype", &LuaGraph::add_target_prototype },
-        { "add_target_prototype", &LuaGraph::add_target_prototype },
         { "find_target", &LuaGraph::find_target },
         { "anonymous", &LuaGraph::anonymous },
         { "current_buildfile", &LuaGraph::current_buildfile },
@@ -151,27 +149,6 @@ int LuaGraph::all_toolsets( lua_State* lua_state )
     lua_pushlightuserdata( lua_state, graph );
     lua_pushinteger( lua_state, 0 );
     return 3;
-}
-
-int LuaGraph::add_target_prototype( lua_State* lua_state )
-{
-    try
-    {
-        const int FORGE = lua_upvalueindex( 1 );
-        const int IDENTIFIER = 1;
-        string id = luaL_checkstring( lua_state, IDENTIFIER );        
-        Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
-        TargetPrototype* target_prototype = forge->graph()->add_target_prototype( id );
-        forge->create_target_prototype_lua_binding( target_prototype );
-        luaxx_push( lua_state, target_prototype );
-        return 1;
-    }
-    
-    catch ( const std::exception& exception )
-    {
-        lua_pushstring( lua_state, exception.what() );
-        return lua_error( lua_state );
-    }
 }
 
 int LuaGraph::find_target( lua_State* lua_state )

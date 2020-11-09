@@ -70,6 +70,10 @@ void LuaToolset::create( lua_State* lua_state )
     const int FORGE = 1;
     luaxx_push( lua_state_, this );
     lua_setfield( lua_state_, FORGE, "Toolset" );
+
+    // Set global `Toolset` to this object.
+    luaxx_push( lua_state_, this );
+    lua_setglobal( lua_state_, "Toolset" );
 }
 
 void LuaToolset::destroy()

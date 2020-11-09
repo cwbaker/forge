@@ -25,7 +25,7 @@ public:
     LuaTarget();
     ~LuaTarget();
 
-    void create( Forge* forge, lua_State* lua_state );
+    void create( lua_State* lua_state, Forge* forge );
     void destroy();
     void create_target( Target* target );
     void update_target( Target* target );
