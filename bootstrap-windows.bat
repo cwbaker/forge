@@ -1,7 +1,7 @@
 rem @echo off
 
 echo Running bootstrap-windows.bat...
-call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" amd64
+for /f "usebackq delims=#" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere" -latest -property installationPath`) do call "%%i\VC\Auxiliary\Build\vcvars64.bat"
 
 set SRC=%~dp0src
 set OBJ=%~dp0bootstrap
