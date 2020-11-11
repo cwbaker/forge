@@ -1,0 +1,47 @@
+name: Upload to Github Release
+
+on:
+  release:
+    types: [ created ]
+
+jobs:
+  upload:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+      with:
+        submodules: true
+    - name: Build
+      run: |
+        if [[ "$RUNNER_OS" == "Linux" ]]; then bash ./bootstrap-linux.bash ; fi
+        if [[ "$RUNNER_OS" == "macOS" ]]; then bash ./bootstrap-macos.bash ; fi
+        if [[ "$RUNNER_OS" == "Windows" ]]; then ./bootstrap-windows.bat ; fi
+        bootstrap/bin/forge variant=release      
+        release/bin/forge variant=shipping prefix=shipping/forge install
+      shell: bash
+    - name: Test
+      run: |
+        shipping/bin/forge_test
+      shell: bash
+    - name: Archive
+      id: archive
+      run: |
+        ARCHIVE=forge-$(echo ${RUNNER_OS} |tr '[:upper:]' '[:lower:]')-${{ github.event.release.tag_name }}.tar.gz
+        pushd shipping
+        tar -zcvf ${ARCHIVE} forge/bin/* forge/lua/**
+        popd
+        echo "::set-output name=filename::${ARCHIVE}"
+      shell: bash
+    - name: Upload
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./shipping/${{ steps.archive.outputs.filename }}
+        asset_name: ${{ steps.archive.outputs.filename }}
+        asset_content_type: application/gzip
