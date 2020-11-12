@@ -4,41 +4,47 @@ title: Installation
 nav_order: 2
 ---
 
-Install Forge by building it from source and linking to the executable `${HOME}/forge/bin/forge` from your path.
+Install Forge by building it from source and linking to `${HOME}/forge/bin/forge` or `${USERPROFILE}/forge/bin/forge.exe` from your path from macOS/Linux and Windows respectively.  Boa sorte!
 
-Change the install location by passing `prefix=${install-directory}` on the command line.  For example `forge prefix=D:\\forge variant=shipping install` or `forge prefix=/usr/local/forge variant=shipping install`.
+Install to another location by passing `prefix=${install-directory}` on the command line.  For example `forge prefix=D:\\forge variant=shipping install` or `forge prefix=/usr/local/forge variant=shipping install`.
 
 **Linux:**
 
-From a shell with GCC installed and available on the path:
+From a shell with GCC installed and that `~/bin` is in the path:
 
-- `git clone git@github.com:cwbaker/forge.git forge`
-- `cd forge`
-- `git submodule update --init`
-- `bash ./bootstrap-linux.bash`
-- `./bootstrap/bin/forge variant=shipping install`
-- Link to `${HOME}/forge/bin/forge` from your path
+~~~sh
+git clone git@github.com:cwbaker/forge.git forge
+cd forge
+git submodule update --init
+bash ./bootstrap-linux.bash
+./bootstrap/bin/forge variant=shipping install
+ln -s ~/forge/bin/forge ~/bin/forge
+~~~
 
 **macOS:**
 
-From a shell with the Xcode command line tools installed:
+From a shell with the Xcode command line tools installed and `~/bin` in the path:
 
-- `git clone git@github.com:cwbaker/forge.git forge`
-- `cd forge`
-- `git submodule update --init`
-- `bash ./bootstrap-macos.bash`
-- `./bootstrap/bin/forge variant=shipping install`
-- Link to `${HOME}/forge/bin/forge` from your path
+~~~sh
+git clone git@github.com:cwbaker/forge.git forge
+cd forge
+git submodule update --init
+bash ./bootstrap-macos.bash
+./bootstrap/bin/forge variant=shipping install
+ln -s ~/forge/bin/forge ~/bin/forge
+~~~
 
 **Windows:**
 
-From a Visual C++ x64 Native Tools command prompt:
+From a Visual C++ x64 Native Tools command prompt with `%USERPROFILE%\\bin` in the path:
 
-- `git clone git@github.com:cwbaker/forge.git forge`
-- `cd forge`
-- `git submodule update --init`
-- `bootstrap-windows.bat`
-- `.\bootstrap\bin\forge.exe variant=shipping install`
-- Link to `${USERPROFILE}/forge/bin/forge.exe` from your path
+~~~
+git clone git@github.com:cwbaker/forge.git forge
+cd forge
+git submodule update --init
+bootstrap-windows.bat
+.\bootstrap\bin\forge.exe variant=shipping install
+mklink %USERPROFILE%\bin\forge.exe %USERPROFILE%\forge\bin\forge.exe
+~~~
 
 NOTE: Forge uses [*vswhere*](https://github.com/Microsoft/vswhere/wiki) to find the Visual C++ compiler for Visual Studio 2015 and later and so requires Visual Studio 15.2 (26418.1 Preview) or later that install *vswhere* to a known location to work out of the box.  Visual Studio 2013, 2012, and 2010 may work but aren't tested.
