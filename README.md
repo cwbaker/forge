@@ -1,6 +1,6 @@
 # Forge
 
-[![Build Status](https://travis-ci.com/cwbaker/forge.svg?branch=master)](https://travis-ci.com/cwbaker/forge)
+![Build](https://github.com/cwbaker/forge/workflows/Build/badge.svg)
 
 *Forge* is a Lua scriptable build tool that tracks dependencies between files, uses relative timestamps to determine which are out of date, and carries out actions to bring those files up to date.
 
