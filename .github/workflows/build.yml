@@ -22,9 +22,15 @@ jobs:
         if [[ "$RUNNER_OS" == "Linux" ]]; then bash ./bootstrap-linux.bash ; fi
         if [[ "$RUNNER_OS" == "macOS" ]]; then bash ./bootstrap-macos.bash ; fi
         if [[ "$RUNNER_OS" == "Windows" ]]; then ./bootstrap-windows.bat ; fi
-        bootstrap/bin/forge variant=release
+        bootstrap/bin/forge
+        debug/bin/forge variant=release prefix=forge install
       shell: bash
     - name: Test
       run: |
         release/bin/forge_test
       shell: bash
+    - name: Upload
+      uses: actions/upload-artifact@v2
+      with:
+        name: forge-${{ runner.os }}
+        path: forge/**
