@@ -5,7 +5,7 @@ gcc.flags_by_architecture = {
     armv5 = '-march=armv5te -mtune=xscale -mthumb';
     armv7 = '-march=armv7 -mtune=xscale -mthumb';
     armv8 = '-march=armv8-a -mtune=xscale -mthumb';
-    x86_64 = '-march=native';
+    x86_64 = '-march=westmere';
 };
 
 function gcc.configure( toolset, gcc_settings )
