@@ -1,0 +1,30 @@
+
+on: 
+  workflow_dispatch:
+
+jobs:
+  create_release:
+    runs_on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Collect Release Notes
+      id: release_notes
+      run: |
+        last_release_commit=`git log -n1 --pretty=format:%H -- version.txt`
+        commits=`git rev-list --count $last_release_commit..HEAD`
+        version=`cat version.txt`.$commits
+        release_notes=`git log --pretty=format:"- %s" $last_release_commit..HEAD`
+        echo "::set-output name=version::${version}"
+        echo "::set-output name=release_notes::${release_notes}"
+      shell: bash
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: v$${{ steps.release_notes.outputs.version }}
+        body: $${{ steps.release_notes.outputs.release_notes }}
+        draft: true
+        prerelease: true
