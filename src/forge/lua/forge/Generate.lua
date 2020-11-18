@@ -1,5 +1,5 @@
 
-local Generate = forge:FilePrototype( 'Generate' );
+local Generate = FilePrototype( 'Generate' );
 
 function Generate.build( toolset, target )
     local dependency = target:dependency();
