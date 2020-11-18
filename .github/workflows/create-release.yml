@@ -24,7 +24,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
-        release_name: v$${{ steps.release_notes.outputs.version }}
+        release_name: v${{ steps.release_notes.outputs.version }}
         body_path: ./release_notes.txt
         draft: true
         prerelease: true
