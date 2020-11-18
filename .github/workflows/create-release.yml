@@ -15,9 +15,8 @@ jobs:
         last_release_commit=`git log -n1 --pretty=format:%H -- version.txt`
         commits=`git rev-list --count $last_release_commit..HEAD`
         version=`cat version.txt`.$commits
-        release_notes=`git log --pretty=format:"- %s" $last_release_commit..HEAD`
+        git log --pretty=format:"- %s" $last_release_commit..HEAD >release_notes.txt
         echo "::set-output name=version::${version}"
-        echo "::set-output name=release_notes::${release_notes}"
       shell: bash
     - name: Create Release
       uses: actions/create-release@v1
@@ -26,6 +25,6 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         release_name: v$${{ steps.release_notes.outputs.version }}
-        body: $${{ steps.release_notes.outputs.release_notes }}
+        body_path: ./release_notes.txt
         draft: true
         prerelease: true
