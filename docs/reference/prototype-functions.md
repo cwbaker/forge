@@ -17,27 +17,27 @@ These functions create target and toolset prototypes on which you can define fun
 ### FilePrototype
 
 ~~~lua
-function forge:FilePrototype( identifier )
+function FilePrototype( identifier )
 ~~~
 
-Create target prototypes that build a single output file from zero or more input files with the `forge:FilePrototype()` prototype function.
+Create target prototypes that build a single output file from zero or more input files with the `FilePrototype()` prototype function.
 
-The `forge:FilePrototype()` function is a special short-hand that provides a create function on the target prototypes that it returns.  That create function creates a target in the same way as the directory example above adding the directory that contains the file as an ordering dependency.
+The `FilePrototype()` function is a special short-hand that provides a create function on the target prototypes that it returns.  That create function creates a target in the same way as the directory example above adding the directory that contains the file as an ordering dependency.
 
 ### GroupPrototype
 
 ~~~lua
-function forge:GroupPrototype( identifier, replacement_modifier, pattern )
+function GroupPrototype( identifier, replacement_modifier, pattern )
 ~~~
 
 Create target prototypes that generate an output file per input file using a single invocation of a tool to build multiple files at once.  For example Microsoft's Visual C++ compiler will compile multiple source files at once.
 
-The `forge:GroupPrototype()` function is a special short-hand that provides a proxy create function that generates targets as dependencies are added in the build script.
+The `GroupPrototype()` function is a special short-hand that provides a proxy create function that generates targets as dependencies are added in the build script.
 
 For example the `Cxx` target prototype used by the Microsoft Visual C++ module to compile C++ is defined as follows:
 
 ~~~lua
-local Cxx = forge:GroupPrototype( 'Cxx', msvc.object_filename );
+local Cxx = GroupPrototype( 'Cxx', msvc.object_filename );
 Cxx.language = 'c++';
 Cxx.build = msvc.compile;
 toolset.Cxx = Cxx;
@@ -46,17 +46,17 @@ toolset.Cxx = Cxx;
 ### PatternPrototype
 
 ~~~lua
-function forge:PatternPrototype( identifier, replacement_modifier, pattern )
+function PatternPrototype( identifier, replacement_modifier, pattern )
 ~~~
 
 Create target prototypes that generate an output file per input file using pattern matching and replacement to generate identifiers for the output files.
 
-The `forge:PatternPrototype()` function is a special short-hand that provides a proxy create function that generates output and input targets as dependencies are added in the build script.
+The `PatternPrototype()` function is a special short-hand that provides a proxy create function that generates output and input targets as dependencies are added in the build script.
 
 The `Copy` prototype provided by *Forge* is a very simple pattern-based target prototype that only defines a build action:
 
 ~~~lua
-local Copy = forge:PatternPrototype( 'Copy' );
+local Copy = PatternPrototype( 'Copy' );
 
 function Copy.build( toolset, target )
     rm( target );
@@ -69,15 +69,15 @@ return Copy;
 ### TargetPrototype
 
 ~~~lua
-function forge:TargetPrototype( identifier )
+function TargetPrototype( identifier )
 ~~~
 
 Create a basic target prototype.  This creates a basic target prototype with no pre-defined behavior at all.  At least `Target.create()` and `Target.build()` need to be provided for the target prototype to be useful.
 
-The `Directory` target prototype is a good example using `forge:TargetPrototype()` that overrides the default behaviour for the create, build, and clean actions:
+The `Directory` target prototype is a good example using `TargetPrototype()` that overrides the default behaviour for the create, build, and clean actions:
 
 ~~~lua
-local Directory = forge:TargetPrototype( 'Directory' );
+local Directory = TargetPrototype( 'Directory' );
 
 function Directory.create( toolset, identifier )
     local target = toolset:Target( identifier, Directory );
@@ -96,7 +96,7 @@ end
 return Directory;
 ~~~
 
-The target prototype is created with a call to `forge:TargetPrototype()` passing `'Directory'` as the identifier for the target prototype.  The identifier only provides debug information during the dump of the dependency graph and so is only required to be informative.
+The target prototype is created with a call to `TargetPrototype()` passing `'Directory'` as the identifier for the target prototype.  The identifier only provides debug information during the dump of the dependency graph and so is only required to be informative.
 
 The create function is called when the `Directory` prototype is used to create a target, e.g. when `toolset:Directory(identifier)` is called from a buildfile.  The `toolset` and `identifier` arguments from this call are forwarded through to `Directory.create()` and the target prototype, `Directory`, is forwarded into the third parameter.
 
@@ -111,10 +111,10 @@ Directories don't often appear directly in buildfiles.  Usually they are implici
 ### ToolsetPrototype
 
 ~~~lua
-function forge:ToolsetPrototype( identifier )
+function ToolsetPrototype( identifier )
 ~~~
 
-Call `forge:ToolsetPrototype()` to create a new Forge toolset prototype.  This creates a table that is callable to create toolsets and is suitable for the `Toolset.initialize()`, `Toolset.configure()`, and `Toolset.validate()` functions to be defined on.
+Call `ToolsetPrototype()` to create a new Forge toolset prototype.  This creates a table that is callable to create toolsets and is suitable for the `Toolset.initialize()`, `Toolset.configure()`, and `Toolset.validate()` functions to be defined on.
 
 **Parameters:**
 
