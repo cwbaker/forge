@@ -75,7 +75,7 @@ Running `forge -r . dependencies` in the *copy-files-tutorial* directory display
 - The `Copy` prototype, the "rule" in parlance common to other build tools, is defined as follows:
 
 ~~~lua
-local Copy = forge:FilePrototype( 'Copy' );
+local Copy = FilePrototype( 'Copy' );
 
 function Copy.build( toolset, target )
     rm( target );
@@ -85,7 +85,7 @@ end
 return Copy;
 ~~~
 
-The call to `forge:FilePrototype()` creates a target prototype that generates files.  Behind this scenes this function is creating a plain target prototype and adding a create function that creates a target that generates a file, is cleanable, and that creates the directory that contains it if necessary.
+The call to `FilePrototype()` creates a target prototype that generates files.  Behind this scenes this function is creating a plain target prototype and adding a create function that creates a target that generates a file, is cleanable, and that creates the directory that contains it if necessary.
 
 The definition of `Copy.build()` defines the actions carried out when targets created with this prototype are outdated and need to be built.  Here the destination file is removed and copied again from the source file but, in general, any actions can be carried out including executing external processes.
 
@@ -97,8 +97,8 @@ From the bottom of *Toolset.lua* where `Copy` is setup as an element available t
 
 ~~~lua
 
-Toolset.Copy = forge:PatternElement( require('forge.Copy') );
+Toolset.Copy = PatternElement( require('forge.Copy') );
 
 ~~~
 
-The call to `forge:PatternElement()` creates and returns a function that can be used in buildfiles to generate targets using pattern matching and replacement.
+The call to `PatternElement()` creates and returns a function that can be used in buildfiles to generate targets using pattern matching and replacement.

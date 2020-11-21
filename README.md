@@ -25,7 +25,7 @@ toolset:all {
 The Lua script that defines the `Copy` target used in the Lua-based domain specific language above is defined as follows:
 
 ~~~lua
-local Copy = forge:PatternPrototype( 'Copy' );
+local Copy = PatternPrototype( 'Copy' );
 
 function Copy.build( toolset, target )
     rm( target );

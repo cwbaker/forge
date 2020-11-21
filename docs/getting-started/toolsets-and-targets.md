@@ -16,7 +16,7 @@ Prototypes are to objects (e.g. toolsets and targets) as classes are to objects 
 
 Toolsets add support for external tools by providing target prototypes and settings used to define dependency graphs representing the targets and dependencies in a build.  For example the *cc* toolset supports C and C++ compilation.
 
-Create a toolset prototype by calling `forge:ToolsetPrototype()` passing a short identifier as the sole parameter.  This returns a table on which to define the functions provided by the toolset.  Return the toolset prototype from the end of the Lua script that defines it.
+Create a toolset prototype by calling `ToolsetPrototype()` passing a short identifier as the sole parameter.  This returns a table on which to define the functions provided by the toolset.  Return the toolset prototype from the end of the Lua script that defines it.
 
 Three functions can be overridden to interact with Forge's configuration and initialization of toolsets:
 
@@ -28,7 +28,7 @@ Three functions can be overridden to interact with Forge's configuration and ini
 
 Other functions needed during definition of the dependency graph can be defined on the toolset prototype also.  These functions are available on toolsets using that toolset prototype from the root build script and any loaded buildfiles.
 
-The identifier passed to `forge:ToolsetPrototype()` identifies the block of per-machine settings returned by the configure function within the *local_settings.lua* file.  The identifier must be unique within your build.  The configuration itself is shared between toolsets and variants.  Any settings that are different between toolsets or variants should be computed in the initialize function that executes for each toolset created in each build.
+The identifier passed to `ToolsetPrototype()` identifies the block of per-machine settings returned by the configure function within the *local_settings.lua* file.  The identifier must be unique within your build.  The configuration itself is shared between toolsets and variants.  Any settings that are different between toolsets or variants should be computed in the initialize function that executes for each toolset created in each build.
 
 ### Writing Targets
 
@@ -48,14 +48,14 @@ Two functions can be overridden to interact with build and clean actions during 
 
 For target prototypes that build to single files or build to multiple files based on a pattern or group there are a few functions that create target prototypes with create and depend functions already defined:
 
-- `forge:FilePrototype()` returns a target prototype with create and depend functions that support building one or more source files to a single file.
+- `FilePrototype()` returns a target prototype with create and depend functions that support building one or more source files to a single file.
 
-- `forge:PatternPrototype()` returns a target prototype with create and depend functions that support building multiple source files to multiple files (with a one-to-one mapping) where the destination filename is derived from a pattern matching the source filename.
+- `PatternPrototype()` returns a target prototype with create and depend functions that support building multiple source files to multiple files (with a one-to-one mapping) where the destination filename is derived from a pattern matching the source filename.
 
-- `forge:GroupPrototype()` returns a target prototype with create and depend fucntions that support building multiple source files to multiple files in groups where the destination filename is derived from a pattern matching the source filename.  For example the Visual C++ compiler accepts multiple C++ source files in one invocation and it is useful to group these together.
+- `GroupPrototype()` returns a target prototype with create and depend fucntions that support building multiple source files to multiple files in groups where the destination filename is derived from a pattern matching the source filename.  For example the Visual C++ compiler accepts multiple C++ source files in one invocation and it is useful to group these together.
 
 For target prototypes where you must provide your own create and depend functions there is 
 
-- `forge:TargetPrototype()` returns a raw target prototype on which at least a create function must be defined.
+- `TargetPrototype()` returns a raw target prototype on which at least a create function must be defined.
 
 Targets without target prototypes are valid.  These targets are typically source files that aren't updated by the build system and but still need to be tracked in order to determine when intermediate files that depend on them are outdated.
