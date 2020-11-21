@@ -122,7 +122,7 @@ int LuaTargetPrototype::create_target_prototype_call_metamethod( lua_State* lua_
         (void) TARGET_PROTOTYPE;
 
         string id = luaL_checkstring( lua_state, IDENTIFIER );
-        Forge *forge = (Forge*) lua_touserdata( lua_state, FORGE );
+        Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
         TargetPrototype* target_prototype = forge->graph()->add_target_prototype( id );
         forge->create_target_prototype_lua_binding( target_prototype );
         luaxx_push( lua_state, target_prototype );

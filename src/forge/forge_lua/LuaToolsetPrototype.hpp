@@ -11,6 +11,7 @@ namespace forge
 
 class LuaToolset;
 class ToolsetPrototype;
+class Forge;
 
 class LuaToolsetPrototype
 {
@@ -19,12 +20,12 @@ class LuaToolsetPrototype
 public:
     LuaToolsetPrototype();
     ~LuaToolsetPrototype();
-    void create( lua_State* lua_state, LuaToolset* lua_toolset );
+    void create( lua_State* lua_state, Forge* forge, LuaToolset* lua_toolset );
     void destroy();
     void create_toolset_prototype( ToolsetPrototype* toolset_prototype );
     void destroy_toolset_prototype( ToolsetPrototype* toolset_prototype );
     static int id( lua_State* lua_state );
-    static int toolset_prototype_call_metamethod( lua_State* lua_state );
+    static int create_toolset_prototype_call_metamethod( lua_State* lua_state );
     static int create_call_metamethod( lua_State* lua_state );
     static int continue_create_call_metamethod( lua_State* lua_state, int /*status*/, lua_KContext /*context*/ );
 };

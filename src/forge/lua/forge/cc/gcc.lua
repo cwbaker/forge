@@ -1,5 +1,5 @@
 
-local gcc = forge:ToolsetPrototype( 'gcc' );
+local gcc = ToolsetPrototype( 'gcc' );
 
 gcc.flags_by_architecture = {
     armv5 = '-march=armv5te -mtune=xscale -mthumb';

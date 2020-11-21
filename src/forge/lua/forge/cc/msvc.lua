@@ -1,5 +1,5 @@
 
-local msvc = forge:ToolsetPrototype( 'msvc' );
+local msvc = ToolsetPrototype( 'msvc' );
 
 function msvc.configure( toolset, msvc_settings )
     local function vswhere()

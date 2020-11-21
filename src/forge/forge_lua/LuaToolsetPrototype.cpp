@@ -30,9 +30,10 @@ LuaToolsetPrototype::~LuaToolsetPrototype()
     destroy();
 }
 
-void LuaToolsetPrototype::create( lua_State* lua_state, LuaToolset* lua_toolset )
+void LuaToolsetPrototype::create( lua_State* lua_state, Forge* forge, LuaToolset* lua_toolset )
 {
     SWEET_ASSERT( lua_state );
+    SWEET_ASSERT( forge );
     SWEET_ASSERT( lua_toolset );
 
     destroy();
@@ -43,7 +44,8 @@ void LuaToolsetPrototype::create( lua_State* lua_state, LuaToolset* lua_toolset 
     // new toolset prototypes via `LuaToolsetPrototype::toolset_prototype_call_metamethod()`.
     luaxx_push( lua_state_, this );
     lua_newtable( lua_state_ );
-    lua_pushcfunction( lua_state_, &LuaToolsetPrototype::toolset_prototype_call_metamethod );
+    lua_pushlightuserdata( lua_state, forge );
+    lua_pushcclosure( lua_state_, &LuaToolsetPrototype::create_toolset_prototype_call_metamethod, 1 );
     lua_setfield( lua_state_, -2, "__call" );
     lua_setmetatable( lua_state_, -2 );
     lua_pop( lua_state_, 1 );
@@ -124,25 +126,18 @@ int LuaToolsetPrototype::id( lua_State* lua_state )
 }
 
 /**
-// Redirect calls made on `forge:ToolsetPrototype()` to create new toolset
-// prototypes.
-//
-// ~~~lua
-// function toolset_prototype_call_metamethod( ToolsetPrototype, forge, identifier, varargs )
-//     return -- new toolset prototype
-// end
+// Redirect calls made on `ToolsetPrototype` to create new toolset prototypes.
 */
-int LuaToolsetPrototype::toolset_prototype_call_metamethod( lua_State* lua_state )
+int LuaToolsetPrototype::create_toolset_prototype_call_metamethod( lua_State* lua_state )
 {
+    const int FORGE = lua_upvalueindex( 1 );
     const int TOOLSET_PROTOTYPE = 1;
-    const int FORGE = 2;
-    const int IDENTIFIER = 3;
+    const int IDENTIFIER = 2;
 
     try
     {
         (void) TOOLSET_PROTOTYPE;
-        // Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
-        Forge* forge = (Forge*) luaxx_to( lua_state, FORGE, FORGE_TYPE );
+        Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
         string id = luaL_checkstring( lua_state, IDENTIFIER );        
         ToolsetPrototype* toolset_prototype = forge->graph()->add_toolset_prototype( id );
         forge->create_toolset_prototype_lua_binding( toolset_prototype );

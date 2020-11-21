@@ -946,7 +946,7 @@ int LuaTarget::vector_string_const_iterator_gc( lua_State* lua_state )
 }
 
 /**
-// Create a new target (as metamethod for calls made on `forge.Target`).
+// Create a new target (as metamethod for calls made on `Target`).
 */
 int LuaTarget::target_call_metamethod( lua_State* lua_state )
 {

@@ -96,7 +96,7 @@ void Lua::create( Forge* forge )
     lua_target_->create( lua_state_, forge );
     lua_target_prototype_->create( lua_state_, forge, lua_target_ );
     lua_toolset_->create( lua_state_ );
-    lua_toolset_prototype_->create( lua_state_, lua_toolset_ );
+    lua_toolset_prototype_->create( lua_state_, forge, lua_toolset_ );
     lua_setglobal( lua_state_, "forge" );
 
     lua_context_->create( forge, lua_state_ );
