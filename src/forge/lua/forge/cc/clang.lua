@@ -414,7 +414,7 @@ function clang.parse_dependencies_file( toolset, filename, object )
     object:clear_implicit_dependencies();
 
     local file = io.open( filename, 'r' );
-    assertf( file, 'Opening '%s' to parse dependencies failed', filename );
+    assertf( file, 'Opening "%s" to parse dependencies failed', filename );
     local dependencies = file:read( 'a' );
     file:close();
     file = nil;
