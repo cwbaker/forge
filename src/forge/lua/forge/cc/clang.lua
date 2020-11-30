@@ -348,8 +348,6 @@ function clang.append_link_flags( toolset, target, flags )
     local settings = toolset.settings;
 
     table.insert( flags, ('-arch %s'):format(settings.architecture) );
-    -- table.insert( flags, '-std=c++11' );
-    -- table.insert( flags, '-stdlib=libc++' );
 
     local standard = settings.standard;
     if standard then 
