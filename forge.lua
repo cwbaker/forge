@@ -24,9 +24,6 @@ local cc = require 'forge.cc' {
     defines = {
         ('BUILD_VARIANT_%s'):format( upper(variant) );
     };
-    xcode = {
-        xcodeproj = root( 'forge.xcodeproj' );
-    };
 
     architecture = 'x86_64';
     assertions = variant ~= 'shipping';
