@@ -413,25 +413,32 @@ end
 function clang.parse_dependencies_file( toolset, filename, object )
     object:clear_implicit_dependencies();
 
-    local file = io.open( filename, "r" );
-    assertf( file, "Opening '%s' to parse dependencies failed", filename );
-    local dependencies = file:read( "a" );
+    local file = io.open( filename, 'r' );
+    assertf( file, 'Opening '%s' to parse dependencies failed', filename );
+    local dependencies = file:read( 'a' );
     file:close();
     file = nil;
 
-    local TARGET_PATTERN = "([^:]+):[ \t\n\r\\]+";
-    local DEPENDENCY_PATTERN = "([^\n\r]+) \\[ \t\n\r]+";
+    local TARGET_PATTERN = '([^:]+):[%s\\]+';
+    local DEPENDENCY_PATTERN = '([^\n\r]+) \\[%s]+';
+    local FINAL_DEPENDENCY_PATTERN = '([^\n\r]+)%s*';
+
     local start, finish, path = dependencies:find( TARGET_PATTERN );
     if start and finish then 
         local start, finish, path = dependencies:find( DEPENDENCY_PATTERN, finish + 1 );
         while start and finish do 
-            local filename = path:gsub( "\\ ", " " );
-            local within_source_tree = relative( absolute(filename), root() ):find( "..", 1, true ) == nil;
+            local filename = path:gsub( '\\ ', ' ' );
+            local within_source_tree = relative( absolute(filename), root() ):find( '..', 1, true ) == nil;
             if within_source_tree then 
-                local dependency = toolset:SourceFile( path:gsub("\\ ", " ") );
+                local dependency = toolset:SourceFile( filename );
                 object:add_implicit_dependency( dependency );
             end
-            start, finish, path = dependencies:find( DEPENDENCY_PATTERN, finish + 1 );
+
+            local next = finish + 1;
+            start, finish, path = dependencies:find( DEPENDENCY_PATTERN, next );
+            if not start and not finish then
+                start, finish, path = dependencies:find( FINAL_DEPENDENCY_PATTERN, next );
+            end
         end
     end
 end
