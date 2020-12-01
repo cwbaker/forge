@@ -293,7 +293,7 @@ function PatternPrototype( identifier, replacement_modifier, pattern )
         local targets_metatable = {
             __call = function( targets, dependencies )
                 local attributes = forge:merge( {}, dependencies );
-                for _, filename in forge:walk_tables(dependencies) do
+                for _, filename in walk_tables(dependencies) do
                     local source_file = toolset:SourceFile( filename );
                     local identifier = root_relative( source_file ):gsub( pattern, replacement );
                     local target = toolset:File( identifier, pattern_prototype );
@@ -325,7 +325,7 @@ function GroupPrototype( identifier, replacement_modifier, pattern )
             __call = function( targets, dependencies )
                 local target = targets[1];
                 forge:merge( target, dependencies );
-                for _, filename in forge:walk_tables(dependencies) do
+                for _, filename in walk_tables(dependencies) do
                     local source_file = toolset:SourceFile( filename );
                     local identifier = root_relative( source_file ):gsub( pattern, replacement );
                     local file = toolset:File( identifier );
@@ -347,30 +347,9 @@ function GroupPrototype( identifier, replacement_modifier, pattern )
     return group_prototype;
 end
 
--- Recursively walk the dependencies of *target* until a target with a 
--- filename is reached.
-function forge:walk_dependencies( target )
-    local index = 1;
-    local function walk( target )
-        for _, dependency in target:dependencies() do 
-            local phony = dependency:filename() == '';
-            if not phony then
-                coroutine.yield( index, dependency );
-                index = index + 1;
-            end
-            if phony then 
-                walk( dependency );
-            end
-        end
-    end
-    return coroutine.wrap( function()
-        walk( target );
-    end );
-end
-
 -- Recursively walk the tables passed in *dependencies* until reaching targets
 -- or non-table values (e.g. strings) that are yielded back to the caller.
-function forge:walk_tables( dependencies )
+function walk_tables( dependencies )
     local function typename( value )
         if type(value) == 'table' then 
             local metatable = getmetatable( value );
@@ -392,6 +371,49 @@ function forge:walk_tables( dependencies )
 
     return coroutine.wrap( function()
         walk( dependencies );
+    end );
+end
+
+-- Recursively walk the dependencies of *target* until a target with a 
+-- filename is reached.
+function walk_dependencies( target )
+    local index = 1;
+    local function walk( target )
+        for _, dependency in target:dependencies() do 
+            local phony = dependency:filename() == '';
+            if not phony then
+                coroutine.yield( index, dependency );
+                index = index + 1;
+            end
+            if phony then 
+                walk( dependency );
+            end
+        end
+    end
+    return coroutine.wrap( function()
+        walk( target );
+    end );
+end
+
+-- Recursively walk ordering dependencies using *yield* and *recurse* to
+-- determine which targets to yield and/or recurse on.
+function walk_ordering_dependencies( target, yield, recurse )
+    local index = 1;
+    local yield = yield or function () return true end;
+    local walk = walk or function () return true end;
+    local function walk( target )
+        for _, dependency in target:ordering_dependencies() do
+            if yield(dependency) then
+                coroutine.yield( index, dependency );
+                index = index + 1;
+            end
+            if recurse(dependency) then
+                walk( dependency );
+            end
+        end
+    end
+    return coroutine.wrap( function()
+        walk( target, yield, walk );
     end );
 end
 

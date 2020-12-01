@@ -32,24 +32,22 @@ function gcc.initialize( toolset )
     local Cc = PatternPrototype( 'Cc', gcc.object_filename );
     Cc.language = 'c';
     Cc.build = gcc.compile;
-    toolset.Cc = Cc;
 
     local Cxx = PatternPrototype( 'Cxx', gcc.object_filename );
     Cxx.language = 'c++';
     Cxx.build = gcc.compile;
+
+    toolset.static_library_filename = gcc.static_library_filename;
+    toolset.dynamic_library_filename = gcc.dynamic_library_filename;
+    toolset.executable_filename = gcc.executable_filename;
+    toolset.compile = gcc.compile;
+    toolset.archive = gcc.archive;
+    toolset.link = gcc.link;
+    toolset.Cc = Cc;
     toolset.Cxx = Cxx;
-
-    local StaticLibrary = FilePrototype( 'StaticLibrary', gcc.static_library_filename );
-    StaticLibrary.build = gcc.archive;
-    toolset.StaticLibrary = StaticLibrary;
-
-    local DynamicLibrary = FilePrototype( 'DynamicLibrary', gcc.dynamic_library_filename );
-    DynamicLibrary.build = gcc.link;
-    toolset.DynamicLibrary = DynamicLibrary;
-
-    local Executable = FilePrototype( 'Executable', gcc.executable_filename );
-    Executable.build = gcc.link;
-    toolset.Executable = Executable;
+    toolset.StaticLibrary = require 'forge.cc.StaticLibrary';
+    toolset.DynamicLibrary = require 'forge.cc.DynamicLibrary';
+    toolset.Executable = require 'forge.cc.Executable';
 
     toolset:defaults {
         architecture = 'x86_64';
@@ -140,9 +138,9 @@ function gcc.archive( toolset, target )
     local settings = toolset.settings;
     pushd( toolset:obj_directory(target) );
     local objects =  {};
-    for _, object in forge:walk_dependencies( target ) do
+    for _, object in walk_dependencies( target ) do
         local prototype = object:prototype();
-        if prototype ~= toolset.Directory then
+        if prototype ~= toolset.Directory and prototype ~= toolset.StaticLibrary then
             table.insert( objects, relative(object) );
         end
     end
@@ -157,23 +155,12 @@ end
 
 -- Link dynamic libraries and executables.
 function gcc.link( toolset, target ) 
-    printf( leaf(target) );
+    pushd( toolset:obj_directory(target) );
 
     local objects = {};
-    local libraries = {};
-    local settings = toolset.settings;
-    pushd( toolset:obj_directory(target) );
-    for _, dependency in forge:walk_dependencies(target) do
+    for _, dependency in walk_dependencies(target) do
         local prototype = dependency:prototype();
-        if prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary then
-            if dependency.whole_archive then 
-                table.insert( libraries, '-Wl,--whole-archive' );
-            end
-            table.insert( libraries, ('-l%s'):format(dependency:id()) );
-            if dependency.whole_archive then 
-                table.insert( libraries, '-Wl,--no-whole-archive' );
-            end
-        elseif prototype ~= toolset.Directory then
+        if prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary and prototype ~= toolset.Directory then
             table.insert( objects, relative(dependency) );
         end
     end
@@ -181,16 +168,22 @@ function gcc.link( toolset, target )
     local flags = {};
     gcc.append_link_flags( toolset, target, flags );
     gcc.append_library_directories( toolset, target, flags );
-    gcc.append_link_libraries( toolset, target, libraries );
+    
+    local libraries = {};
+    gcc.append_libraries( toolset, target, libraries );
+    gcc.append_third_party_libraries( toolset, target, libraries );
 
     if #objects > 0 then
+        local settings = toolset.settings;
         local ldflags = table.concat( flags, ' ' );
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, ' ' );
         local gxx = settings.gcc.gxx;
         local environment = settings.gcc.environment;
+        printf( leaf(target) );
         system( gxx, ('g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
     end
+
     popd();
 end
 
@@ -342,18 +335,33 @@ function gcc.append_link_flags( toolset, target, flags )
     table.insert( flags, ('-o "%s"'):format(native(target:filename())) );
 end
 
-function gcc.append_link_libraries( toolset, target, libraries )
+function gcc.append_libraries( toolset, target, flags )
+    local libraries = target:find_transitive_libraries();
+    for _, library in ipairs(libraries) do
+        if library.whole_archive then 
+            table.insert( flags, '-Wl,--whole-archive' );
+        end
+        table.insert( flags, ('-l%s'):format(library:id()) );
+        if library.whole_archive then 
+            table.insert( flags, '-Wl,--no-whole-archive' );
+        end
+    end
+end
+
+function gcc.append_third_party_libraries( toolset, target, flags )
     local settings = toolset.settings;
 
-    if settings.libraries then 
-        for _, library in ipairs(settings.libraries) do 
-            table.insert( libraries, ('-l%s'):format(library) );
+    local libraries = settings.libraries;
+    if libraries then 
+        for _, library in ipairs(libraries) do 
+            table.insert( flags, ('-l%s'):format(library) );
         end
     end
 
-    if target.libraries then 
-        for _, library in ipairs(target.libraries) do 
-            table.insert( libraries, ('-l%s'):format(library) );
+    local libraries = target.libraries;
+    if libraries then 
+        for _, library in ipairs(libraries) do 
+            table.insert( flags, ('-l%s'):format(library) );
         end
     end
 end

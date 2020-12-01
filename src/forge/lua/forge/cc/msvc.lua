@@ -269,24 +269,22 @@ function msvc.initialize( toolset )
     local Cc = GroupPrototype( 'Cc', msvc.object_filename );
     Cc.language = 'c';
     Cc.build = msvc.compile;
-    toolset.Cc = Cc;
 
     local Cxx = GroupPrototype( 'Cxx', msvc.object_filename );
     Cxx.language = 'c++';
     Cxx.build = msvc.compile;
+
+    toolset.static_library_filename = msvc.static_library_filename;
+    toolset.dynamic_library_filename = msvc.dynamic_library_filename;
+    toolset.executable_filename = msvc.executable_filename;
+    toolset.compile = msvc.compile;
+    toolset.archive = msvc.archive;
+    toolset.link = msvc.link;
+    toolset.Cc = Cc;
     toolset.Cxx = Cxx;
-
-    local StaticLibrary = FilePrototype( 'StaticLibrary', msvc.static_library_filename );
-    StaticLibrary.build = msvc.archive;
-    toolset.StaticLibrary = StaticLibrary;
-
-    local DynamicLibrary = FilePrototype( 'DynamicLibrary', msvc.dynamic_library_filename );
-    DynamicLibrary.build = msvc.link;
-    toolset.DynamicLibrary = DynamicLibrary;
-
-    local Executable = FilePrototype( 'Executable', msvc.executable_filename );
-    Executable.build = msvc.link;
-    toolset.Executable = Executable;
+    toolset.StaticLibrary = require 'forge.cc.StaticLibrary';
+    toolset.DynamicLibrary = require 'forge.cc.DynamicLibrary';
+    toolset.Executable = require 'forge.cc.Executable';
 
     toolset:defaults {
         architecture = 'x86_64';
@@ -443,14 +441,10 @@ function msvc.link( toolset, target )
     printf( leaf(target) );
 
     local objects = {};
-    local libraries = {};
-    local settings = toolset.settings;
     pushd( toolset:obj_directory(target) );
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
-        if prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary then
-            table.insert( libraries, ('%s.lib'):format(basename(dependency:filename())) );
-        elseif prototype ~= toolset.Directory then
+        if prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary and prototype ~= toolset.Directory then
             assertf( target.architecture == dependency.architecture, "Architectures for '%s' (%s) and '%s' (%s) don't match", target:path(), tostring(target.architecture), dependency:path(), tostring(dependency.architecture) );
             for _, object in dependency:dependencies() do
                 if object:prototype() == nil then
@@ -463,9 +457,13 @@ function msvc.link( toolset, target )
     local flags = {};
     msvc.append_link_flags( toolset, target, flags );
     msvc.append_library_directories( toolset, target, flags );
-    msvc.append_link_libraries( toolset, target, libraries );
+
+    local libraries = {};
+    msvc.append_libraries( toolset, target, libraries );
+    msvc.append_third_party_libraries( toolset, target, libraries );
 
     if #objects > 0 then
+        local settings = toolset.settings;
         local msld = msvc.visual_cxx_tool( toolset, "link.exe" );
         local msmt = msvc.windows_sdk_tool( toolset, "mt.exe" );
         local msrc = msvc.windows_sdk_tool( toolset, "rc.exe" );
@@ -731,17 +729,26 @@ function msvc.append_link_flags( toolset, target, flags )
     end
 end
 
-function msvc.append_link_libraries( toolset, target, flags )
+function msvc.append_libraries( toolset, target, flags )
+    local libraries = target:find_transitive_libraries();
+    for _, library in ipairs(libraries) do
+        table.insert( flags, ('%s.lib'):format(basename(library:filename())) );
+    end
+end
+
+function msvc.append_third_party_libraries( toolset, target, flags )
     local settings = toolset.settings;
 
-    if settings.libraries then
-        for _, library in ipairs(settings.libraries) do
+    local libraries = settings.libraries;
+    if libraries then
+        for _, library in ipairs(libraries) do
             table.insert( flags, ('%s.lib'):format(basename(library)) );
         end
     end
 
-    if target.libraries then
-        for _, library in ipairs(target.libraries) do
+    local libraries = target.libraries;
+    if libraries then
+        for _, library in ipairs(libraries) do
             table.insert( flags, ('%s.lib'):format(basename(library)) );
         end
     end

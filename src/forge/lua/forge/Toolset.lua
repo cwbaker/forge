@@ -228,7 +228,7 @@ end
 function Toolset:all( dependencies )
     local all = Target( self, 'all' );
     if dependencies then 
-        for _, dependency in forge:walk_tables(dependencies) do
+        for _, dependency in walk_tables(dependencies) do
             if type(dependency) == 'string' then 
                 dependency = Target( self, self:interpolate(dependency) );
             end

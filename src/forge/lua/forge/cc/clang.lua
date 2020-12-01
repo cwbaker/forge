@@ -27,34 +27,32 @@ function clang.initialize( toolset )
     local Cc = PatternPrototype( 'Cc', clang.object_filename );
     Cc.language = 'c';
     Cc.build = clang.compile;
-    toolset.Cc = Cc;
 
     local Cxx = PatternPrototype( 'Cxx', clang.object_filename );
     Cxx.language = 'c++';
     Cxx.build = clang.compile;
-    toolset.Cxx = Cxx;
 
     local ObjC = PatternPrototype( 'ObjC', clang.object_filename );
     ObjC.language = 'objective-c';
     ObjC.build = clang.compile;
-    toolset.ObjC = ObjC;
 
     local ObjCxx = PatternPrototype( 'ObjCxx', clang.object_filename );
     ObjCxx.language = 'objective-c++';
     ObjCxx.build = clang.compile;
+
+    toolset.static_library_filename = clang.static_library_filename;
+    toolset.dynamic_library_filename = clang.dynamic_library_filename;
+    toolset.executable_filename = clang.executable_filename;
+    toolset.compile = clang.compile;
+    toolset.archive = clang.archive;
+    toolset.link = clang.link;
+    toolset.Cc = Cc;
+    toolset.Cxx = Cxx;
+    toolset.ObjC = ObjC;
     toolset.ObjCxx = ObjCxx;
-
-    local StaticLibrary = FilePrototype( 'StaticLibrary', clang.static_library_filename );
-    StaticLibrary.build = clang.archive;
-    toolset.StaticLibrary = StaticLibrary;
-
-    local DynamicLibrary = FilePrototype( 'DynamicLibrary', clang.dynamic_library_filename );
-    DynamicLibrary.build = clang.link;
-    toolset.DynamicLibrary = DynamicLibrary;
-
-    local Executable = FilePrototype( 'Executable', clang.executable_filename );
-    Executable.build = clang.link;
-    toolset.Executable = Executable;
+    toolset.StaticLibrary = require 'forge.cc.StaticLibrary';
+    toolset.DynamicLibrary = require 'forge.cc.DynamicLibrary';
+    toolset.Executable = require 'forge.cc.Executable';
 
     toolset:defaults {
         architecture = 'x86_64';
@@ -156,7 +154,7 @@ function clang.archive( toolset, target )
     local settings = toolset.settings;
     pushd( toolset:obj_directory(target) );
     local objects =  {};
-    for _, object in forge:walk_dependencies( target ) do
+    for _, object in walk_dependencies( target ) do
         local prototype = object:prototype();
         if prototype ~= toolset.Directory then
             table.insert( objects, relative(object) );
@@ -173,16 +171,11 @@ end
 
 -- Link dynamic libraries and executables.
 function clang.link( toolset, target ) 
-    local settings = toolset.settings;
-
     local objects = {};
-    local libraries = {};
     pushd( toolset:obj_directory(target) );
-    for _, dependency in forge:walk_dependencies(target) do
+    for _, dependency in walk_dependencies(target) do
         local prototype = dependency:prototype();
-        if prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary then
-            table.insert( libraries, ('-l%s'):format(dependency:id()) );
-        elseif prototype ~= toolset.Directory then
+        if prototype ~= toolset.StaticLibrary or prototype ~= toolset.DynamicLibrary and prototype ~= toolset.Directory then
             table.insert( objects, relative(dependency) );
         end
     end
@@ -190,9 +183,13 @@ function clang.link( toolset, target )
     local flags = {};
     clang.append_link_flags( toolset, target, flags );
     clang.append_library_directories( toolset, target, flags );
-    clang.append_link_libraries( toolset, target, libraries );
+
+    local libraries = {};
+    clang.append_libraries( toolset, target, libraries );
+    clang.append_third_party_libraries( toolset, target, libraries );
 
     if #objects > 0 then
+        local settings = toolset.settings;
         local cxx = settings.clang.cxx;
         local ldflags = table.concat( flags, ' ' );
         local ldobjects = table.concat( objects, '" "' );
@@ -382,30 +379,41 @@ function clang.append_link_flags( toolset, target, flags )
     table.insert( flags, ('-o "%s"'):format(native(target:filename())) );
 end
 
-function clang.append_link_libraries( toolset, target, libraries )
+function clang.append_libraries( toolset, target, flags )
+    local libraries = target:find_transitive_libraries();
+    for _, library in ipairs(libraries) do
+        table.insert( flags, ('-l%s'):format(library:id()) );
+    end
+end
+
+function clang.append_third_party_libraries( toolset, target, flags )
     local settings = toolset.settings;
 
-    if settings.frameworks then
-        for _, framework in ipairs(settings.frameworks) do
-            table.insert( libraries, ('-framework %s'):format(framework) );
+    local frameworks = settings.frameworks;
+    if frameworks then
+        for _, framework in ipairs(frameworks) do
+            table.insert( flags, ('-framework %s'):format(framework) );
         end
     end
 
-    if settings.libraries then
-        for _, library in ipairs(settings.libraries) do
-            table.insert( libraries, ('-l%s'):format(library) );
+    local libraries = settings.libraries;
+    if libraries then
+        for _, library in ipairs(libraries) do
+            table.insert( flags, ('-l%s'):format(library) );
         end
     end
 
-    if target.frameworks then
-        for _, framework in ipairs(target.frameworks) do
-            table.insert( libraries, ('-framework %s'):format(framework) );
+    local frameworks = target.frameworks;
+    if frameworks then
+        for _, framework in ipairs(frameworks) do
+            table.insert( flags, ('-framework %s'):format(framework) );
         end
     end
 
-    if target.libraries then
-        for _, library in ipairs(target.libraries) do
-            table.insert( libraries, ('-l%s'):format(library) );
+    local libraries = target.libraries;
+    if libraries then
+        for _, library in ipairs(libraries) do
+            table.insert( flags, ('-l%s'):format(library) );
         end
     end
 end
