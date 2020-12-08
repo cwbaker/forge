@@ -50,6 +50,7 @@ public:
     void create( Forge* forge );
     void destroy();
     void assign_global_variables( const std::vector<std::string>& assignments );
+    void set_package_path( const std::string& path );
 };
     
 }

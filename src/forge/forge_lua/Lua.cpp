@@ -110,10 +110,7 @@ void Lua::create( Forge* forge )
     path first_path = forge_->executable( "../lua/?.lua" );
     path second_path = forge_->executable( "../lua/?/init.lua" );
     string path = first_path.generic_string() + ";" + second_path.generic_string();
-    lua_getglobal( lua_state_, "package" );
-    lua_pushlstring( lua_state_, path.c_str(), path.size() );
-    lua_setfield( lua_state_, -2, "path" );
-    lua_pop( lua_state_, 1 );
+    set_package_path( path );
 }
 
 void Lua::destroy()
@@ -177,4 +174,19 @@ void Lua::assign_global_variables( const std::vector<std::string>& assignments )
             lua_setglobal( lua_state_, attribute.c_str() );
         }
     }
+}
+
+/**
+// Set the Lua module search path in `package.path`.
+//
+// @param path
+//  The value to set `package.path` to.
+*/
+void Lua::set_package_path( const std::string& path )
+{
+    SWEET_ASSERT( lua_state_ );
+    lua_getglobal( lua_state_, "package" );
+    lua_pushlstring( lua_state_, path.c_str(), path.size() );
+    lua_setfield( lua_state_, -2, "path" );
+    lua_pop( lua_state_, 1 );
 }

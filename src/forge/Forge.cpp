@@ -368,6 +368,18 @@ void Forge::assign_global_variables( const std::vector<std::string>& assignments
 }
 
 /**
+// Set the Lua module search path in `package.path`.
+//
+// @param path
+//  The value to set `package.path` to.
+*/
+void Forge::set_package_path( const std::string& path )
+{
+    SWEET_ASSERT( lua_ );
+    lua_->set_package_path( path );
+}
+
+/**
 // Load and execute *filename* and *command*.
 //
 // @param filename
