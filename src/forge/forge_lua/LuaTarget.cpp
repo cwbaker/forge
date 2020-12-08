@@ -965,7 +965,6 @@ int LuaTarget::target_call_metamethod( lua_State* lua_state )
     Target* working_directory = context->working_directory();
     size_t identifier_length = 0;
     const char* identifier = luaL_checklstring( lua_state, IDENTIFIER, &identifier_length );
-    luaL_argcheck( lua_state, identifier && identifier_length > 0, IDENTIFIER, "missing or empty identifier" );
     TargetPrototype* target_prototype = (TargetPrototype*) luaxx_to( lua_state, TARGET_PROTOTYPE, TARGET_PROTOTYPE_TYPE );
 
     Target* target = graph->add_or_find_target( string(identifier, identifier_length), working_directory );
