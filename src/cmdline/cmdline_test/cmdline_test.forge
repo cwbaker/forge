@@ -1,14 +1,15 @@
 
 for _, forge in toolsets('cc.*') do
     forge:all {
-        forge:Executable '${bin}/cmdline_test' {
+        forge:StaticLibrary '${lib}/cmdline_test' {
+            whole_archive = true;
+            
             '${lib}/cmdline_${architecture}';
             '${lib}/error_${architecture}';
             '${lib}/assert_${architecture}';
             '${lib}/UnitTest++_${architecture}';
             
             forge:Cxx '${obj}/%1' {
-                'main.cpp',
                 'TestParser.cpp',
                 'TestSplitter.cpp'
             };
