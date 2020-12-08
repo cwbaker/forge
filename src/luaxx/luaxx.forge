@@ -1,7 +1,9 @@
 
-for _, forge in toolsets('cc.*') do
-    forge:StaticLibrary '${lib}/luaxx_${architecture}' {
-        forge:Cxx '${obj}/%1' {
+buildfile 'luaxx_unit/luaxx_unit.forge';
+
+for _, cc in toolsets('cc.*') do
+    cc:StaticLibrary '${lib}/luaxx_${architecture}' {
+        cc:Cxx '${obj}/%1' {
             'luaxx.cpp'
         };
     };
