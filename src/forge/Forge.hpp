@@ -85,6 +85,7 @@ class Forge
 
         void set_root_directory( const std::string& root_directory );
         void assign_global_variables( const std::vector<std::string>& assignments_and_commands );
+        void set_package_path( const std::string& path );
         void execute( const std::string& filename, const std::string& command );
         void file( const std::string& filename );
         void script( const std::string& script );
