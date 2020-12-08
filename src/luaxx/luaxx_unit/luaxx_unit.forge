@@ -1,0 +1,13 @@
+
+for _, cc in toolsets('cc.*') do
+    cc:all {
+        cc:StaticLibrary '${lib}/luaxx_unit_${architecture}' {
+            '${lib}/assert_${architecture}';
+            '${lib}/liblua_${architecture}';
+            '${lib}/UnitTest++_${architecture}';
+            cc:Cxx '${obj}/%1' {
+                'LuaUnitTest.cpp';
+            };
+        };
+    };
+end
