@@ -200,7 +200,7 @@ boost::filesystem::path Forge::root( const boost::filesystem::path& path ) const
     boost::filesystem::path absolute_path( root_directory_ );
     absolute_path /= path;
     absolute_path.normalize();
-    return absolute_path.string();
+    return absolute_path;
 }
 
 const boost::filesystem::path& Forge::initial() const
@@ -218,7 +218,7 @@ boost::filesystem::path Forge::initial( const boost::filesystem::path& path ) co
     boost::filesystem::path absolute_path( initial_directory_ );
     absolute_path /= path;
     absolute_path.normalize();
-    return absolute_path.string();
+    return absolute_path;
 }
 
 const boost::filesystem::path& Forge::home() const
@@ -236,7 +236,7 @@ boost::filesystem::path Forge::home( const boost::filesystem::path& path ) const
     boost::filesystem::path absolute_path( home_directory_ );
     absolute_path /= path;
     absolute_path.normalize();
-    return absolute_path.string();
+    return absolute_path;
 }
 
 const boost::filesystem::path& Forge::executable() const
@@ -254,7 +254,7 @@ boost::filesystem::path Forge::executable( const boost::filesystem::path& path )
     boost::filesystem::path absolute_path( executable_directory_ );
     absolute_path /= path;
     absolute_path.normalize();
-    return absolute_path.string();
+    return absolute_path;
 }
 
 boost::filesystem::path Forge::absolute( const boost::filesystem::path& path ) const
