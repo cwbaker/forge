@@ -368,10 +368,10 @@ void Forge::assign_global_variables( const std::vector<std::string>& assignments
 }
 
 /**
-// Load *filename* and execute *command*.
+// Load and execute *filename* and *command*.
 //
 // @param filename
-//  The name of the file to execute to initialize the build system.
+//  The name of the file to load and execute.
 //
 // @param command
 //  The function to call once the root file has been loaded.
@@ -386,6 +386,20 @@ void Forge::execute( const std::string& filename, const std::string& command )
     {
         scheduler_->command( path, command );
     }
+}
+
+/**
+// Load and execute *filename* and execute *command*.
+//
+// @param filename
+//  The name of the file to load and execute.
+*/
+void Forge::file( const std::string& filename )
+{
+    error_policy_.push_errors();
+    boost::filesystem::path path( root_directory_ / filename );    
+    scheduler_->load( path );
+    error_policy_.pop_errors();
 }
 
 /**
