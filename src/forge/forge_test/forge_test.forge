@@ -17,6 +17,7 @@ for _, forge in toolsets('cc.*') do
     };
     forge:all {
         forge:Executable '${bin}/forge_test' {
+            '${lib}/cmdline_test';
             '${lib}/forge_${architecture}';
             '${lib}/forge_lua_${architecture}';
             '${lib}/process_${architecture}';
