@@ -303,36 +303,30 @@ Target* Graph::target( const std::string& id )
 */
 Target* Graph::add_or_find_target( const std::string& id, Target* working_directory )
 {
-    SWEET_ASSERT( !id.empty() );
-    
-    Target* target = nullptr;
-    if ( !id.empty() )
+    boost::filesystem::path path( id );
+    Target* target = working_directory && path.is_relative() ? working_directory : root_target_.get();
+    SWEET_ASSERT( target );
+
+    boost::filesystem::path::const_iterator i = path.begin();
+
+    if ( path.has_root_name() )
     {
-        boost::filesystem::path path( id );
-        target = working_directory && path.is_relative() ? working_directory : root_target_.get();
-        SWEET_ASSERT( target );
+        string element = i->generic_string();
+        transform( element.begin(), element.end(), element.begin(), toupper );
+        target = find_or_create_target_by_element( target, element );
+        ++i;
+    }
 
-        boost::filesystem::path::const_iterator i = path.begin();
+    if ( path.is_absolute() )
+    {
+        SWEET_ASSERT( i->generic_string() == "/" );
+        ++i;
+    }
 
-        if ( path.has_root_name() )
-        {
-            string element = i->generic_string();
-            transform( element.begin(), element.end(), element.begin(), toupper );
-            target = find_or_create_target_by_element( target, element );
-            ++i;
-        }
-
-        if ( path.is_absolute() )
-        {
-            SWEET_ASSERT( i->generic_string() == "/" );
-            ++i;
-        }
-
-        while ( i != path.end() )
-        {
-            target = find_or_create_target_by_element( target, i->generic_string() );
-            ++i;
-        }
+    while ( i != path.end() )
+    {
+        target = find_or_create_target_by_element( target, i->generic_string() );
+        ++i;
     }
     return target;
 }
