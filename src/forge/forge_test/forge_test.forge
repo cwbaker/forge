@@ -11,17 +11,18 @@ if operating_system() == 'linux' then
     };
 end
 
-for _, forge in toolsets('cc.*') do
-    local forge = forge:inherit {
+for _, cc in toolsets('cc.*') do
+    local cc = cc:inherit {
         warning_level = warning_level;
     };
-    forge:all {
-        forge:Executable '${bin}/forge_test' {
+    cc:all {
+        cc:Executable '${bin}/forge_test' {
             '${lib}/cmdline_test';
             '${lib}/forge_${architecture}';
             '${lib}/forge_lua_${architecture}';
             '${lib}/process_${architecture}';
             '${lib}/luaxx_${architecture}';
+            '${lib}/luaxx_unit_${architecture}';
             '${lib}/cmdline_${architecture}';
             '${lib}/error_${architecture}';
             '${lib}/assert_${architecture}';
@@ -32,10 +33,12 @@ for _, forge in toolsets('cc.*') do
 
             libraries = libraries;
             
-            forge:Cxx '${obj}/%1' {
+            cc:Cxx '${obj}/%1' {
                 defines = { 
-                    'BOOST_ALL_NO_LIB' -- Disable automatic linking to Boost libraries.
+                    'BOOST_ALL_NO_LIB'; -- Disable automatic linking to Boost libraries.
+                    ([[TEST_DIRECTORY=\"%s/\"]]):format( pwd() );
                 };
+                'dependencies.cpp',
                 'main.cpp',
                 'ErrorChecker.cpp',
                 'FileChecker.cpp',
