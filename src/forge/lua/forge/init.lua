@@ -376,16 +376,20 @@ end
 
 -- Recursively walk the dependencies of *target* until a target with a 
 -- filename is reached.
-function walk_dependencies( target )
+function walk_dependencies( target, yield_recurse )
+    local yield_recurse = yield_recurse or function( dependency )
+        local phony = dependency:filename() == '';
+        return not phony, phony;
+    end;
     local index = 1;
     local function walk( target )
-        for _, dependency in target:dependencies() do 
-            local phony = dependency:filename() == '';
-            if not phony then
+        for _, dependency in target:dependencies() do
+            local yield, recurse = yield_recurse( dependency )
+            if yield then
                 coroutine.yield( index, dependency );
                 index = index + 1;
             end
-            if phony then 
+            if recurse then 
                 walk( dependency );
             end
         end
