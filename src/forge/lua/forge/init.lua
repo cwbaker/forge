@@ -399,28 +399,6 @@ function walk_dependencies( target, yield_recurse )
     end );
 end
 
--- Recursively walk ordering dependencies using *yield* and *recurse* to
--- determine which targets to yield and/or recurse on.
-function walk_ordering_dependencies( target, yield, recurse )
-    local index = 1;
-    local yield = yield or function () return true end;
-    local walk = walk or function () return true end;
-    local function walk( target )
-        for _, dependency in target:ordering_dependencies() do
-            if yield(dependency) then
-                coroutine.yield( index, dependency );
-                index = index + 1;
-            end
-            if recurse(dependency) then
-                walk( dependency );
-            end
-        end
-    end
-    return coroutine.wrap( function()
-        walk( target, yield, walk );
-    end );
-end
-
 -- Merge fields with string keys from /source/ to /destination/.
 function forge:merge( destination, source )
     local destination = destination or {};
