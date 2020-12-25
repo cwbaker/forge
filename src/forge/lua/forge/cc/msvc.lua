@@ -416,10 +416,12 @@ function msvc.archive( toolset, target )
     pushd( toolset:obj_directory(target) );
     local objects = {};
     for _, dependency in target:dependencies() do
-        local prototype = dependency:prototype();
-        if prototype ~= toolset.Directory then
-            for _, object in dependency:dependencies() do
-                table.insert( objects, relative(object:filename()) );
+        if dependency:outdated() then
+            local prototype = dependency:prototype();
+            if prototype ~= toolset.Directory and prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary then
+                for _, object in dependency:dependencies() do
+                    table.insert( objects, relative(object:filename()) );
+                end
             end
         end
     end
@@ -431,6 +433,8 @@ function msvc.archive( toolset, target )
         local msar = msvc.visual_cxx_tool( toolset, 'lib.exe' );
         local environment = msvc.environments_by_architecture[settings.architecture];
         system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:filename()), arobjects), environment );
+    else
+        touch( target );
     end
     popd();
 end
