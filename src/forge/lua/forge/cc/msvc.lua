@@ -328,19 +328,19 @@ end
 function msvc.static_library_filename( toolset, identifier )
     local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s.lib'):format( identifier );
-    return identifier, filename;
+    return filename, identifier;
 end
 
 function msvc.dynamic_library_filename( toolset, identifier )
     local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s.dll'):format( identifier );
-    return identifier, filename;
+    return filename, identifier;
 end
 
 function msvc.executable_filename( toolset, identifier )
     local identifier = toolset:interpolate( identifier );
     local filename = ('%s.exe'):format( identifier );
-    return identifier, filename;
+    return filename, identifier;
 end
 
 -- Compile C and C++.
@@ -403,8 +403,6 @@ end
 
 -- Archive objects into a static library. 
 function msvc.archive( toolset, target ) 
-    printf( leaf(target) );
-
     local settings = toolset.settings;
 
     local flags = {
@@ -427,6 +425,7 @@ function msvc.archive( toolset, target )
     end
     
     if #objects > 0 then
+        printf( leaf(target) );
         local arflags = table.concat( flags, ' ' );
         local arobjects = table.concat( objects, '" "' );
         local msar = msvc.visual_cxx_tool( toolset, 'lib.exe' );

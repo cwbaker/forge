@@ -2,7 +2,7 @@
 local DynamicLibrary = TargetPrototype( 'DynamicLibrary' );
 
 function DynamicLibrary.create( toolset, identifier )
-    local identifier, filename = toolset:dynamic_library_filename( identifier );
+    local filename, identifier = toolset:dynamic_library_filename( identifier );
     local target = toolset:Target( identifier, DynamicLibrary );
     target:set_filename( filename or target:path() );
     target:set_cleanable( true );

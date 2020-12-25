@@ -94,7 +94,7 @@ end
 function clang.static_library_filename( forge, identifier )
     local identifier = absolute( forge:interpolate(identifier) );
     local filename = ('%s/lib%s.a'):format( branch(identifier), leaf(identifier) );
-    return identifier, filename;
+    return filename, identifier;
 end
 
 function clang.dynamic_library_filename( forge, identifier )
@@ -108,7 +108,7 @@ function clang.dynamic_library_filename( forge, identifier )
     else
         filename = ('lib%s.so'):format( identifier );
     end
-    return identifier, filename;
+    return filename, identifier;
 end
 
 function clang.executable_filename( forge, identifier )
@@ -117,7 +117,7 @@ function clang.executable_filename( forge, identifier )
     if operating_system() == 'windows' then 
         filename = ('%s.exe'):format( identifier );
     end
-    return identifier, filename;
+    return filename, identifier;
 end
 
 -- Compile C, C++, Objective-C, and Objective-C++.
@@ -150,7 +150,6 @@ end
 
 -- Archive objects into a static library. 
 function clang.archive( toolset, target )
-    printf( leaf(target) );
     local settings = toolset.settings;
     pushd( toolset:obj_directory(target) );
     local objects =  {};
@@ -161,6 +160,7 @@ function clang.archive( toolset, target )
         end
     end
     if #objects > 0 then
+        printf( leaf(target) );
         local objects = table.concat( objects, '" "' );
         local ar = settings.clang.ar;
         local environment = settings.clang.environment;
@@ -175,7 +175,7 @@ function clang.link( toolset, target )
     pushd( toolset:obj_directory(target) );
     for _, dependency in walk_dependencies(target) do
         local prototype = dependency:prototype();
-        if prototype ~= toolset.StaticLibrary or prototype ~= toolset.DynamicLibrary and prototype ~= toolset.Directory then
+        if prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary and prototype ~= toolset.Directory then
             table.insert( objects, relative(dependency) );
         end
     end
