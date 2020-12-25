@@ -25,22 +25,17 @@ end
 -- Returns the list of static libraries to link with this executable.
 function Executable.find_transitive_libraries( target )
     local toolset = target.toolset;
-    local function is_static_library( target ) 
-        return target:prototype() == toolset.StaticLibrary; 
+    local function yield_recurse_on_library( target )
+        local prototype = target:prototype();
+        local library = prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary;
+        return library, library;
     end
 
     local all_libraries = {};
     local index_by_library = {};
-    for _, dependency in walk_dependencies(target) do
-        local prototype = dependency:prototype();
-        if prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary then
-            table.insert( all_libraries, dependency );
-            index_by_library[dependency] = #all_libraries;
-            for _, dependency in walk_ordering_dependencies(dependency, is_static_library, is_static_library) do
-                table.insert( all_libraries, dependency );
-                index_by_library[dependency] = #all_libraries;
-            end
-        end
+    for _, dependency in walk_dependencies(target, yield_recurse_on_library) do
+        table.insert( all_libraries, dependency );
+        index_by_library[dependency] = #all_libraries;
     end
 
     local libraries = {};
