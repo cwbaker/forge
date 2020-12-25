@@ -138,9 +138,11 @@ function gcc.archive( toolset, target )
     pushd( toolset:obj_directory(target) );
     local objects =  {};
     for _, object in walk_dependencies( target ) do
-        local prototype = object:prototype();
-        if prototype ~= toolset.Directory and prototype ~= toolset.StaticLibrary then
-            table.insert( objects, relative(object) );
+        if object:outdated() then
+            local prototype = object:prototype();
+            if prototype ~= toolset.Directory and prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary then
+                table.insert( objects, relative(object) );
+            end
         end
     end
     if #objects > 0 then
@@ -149,6 +151,8 @@ function gcc.archive( toolset, target )
         local ar = settings.gcc.ar;
         local environment = settings.gcc.environment;
         system( ar, ('ar -rcs "%s" "%s"'):format(native(target), objects), environment );
+    else
+        touch( target );
     end
     popd();
 end
