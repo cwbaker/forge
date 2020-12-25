@@ -91,19 +91,19 @@ end
 function gcc.static_library_filename( toolset, identifier )
     local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s/lib%s.a'):format( branch(identifier), leaf(identifier) );
-    return identifier, filename;
+    return filename, identifier;
 end
 
 function gcc.dynamic_library_filename( toolset, identifier )
     local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s/lib%s.so'):format( branch(identifier), leaf(identifier) );
-    return identifier, filename;
+    return filename, identifier;
 end
 
 function gcc.executable_filename( toolset, identifier )
     local identifier = toolset:interpolate( identifier );
     local filename = identifier;
-    return identifier, filename;
+    return filename, identifier;
 end
 
 -- Compile C, C++, Objective-C, and Objective-C++.
@@ -134,7 +134,6 @@ end
 
 -- Archive objects into a static library. 
 function gcc.archive( toolset, target )
-    printf( leaf(target) );
     local settings = toolset.settings;
     pushd( toolset:obj_directory(target) );
     local objects =  {};
@@ -145,6 +144,7 @@ function gcc.archive( toolset, target )
         end
     end
     if #objects > 0 then
+        printf( leaf(target) );
         local objects = table.concat( objects, '" "' );
         local ar = settings.gcc.ar;
         local environment = settings.gcc.environment;

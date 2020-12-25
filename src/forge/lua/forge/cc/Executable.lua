@@ -2,7 +2,7 @@
 local Executable = TargetPrototype( 'Executable' );
 
 function Executable.create( toolset, identifier )
-    local identifier, filename = toolset:executable_filename( identifier );
+    local filename, identifier = toolset:executable_filename( identifier );
     local target = toolset:Target( identifier, Executable );
     target:set_filename( filename or target:path() );
     target:set_cleanable( true );
