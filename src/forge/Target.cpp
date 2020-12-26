@@ -365,13 +365,11 @@ void Target::bind_to_dependencies()
     if ( !bound_to_dependencies_ )
     {
         time_t timestamp = timestamp_;
-        bool outdated = outdated_;
 
         int i = 0;
         Target* target = binding_dependency( i );
         while ( target )
         {
-            outdated = outdated || target->outdated();
             timestamp = std::max( timestamp, target->timestamp() );
             ++i;
             target = binding_dependency( i );
@@ -379,15 +377,14 @@ void Target::bind_to_dependencies()
 
         if ( !filenames_.empty() )
         {
-            outdated = 
-                outdated || 
-                timestamp > last_write_time() ||
-                (cleanable_ && !built_)
-            ;
+            set_outdated(
+              outdated_ || 
+              timestamp > last_write_time() || 
+              (cleanable_ && !built_) 
+            );
         }
 
         set_timestamp( timestamp );
-        set_outdated( outdated );
         bound_to_dependencies_ = true;
     }
 }
