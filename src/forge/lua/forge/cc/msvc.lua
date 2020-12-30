@@ -416,12 +416,10 @@ function msvc.archive( toolset, target )
     pushd( toolset:obj_directory(target) );
     local objects = {};
     for _, dependency in target:dependencies() do
-        if dependency:outdated() then
-            local prototype = dependency:prototype();
-            if prototype ~= toolset.Directory and prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary then
-                for _, object in dependency:dependencies() do
-                    table.insert( objects, relative(object:filename()) );
-                end
+        local prototype = dependency:prototype();
+        if prototype ~= toolset.Directory and prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary then
+            for _, object in dependency:dependencies() do
+                table.insert( objects, relative(object:filename()) );
             end
         end
     end

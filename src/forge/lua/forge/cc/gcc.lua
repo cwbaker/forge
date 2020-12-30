@@ -137,12 +137,10 @@ function gcc.archive( toolset, target )
     local settings = toolset.settings;
     pushd( toolset:obj_directory(target) );
     local objects =  {};
-    for _, object in walk_dependencies( target ) do
-        if object:outdated() then
-            local prototype = object:prototype();
-            if prototype ~= toolset.Directory and prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary then
-                table.insert( objects, relative(object) );
-            end
+    for _, dependency in target:dependencies() do
+        local prototype = dependency:prototype();
+        if prototype ~= toolset.Directory and prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary then
+            table.insert( objects, relative(dependency) );
         end
     end
     if #objects > 0 then
