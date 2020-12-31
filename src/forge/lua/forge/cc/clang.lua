@@ -153,13 +153,17 @@ function clang.archive( toolset, target )
     local settings = toolset.settings;
     pushd( toolset:obj_directory(target) );
     local objects =  {};
+    local outdated_objects = 0;
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype ~= toolset.Directory and prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary then
             table.insert( objects, relative(dependency) );
+            if dependency:outdated() then
+                outdated_objects = outdated_objects + 1;
+            end
         end
     end
-    if #objects > 0 then
+    if outdated_objects > 0 then
         printf( leaf(target) );
         local objects = table.concat( objects, '" "' );
         local ar = settings.clang.ar;

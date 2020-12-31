@@ -415,16 +415,20 @@ function msvc.archive( toolset, target )
     
     pushd( toolset:obj_directory(target) );
     local objects = {};
+    local outdated_objects = 0;
     for _, dependency in target:dependencies() do
         local prototype = dependency:prototype();
         if prototype ~= toolset.Directory and prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary then
             for _, object in dependency:dependencies() do
                 table.insert( objects, relative(object:filename()) );
+                if object:outdated() then
+                    outdated_objects = outdated_objects + 1;
+                end
             end
         end
     end
     
-    if #objects > 0 then
+    if outdated_objects > 0 then
         printf( leaf(target) );
         local arflags = table.concat( flags, ' ' );
         local arobjects = table.concat( objects, '" "' );
