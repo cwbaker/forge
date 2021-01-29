@@ -11,12 +11,12 @@ if operating_system() == 'linux' then
     warning_level = 0;
 end
 
-for _, forge in toolsets('cc.*') do
-    local forge = forge:inherit {
+for _, cc in toolsets('cc.*') do
+    local cc = cc:inherit {
         warning_level = warning_level;
     };
-    forge:StaticLibrary '${lib}/forge_${architecture}' {
-        forge:Cxx '${obj}/%1' {
+    cc:StaticLibrary '${lib}/forge_${architecture}' {
+        cc:Cxx '${obj}/%1' {
             defines = {
                 'BOOST_ALL_NO_LIB'; -- Disable automatic linking to Boost libraries.
                 '_CRT_SECURE_NO_DEPRECATE'; -- Disable CRT security warnings
