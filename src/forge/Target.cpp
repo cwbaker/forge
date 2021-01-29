@@ -357,19 +357,28 @@ void Target::bind_to_file()
 //
 // Sets the timestamp of this Target to be the latest last write time of the 
 // files that it is bound to or the latest timestamp of any of its 
-// dependencies.  Set this Target to be outdated if any of its dependencies 
-// have a timestamp that is later than its last write time.
+// dependencies.
+// 
+// If this Target is bound to one or more files then it is outdated if any of
+// its dependencies have a timestamp later than its last write time.  If this
+// Target is not bound to any files then it is outdated if any of its
+// dependencies are outdated.
+//
+// Cleanable Targets that haven't been built are always outdated whether they
+// are bound to files or not.
 */
 void Target::bind_to_dependencies()
 {
     if ( !bound_to_dependencies_ )
     {
         time_t timestamp = timestamp_;
+        bool outdated = outdated_;
 
         int i = 0;
         Target* target = binding_dependency( i );
         while ( target )
         {
+            outdated = outdated || target->outdated();
             timestamp = std::max( timestamp, target->timestamp() );
             ++i;
             target = binding_dependency( i );
@@ -377,13 +386,12 @@ void Target::bind_to_dependencies()
 
         if ( !filenames_.empty() )
         {
-            set_outdated(
-              outdated_ || 
-              timestamp > last_write_time() || 
-              (cleanable_ && !built_) 
-            );
+            outdated = outdated_ || timestamp > last_write_time();
         }
 
+        outdated = outdated || (cleanable_ && !built_);
+
+        set_outdated( outdated );
         set_timestamp( timestamp );
         bound_to_dependencies_ = true;
     }
