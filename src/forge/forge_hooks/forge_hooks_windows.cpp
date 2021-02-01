@@ -230,7 +230,10 @@ static HANDLE WINAPI create_file_a_hook( LPCSTR filename, DWORD desired_access, 
         flags,
         template_file
     );
-    log_file_access( filename, desired_access & GENERIC_WRITE );
+    if ( handle != INVALID_HANDLE_VALUE )
+    {
+        log_file_access( filename, desired_access & GENERIC_WRITE );
+    }
     return handle;
 }
 
@@ -245,10 +248,13 @@ static HANDLE WINAPI create_file_w_hook( LPCWSTR wide_filename, DWORD desired_ac
         flags,
         template_file
     );
-    char filename [MAX_PATH + 1];
-    int count = WideCharToMultiByte( CP_UTF8, 0, wide_filename, (int) wcslen(wide_filename), filename, (int) sizeof(filename), NULL, NULL );
-    filename[count] = 0;
-    log_file_access( filename, desired_access & GENERIC_WRITE );
+    if ( handle != INVALID_HANDLE_VALUE )
+    {
+        char filename [MAX_PATH + 1];
+        int count = WideCharToMultiByte( CP_UTF8, 0, wide_filename, (int) wcslen(wide_filename), filename, (int) sizeof(filename), NULL, NULL );
+        filename[count] = 0;
+        log_file_access( filename, desired_access & GENERIC_WRITE );
+    }
     return handle;
 }
 
@@ -266,7 +272,10 @@ static HANDLE WINAPI create_file_transacted_a_hook( LPCSTR filename, DWORD desir
         mini_version,
         extended_parameter
     );
-    log_file_access( filename, desired_access & GENERIC_WRITE );
+    if ( handle != INVALID_HANDLE_VALUE )
+    {
+        log_file_access( filename, desired_access & GENERIC_WRITE );
+    }
     return handle;
 }
 
@@ -284,10 +293,13 @@ static HANDLE WINAPI create_file_transacted_w_hook( LPCWSTR wide_filename, DWORD
         mini_version,
         extended_parameter
     );
-    char filename [MAX_PATH + 1];
-    int count = WideCharToMultiByte( CP_UTF8, 0, wide_filename, (int) wcslen(wide_filename), filename, (int) sizeof(filename), NULL, NULL );
-    filename[count] = 0;
-    log_file_access( filename, desired_access & GENERIC_WRITE );
+    if ( handle != INVALID_HANDLE_VALUE )
+    {
+        char filename [MAX_PATH + 1];
+        int count = WideCharToMultiByte( CP_UTF8, 0, wide_filename, (int) wcslen(wide_filename), filename, (int) sizeof(filename), NULL, NULL );
+        filename[count] = 0;
+        log_file_access( filename, desired_access & GENERIC_WRITE );
+    }
     return handle;
 }
 
