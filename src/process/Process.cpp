@@ -42,6 +42,7 @@ Process::Process()
   environment_( NULL ),
   start_suspended_( false ),
   inherit_environment_( false ),
+  pipes_(),
 #if defined(BUILD_OS_WINDOWS)
   process_( INVALID_HANDLE_VALUE ),
   suspended_thread_( INVALID_HANDLE_VALUE )
