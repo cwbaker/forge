@@ -11,6 +11,7 @@
 #include "Scheduler.hpp"
 #include <process/Process.hpp>
 #include <process/Environment.hpp>
+#include <error/Error.hpp>
 #include <assert/assert.hpp>
 #include <stdlib.h>
 
@@ -312,7 +313,14 @@ void Executor::inject_build_hooks_windows( process::Process* pprocess, intptr_t 
         int total_size = inject_build_hooks_size + forge_hooks_library_size + initialize_size;
 
         HANDLE process = (HANDLE) pprocess->process();
-        HANDLE thread = (HANDLE) pprocess->thread();
+
+        // Open a new handle with the thread that has access rights to get and
+        // set thread context.  This used to work using the thread handle from
+        // CreateProcessA() directly but now SetThreadContext() calls fail
+        // with an invalid handle error when used without explictly requesting
+        // permission to the set thread context.
+        HANDLE thread = ::OpenThread( THREAD_GET_CONTEXT | THREAD_SET_CONTEXT, FALSE, ::GetThreadId((HANDLE) pprocess->thread()) );
+        SWEET_ASSERT( thread != nullptr );
 
         CONTEXT context;
         context.ContextFlags = CONTEXT_CONTROL;
@@ -357,11 +365,16 @@ void Executor::inject_build_hooks_windows( process::Process* pprocess, intptr_t 
         context.Rip = (uintptr_t) buffer;
         context.ContextFlags = CONTEXT_CONTROL;
         result = ::SetThreadContext( thread, &context );
-        SWEET_ASSERT( result );
+        if ( !result )
+        {
+            char buffer [256];
+            fprintf( stdout, "forge: ERROR: Setting thread context failed - %s\n", error::Error::format(::GetLastError(), buffer, sizeof(buffer)) );
+        }
+        ::CloseHandle( thread );
     }
 #else
     (void) pprocess;
-    (void) write_dependencies_pipe;    
+    (void) write_dependencies_pipe;
 #endif
 }
 
