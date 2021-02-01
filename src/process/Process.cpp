@@ -64,6 +64,12 @@ Process::~Process()
     resume();
 
 #if defined(BUILD_OS_WINDOWS)   
+    if ( suspended_thread_ != INVALID_HANDLE_VALUE )
+    {
+        ::CloseHandle( suspended_thread_ );
+        suspended_thread_ = INVALID_HANDLE_VALUE;
+    }
+
     if ( process_ != INVALID_HANDLE_VALUE )
     {
         ::CloseHandle( process_ );
@@ -464,6 +470,7 @@ void Process::resume()
     if ( suspended_thread_ != INVALID_HANDLE_VALUE )
     {
         ::ResumeThread( suspended_thread_ );
+        ::CloseHandle( suspended_thread_ );
         suspended_thread_ = INVALID_HANDLE_VALUE;
     }
 #elif defined(BUILD_OS_MACOS)
