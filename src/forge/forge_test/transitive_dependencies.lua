@@ -45,48 +45,50 @@ end
 
 remove( absolute('.forge') );
 
-require 'forge';
-local cc = require 'forge.cc.gcc' {};
+if operating_system() ~= 'windows' then
+    require 'forge';
+    local cc = require 'forge.cc.gcc' {};
 
-create( absolute('baz.o'), 1 );
-create( cc:static_library_filename('baz'), 1 );
-create( absolute('bar.c'), 1 );
-create( absolute('bar.o'), 1 );
-create( cc:static_library_filename('bar'), 1 );
-create( absolute('foo.o'), 1 );
-create( cc:static_library_filename('foo'), 1 );
-create( absolute('exe.o'), 1 );
-create( cc:executable_filename('exe'), 1 );
+    create( absolute('baz.o'), 1 );
+    create( cc:static_library_filename('baz'), 1 );
+    create( absolute('bar.c'), 1 );
+    create( absolute('bar.o'), 1 );
+    create( cc:static_library_filename('bar'), 1 );
+    create( absolute('foo.o'), 1 );
+    create( cc:static_library_filename('foo'), 1 );
+    create( absolute('exe.o'), 1 );
+    create( cc:executable_filename('exe'), 1 );
 
-local exe = dependency_graph( cc );
-local libraries = exe:find_transitive_libraries();
-CHECK( libraries[1] == find_target('foo') );
-CHECK( libraries[2] == find_target('bar') );
-CHECK( libraries[3] == find_target('baz') );
-CHECK( find_initial_target(exe) == exe );
-CHECK( #executions == 5 );
-CHECK( executions[1]:find('ar') );
-CHECK( executions[2]:find('gcc') );
-CHECK( executions[3]:find('ar') );
-CHECK( executions[4]:find('ar') );
-CHECK( executions[5]:find('g++') );
+    local exe = dependency_graph( cc );
+    local libraries = exe:find_transitive_libraries();
+    CHECK( libraries[1] == find_target('foo') );
+    CHECK( libraries[2] == find_target('bar') );
+    CHECK( libraries[3] == find_target('baz') );
+    CHECK( find_initial_target(exe) == exe );
+    CHECK( #executions == 5 );
+    CHECK( executions[1]:find('ar') );
+    CHECK( executions[2]:find('gcc') );
+    CHECK( executions[3]:find('ar') );
+    CHECK( executions[4]:find('ar') );
+    CHECK( executions[5]:find('g++') );
 
-touch( absolute('bar.c'), 2 );
+    touch( absolute('bar.c'), 2 );
 
-local exe = dependency_graph( cc );
-CHECK( #executions == 3 );
-CHECK( executions[1]:find('gcc') );
-CHECK( executions[2]:find('ar') );
-CHECK( executions[3]:find('g++') );
+    local exe = dependency_graph( cc );
+    CHECK( #executions == 3 );
+    CHECK( executions[1]:find('gcc') );
+    CHECK( executions[2]:find('ar') );
+    CHECK( executions[3]:find('g++') );
 
-touch( absolute('bar.o'), 2 );
-touch( cc:static_library_filename('bar'), 2 );
-touch( cc:static_library_filename('foo'), 2 );
-touch( cc:executable_filename('exe'), 2 );
+    touch( absolute('bar.o'), 2 );
+    touch( cc:static_library_filename('bar'), 2 );
+    touch( cc:static_library_filename('foo'), 2 );
+    touch( cc:executable_filename('exe'), 2 );
 
-local exe = dependency_graph( cc );
-print_dependencies( exe );
-print_executions();
-CHECK( #executions == 0 );
+    local exe = dependency_graph( cc );
+    print_dependencies( exe );
+    print_executions();
+    CHECK( #executions == 0 );
 
-remove( absolute('.forge') );
+    remove( absolute('.forge') );
+end
