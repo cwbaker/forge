@@ -122,7 +122,7 @@ function gcc.compile( toolset, target )
     local source = target:dependency();
     local output = target:filename();
     local input = absolute( source:filename() );
-    print( leaf(source:id()) );
+    printf( leaf(source:id()) );
     target:clear_implicit_dependencies();
     system( 
         gcc_, 

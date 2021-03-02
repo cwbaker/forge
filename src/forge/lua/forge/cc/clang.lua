@@ -137,7 +137,7 @@ function clang.compile( toolset, target )
         cc = settings.clang.cc;
     end
     local source = target:dependency();
-    print( leaf(source) );
+    printf( leaf(source) );
     local dependencies = ('%s.d'):format( target );
     local output = target:filename();
     local input = absolute( source );

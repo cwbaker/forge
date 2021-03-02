@@ -17,6 +17,9 @@ local function execute( command, command_line )
 	return 0;
 end
 
+local function printf()
+end
+
 local function dependency_graph( toolset )
 	forge:load();
 	local exe = toolset:Executable 'exe' {
@@ -36,6 +39,7 @@ local function dependency_graph( toolset )
 	};
 	clear_executions();
 	_G.execute = execute;
+    _G.printf = printf;
 	_G.goal = exe;
 	build();
 	forge:save();
