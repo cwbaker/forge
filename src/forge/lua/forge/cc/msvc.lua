@@ -737,7 +737,11 @@ end
 function msvc.append_libraries( toolset, target, flags )
     local libraries = target:find_transitive_libraries();
     for _, library in ipairs(libraries) do
-        table.insert( flags, ('%s.lib'):format(basename(library:filename())) );
+        if library.whole_archive then
+            table.insert( flags, ('/WHOLEARCHIVE:"%s"'):format(library:filename()) );
+        else
+            table.insert( flags, ('%s.lib'):format(basename(library:filename())) );
+        end
     end
 end
 
