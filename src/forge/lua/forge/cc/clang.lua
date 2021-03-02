@@ -388,7 +388,11 @@ end
 function clang.append_libraries( toolset, target, flags )
     local libraries = target:find_transitive_libraries();
     for _, library in ipairs(libraries) do
-        table.insert( flags, ('-l%s'):format(library:id()) );
+        if library.whole_archive then
+            table.insert( flags, ('-force_load "%s"'):format(library:filename()) );
+        else
+            table.insert( flags, ('-l%s'):format(library:id()) );
+        end
     end
 end
 
