@@ -35,7 +35,6 @@ local function dependency_graph( toolset )
 	    'exe.o';
 	};
 	clear_executions();
-	print_dependencies( exe );
 	_G.execute = execute;
 	_G.goal = exe;
 	build();
@@ -86,8 +85,6 @@ if operating_system() ~= 'windows' then
     touch( cc:executable_filename('exe'), 2 );
 
     local exe = dependency_graph( cc );
-    print_dependencies( exe );
-    print_executions();
     CHECK( #executions == 0 );
 
     remove( absolute('.forge') );
