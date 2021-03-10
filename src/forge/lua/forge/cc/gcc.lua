@@ -234,20 +234,20 @@ end
 function gcc.append_compile_flags( toolset, target, flags )
     local settings = toolset.settings;
 
-    table.insert( flags, "-c" );
+    table.insert( flags, '-c' );
     table.insert( flags, gcc.flags_by_architecture[settings.architecture] );
-    table.insert( flags, "-fpic" );
+    table.insert( flags, '-fpic' );
     
     local language = target.language or 'c++';
     if language then
-        table.insert( flags, ("-x %s"):format(language) );
-        if string.find(language, "c++", 1, true) then
+        table.insert( flags, ('-x %s'):format(language) );
+        if string.find(language, 'c++', 1, true) then
             if settings.exceptions then
-                table.insert( flags, "-fexceptions" );
+                table.insert( flags, '-fexceptions' );
             end
 
             if settings.run_time_type_info then
-                table.insert( flags, "-frtti" );
+                table.insert( flags, '-frtti' );
             end
 
             local standard = settings.standard;
@@ -258,35 +258,35 @@ function gcc.append_compile_flags( toolset, target, flags )
     end
         
     if settings.debug then
-        table.insert( flags, "-g3" );
+        table.insert( flags, '-g3' );
     end
 
     if settings.optimization then
-        table.insert( flags, "-O3" );
-        table.insert( flags, "-Ofast" );
+        table.insert( flags, '-O3' );
+        table.insert( flags, '-Ofast' );
     end
     
     if settings.preprocess then
-        table.insert( flags, "-E" );
+        table.insert( flags, '-E' );
     end
 
     if settings.runtime_checks then
-        table.insert( flags, "-fstack-protector" );
+        table.insert( flags, '-fstack-protector' );
     else
-        table.insert( flags, "-fno-stack-protector" );
+        table.insert( flags, '-fno-stack-protector' );
     end
 
     if settings.warnings_as_errors then 
-        table.insert( flags, "-Werror" );
+        table.insert( flags, '-Werror' );
     end
 
     local warning_level = settings.warning_level
     if warning_level == 0 then 
-        table.insert( flags, "-w" );
+        table.insert( flags, '-w' );
     elseif warning_level == 1 then
-        table.insert( flags, "-Wall" );
+        table.insert( flags, '-Wall' );
     elseif warning_level >= 2 then
-        table.insert( flags, "-Wall -Wextra" );
+        table.insert( flags, '-Wall -Wextra' );
     end
 end
 
