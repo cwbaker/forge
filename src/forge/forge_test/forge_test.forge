@@ -26,7 +26,7 @@ for _, cc in toolsets('cc.*') do
             '${lib}/cmdline_${architecture}';
             '${lib}/error_${architecture}';
             '${lib}/assert_${architecture}';
-            '${lib}/liblua_${architecture}';
+            '${lib}/liblua_${platform}_${architecture}';
             '${lib}/boost_filesystem_${architecture}';
             '${lib}/boost_system_${architecture}';
             '${lib}/UnitTest++_${architecture}';
