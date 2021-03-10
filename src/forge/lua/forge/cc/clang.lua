@@ -205,6 +205,15 @@ function clang.link( toolset, target )
     popd();
 end
 
+function clang.append_flags( flags, values, format )
+    local format = format or '%s';
+    if values then
+        for _, flag in ipairs(values) do
+            table.insert( flags, format:format(flag) );
+        end
+    end
+end
+
 function clang.append_defines( toolset, target, flags )
     local settings = toolset.settings;
 
@@ -212,35 +221,18 @@ function clang.append_defines( toolset, target, flags )
         table.insert( flags, '-DNDEBUG' );
     end
 
-    local defines = settings.defines;
-    if defines then
-        for _, define in ipairs(defines) do
-            table.insert( flags, ('-D%s'):format(define) );
-        end
-    end
-    
-    local defines = target.defines;
-    if defines then
-        for _, define in ipairs(defines) do
-            table.insert( flags, ('-D%s'):format(define) );
-        end
-    end
+    clang.append_flags( flags, settings.defines, '-D%s' );
+    clang.append_flags( flags, target.defines, '-D%s' );
 end
 
 function clang.append_include_directories( toolset, target, flags )
-    local settings = toolset.settings;
+    clang.append_flags( flags, target.include_directories, '-I "%s"' );
+    clang.append_flags( flags, toolset.settings.include_directories, '-I "%s"' );
+end
 
-    if target.include_directories then
-        for _, directory in ipairs(target.include_directories) do
-            table.insert( flags, ('-I "%s"'):format(relative(directory)) );
-        end
-    end
-
-    if settings.include_directories then
-        for _, directory in ipairs(settings.include_directories) do
-            table.insert( flags, ('-I "%s"'):format(directory) );
-        end
-    end
+function clang.append_framework_directories( toolset, target, flags )
+    clang.append_flags( flags, target.framework_directories, '-F "%s"' );
+    clang.append_flags( flags, toolset.settings.framework_directories, '-F "%s"' );
 end
 
 function clang.append_compile_flags( toolset, target, flags )
@@ -255,6 +247,9 @@ function clang.append_compile_flags( toolset, target, flags )
     if settings.architecture == 'x86_64' then
         table.insert( flags, '-maes' );
     end
+
+    clang.append_flags( flags, target.cppflags );
+    clang.append_flags( flags, settings.cppflags );
     
     local language = target.language or 'c++';
     if language then
@@ -274,7 +269,13 @@ function clang.append_compile_flags( toolset, target, flags )
             local standard = settings.standard;
             if standard then 
                 table.insert( flags, ('-std=%s'):format(standard) );
-            end                
+            end
+
+            clang.append_flags( flags, settings.cxxflags );
+            clang.append_flags( flags, target.cxxflags );
+        else
+            clang.append_flags( flags, settings.cflags );
+            clang.append_flags( flags, target.cflags );
         end
 
         if string.find(language, 'objective', 1, true) then
@@ -331,24 +332,16 @@ function clang.append_compile_flags( toolset, target, flags )
     end
 end
 
-function clang.append_library_directories( toolset, target, library_directories )
-    local settings = toolset.settings;
-
-    if target.library_directories then
-        for _, directory in ipairs(target.library_directories) do
-            table.insert( library_directories, ('-L "%s"'):format(directory) );
-        end
-    end
-    
-    if settings.library_directories then
-        for _, directory in ipairs(settings.library_directories) do
-            table.insert( library_directories, ('-L "%s"'):format(directory) );
-        end
-    end
+function clang.append_library_directories( toolset, target, flags )
+    clang.append_flags( flags, target.library_directories, '-L "%s"' );
+    clang.append_flags( flags, toolset.settings.library_directories, '-L "%s"' );
 end
 
 function clang.append_link_flags( toolset, target, flags )
     local settings = toolset.settings;
+
+    clang.append_flags( flags, settings.ldflags );
+    clang.append_flags( flags, target.ldflags );
 
     table.insert( flags, ('-arch %s'):format(settings.architecture) );
 
@@ -398,34 +391,10 @@ end
 
 function clang.append_third_party_libraries( toolset, target, flags )
     local settings = toolset.settings;
-
-    local frameworks = settings.frameworks;
-    if frameworks then
-        for _, framework in ipairs(frameworks) do
-            table.insert( flags, ('-framework %s'):format(framework) );
-        end
-    end
-
-    local libraries = settings.libraries;
-    if libraries then
-        for _, library in ipairs(libraries) do
-            table.insert( flags, ('-l%s'):format(library) );
-        end
-    end
-
-    local frameworks = target.frameworks;
-    if frameworks then
-        for _, framework in ipairs(frameworks) do
-            table.insert( flags, ('-framework %s'):format(framework) );
-        end
-    end
-
-    local libraries = target.libraries;
-    if libraries then
-        for _, library in ipairs(libraries) do
-            table.insert( flags, ('-l%s'):format(library) );
-        end
-    end
+    clang.append_flags( flags, settings.frameworks, '-framework %s' );
+    clang.append_flags( flags, settings.libraries, '-l%s' );
+    clang.append_flags( flags, target.frameworks, '-framework %s' );
+    clang.append_flags( flags, target.libraries, '-l%s' );
 end
 
 function clang.parse_dependencies_file( toolset, filename, object )

@@ -556,6 +556,15 @@ function msvc.windows_sdk_tool( toolset, tool )
     end
 end
 
+function msvc.append_flags( flags, values, format )
+    local format = format or '%s';
+    if values then
+        for _, flag in ipairs(values) do
+            table.insert( flags, format:format(flag) );
+        end
+    end
+end
+
 function msvc.append_defines( toolset, target, flags )
     local settings = toolset.settings;
 
@@ -563,33 +572,13 @@ function msvc.append_defines( toolset, target, flags )
         table.insert( flags, '/DNDEBUG' );
     end
 
-    if settings.defines then
-        for _, define in ipairs(settings.defines) do
-            table.insert( flags, ('/D%s'):format(define) );
-        end
-    end
-
-    if target.defines then
-        for _, define in ipairs(target.defines) do
-            table.insert( flags, ('/D%s'):format(define) );
-        end
-    end
+    msvc.append_flags( flags, settings.defines, '/D%s' );
+    msvc.append_flags( flags, target.defines, '/D%s' );
 end
 
 function msvc.append_include_directories( toolset, target, flags )
-    local settings = toolset.settings;
-
-    if target.include_directories then
-        for _, directory in ipairs(target.include_directories) do
-            table.insert( flags, ('/I "%s"'):format(relative(directory)) );
-        end
-    end
-
-    if settings.include_directories then
-        for _, directory in ipairs(settings.include_directories) do
-            table.insert( flags, ('/I "%s"'):format(directory) );
-        end
-    end
+    msvc.append_flags( flags, target.include_directories, '/I "%s"' );
+    msvc.append_flags( flags, toolset.settings.include_directories, '/I "%s"' );
 end
 
 function msvc.append_compile_flags( toolset, target, flags )
@@ -601,9 +590,14 @@ function msvc.append_compile_flags( toolset, target, flags )
     table.insert( flags, '/c' );
     table.insert( flags, '/showIncludes' );
 
+    msvc.append_flags( flags, target.cppflags );
+    msvc.append_flags( flags, settings.cppflags );
+
     local language = target.language or 'c++';
     if language == 'c' then 
         table.insert( flags, '/TC' );
+        msvc.append_flags( flags, target.cflags );
+        msvc.append_flags( flags, settings.cflags );
     elseif language == 'c++' then
         table.insert( flags, '/TP' );
         if settings.exceptions then
@@ -612,6 +606,8 @@ function msvc.append_compile_flags( toolset, target, flags )
         if settings.run_time_type_info then
             table.insert( flags, '/GR' );
         end
+        msvc.append_flags( flags, target.cxxflags );
+        msvc.append_flags( flags, settings.cxxflags );
     else
         assert( false, 'Only C and C++ are supported by Microsoft Visual C++' );
     end
@@ -671,25 +667,17 @@ function msvc.append_compile_flags( toolset, target, flags )
 end
 
 function msvc.append_library_directories( toolset, target, flags )
-    local settings = toolset.settings;
-
-    if target.library_directories then
-        for _, directory in ipairs(target.library_directories) do
-            table.insert( flags, ('/libpath:"%s"'):format(directory) );
-        end
-    end    
-
-    if settings.library_directories then
-        for _, directory in ipairs(settings.library_directories) do
-            table.insert( flags, ('/libpath:"%s"'):format(directory) );
-        end
-    end    
+    msvc.append_flags( flags, target.library_directories, '/libpath:"%s"' );
+    msvc.append_flags( flags, toolset.settings.library_directories, '/libpath:"%s"' );
 end
 
 function msvc.append_link_flags( toolset, target, flags )
     local settings = toolset.settings;
 
     table.insert( flags, "/nologo" );
+
+    msvc.append_flags( flags, settings.ldflags );
+    msvc.append_flags( flags, target.ldflags );
 
     local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( toolset:obj_directory(target), target:id() );
     table.insert( flags, '/manifest' );
@@ -746,21 +734,8 @@ function msvc.append_libraries( toolset, target, flags )
 end
 
 function msvc.append_third_party_libraries( toolset, target, flags )
-    local settings = toolset.settings;
-
-    local libraries = settings.libraries;
-    if libraries then
-        for _, library in ipairs(libraries) do
-            table.insert( flags, ('%s.lib'):format(basename(library)) );
-        end
-    end
-
-    local libraries = target.libraries;
-    if libraries then
-        for _, library in ipairs(libraries) do
-            table.insert( flags, ('%s.lib'):format(basename(library)) );
-        end
-    end
+    msvc.append_flags( flags, toolset.settings.libraries );
+    msvc.append_flags( flags, target.libraries );
 end
 
 function msvc.dependencies_filter( toolset, output_directory, source_directory )

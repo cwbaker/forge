@@ -193,6 +193,15 @@ function gcc.link( toolset, target )
     popd();
 end
 
+function gcc.append_flags( flags, values, format )
+    local format = format or '%s';
+    if values then
+        for _, flag in ipairs(values) do
+            table.insert( flags, format:format(flag) );
+        end
+    end
+end
+
 function gcc.append_defines( toolset, target, flags )
     local settings = toolset.settings;
 
@@ -200,35 +209,13 @@ function gcc.append_defines( toolset, target, flags )
         table.insert( flags, '-DNDEBUG' );
     end
 
-    local defines = settings.defines;
-    if defines then
-        for _, define in ipairs(defines) do
-            table.insert( flags, ('-D%s'):format(define) );
-        end
-    end
-    
-    local defines = target.defines;
-    if defines then
-        for _, define in ipairs(defines) do
-            table.insert( flags, ('-D%s'):format(define) );
-        end
-    end
+    gcc.append_flags( flags, settings.defines, '-D%s' );
+    gcc.append_flags( flags, target.defines, '-D%s' );
 end
 
 function gcc.append_include_directories( toolset, target, flags )
-    local settings = toolset.settings;
-
-    if target.include_directories then
-        for _, directory in ipairs(target.include_directories) do
-            table.insert( flags, ('-I "%s"'):format(relative(directory)) );
-        end
-    end
-
-    if settings.include_directories then
-        for _, directory in ipairs(settings.include_directories) do
-            table.insert( flags, ('-I "%s"'):format(directory) );
-        end
-    end
+    gcc.append_flags( flags, target.include_directories, '-I "%s"' );
+    gcc.append_flags( flags, toolset.settings.include_directories, '-I "%s"' );
 end
 
 function gcc.append_compile_flags( toolset, target, flags )
@@ -238,6 +225,9 @@ function gcc.append_compile_flags( toolset, target, flags )
     table.insert( flags, gcc.flags_by_architecture[settings.architecture] );
     table.insert( flags, '-fpic' );
     
+    gcc.append_flags( flags, target.cppflags );
+    gcc.append_flags( flags, settings.cppflags );
+
     local language = target.language or 'c++';
     if language then
         table.insert( flags, ('-x %s'):format(language) );
@@ -253,7 +243,13 @@ function gcc.append_compile_flags( toolset, target, flags )
             local standard = settings.standard;
             if standard then 
                 table.insert( flags, ('-std=%s'):format(standard) );
-            end                
+            end
+
+            gcc.append_flags( flags, settings.cxxflags );
+            gcc.append_flags( flags, target.cxxflags );
+        else
+            gcc.append_flags( flags, settings.cflags );
+            gcc.append_flags( flags, target.cflags );
         end
     end
         
@@ -290,24 +286,16 @@ function gcc.append_compile_flags( toolset, target, flags )
     end
 end
 
-function gcc.append_library_directories( toolset, target, library_directories )
-    local settings = toolset.settings;
-
-    if target.library_directories then
-        for _, directory in ipairs(target.library_directories) do
-            table.insert( library_directories, ('-L "%s"'):format(directory) );
-        end
-    end
-    
-    if settings.library_directories then
-        for _, directory in ipairs(settings.library_directories) do
-            table.insert( library_directories, ('-L "%s"'):format(directory) );
-        end
-    end
+function gcc.append_library_directories( toolset, target, flags )
+    gcc.append_flags( flags, target.library_directories, '-L "%s"' );
+    gcc.append_flags( flags, toolset.settings.library_directories, '-L "%s"' );
 end
 
 function gcc.append_link_flags( toolset, target, flags )
     local settings = toolset.settings;
+
+    gcc.append_flags( flags, settings.ldflags );
+    gcc.append_flags( flags, target.ldflags );
 
     table.insert( flags, gcc.flags_by_architecture[settings.architecture] );
     table.insert( flags, "-std=c++11" );
@@ -355,21 +343,8 @@ function gcc.append_libraries( toolset, target, flags )
 end
 
 function gcc.append_third_party_libraries( toolset, target, flags )
-    local settings = toolset.settings;
-
-    local libraries = settings.libraries;
-    if libraries then 
-        for _, library in ipairs(libraries) do 
-            table.insert( flags, ('-l%s'):format(library) );
-        end
-    end
-
-    local libraries = target.libraries;
-    if libraries then 
-        for _, library in ipairs(libraries) do 
-            table.insert( flags, ('-l%s'):format(library) );
-        end
-    end
+    gcc.append_flags( flags, toolset.settings.libraries, '-l%s' );
+    gcc.append_flags( flags, target.libraries, '-l%s' );
 end
 
 return gcc;
