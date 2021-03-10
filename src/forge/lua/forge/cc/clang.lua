@@ -127,6 +127,7 @@ function clang.compile( toolset, target )
     local flags = {};
     clang.append_defines( toolset, target, flags );
     clang.append_include_directories( toolset, target, flags );
+    clang.append_framework_directories( toolset, target, flags );
     clang.append_compile_flags( toolset, target, flags );
     
     local ccflags = table.concat( flags, ' ' );
@@ -189,6 +190,7 @@ function clang.link( toolset, target )
     local flags = {};
     clang.append_link_flags( toolset, target, flags );
     clang.append_library_directories( toolset, target, flags );
+    clang.append_framework_directories( toolset, target, flags );
 
     local libraries = {};
     clang.append_libraries( toolset, target, libraries );
