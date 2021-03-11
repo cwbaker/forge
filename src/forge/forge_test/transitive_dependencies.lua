@@ -8,12 +8,12 @@ end
 
 local function print_executions()
 	for _, execution in ipairs(executions) do
-		printf( '"%s" "%s"', execution[1], execution[2] );
+		printf( '%s', execution );
 	end
 end
 
 local function execute( command, command_line )
-	table.insert( executions, command );
+	table.insert( executions, ('%s %s'):format(command, command_line) );
 	return 0;
 end
 
