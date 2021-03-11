@@ -2,6 +2,7 @@
 local Toolset = _G.Toolset or {};
 
 function Toolset.new( toolset_prototype, values )
+    local forge = require( 'forge' ):load( values );
     local settings = forge.Settings():apply( values );
     local identifier = Toolset.interpolate( Toolset, values.identifier or '', values );
     local toolset = add_toolset( identifier, toolset_prototype );

@@ -428,17 +428,25 @@ end
 -- directory of the project if it exists or set to an empty table otherwise.
 --
 -- Returns a new toolset initialized with the local settings.
-function forge:load()
-    self.local_settings = exists( root('local_settings.lua') ) and dofile( root('local_settings.lua') ) or {};
-    self.cache = root( '.forge' );
-    self.Settings = require 'forge.Settings';
-    self.Toolset = require 'forge.Toolset';
-
-    if variant or self.variant then 
-        self.cache = root( ('%s/.forge'):format(variant or self.variant) );
+function forge:load( settings )
+    if not self.loaded then
+        self.loaded = true;
+        self.local_settings = exists( root('local_settings.lua') ) and dofile( root('local_settings.lua') ) or {};
+        self.cache = root( '.forge' );
+        if settings and settings.cache then
+            self.cache = settings.cache;
+        elseif variant or self.variant then 
+            self.cache = root( ('%s/.forge'):format(variant or self.variant) );
+        end
+        load_binary( self.cache );
     end
+    return self;
+end
 
-    load_binary( self.cache );
+-- Reload cached dependencies and local settings.
+function forge:reload( settings )
+    self.loaded = nil;
+    return self:load( settings );
 end
 
 -- Save the dependency graph and local settings.
@@ -499,11 +507,15 @@ function forge:save()
 end
 
 setmetatable( forge, {
-    __call = function( forge, settings )
+    __call = function( _, settings )
+        local forge = require( 'forge' ):load( values );
         local toolset = Toolset( forge.local_settings );
         return toolset:clone( settings );
     end
 } );
 
-forge:load();
+forge.Settings = require 'forge.Settings';
+
+forge.Toolset = require 'forge.Toolset';
+
 return forge;

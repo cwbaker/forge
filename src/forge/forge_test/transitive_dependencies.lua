@@ -21,7 +21,7 @@ local function printf()
 end
 
 local function dependency_graph( toolset )
-	forge:load();
+	forge:reload();
 	local exe = toolset:Executable 'exe' {
 	    toolset:StaticLibrary 'foo' {
 	        'baz';
