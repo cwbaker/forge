@@ -3,47 +3,47 @@
 local executions = {};
 
 local function clear_executions()
-	executions = {};
+    executions = {};
 end
 
 local function print_executions()
-	for _, execution in ipairs(executions) do
-		printf( '%s', execution );
-	end
+    for _, execution in ipairs(executions) do
+        printf( '%s', execution );
+    end
 end
 
 local function execute( command, command_line )
-	table.insert( executions, ('%s %s'):format(command, command_line) );
-	return 0;
+    table.insert( executions, ('%s %s'):format(command, command_line) );
+    return 0;
 end
 
 local function printf()
 end
 
 local function dependency_graph( toolset )
-	forge:reload();
-	local exe = toolset:Executable 'exe' {
-	    toolset:StaticLibrary 'foo' {
-	        'baz';
-	        toolset:StaticLibrary 'bar' {
-	            toolset:StaticLibrary 'baz' {
-	            	'baz.o';
-	            };
-	        	toolset:Cc 'bar' {
-	        		'bar.c';
-	        	};
-	        };
-	        'foo.o';
-	    };
-	    'exe.o';
-	};
-	clear_executions();
-	_G.execute = execute;
+    forge:reload();
+    local exe = toolset:Executable 'exe' {
+        toolset:StaticLibrary 'foo' {
+            'baz';
+            toolset:StaticLibrary 'bar' {
+                toolset:StaticLibrary 'baz' {
+                    'baz.o';
+                };
+                toolset:Cc 'bar' {
+                    'bar.c';
+                };
+            };
+            'foo.o';
+        };
+        'exe.o';
+    };
+    clear_executions();
+    _G.execute = execute;
     _G.printf = printf;
-	_G.goal = exe;
-	build();
-	forge:save();
-	return exe;
+    _G.goal = exe;
+    build();
+    forge:save();
+    return exe;
 end
 
 remove( absolute('.forge') );
