@@ -10,7 +10,7 @@ Install to another location by passing `prefix=${install-directory}` on the comm
 
 **Linux:**
 
-From a shell with GCC installed and that `~/bin` is in the path:
+From a shell with GCC installed and `~/bin` in `$PATH`:
 
 ~~~sh
 git clone git@github.com:cwbaker/forge.git forge
@@ -23,7 +23,7 @@ ln -s ~/forge/bin/forge ~/bin/forge
 
 **macOS:**
 
-From a shell with the Xcode command line tools installed and `~/bin` in the path:
+From a shell with the Xcode command line tools installed and `~/bin` in `$PATH`:
 
 ~~~sh
 git clone git@github.com:cwbaker/forge.git forge
@@ -36,7 +36,7 @@ ln -s ~/forge/bin/forge ~/bin/forge
 
 **Windows:**
 
-From a Visual C++ x64 Native Tools command prompt with `%USERPROFILE%\\bin` in the path:
+From a Visual C++ x64 Native Tools command prompt with `%USERPROFILE%\\bin` in the `%PATH%`:
 
 ~~~
 git clone git@github.com:cwbaker/forge.git forge
