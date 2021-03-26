@@ -32,6 +32,8 @@ Although targets usually bind to a single file it is possible to create targets 
 
 The string passed to create a target is that target's identifier or is used to generate the identifier for multiple targets.  A target's identifier is often different from its filename.  In the example above the static library target's identifier is `hello_world` but it will build to a file named *libhello_world.a* or *hello_world.lib* when built with Unix and Windows toolchains respectively.
 
+Targets without target prototypes are valid.  These targets are typically source files that aren't updated by the build system and but still need to be tracked in order to determine when intermediate files that depend on them are outdated.
+
 Create dependencies conditionally by storing a target in a local variable and making further dependency calls on it.  Alternatively passing the same identifier (after string substitution) will return an already created target.  So really all that needs to happen is the dependency call is made conditionally onto the same target.
 
 Create dependencies dynamically using the same pattern as for conditional dependencies of storing a target in a local variable or reusing an existing identifier.  A typical example of dynamic dependencies is looping over all toolsets to build executables to be combined into a macOS or iOS fat binary.

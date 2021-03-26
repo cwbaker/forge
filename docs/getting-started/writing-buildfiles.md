@@ -12,7 +12,9 @@ Buildfiles are the plain Lua scripts that specify the targets and dependencies f
 
 The `buildfile()` function, used to load a buildfile, temporarily updates the working directory to the directory containing the buildfile and then executes the buildfile.  This makes relative paths in the buildfile relative to the buildfile.
 
-Having buildfile relative paths leads naturally to having a buildfile per source containing directory with buildfiles in parent directories loading buildfiles from any directories beneath their own.
+Having buildfile relative paths leads naturally to having a hierarchy of buildfiles per source directory where buildfiles in parent directories loading buildfiles from directories beneath their own.
+
+Separating the dependency graph definition in buildfiles from the configuration in the root build script allows the buildfiles to be reused between different projects that might need different configurations.  For example the buildfile for a library can be reused by several projects each with different configurations.
 
 ### Buildfiles
 
