@@ -1,7 +1,7 @@
 
-for _, forge in toolsets('cc.*') do
-    forge:StaticLibrary '${lib}/assert_${architecture}' {
-        forge:Cc '${obj}/%1' {
+for _, cc in toolsets('cc.*') do
+    cc:StaticLibrary '${lib}/assert_${architecture}' {
+        cc:Cc '${obj}/%1' {
             'assert.cpp'
         };
     };
