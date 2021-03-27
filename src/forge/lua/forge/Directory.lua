@@ -2,7 +2,8 @@
 local Directory = TargetPrototype( 'Directory' );
 
 function Directory.create( toolset, identifier )
-    local target = toolset:Target( toolset:interpolate(identifier), Directory );
+    local identifier = toolset:interpolate( identifier );
+    local target = toolset:Target( identifier, Directory );
     target:set_filename( target:path() );
     target:set_cleanable( true );
     return target;
