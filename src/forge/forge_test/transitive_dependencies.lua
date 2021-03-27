@@ -53,14 +53,14 @@ if operating_system() ~= 'windows' then
     local cc = require 'forge.cc.gcc' {};
 
     create( absolute('baz.o'), 1 );
-    create( cc:static_library_filename('baz'), 1 );
+    create( absolute('libbaz.a'), 1 );
     create( absolute('bar.c'), 1 );
     create( absolute('bar.o'), 1 );
-    create( cc:static_library_filename('bar'), 1 );
+    create( absolute('libbar.a'), 1 );
     create( absolute('foo.o'), 1 );
-    create( cc:static_library_filename('foo'), 1 );
+    create( absolute('libfoo.a'), 1 );
     create( absolute('exe.o'), 1 );
-    create( cc:executable_filename('exe'), 1 );
+    create( absolute('exe'), 1 );
 
     local exe = dependency_graph( cc );
     local libraries = exe:find_transitive_libraries();
@@ -84,9 +84,9 @@ if operating_system() ~= 'windows' then
     CHECK( executions[3]:find('g++') );
 
     touch( absolute('bar.o'), 2 );
-    touch( cc:static_library_filename('bar'), 2 );
-    touch( cc:static_library_filename('foo'), 2 );
-    touch( cc:executable_filename('exe'), 2 );
+    touch( absolute('libbar.a'), 2 );
+    touch( absolute('libfoo.a'), 2 );
+    touch( absolute('exe'), 2 );
 
     local exe = dependency_graph( cc );
     CHECK( #executions == 0 );
