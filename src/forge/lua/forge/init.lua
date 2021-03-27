@@ -247,11 +247,11 @@ function find_initial_target( goal )
     return nil;
 end
 
-function FilePrototype( identifier, filename_modifier )
-    local filename_modifier = filename_modifier or Toolset.interpolate;
+function FilePrototype( identifier )
     local file_prototype = TargetPrototype( identifier );
     file_prototype.create = function( toolset, identifier, target_prototype )
-        local identifier, filename = filename_modifier( toolset, identifier );
+        local identify = target_prototype.identify or Toolset.interpolate;
+        local identifier, filename = identify( toolset, identifier );
         local target = Target( toolset, identifier, target_prototype );
         target:set_filename( filename or target:path() );
         target:set_cleanable( true );
@@ -283,20 +283,23 @@ function JavaStylePrototype( identifier, pattern )
     return java_style_prototype;
 end
 
-function PatternPrototype( identifier, replacement_modifier, pattern )
-    local replacement_modifier = replacement_modifier or Toolset.interpolate;
+function PatternPrototype( identifier, pattern )
     local pattern = pattern or '(.-([^\\/]-))%.?([^%.\\/]*)$';
     local pattern_prototype = TargetPrototype( identifier );
     pattern_prototype.create = function( toolset, replacement )
         local targets = {};
-        local replacement = replacement_modifier( toolset, replacement );
+        local replacement = toolset:interpolate( replacement );
         local targets_metatable = {
             __call = function( targets, dependencies )
+                local identify = pattern_prototype.identify or Toolset.interpolate;
                 local attributes = forge:merge( {}, dependencies );
                 for _, filename in walk_tables(dependencies) do
                     local source_file = toolset:SourceFile( filename );
-                    local identifier = root_relative( source_file ):gsub( pattern, replacement );
-                    local target = toolset:File( identifier, pattern_prototype );
+                    local identifier, filename = identify( toolset, root_relative(source_file):gsub(pattern, replacement) );
+                    local target = Target( toolset, identifier, pattern_prototype );
+                    target:set_filename( filename or target:path() );
+                    target:set_cleanable( true );
+                    target:add_ordering_dependency( toolset:Directory(branch(target)) );
                     forge:merge( target, attributes );
                     local created = target.created;
                     if created then
@@ -314,21 +317,24 @@ function PatternPrototype( identifier, replacement_modifier, pattern )
     return pattern_prototype;
 end
 
-function GroupPrototype( identifier, replacement_modifier, pattern )
-    local replacement_modifier = replacement_modifier or Toolset.interpolate;
+function GroupPrototype( identifier, pattern )
     local pattern = pattern or '(.-([^\\/]-))%.?([^%.\\/]*)$';
     local group_prototype = TargetPrototype( identifier );
     group_prototype.create = function( toolset, replacement )
         local targets = {};
-        local replacement = replacement_modifier( toolset, replacement );
+        local replacement = toolset:interpolate( replacement );
         local targets_metatable = {
             __call = function( targets, dependencies )
+                local identify = group_prototype.identify or Toolset.interpolate;
                 local target = targets[1];
                 forge:merge( target, dependencies );
                 for _, filename in walk_tables(dependencies) do
                     local source_file = toolset:SourceFile( filename );
-                    local identifier = root_relative( source_file ):gsub( pattern, replacement );
-                    local file = toolset:File( identifier );
+                    local identifier, filename = identify( toolset, root_relative(source_file):gsub(pattern, replacement) );
+                    local file = Target( toolset, identifier );
+                    file:set_filename( filename or file:path() );
+                    file:set_cleanable( true );
+                    file:add_ordering_dependency( toolset:Directory(branch(file)) );
                     file:add_dependency( source_file );
                     local created = target.created;
                     if created then
