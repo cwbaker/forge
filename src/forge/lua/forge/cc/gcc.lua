@@ -1,19 +1,12 @@
 
 local gcc = ToolsetPrototype( 'gcc' );
 
-gcc.flags_by_architecture = {
-    armv5 = '-march=armv5te -mtune=xscale -mthumb';
-    armv7 = '-march=armv7 -mtune=xscale -mthumb';
-    armv8 = '-march=armv8-a -mtune=xscale -mthumb';
-    x86_64 = '-march=westmere -maes';
-};
-
 function gcc.configure( toolset, gcc_settings )
     local paths = os.getenv( 'PATH' );
     return {
-        gcc = toolset:which( gcc_settings.gcc or os.getenv('CC') or 'gcc', paths );
-        gxx = toolset:which( gcc_settings.gxx or os.getenv('CXX') or 'g++', paths );
-        ar = toolset:which( gcc_settings.ar or os.getenv('AR') or 'ar', paths );
+        gcc = which( gcc_settings.gcc or os.getenv('CC') or 'gcc', paths );
+        gxx = which( gcc_settings.gxx or os.getenv('CXX') or 'g++', paths );
+        ar = which( gcc_settings.ar or os.getenv('AR') or 'ar', paths );
         environment = gcc_settings.environment or {
             PATH = '/usr/bin';
         };
@@ -29,53 +22,43 @@ function gcc.validate( toolset, gcc_settings )
 end
 
 function gcc.initialize( toolset )
-    local Cc = PatternPrototype( 'Cc', gcc.object_filename );
-    Cc.language = 'c';
-    Cc.build = gcc.compile;
-
-    local Cxx = PatternPrototype( 'Cxx', gcc.object_filename );
-    Cxx.language = 'c++';
-    Cxx.build = gcc.compile;
-
-    toolset.static_library_filename = gcc.static_library_filename;
-    toolset.dynamic_library_filename = gcc.dynamic_library_filename;
-    toolset.executable_filename = gcc.executable_filename;
-    toolset.compile = gcc.compile;
-    toolset.archive = gcc.archive;
-    toolset.link = gcc.link;
+    local Cc = PatternPrototype( 'Cc' );
+    Cc.identify = gcc.object_filename;
+    Cc.build = function( toolset, target ) gcc.compile( toolset, target, 'c' ) end;
     toolset.Cc = Cc;
+
+    local Cxx = PatternPrototype( 'Cxx' );
+    Cxx.identify = gcc.object_filename;
+    Cxx.build = function( toolset, target ) gcc.compile( toolset, target, 'c++' ) end;
     toolset.Cxx = Cxx;
-    toolset.StaticLibrary = require 'forge.cc.StaticLibrary';
-    toolset.DynamicLibrary = require 'forge.cc.DynamicLibrary';
-    toolset.Executable = require 'forge.cc.Executable';
+
+    local StaticLibrary = FilePrototype( 'StaticLibrary' );
+    StaticLibrary.identify = gcc.static_library_filename;
+    StaticLibrary.build = gcc.archive;
+    toolset.StaticLibrary = StaticLibrary;
+
+    local DynamicLibrary = FilePrototype( 'DynamicLibrary' );
+    DynamicLibrary.identify = gcc.dynamic_library_filename;
+    DynamicLibrary.build = gcc.link;
+    toolset.DynamicLibrary = DynamicLibrary;
+
+    local Executable = FilePrototype( 'Executable' );
+    Executable.identify = gcc.executable_filename;
+    Executable.build = gcc.link;
+    toolset.Executable = Executable;
 
     toolset:defaults {
         architecture = 'x86_64';
         assertions = true;
         debug = true;
-        debuggable = true;
         exceptions = true;
         fast_floating_point = false;
-        framework_directories = {};
-        generate_dsym_bundle = false;
         generate_map_file = true;
-        incremental_linking = true;
-        link_time_code_generation = false;
-        minimal_rebuild = true;
-        objc_arc = true;
-        objc_modules = true;
         optimization = false;
-        pre_compiled_headers = true;
         preprocess = false;
-        profiling = false;
-        run_time_checks = true;
-        runtime_library = 'static_debug';
         run_time_type_info = true;
-        stack_size = 1048576;
         standard = 'c++17';
-        string_pooling = false;
         strip = false;
-        subsystem = 'CONSOLE';
         verbose_linking = false;
         warning_level = 3;
         warnings_as_errors = true;
@@ -91,29 +74,36 @@ end
 function gcc.static_library_filename( toolset, identifier )
     local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s/lib%s.a'):format( branch(identifier), leaf(identifier) );
-    return filename, identifier;
+    return identifier, filename;
 end
 
 function gcc.dynamic_library_filename( toolset, identifier )
     local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s/lib%s.so'):format( branch(identifier), leaf(identifier) );
-    return filename, identifier;
+    return identifier, filename;
 end
 
 function gcc.executable_filename( toolset, identifier )
-    local identifier = toolset:interpolate( identifier );
+    local identifier = absolute( toolset:interpolate(identifier) );
     local filename = identifier;
-    return filename, identifier;
+    return identifier, filename;
 end
 
--- Compile C, C++, Objective-C, and Objective-C++.
-function gcc.compile( toolset, target )
+local flags_by_architecture = {
+    armv5 = '-march=armv5te -mtune=xscale -mthumb';
+    armv7 = '-march=armv7 -mtune=xscale -mthumb';
+    armv8 = '-march=armv8-a -mtune=xscale -mthumb';
+    x86_64 = '-march=westmere -maes';
+};
+
+-- Compile C and C++ source to object files.
+function gcc.compile( toolset, target, language )
     local settings = toolset.settings;
 
     local flags = {};
     gcc.append_defines( toolset, target, flags );
     gcc.append_include_directories( toolset, target, flags );
-    gcc.append_compile_flags( toolset, target, flags );
+    gcc.append_compile_flags( toolset, target, flags, language );
     
     local gcc_ = settings.gcc.gcc;
     local environment = settings.gcc.environment;
@@ -218,17 +208,17 @@ function gcc.append_include_directories( toolset, target, flags )
     gcc.append_flags( flags, toolset.settings.include_directories, '-I "%s"' );
 end
 
-function gcc.append_compile_flags( toolset, target, flags )
+function gcc.append_compile_flags( toolset, target, flags, language )
     local settings = toolset.settings;
 
     table.insert( flags, '-c' );
-    table.insert( flags, gcc.flags_by_architecture[settings.architecture] );
+    table.insert( flags, flags_by_architecture[settings.architecture] );
     table.insert( flags, '-fpic' );
     
     gcc.append_flags( flags, target.cppflags );
     gcc.append_flags( flags, settings.cppflags );
 
-    local language = target.language or 'c++';
+    local language = language or 'c++';
     if language then
         table.insert( flags, ('-x %s'):format(language) );
         if string.find(language, 'c++', 1, true) then
@@ -297,7 +287,7 @@ function gcc.append_link_flags( toolset, target, flags )
     gcc.append_flags( flags, settings.ldflags );
     gcc.append_flags( flags, target.ldflags );
 
-    table.insert( flags, gcc.flags_by_architecture[settings.architecture] );
+    table.insert( flags, flags_by_architecture[settings.architecture] );
     table.insert( flags, "-std=c++11" );
 
     if target:prototype() == toolset.DynamicLibrary then
@@ -330,7 +320,7 @@ function gcc.append_link_flags( toolset, target, flags )
 end
 
 function gcc.append_libraries( toolset, target, flags )
-    local libraries = target:find_transitive_libraries();
+    local libraries = gcc.find_transitive_libraries( target );
     for _, library in ipairs(libraries) do
         if library.whole_archive then 
             table.insert( flags, '-Wl,--whole-archive' );
@@ -345,6 +335,39 @@ end
 function gcc.append_third_party_libraries( toolset, target, flags )
     gcc.append_flags( flags, toolset.settings.libraries, '-l%s' );
     gcc.append_flags( flags, target.libraries, '-l%s' );
+end
+
+-- Collect transitive dependencies on static and dynamic libraries.
+--
+-- Walks immediate dependencies adding static and dynamic libraries to a list
+-- of libraries.  Recursively walks the ordering dependencies of any static
+-- libraries to collect transitive static library dependencies.  Removes
+-- duplicate libraries preserving the most recently added duplicates at the
+-- end of the list.
+--
+-- Returns the list of static libraries to link with this executable.
+function gcc.find_transitive_libraries( target )
+    local toolset = target.toolset;
+    local function yield_recurse_on_library( target )
+        local prototype = target:prototype();
+        local library = prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary;
+        return library, library;
+    end
+
+    local all_libraries = {};
+    local index_by_library = {};
+    for _, dependency in walk_dependencies(target, yield_recurse_on_library) do
+        table.insert( all_libraries, dependency );
+        index_by_library[dependency] = #all_libraries;
+    end
+
+    local libraries = {};
+    for index, library in ipairs(all_libraries) do
+        if index == index_by_library[library] then
+            table.insert( libraries, library );
+        end
+    end
+    return libraries;
 end
 
 return gcc;

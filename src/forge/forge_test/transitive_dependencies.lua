@@ -63,7 +63,7 @@ if operating_system() ~= 'windows' then
     create( absolute('exe'), 1 );
 
     local exe = dependency_graph( cc );
-    local libraries = exe:find_transitive_libraries();
+    local libraries = cc.find_transitive_libraries( exe );
     CHECK( libraries[1] == find_target('foo') );
     CHECK( libraries[2] == find_target('bar') );
     CHECK( libraries[3] == find_target('baz') );

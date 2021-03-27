@@ -266,52 +266,46 @@ function msvc.initialize( toolset )
         };
     };
 
-    local Cc = GroupPrototype( 'Cc', msvc.object_filename );
-    Cc.language = 'c';
-    Cc.build = msvc.compile;
-
-    local Cxx = GroupPrototype( 'Cxx', msvc.object_filename );
-    Cxx.language = 'c++';
-    Cxx.build = msvc.compile;
-
-    toolset.static_library_filename = msvc.static_library_filename;
-    toolset.dynamic_library_filename = msvc.dynamic_library_filename;
-    toolset.executable_filename = msvc.executable_filename;
-    toolset.compile = msvc.compile;
-    toolset.archive = msvc.archive;
-    toolset.link = msvc.link;
+    local Cc = GroupPrototype( 'Cc' );
+    Cc.identify = msvc.object_filename;
+    Cc.build = function( toolset, target ) msvc.compile( toolset, target, 'c' ) end;
     toolset.Cc = Cc;
+
+    local Cxx = GroupPrototype( 'Cxx' );
+    Cxx.identify = msvc.object_filename;
+    Cxx.build = function( toolset, target ) msvc.compile( toolset, target, 'c++' ) end;
     toolset.Cxx = Cxx;
-    toolset.StaticLibrary = require 'forge.cc.StaticLibrary';
-    toolset.DynamicLibrary = require 'forge.cc.DynamicLibrary';
-    toolset.Executable = require 'forge.cc.Executable';
+
+    local StaticLibrary = FilePrototype( 'StaticLibrary' );
+    StaticLibrary.identify = msvc.static_library_filename;
+    StaticLibrary.build = msvc.archive;
+    toolset.StaticLibrary = StaticLibrary;
+
+    local DynamicLibrary = FilePrototype( 'DynamicLibrary' );
+    DynamicLibrary.identify = msvc.dynamic_library_filename;
+    DynamicLibrary.build = msvc.link;
+    toolset.DynamicLibrary = DynamicLibrary;
+
+    local Executable = FilePrototype( 'Executable' );
+    Executable.identify = msvc.executable_filename;
+    Executable.build = msvc.link;
+    toolset.Executable = Executable;
 
     toolset:defaults {
         architecture = 'x86_64';
         assertions = true;
         debug = true;
-        debuggable = true;
         exceptions = true;
-        fast_floating_point = false;
-        framework_directories = {};
-        generate_dsym_bundle = false;
         generate_map_file = true;
         incremental_linking = true;
         link_time_code_generation = false;
-        minimal_rebuild = true;
-        objc_arc = true;
-        objc_modules = true;
         optimization = false;
-        pre_compiled_headers = true;
         preprocess = false;
-        profiling = false;
         run_time_checks = true;
         runtime_library = 'static_debug';
         run_time_type_info = true;
         stack_size = 1048576;
         standard = 'c++17';
-        string_pooling = false;
-        strip = false;
         subsystem = 'CONSOLE';
         verbose_linking = false;
         warning_level = 3;
@@ -328,29 +322,29 @@ end
 function msvc.static_library_filename( toolset, identifier )
     local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s.lib'):format( identifier );
-    return filename, identifier;
+    return identifier, filename;
 end
 
 function msvc.dynamic_library_filename( toolset, identifier )
     local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s.dll'):format( identifier );
-    return filename, identifier;
+    return identifier, filename;
 end
 
 function msvc.executable_filename( toolset, identifier )
     local identifier = toolset:interpolate( identifier );
     local filename = ('%s.exe'):format( identifier );
-    return filename, identifier;
+    return identifier, filename;
 end
 
 -- Compile C and C++.
-function msvc.compile( toolset, target ) 
+function msvc.compile( toolset, target, language ) 
     local settings = toolset.settings;    
 
     local flags = {};
     msvc.append_defines( toolset, target, flags );
     msvc.append_include_directories( toolset, target, flags );
-    msvc.append_compile_flags( toolset, target, flags );
+    msvc.append_compile_flags( toolset, target, flags, language );
 
     local objects_by_source = {};
     local sources_by_directory = {};
@@ -581,7 +575,7 @@ function msvc.append_include_directories( toolset, target, flags )
     msvc.append_flags( flags, toolset.settings.include_directories, '/I "%s"' );
 end
 
-function msvc.append_compile_flags( toolset, target, flags )
+function msvc.append_compile_flags( toolset, target, flags, language )
     local settings = toolset.settings;
 
     table.insert( flags, '/nologo' );
@@ -593,7 +587,7 @@ function msvc.append_compile_flags( toolset, target, flags )
     msvc.append_flags( flags, target.cppflags );
     msvc.append_flags( flags, settings.cppflags );
 
-    local language = target.language or 'c++';
+    local language = language or 'c++';
     if language == 'c' then 
         table.insert( flags, '/TC' );
         msvc.append_flags( flags, target.cflags );
@@ -723,7 +717,7 @@ function msvc.append_link_flags( toolset, target, flags )
 end
 
 function msvc.append_libraries( toolset, target, flags )
-    local libraries = target:find_transitive_libraries();
+    local libraries = msvc.find_transitive_libraries( target );
     for _, library in ipairs(libraries) do
         if library.whole_archive then
             table.insert( flags, ('/WHOLEARCHIVE:"%s"'):format(library:filename()) );
@@ -798,6 +792,39 @@ function msvc.dependencies_filter( toolset, output_directory, source_directory )
         end
     end
     return dependencies_filter;
+end
+
+-- Collect transitive dependencies on static and dynamic libraries.
+--
+-- Walks immediate dependencies adding static and dynamic libraries to a list
+-- of libraries.  Recursively walks the ordering dependencies of any static
+-- libraries to collect transitive static library dependencies.  Removes
+-- duplicate libraries preserving the most recently added duplicates at the
+-- end of the list.
+--
+-- Returns the list of static libraries to link with this executable.
+function msvc.find_transitive_libraries( target )
+    local toolset = target.toolset;
+    local function yield_recurse_on_library( target )
+        local prototype = target:prototype();
+        local library = prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary;
+        return library, library;
+    end
+
+    local all_libraries = {};
+    local index_by_library = {};
+    for _, dependency in walk_dependencies(target, yield_recurse_on_library) do
+        table.insert( all_libraries, dependency );
+        index_by_library[dependency] = #all_libraries;
+    end
+
+    local libraries = {};
+    for index, library in ipairs(all_libraries) do
+        if index == index_by_library[library] then
+            table.insert( libraries, library );
+        end
+    end
+    return libraries;
 end
 
 return msvc;

@@ -4,9 +4,9 @@ local clang = ToolsetPrototype( 'clang' );
 function clang.configure( toolset, clang_settings )
     local paths = os.getenv( 'PATH' );
     return {
-        cc = toolset:which( clang_settings.cc or os.getenv('CC') or 'clang', paths );
-        cxx = toolset:which( clang_settings.cxx or os.getenv('CXX') or 'clang++', paths );
-        ar = toolset:which( clang_settings.ar or os.getenv('AR') or 'ar', paths );
+        cc = which( clang_settings.cc or os.getenv('CC') or 'clang', paths );
+        cxx = which( clang_settings.cxx or os.getenv('CXX') or 'clang++', paths );
+        ar = which( clang_settings.ar or os.getenv('AR') or 'ar', paths );
         environment = clang_settings.environment or {
             PATH = '/usr/bin';
         };
@@ -22,62 +22,54 @@ function clang.validate( toolset, clang_settings )
 end
 
 function clang.initialize( toolset )
-    local settings = toolset.settings;
-
-    local Cc = PatternPrototype( 'Cc', clang.object_filename );
-    Cc.language = 'c';
-    Cc.build = clang.compile;
-
-    local Cxx = PatternPrototype( 'Cxx', clang.object_filename );
-    Cxx.language = 'c++';
-    Cxx.build = clang.compile;
-
-    local ObjC = PatternPrototype( 'ObjC', clang.object_filename );
-    ObjC.language = 'objective-c';
-    ObjC.build = clang.compile;
-
-    local ObjCxx = PatternPrototype( 'ObjCxx', clang.object_filename );
-    ObjCxx.language = 'objective-c++';
-    ObjCxx.build = clang.compile;
-
-    toolset.static_library_filename = clang.static_library_filename;
-    toolset.dynamic_library_filename = clang.dynamic_library_filename;
-    toolset.executable_filename = clang.executable_filename;
-    toolset.compile = clang.compile;
-    toolset.archive = clang.archive;
-    toolset.link = clang.link;
+    local Cc = PatternPrototype( 'Cc' );
+    Cc.identify = clang.object_filename;
+    Cc.build = function( toolset, target ) clang.compile( toolset, target, 'c' ) end;
     toolset.Cc = Cc;
+
+    local Cxx = PatternPrototype( 'Cxx' );
+    Cxx.identify = clang.object_filename;
+    Cxx.build = function( toolset, target ) clang.compile( toolset, target, 'c++' ) end;
     toolset.Cxx = Cxx;
+
+    local ObjC = PatternPrototype( 'ObjC' );
+    ObjC.identify = clang.object_filename;
+    ObjC.build = function( toolset, target ) clang.compile( toolset, target, 'objective-c' ) end;
     toolset.ObjC = ObjC;
+
+    local ObjCxx = PatternPrototype( 'ObjCxx' );
+    ObjCxx.identify = clang.object_filename;
+    ObjCxx.build = function( toolset, target ) clang.compile( toolset, target, 'objective-c++' ) end;
     toolset.ObjCxx = ObjCxx;
-    toolset.StaticLibrary = require 'forge.cc.StaticLibrary';
-    toolset.DynamicLibrary = require 'forge.cc.DynamicLibrary';
-    toolset.Executable = require 'forge.cc.Executable';
+
+    local StaticLibrary = FilePrototype( 'StaticLibrary' );
+    StaticLibrary.identify = clang.static_library_filename;
+    StaticLibrary.build = clang.archive;
+    toolset.StaticLibrary = StaticLibrary;
+
+    local DynamicLibrary = FilePrototype( 'DynamicLibrary' );
+    DynamicLibrary.identify = clang.dynamic_library_filename;
+    DynamicLibrary.build = clang.link;
+    toolset.DynamicLibrary = DynamicLibrary;
+
+    local Executable = FilePrototype( 'Executable' );
+    Executable.identify = clang.executable_filename;
+    Executable.build = clang.link;
+    toolset.Executable = Executable;
 
     toolset:defaults {
         architecture = 'x86_64';
         assertions = true;
         debug = true;
-        debuggable = true;
         exceptions = true;
-        fast_floating_point = false;
         generate_map_file = true;
-        incremental_linking = true;
-        link_time_code_generation = false;
-        minimal_rebuild = true;
         objc_arc = true;
         objc_modules = true;
         optimization = false;
-        pre_compiled_headers = true;
         preprocess = false;
-        profiling = false;
-        run_time_checks = true;
-        runtime_library = 'static_debug';
         run_time_type_info = true;
-        stack_size = 1048576;
         standard = 'c++17';
         standard_library = 'libc++';
-        string_pooling = false;
         strip = false;
         verbose_linking = false;
         warning_level = 3;
@@ -87,18 +79,18 @@ function clang.initialize( toolset )
     return true;
 end
 
-function clang.object_filename( forge, identifier )
+function clang.object_filename( toolset, identifier )
     return ('%s.o'):format( identifier );
 end
 
-function clang.static_library_filename( forge, identifier )
-    local identifier = absolute( forge:interpolate(identifier) );
+function clang.static_library_filename( toolset, identifier )
+    local identifier = absolute( toolset:interpolate(identifier) );
     local filename = ('%s/lib%s.a'):format( branch(identifier), leaf(identifier) );
-    return filename, identifier;
+    return identifier, filename;
 end
 
-function clang.dynamic_library_filename( forge, identifier )
-    local identifier = absolute( forge:interpolate(identifier) );
+function clang.dynamic_library_filename( toolset, identifier )
+    local identifier = absolute( toolset:interpolate(identifier) );
     local filename;
     local operating_system = _G.operating_system();
     if operating_system == 'macos' then
@@ -106,33 +98,33 @@ function clang.dynamic_library_filename( forge, identifier )
     elseif operating_system == 'windows' then
         filename = ('%s.dll'):format( identifier );
     else
-        filename = ('lib%s.so'):format( identifier );
+        filename = ('%s/lib%s.so'):format( branch(identifier), leaf(identifier) );
     end
-    return filename, identifier;
+    return identifier, filename;
 end
 
-function clang.executable_filename( forge, identifier )
-    local identifier = forge:interpolate( identifier );
+function clang.executable_filename( toolset, identifier )
+    local identifier = absolute( toolset:interpolate(identifier) );
     local filename = identifier;
     if operating_system() == 'windows' then 
         filename = ('%s.exe'):format( identifier );
     end
-    return filename, identifier;
+    return identifier, filename;
 end
 
 -- Compile C, C++, Objective-C, and Objective-C++.
-function clang.compile( toolset, target ) 
+function clang.compile( toolset, target, language ) 
     local settings = toolset.settings;
 
     local flags = {};
     clang.append_defines( toolset, target, flags );
     clang.append_include_directories( toolset, target, flags );
     clang.append_framework_directories( toolset, target, flags );
-    clang.append_compile_flags( toolset, target, flags );
+    clang.append_compile_flags( toolset, target, flags, language );
     
     local ccflags = table.concat( flags, ' ' );
     local cc;
-    if target.language == 'c++' or target.language == 'objective-c++' then
+    if language == 'c++' or language == 'objective-c++' then
         cc = settings.clang.cxx;
     else
         cc = settings.clang.cc;
@@ -237,7 +229,7 @@ function clang.append_framework_directories( toolset, target, flags )
     clang.append_flags( flags, toolset.settings.framework_directories, '-F "%s"' );
 end
 
-function clang.append_compile_flags( toolset, target, flags )
+function clang.append_compile_flags( toolset, target, flags, language )
     local settings = toolset.settings;
 
     table.insert( flags, '-c' );
@@ -253,7 +245,7 @@ function clang.append_compile_flags( toolset, target, flags )
     clang.append_flags( flags, target.cppflags );
     clang.append_flags( flags, settings.cppflags );
     
-    local language = target.language or 'c++';
+    local language = language or 'c++';
     if language then
         table.insert( flags, ('-x %s'):format(language) );
         if string.find(language, 'c++', 1, true) then
@@ -381,7 +373,7 @@ function clang.append_link_flags( toolset, target, flags )
 end
 
 function clang.append_libraries( toolset, target, flags )
-    local libraries = target:find_transitive_libraries();
+    local libraries = clang.find_transitive_libraries( target );
     for _, library in ipairs(libraries) do
         if library.whole_archive then
             table.insert( flags, ('-force_load "%s"'):format(library:filename()) );
@@ -430,6 +422,39 @@ function clang.parse_dependencies_file( toolset, filename, object )
             end
         end
     end
+end
+
+-- Collect transitive dependencies on static and dynamic libraries.
+--
+-- Walks immediate dependencies adding static and dynamic libraries to a list
+-- of libraries.  Recursively walks the ordering dependencies of any static
+-- libraries to collect transitive static library dependencies.  Removes
+-- duplicate libraries preserving the most recently added duplicates at the
+-- end of the list.
+--
+-- Returns the list of static libraries to link with this executable.
+function clang.find_transitive_libraries( target )
+    local toolset = target.toolset;
+    local function yield_recurse_on_library( target )
+        local prototype = target:prototype();
+        local library = prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary;
+        return library, library;
+    end
+
+    local all_libraries = {};
+    local index_by_library = {};
+    for _, dependency in walk_dependencies(target, yield_recurse_on_library) do
+        table.insert( all_libraries, dependency );
+        index_by_library[dependency] = #all_libraries;
+    end
+
+    local libraries = {};
+    for index, library in ipairs(all_libraries) do
+        if index == index_by_library[library] then
+            table.insert( libraries, library );
+        end
+    end
+    return libraries;
 end
 
 return clang;
