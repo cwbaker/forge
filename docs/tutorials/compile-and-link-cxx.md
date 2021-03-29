@@ -7,7 +7,7 @@ nav_order: 2
 
 The classic "Hello World!" as built by Forge.  An example of how to build a C or C++ application with Forge covering variant builds, compilation, static libraries, and linking.
 
-Like all Forge projects the root build script, *forge.lua*, defines the root directory of the project and configures and initializes the modules, prototypes, toolsets, and targets in the dependency graph.  A full listing of *forge.lua* for the C/C++ tutorial follows:
+Like all Forge projects the root build script, *forge.lua*, defines the root directory of the project and configures and initializes the modules, prototypes, toolsets, and targets in the dependency graph.  A full listing of *forge.lua* for the C/C++ tutorial is:
 
 ~~~lua
 variant = variant or 'debug';
