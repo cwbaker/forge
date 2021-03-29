@@ -30,22 +30,6 @@ The `execute()` call suspends processing on the Lua coroutine that it is made on
 
 Note that use of `execute()` within a traversal orders by dependencies and has barriers in place to ensure that targets aren't visited until all of their dependencies have been successfully visited.  So long as shared data isn't updated (uncommon during a traversal) there should be no problem.
 
-### forge_hooks_library
-
-~~~lua
-function forge_hooks_library()
-~~~
-
-Returns the currently set Forge hooks library.  This library is injected into executed processes to intercept open calls and detect implicit dependencies.
-
-### getenv
-
-~~~lua
-function getenv( name )
-~~~
-
-Get the value of the environment variable `name`.  If the environment variable isn't set then this function returns nil.
-
 ### hash
 
 ~~~lua
@@ -69,16 +53,6 @@ function print( text )
 ~~~
 
 Print `text` to stdout.
-
-### set_forge_hooks_library
-
-~~~lua
-function set_forge_hooks_library( forge_hooks_library )
-~~~
-
-Set the path to the Forge hooks library.  The default is *libforge_hooks.so* on Linux, *forge_hooks.dylib* on macOS, and *forge_hooks.dll* on Windows all within the same directory as the running Forge executable.
-
-Pass an empty string in `forge_hooks_library` to disable the use of hooking open calls to trace dependencies when executing external processes.
 
 ### sleep
 
