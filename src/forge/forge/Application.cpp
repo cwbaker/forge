@@ -46,9 +46,9 @@ Application::Application( int argc, char** argv )
     command_line_parser.add_options()
         ( "help", "h", "Print this message and exit", &help )
         ( "version", "v", "Print the version and exit", &version )
-        ( "root", "r", "Set the root directory", &root_directory )
-        ( "file", "f", "Set the name of the root build script", &filename )
-        ( "stack-trace", "s", "Enable stack traces in error messages", &stack_trace_enabled )
+        ( "root", "r", "Set root directory", &root_directory )
+        ( "file", "f", "Set root build script filename", &filename )
+        ( "stack-trace", "s", "Stack traces on error", &stack_trace_enabled )
         ( &assignments_and_commands )
     ;
     command_line_parser.parse( argc, argv );

@@ -93,15 +93,15 @@ end
 function help()
     printf [[
 Variables:
-  goal               Target to build (relative to current working directory).
-  variant            Variant built (debug, release, or shipping).
+  goal={goal}        Target to build.
+  variant={variant}  Variant to build.
 Commands:
   build              Build outdated targets.
   clean              Clean all targets.
-  reconfigure        Regenerate per-machine configuration settings.
-  dependencies       Print targets by dependency hierarchy.
-  namespace          Print targets by namespace hierarchy.
-    ]];
+  reconfigure        Re-run auto-detected configuration.
+  dependencies       Print dependency hierarchy.
+  namespace          Print namespace hierarchy.
+]];
 end
 
 -- Iterate over toolsets that match patterns.
