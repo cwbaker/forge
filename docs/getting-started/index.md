@@ -8,12 +8,12 @@ has_children: true
 - TOC
 {:toc}
 
-Forge is a Lua scripted build tool that tracks dependencies between files, uses relative timestamps to determine which are out of date, and carries out actions to bring those files up to date.
+Read this section in any order.  Earlier documents introduce concepts used later but not so much that it will limit your understanding.
 
 - [Running Forge](running-forge.md) describes running Forge from the command line to build, clean, or run other custom actions defined by the build.
 
-- [Configuring Forge](configuring-forge.md) describes how to configure a build by editing the root build script *forge.lua*.
+- [Configuring Forge](configuring-forge.md) describes configuring a build by editing the root build script *forge.lua*.
 
-- [Writing Buildfiles](writing-buildfiles.md) describes writing buildfiles to specify which files are built from which source files.
+- [Writing Buildfiles](writing-buildfiles.md) describes specifying which files are built form which source files by writing buildfiles.
 
-- [Toolsets and Targets](writing-toolsets.md) describes adding toolset and target prototypes to add support for new tools.
+- [Targets and Toolsets](targets-and-toolsets.md) describes adding support for new tools with target and toolset prototypes.
