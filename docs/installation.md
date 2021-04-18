@@ -7,9 +7,9 @@ nav_order: 2
 - TOC
 {:toc}
 
-Install Forge by building it from source and linking to `${HOME}/forge/bin/forge` or `${USERPROFILE}/forge/bin/forge.exe` from your path from macOS/Linux and Windows respectively.  Boa sorte!
+Install Forge by building from source and then linking to the `forge` executable from a directory in your path.
 
-Install to another location by passing `prefix=${install-directory}` on the command line.  For example `forge prefix=D:\\forge variant=shipping install` or `forge prefix=/usr/local/forge variant=shipping install`.
+Install to a location other than your home directory by passing `prefix=${install-directory}` on the command line.  For example `forge prefix=D:\\forge variant=shipping install` or `forge prefix=/usr/local/forge variant=shipping install`.
 
 ### Linux
 
