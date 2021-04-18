@@ -19,7 +19,7 @@ The root build script, *forge.lua*, marks the root directory of the project and 
 
 Targets are the nodes in the dependency graph.  Typically each target has a one-to-one relationship with a file in the file system but there are also cases where targets have no associated file or many associated files.
 
-### Target Prototypes
+### Target Prototype
 
 Target prototypes associate targets with the Lua functions that determine what happens when a target is created, when dependencies are added, and when a target is built or cleaned.
 
@@ -27,6 +27,6 @@ Target prototypes associate targets with the Lua functions that determine what h
 
 Toolsets are sets of variables and prototypes that provide a configuration and a convenient, largely declarative domain language for specifying the dependency graph.
 
-### Toolset Prototypes
+### Toolset Prototype
 
 Toolset prototypes package target prototypes and toolsets into resuable components that add support for different compilers, platforms, and tools (e.g. Clang, GCC, Mingw, and Microsoft Visual C++, support for building Android and/or iOS apps, and other tools like parser generators, or asset builders for video games).
