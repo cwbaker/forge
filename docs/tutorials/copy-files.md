@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Copying Files
+title: Copy Files
 parent: Tutorials
 nav_order: 1
 ---
