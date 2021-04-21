@@ -10,6 +10,8 @@ nav_order: 6
 
 ## Overview
 
+Functions that interact with the operating system.  The most commonly used of these are `execute()` to execute external processes for the build, `print()` to print to the standard output stream, and `operating_system()` to determine the underlying host operating system.
+
 ## Functions
 
 ### execute
@@ -78,8 +80,4 @@ function wait()
 
 Wait for all currently executing processes to finish.
 
-Not useful outside of waiting for processes executed to read back configuration settings to complete before attempting to use those settings.
-
-**Returns:**
-
-Nothing.
+Used to wait for processes executed to read back configuration settings to complete before attempting to use those settings.
