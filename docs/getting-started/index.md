@@ -5,9 +5,6 @@ nav_order: 3
 has_children: true
 ---
 
-- TOC
-{:toc}
-
 Read this section in any order.  Earlier documents introduce concepts used later but not so much that it will limit your understanding.
 
 - [Running Forge](running-forge.md) describes running Forge from the command line to build, clean, or run other custom actions defined by the build.
