@@ -10,7 +10,9 @@ nav_order: 2
 
 ## Overview
 
-The functions listed here operate directly on files and/or directories in the file system.  The directory and path functions are distinct from these in that they operate independently of the file system.
+These functions operate directly on files and/or directories in the file system.  See [Directory Functions](directory-functions.md) and [Path Functions](path-functions.md) for functions that work with Forge's directory stack and manipulate paths independently of the file system.
+
+File system operations made from Forge during a post-order graph traversal are synchronized by the ordering implied by dependencies.  As usual when dealing with the file system there is no synchronization with other processes that might be working with the same files or directories.
 
 ## Functions
 
