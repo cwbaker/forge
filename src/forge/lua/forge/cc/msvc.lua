@@ -313,6 +313,13 @@ function msvc.initialize( toolset )
         warnings_as_errors = true;
     };
 
+    -- Assume that 'native' architecture on Windows means x86_64.  This isn't
+    -- necessarily true but is more likely than i386 and any ARM variants.
+    local settings = toolset.settings;
+    if settings.architecture == 'native' then
+        settings.architecture = 'x86_64';
+    end
+
     return true;
 end
 

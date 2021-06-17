@@ -48,7 +48,7 @@ function gcc.initialize( toolset )
     toolset.Executable = Executable;
 
     toolset:defaults {
-        architecture = 'x86_64';
+        architecture = 'native';
         assertions = true;
         debug = true;
         exceptions = true;
@@ -89,13 +89,6 @@ function gcc.executable_filename( toolset, identifier )
     local filename = identifier;
     return identifier, filename;
 end
-
-local flags_by_architecture = {
-    armv5 = '-march=armv5te -mtune=xscale -mthumb';
-    armv7 = '-march=armv7 -mtune=xscale -mthumb';
-    armv8 = '-march=armv8-a -mtune=xscale -mthumb';
-    x86_64 = '-march=westmere -maes';
-};
 
 -- Compile C and C++ source to object files.
 function gcc.compile( toolset, target, language )
@@ -213,7 +206,7 @@ function gcc.append_compile_flags( toolset, target, flags, language )
     local settings = toolset.settings;
 
     table.insert( flags, '-c' );
-    table.insert( flags, flags_by_architecture[settings.architecture] );
+    table.insert( flags, ('-march=%s'):format(settings.architecture) );
     table.insert( flags, '-fpic' );
     
     gcc.append_flags( flags, target.cppflags );
@@ -288,7 +281,7 @@ function gcc.append_link_flags( toolset, target, flags )
     gcc.append_flags( flags, settings.ldflags );
     gcc.append_flags( flags, target.ldflags );
 
-    table.insert( flags, flags_by_architecture[settings.architecture] );
+    table.insert( flags, ('-march=%s'):format(settings.architecture) );
     table.insert( flags, "-std=c++11" );
 
     if target:prototype() == toolset.DynamicLibrary then
