@@ -25,7 +25,7 @@ local cc = require 'forge.cc' {
         ('BUILD_VARIANT_%s'):format( upper(variant) );
     };
 
-    architecture = 'x86_64';
+    architecture = 'native';
     assertions = variant ~= 'shipping';
     debug = variant ~= 'shipping';
     debuggable = variant ~= 'shipping';
@@ -46,9 +46,10 @@ local cc = require 'forge.cc' {
     warnings_as_errors = true;
 };
 
+local settings = cc.settings;
+
 -- Bump the C++ standard to c++14 when building on Windows as that is the 
 -- closest standard supported by Microsoft Visual C++.
-local settings = cc.settings;
 if settings.platform == 'windows' then
     settings.standard = 'c++14';
 end
