@@ -126,6 +126,7 @@ end
 -- Add dependencies detected by the injected build hooks library to the 
 -- target /target/.
 function Toolset:dependencies_filter( target )
+    target:clear_implicit_dependencies();
     return function( line )
         if line:match('^==') then 
             local READ_PATTERN = "^== read '([^']*)'";
@@ -147,6 +148,7 @@ end
 -- target /target/.
 function Toolset:filenames_filter( target )
     target:clear_filenames();
+    target:clear_implicit_dependencies();
     local output_directory = target:ordering_dependency():filename();
     return function( line )
         if line:match('^==') then
