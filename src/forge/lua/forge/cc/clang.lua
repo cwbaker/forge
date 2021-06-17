@@ -58,7 +58,7 @@ function clang.initialize( toolset )
     toolset.Executable = Executable;
 
     toolset:defaults {
-        architecture = 'x86_64';
+        architecture = 'native';
         assertions = true;
         debug = true;
         exceptions = true;
@@ -234,8 +234,12 @@ function clang.append_compile_flags( toolset, target, flags, language )
     local settings = toolset.settings;
 
     table.insert( flags, '-c' );
-    table.insert( flags, ('-arch %s'):format(settings.architecture) );
     table.insert( flags, '-fasm-blocks' );
+
+    local architecture = settings.architecture;
+    if architecture ~= 'native' then
+        table.insert( flags, ('-arch %s'):format(architecture) );
+    end
 
     clang.append_flags( flags, target.cppflags );
     clang.append_flags( flags, settings.cppflags );
@@ -332,7 +336,10 @@ function clang.append_link_flags( toolset, target, flags )
     clang.append_flags( flags, settings.ldflags );
     clang.append_flags( flags, target.ldflags );
 
-    table.insert( flags, ('-arch %s'):format(settings.architecture) );
+    local architecture = settings.architecture;
+    if architecture ~= 'native' then
+        table.insert( flags, ('-arch %s'):format(architecture) );
+    end
 
     local standard = settings.standard;
     if standard then 
