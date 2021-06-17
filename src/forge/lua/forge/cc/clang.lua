@@ -71,6 +71,7 @@ function clang.initialize( toolset )
         standard = 'c++17';
         standard_library = 'libc++';
         strip = false;
+        toolchain = 'clang';
         verbose_linking = false;
         warning_level = 3;
         warnings_as_errors = true;
