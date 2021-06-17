@@ -307,6 +307,7 @@ function msvc.initialize( toolset )
         stack_size = 1048576;
         standard = 'c++17';
         subsystem = 'CONSOLE';
+        toolchain = 'msvc';
         verbose_linking = false;
         warning_level = 3;
         warnings_as_errors = true;

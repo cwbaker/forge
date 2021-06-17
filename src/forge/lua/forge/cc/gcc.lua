@@ -59,6 +59,7 @@ function gcc.initialize( toolset )
         run_time_type_info = true;
         standard = 'c++17';
         strip = false;
+        toolchain = 'gcc';
         verbose_linking = false;
         warning_level = 3;
         warnings_as_errors = true;
