@@ -2,6 +2,7 @@
 #define FORGE_LUASYSTEM_HPP_INCLUDED
 
 #include <lua.hpp>
+#include <stdint.h>
 
 namespace sweet
 {
@@ -30,6 +31,8 @@ private:
     static int ticks( lua_State* lua_state );
     static int operating_system( lua_State* lua_state );
     static lua_Integer hash_recursively( lua_State* lua_state, int table, bool hash_integer_keys );
+    static uint64_t fnv1a_start();
+    static uint64_t fnv1a_append( uint64_t hash, const unsigned char* data, size_t length );
 };
 
 }
