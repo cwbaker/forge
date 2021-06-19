@@ -14,13 +14,6 @@
 #include <luaxx/luaxx.hpp>
 #include <assert/assert.hpp>
 #include <lua.hpp>
-#include <meow_hash/meow_intrinsics.h>
-#if defined BUILD_OS_MACOS
-// Ignore unused function warning for 'MeowHash_Accelerated'
-#pragma clang diagnostic ignored "-Wunused-function"
-#endif
-#include <meow_hash/meow_hash.h>
-#include <meow_hash/more/meow_more.h>
 #include <luaxx/luaxx.hpp>
 #include <assert/assert.hpp>
 #include <lua.hpp>
@@ -291,8 +284,7 @@ lua_Integer LuaSystem::hash_recursively( lua_State* lua_state, int table, bool h
     lua_Integer hash = 0;
     while ( lua_next(lua_state, table) )
     {
-        meow_hash_state state;
-        MeowHashBegin( &state );
+        uint64_t working_hash = fnv1a_start();
 
         bool hash_value = false;
         int type = lua_type( lua_state, -2 );
@@ -302,13 +294,13 @@ lua_Integer LuaSystem::hash_recursively( lua_State* lua_state, int table, bool h
             {
                 size_t length = 0;
                 const char* key = lua_tolstring( lua_state, -2, &length );
-                MeowHashAbsorb( &state, length, (void*) key );
+                working_hash = fnv1a_append( working_hash, (const unsigned char*) key, length );
                 hash_value = true;
             }
             else
             {
                 lua_Integer key = lua_tointeger( lua_state, -2 );
-                MeowHashAbsorb( &state, sizeof(key), (void*) &key );
+                working_hash = fnv1a_append( working_hash, (const unsigned char*) &key, sizeof(key) );
                 hash_value = true;
             }
 
@@ -316,30 +308,29 @@ lua_Integer LuaSystem::hash_recursively( lua_State* lua_state, int table, bool h
             {
                 size_t length = 0;
                 const char* value = lua_tolstring( lua_state, -1, &length );
-                MeowHashAbsorb( &state, length, (void*) value );
+                working_hash = fnv1a_append( working_hash, (const unsigned char*) value, length );
             }
             else if ( lua_isinteger(lua_state, -1) )
             {
                 lua_Integer value = lua_tointeger( lua_state, -1 );
-                MeowHashAbsorb( &state, sizeof(value), (void*) &value );
+                working_hash = fnv1a_append( working_hash, (const unsigned char*) &value, sizeof(value) );
             }
             else if ( lua_isnumber(lua_state, -1) )
             {
                 lua_Number value = lua_tonumber( lua_state, -1 );
-                MeowHashAbsorb( &state, sizeof(value), (void*) &value );
+                working_hash = fnv1a_append( working_hash, (const unsigned char*) &value, sizeof(value) );
             }
             else if ( lua_isboolean(lua_state, -1) )
             {
                 bool value = lua_toboolean( lua_state, -1 ) == 1;
-                MeowHashAbsorb( &state, sizeof(value), (void*) &value );
+                working_hash = fnv1a_append( working_hash, (const unsigned char*) &value, sizeof(value) );
             }
             else if ( lua_istable(lua_state, -1) )
             {
                 hash ^= hash_recursively( lua_state, lua_gettop(lua_state), true );
             }
 
-            meow_hash working_hash = MeowHashEnd( &state, 0xc0dedbad );
-            hash ^= MeowU64From( working_hash, 0 );
+            hash ^= working_hash;
         }
         lua_pop( lua_state, 1 );
     }
@@ -362,5 +353,23 @@ lua_Integer LuaSystem::hash_recursively( lua_State* lua_state, int table, bool h
     lua_pushinteger( lua_state, hash );
     lua_rawset( lua_state, table );
 
+    return hash;
+}
+
+uint64_t LuaSystem::fnv1a_start()
+{
+    const uint64_t FNV_OFFSET_BASIS = 0xcbf29ce484222325;
+    return FNV_OFFSET_BASIS;
+}
+
+uint64_t LuaSystem::fnv1a_append( uint64_t hash, const unsigned char* data, size_t length )
+{
+    SWEET_ASSERT( data );
+    SWEET_ASSERT( length >= 0 );
+    for ( size_t i = 0; i < length; ++i )
+    {
+        const uint64_t FNV_PRIME = 0x100000001b3;
+        hash = (hash ^ data[i]) * FNV_PRIME;
+    }
     return hash;
 }
