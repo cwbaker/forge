@@ -7,9 +7,6 @@ function clang.configure( toolset, clang_settings )
         cc = which( clang_settings.cc or os.getenv('CC') or 'clang', paths );
         cxx = which( clang_settings.cxx or os.getenv('CXX') or 'clang++', paths );
         ar = which( clang_settings.ar or os.getenv('AR') or 'ar', paths );
-        environment = clang_settings.environment or {
-            PATH = '/usr/bin';
-        };
     };
 end
 
@@ -130,6 +127,7 @@ function clang.compile( toolset, target, language )
     else
         cc = settings.clang.cc;
     end
+    local environment = { PATH = branch(cc) };
     local source = target:dependency();
     printf( leaf(source) );
     local dependencies = ('%s.d'):format( target );
@@ -137,7 +135,8 @@ function clang.compile( toolset, target, language )
     local input = absolute( source );
     system( 
         cc, 
-        ('%s %s -MMD -MF "%s" -o "%s" "%s"'):format(leaf(cc), ccflags, dependencies, output, input)
+        ('%s %s -MMD -MF "%s" -o "%s" "%s"'):format(leaf(cc), ccflags, dependencies, output, input),
+        environment
     );
     clang.parse_dependencies_file( toolset, dependencies, target );
 end
@@ -161,7 +160,7 @@ function clang.archive( toolset, target )
         printf( leaf(target) );
         local objects = table.concat( objects, '" "' );
         local ar = settings.clang.ar;
-        local environment = settings.clang.environment;
+        local environment = { PATH = branch(ar) };
         system( ar, ('ar -rcs "%s" "%s"'):format(native(target), objects), environment );
     else
         touch( target );
@@ -192,10 +191,11 @@ function clang.link( toolset, target )
     if #objects > 0 then
         local settings = toolset.settings;
         local cxx = settings.clang.cxx;
+        local environment = { PATH = branch(cxx) };
         local ldflags = table.concat( flags, ' ' );
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, ' ' );
-        system( cxx, ('clang++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs) );
+        system( cxx, ('clang++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
     end
     popd();
 end
