@@ -7,9 +7,6 @@ function gcc.configure( toolset, gcc_settings )
         gcc = which( gcc_settings.gcc or os.getenv('CC') or 'gcc', paths );
         gxx = which( gcc_settings.gxx or os.getenv('CXX') or 'g++', paths );
         ar = which( gcc_settings.ar or os.getenv('AR') or 'ar', paths );
-        environment = gcc_settings.environment or {
-            PATH = '/usr/bin';
-        };
     };
 end
 
@@ -100,7 +97,7 @@ function gcc.compile( toolset, target, language )
     gcc.append_compile_flags( toolset, target, flags, language );
     
     local gcc_ = settings.gcc.gcc;
-    local environment = settings.gcc.environment;
+    local environment = { PATH = branch(gcc_) };
     local ccflags = table.concat( flags, ' ' );
     local dependencies = ('%s.d'):format( target );
     local source = target:dependency();
@@ -135,7 +132,7 @@ function gcc.archive( toolset, target )
         printf( leaf(target) );
         local objects = table.concat( objects, '" "' );
         local ar = settings.gcc.ar;
-        local environment = settings.gcc.environment;
+        local environment = { PATH = branch(ar) };
         system( ar, ('ar -rcs "%s" "%s"'):format(native(target), objects), environment );
     else
         touch( target );
@@ -169,7 +166,7 @@ function gcc.link( toolset, target )
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, ' ' );
         local gxx = settings.gcc.gxx;
-        local environment = settings.gcc.environment;
+        local environment = { PATH = branch(gxx) };
         printf( leaf(target) );
         system( gxx, ('g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
     end
