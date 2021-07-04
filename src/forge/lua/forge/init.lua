@@ -21,7 +21,7 @@ end
 -- Visit a target by calling a member function "clean" if it exists or if
 -- there is no "clean" function and the target is not marked as a source file
 -- that must exist then its associated file is deleted.
-local function clean_visit( target )
+function clean_visit( target )
     local clean_function = target.clean;
     if clean_function then 
         clean_function( target.toolset, target );
@@ -39,7 +39,7 @@ end
 -- Visit a target by calling a member function "build" if it exists and 
 -- setting that Target's built flag to true if the function returns with
 -- no errors.
-local function build_visit( target )
+function build_visit( target )
     if target:outdated() then
         local build_function = target.build;
         if build_function then 
