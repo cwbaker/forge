@@ -105,7 +105,7 @@ function gcc.compile( toolset, target, language )
     local input = absolute( source:filename() );
     printf( leaf(source:id()) );
     target:clear_implicit_dependencies();
-    system( 
+    system(
         gcc_, 
         ('gcc %s -MMD -MF "%s" -o "%s" "%s"'):format(ccflags, dependencies, output, input), 
         environment,
