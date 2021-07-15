@@ -210,21 +210,19 @@ function gcc.append_compile_flags( toolset, target, flags, language )
     gcc.append_flags( flags, settings.cppflags );
 
     local language = language or 'c++';
-    if language then
-        table.insert( flags, ('-x %s'):format(language) );
-        if string.find(language, 'c++', 1, true) then
-            if settings.exceptions then
-                table.insert( flags, '-fexceptions' );
-            end
+    table.insert( flags, ('-x %s'):format(language) );
+    if string.find(language, 'c++', 1, true) then
+        if settings.exceptions then
+            table.insert( flags, '-fexceptions' );
+        end
 
-            if settings.run_time_type_info then
-                table.insert( flags, '-frtti' );
-            end
+        if settings.run_time_type_info then
+            table.insert( flags, '-frtti' );
+        end
 
-            local standard = settings.standard;
-            if standard then 
-                table.insert( flags, ('-std=%s'):format(standard) );
-            end
+        local standard = settings.standard;
+        if standard then 
+            table.insert( flags, ('-std=%s'):format(standard) );
         end
     end
         
@@ -260,14 +258,12 @@ function gcc.append_compile_flags( toolset, target, flags, language )
         table.insert( flags, '-Wall -Wextra' );
     end
 
-    if language then
-        if string.find(language, 'c++', 1, true) then
-            gcc.append_flags( flags, settings.cxxflags );
-            gcc.append_flags( flags, target.cxxflags );
-        else
-            gcc.append_flags( flags, settings.cflags );
-            gcc.append_flags( flags, target.cflags );
-        end
+    if language:find('c++', 1, true) then
+        gcc.append_flags( flags, settings.cxxflags );
+        gcc.append_flags( flags, target.cxxflags );
+    else
+        gcc.append_flags( flags, settings.cflags );
+        gcc.append_flags( flags, target.cflags );
     end
 end
 

@@ -245,39 +245,37 @@ function clang.append_compile_flags( toolset, target, flags, language )
     clang.append_flags( flags, settings.cppflags );
     
     local language = language or 'c++';
-    if language then
-        table.insert( flags, ('-x %s'):format(language) );
-        if string.find(language, 'c++', 1, true) then
-            table.insert( flags, '-stdlib=libc++' );
-            table.insert( flags, '-Wno-deprecated' );
+    table.insert( flags, ('-x %s'):format(language) );
+    if language:find('c++', 1, true) then
+        table.insert( flags, '-stdlib=libc++' );
+        table.insert( flags, '-Wno-deprecated' );
 
-            if settings.exceptions then
-                table.insert( flags, '-fexceptions' );
-            end
-
-            if settings.run_time_type_info then
-                table.insert( flags, '-frtti' );
-            end
-
-            local standard = settings.standard;
-            if standard then 
-                table.insert( flags, ('-std=%s'):format(standard) );
-            end
+        if settings.exceptions then
+            table.insert( flags, '-fexceptions' );
         end
 
-        if string.find(language, 'objective', 1, true) then
-            table.insert( flags, '-fobjc-abi-version=2' );
-            table.insert( flags, '-fobjc-legacy-dispatch' );
-            table.insert( flags, '"-DIBOutlet=__attribute__((iboutlet))"' );
-            table.insert( flags, '"-DIBOutletCollection(ClassName)=__attribute__((iboutletcollection(ClassName)))"' );
-            table.insert( flags, '"-DIBAction=void)__attribute__((ibaction)"' );
-            if settings.objc_arc then
-                table.insert( flags, '-fobjc-arc' );
-            end
-            if settings.objc_modules then
-                if language == 'objective-c' then
-                    table.insert( flags, '-fmodules' );
-                end
+        if settings.run_time_type_info then
+            table.insert( flags, '-frtti' );
+        end
+
+        local standard = settings.standard;
+        if standard then 
+            table.insert( flags, ('-std=%s'):format(standard) );
+        end
+    end
+
+    if language:find('objective', 1, true) then
+        table.insert( flags, '-fobjc-abi-version=2' );
+        table.insert( flags, '-fobjc-legacy-dispatch' );
+        table.insert( flags, '"-DIBOutlet=__attribute__((iboutlet))"' );
+        table.insert( flags, '"-DIBOutletCollection(ClassName)=__attribute__((iboutletcollection(ClassName)))"' );
+        table.insert( flags, '"-DIBAction=void)__attribute__((ibaction)"' );
+        if settings.objc_arc then
+            table.insert( flags, '-fobjc-arc' );
+        end
+        if settings.objc_modules then
+            if language == 'objective-c' then
+                table.insert( flags, '-fmodules' );
             end
         end
     end
@@ -318,14 +316,12 @@ function clang.append_compile_flags( toolset, target, flags, language )
         table.insert( flags, '-Wall -Wextra -Weverything' );
     end
 
-    if language then
-        if string.find(language, 'c++', 1, true) then
-            clang.append_flags( flags, settings.cxxflags );
-            clang.append_flags( flags, target.cxxflags );
-        else
-            clang.append_flags( flags, settings.cflags );
-            clang.append_flags( flags, target.cflags );
-        end
+    if language:find('c++', 1, true) then
+        clang.append_flags( flags, settings.cxxflags );
+        clang.append_flags( flags, target.cxxflags );
+    else
+        clang.append_flags( flags, settings.cflags );
+        clang.append_flags( flags, target.cflags );
     end
 end
 
