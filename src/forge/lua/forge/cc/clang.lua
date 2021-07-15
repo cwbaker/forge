@@ -263,12 +263,6 @@ function clang.append_compile_flags( toolset, target, flags, language )
             if standard then 
                 table.insert( flags, ('-std=%s'):format(standard) );
             end
-
-            clang.append_flags( flags, settings.cxxflags );
-            clang.append_flags( flags, target.cxxflags );
-        else
-            clang.append_flags( flags, settings.cflags );
-            clang.append_flags( flags, target.cflags );
         end
 
         if string.find(language, 'objective', 1, true) then
@@ -322,6 +316,16 @@ function clang.append_compile_flags( toolset, target, flags, language )
         table.insert( flags, '-Wall -Wextra' );
     else
         table.insert( flags, '-Wall -Wextra -Weverything' );
+    end
+
+    if language then
+        if string.find(language, 'c++', 1, true) then
+            clang.append_flags( flags, settings.cxxflags );
+            clang.append_flags( flags, target.cxxflags );
+        else
+            clang.append_flags( flags, settings.cflags );
+            clang.append_flags( flags, target.cflags );
+        end
     end
 end
 

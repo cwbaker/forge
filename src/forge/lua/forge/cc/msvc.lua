@@ -598,8 +598,6 @@ function msvc.append_compile_flags( toolset, target, flags, language )
     local language = language or 'c++';
     if language == 'c' then 
         table.insert( flags, '/TC' );
-        msvc.append_flags( flags, target.cflags );
-        msvc.append_flags( flags, settings.cflags );
     elseif language == 'c++' then
         table.insert( flags, '/TP' );
         if settings.exceptions then
@@ -608,8 +606,6 @@ function msvc.append_compile_flags( toolset, target, flags, language )
         if settings.run_time_type_info then
             table.insert( flags, '/GR' );
         end
-        msvc.append_flags( flags, target.cxxflags );
-        msvc.append_flags( flags, settings.cxxflags );
     else
         assert( false, 'Only C and C++ are supported by Microsoft Visual C++' );
     end
@@ -665,6 +661,14 @@ function msvc.append_compile_flags( toolset, target, flags, language )
         table.insert( flags, '/W3' );
     elseif warning_level >= 4 then
         table.insert( flags, '/W4' );
+    end
+
+    if language == 'c' then 
+        msvc.append_flags( flags, target.cflags );
+        msvc.append_flags( flags, settings.cflags );
+    elseif language == 'c++' then
+        msvc.append_flags( flags, target.cxxflags );
+        msvc.append_flags( flags, settings.cxxflags );
     end
 end
 
