@@ -663,12 +663,12 @@ function msvc.append_compile_flags( toolset, target, flags, language )
         table.insert( flags, '/W4' );
     end
 
-    if language == 'c' then 
-        msvc.append_flags( flags, target.cflags );
-        msvc.append_flags( flags, settings.cflags );
-    elseif language == 'c++' then
-        msvc.append_flags( flags, target.cxxflags );
+    if language == 'c++' then
         msvc.append_flags( flags, settings.cxxflags );
+        msvc.append_flags( flags, target.cxxflags );
+    else
+        msvc.append_flags( flags, settings.cflags );
+        msvc.append_flags( flags, target.cflags );
     end
 end
 
