@@ -430,7 +430,7 @@ function msvc.archive( toolset, target )
         end
     end
     
-    if outdated_objects > 0 then
+    if outdated_objects > 0 or not exists(target) then
         printf( leaf(target) );
         local arflags = table.concat( flags, ' ' );
         local arobjects = table.concat( objects, '" "' );

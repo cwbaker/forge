@@ -128,7 +128,7 @@ function gcc.archive( toolset, target )
             end
         end
     end
-    if outdated_objects > 0 then
+    if outdated_objects > 0 or not exists(target) then
         printf( leaf(target) );
         local objects = table.concat( objects, '" "' );
         local ar = settings.gcc.ar;
