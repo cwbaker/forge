@@ -579,8 +579,23 @@ function msvc.append_defines( toolset, target, flags )
 end
 
 function msvc.append_include_directories( toolset, target, flags )
-    msvc.append_flags( flags, target.include_directories, '/I "%s"' );
-    msvc.append_flags( flags, toolset.settings.include_directories, '/I "%s"' );
+    -- Convert directories to absolute paths before appending them to the
+    -- compiler flags as Visual C++ compilation changes to the source
+    -- directory of each set of source files before compilation and this
+    -- breaks any relative include paths passed from buildfiles.
+    --
+    -- The directory is changed before compilation to allow the /showIncludes
+    -- output to be interpreted correctly.  If automatic dependency capture
+    -- worked with Visual C++ compilation then this hack could be removed.
+    local function append_directories( flags, directories )
+        if directories then
+            for _, directory in ipairs(directories) do
+                table.insert( flags, ('/I "%s"'):format(absolute(directory)) );
+            end
+        end
+    end
+    append_directories( flags, target.include_directories, '/I "%s"' );
+    append_directories( flags, toolset.settings.include_directories, '/I "%s"' );
 end
 
 function msvc.append_compile_flags( toolset, target, flags, language )
