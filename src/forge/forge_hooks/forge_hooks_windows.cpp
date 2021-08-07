@@ -209,13 +209,27 @@ static LoadLibraryWFunction original_load_library_w = NULL;
 static LoadLibraryExAFunction original_load_library_ex_a = NULL;
 static LoadLibraryExWFunction original_load_library_ex_w = NULL;
 
-static void log_file_access( const char* filename, int write )
+// Skip the "\\?\" or "\??\" prefixes used to disable string parsing in
+// Windows APIs.  Forge scripts that handle these are expecting paths
+// without these prefixes.
+// See https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#win32-file-namespaces.
+static const char* skip_win32_file_namespace( const char* filename )
+{
+    if ( filename[0] == '\\' && (filename[1] == '\\' || filename[1] == '?') && filename[2] == '?' && filename[3] == '\\' )
+    {
+        return filename + 4;
+    }
+    return filename;
+}
+
+static void log_file_access( const char* namespaced_path, int write )
 {
     DWORD bytes_written = 0;
     HANDLE pipe = build_hooks_dependencies_pipe;
     const char* access = write ? "== write '" : "== read '";
+    const char* path = skip_win32_file_namespace( namespaced_path );
     WriteFile( pipe, access, (DWORD) strlen(access), &bytes_written, NULL );
-    WriteFile( pipe, filename, (DWORD) strlen(filename), &bytes_written, NULL );
+    WriteFile( pipe, path, (DWORD) strlen(path), &bytes_written, NULL );
     WriteFile( pipe, "'\n", 2, &bytes_written, NULL );
 }
 
