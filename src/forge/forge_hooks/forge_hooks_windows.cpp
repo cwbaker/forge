@@ -461,6 +461,14 @@ static NTSTATUS WINAPI nt_create_file_hook( PHANDLE file_handle, ACCESS_MASK des
         ea_buffer,
         ea_length
     );
+    if ( NT_SUCCESS(status) )
+    {
+        LPCWSTR wide_path = object_attributes->ObjectName->Buffer;
+        char path [MAX_PATH + 1];
+        int count = WideCharToMultiByte( CP_UTF8, 0, wide_path, (int) wcslen(wide_path), path, (int) sizeof(path), NULL, NULL );
+        path[count] = 0;
+        log_file_access( path, desired_access & (FILE_WRITE_DATA | FILE_APPEND_DATA) );
+    }
     return status;
 }
 
@@ -539,8 +547,8 @@ static void patch_iat( HMODULE module )
         char filename [MAX_PATH];
         if ( GetModuleFileName(modules[i], filename, sizeof(filename)) )
         {
-            uintptr_t base_address = (uintptr_t) modules[i];
-            ImportDescriptor kernel32( base_address, "KERNEL32.dll" ); 
+            uintptr_t base_address = (uintptr_t) modules[i];            
+            ImportDescriptor kernel32( base_address, "KERNEL32.DLL" );
             if ( kernel32.valid() )
             {
                 kernel32.patch_function( "CreateFileA", (void*) &create_file_a_hook, (void**) &original_create_file_a );
@@ -557,6 +565,12 @@ static void patch_iat( HMODULE module )
                 kernel32.patch_function( "LoadLibraryW", (void*) &load_library_w_hook, (void**) &original_load_library_w );
                 kernel32.patch_function( "LoadLibraryExA", (void*) &load_library_ex_a_hook, (void**) &original_load_library_ex_a );
                 kernel32.patch_function( "LoadLibraryExW", (void*) &load_library_ex_w_hook, (void**) &original_load_library_ex_w );
+            }
+
+            ImportDescriptor ntdll( base_address, "ntdll.dll" );
+            if ( ntdll.valid() )
+            {
+                ntdll.patch_function( "NtCreateFile", (void*) &nt_create_file_hook, (void**) &original_nt_create_file );
             }
         }
     }
