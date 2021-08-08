@@ -500,7 +500,7 @@ void Forge::outputf( const char* format, ... )
 
     if ( event_sink_ && format )
     {
-        char message [1024];
+        char message [8192];
         va_list args;
         va_start( args, format );
         vsnprintf( message, sizeof(message), format, args );
@@ -525,7 +525,7 @@ void Forge::errorf( const char* format, ... )
 
     if ( event_sink_ && format )
     {
-        char message [1024];
+        char message [8192];
         va_list args;
         va_start( args, format );
         vsnprintf( message, sizeof(message), format, args );
