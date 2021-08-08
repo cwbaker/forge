@@ -130,12 +130,13 @@ function Toolset:dependencies_filter( target )
     return function( line )
         if line:match('^==') then 
             local READ_PATTERN = "^== read '([^']*)'";
-            local filename = line:match( READ_PATTERN );
-            if filename then
-                local within_source_tree = relative( absolute(filename), root() ):find( '..', 1, true ) == nil;
+            local path = line:match( READ_PATTERN );
+            if path then
+                local relative_path = relative( absolute(path), root() );
+                local within_source_tree = is_relative(relative_path) and relative_path:find( '..', 1, true ) == nil;
                 if within_source_tree then 
-                    local header = self:SourceFile( filename );
-                    target:add_implicit_dependency( header );
+                    local file = self:SourceFile( path );
+                    target:add_implicit_dependency( file );
                 end
             end
         else
@@ -153,14 +154,15 @@ function Toolset:filenames_filter( target )
     return function( line )
         if line:match('^==') then
             local READ_WRITE_PATTERN = "^== (%a+) '([^']*)'";
-            local read_write, filename = line:match( READ_WRITE_PATTERN );
-            if read_write and filename then
-                local within_source_tree = relative( absolute(filename), output_directory ):find( '..', 1, true ) == nil;
+            local read_write, path = line:match( READ_WRITE_PATTERN );
+            if read_write and path then
+                local relative_path = relative( absolute(path), output_directory );
+                local within_source_tree = is_relative(relative_path) and relative_path:find( '..', 1, true ) == nil;
                 if within_source_tree then 
                     if read_write == 'write' then
-                        target:add_filename( filename );
+                        target:add_filename( path );
                     else
-                        local source_file = self:SourceFile( filename );
+                        local source_file = self:SourceFile( path );
                         target:add_implicit_dependency( source_file );
                     end
                 end
