@@ -256,7 +256,7 @@ function msvc.initialize( toolset )
             SYSTEMROOT = os.getenv( 'SYSTEMROOT' );
             TMP = os.getenv( 'TMP' );
         };
-        ['x86_64'] = {
+        ['x86-64'] = {
             PATH = table.concat( path_x86_64, ';' );
             LIB = table.concat( lib_x86_64, ';' );
             LIBPATH = table.concat( lib_x86_64, ';' );
@@ -292,7 +292,7 @@ function msvc.initialize( toolset )
     toolset.Executable = Executable;
 
     toolset:defaults {
-        architecture = 'x86_64';
+        architecture = 'x86-64';
         assertions = true;
         debug = true;
         exceptions = true;
@@ -317,7 +317,7 @@ function msvc.initialize( toolset )
     -- necessarily true but is more likely than i386 and any ARM variants.
     local settings = toolset.settings;
     if settings.architecture == 'native' then
-        settings.architecture = 'x86_64';
+        settings.architecture = 'x86-64';
     end
 
     return true;
@@ -533,13 +533,13 @@ function msvc.visual_cxx_tool( toolset, tool )
     local settings = toolset.settings;
     local msvc = settings.msvc;
     if msvc.toolset_version >= 15 then 
-        if settings.architecture == 'x86_64' then
+        if settings.architecture == 'x86-64' then
             return ('%s\\bin\\Hostx64\\x64\\%s'):format( msvc.visual_cxx_directory, tool );
         else
             return ('%s\\bin\\Hostx64\\x86\\%s'):format( msvc.visual_cxx_directory, tool );
         end
     else
-        if settings.architecture == 'x86_64' then
+        if settings.architecture == 'x86-64' then
             return ('%s/VC/bin/amd64/%s'):format( msvc.visual_studio_directory, tool );
         else
             return ('%s/VC/bin/%s'):format( msvc.visual_studio_directory, tool );
