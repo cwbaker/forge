@@ -24,7 +24,7 @@ jobs:
         if [[ "$RUNNER_OS" == "macOS" ]]; then bash ./bootstrap-macos.bash ; fi
         if [[ "$RUNNER_OS" == "Windows" ]]; then ./bootstrap-windows.bat ; fi
         bootstrap/bin/forge
-        debug/bin/forge variant=release prefix=forge install
+        debug/bin/forge architecture=x86-64 variant=release prefix=forge install
       shell: bash
     - name: Test
       run: |
