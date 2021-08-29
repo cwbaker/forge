@@ -5,6 +5,7 @@
 package.path = root('src/forge/lua/?.lua')..';'..root('src/forge/lua/?/init.lua');
 
 variant = variant or 'debug';
+architecture = architecture or 'native';
 
 local cc = require 'forge.cc' {
     identifier = 'cc_${platform}_${architecture}';
@@ -25,7 +26,7 @@ local cc = require 'forge.cc' {
         ('BUILD_VARIANT_%s'):format( upper(variant) );
     };
 
-    architecture = 'native';
+    architecture = architecture;
     assertions = variant ~= 'shipping';
     debug = variant ~= 'shipping';
     debuggable = variant ~= 'shipping';

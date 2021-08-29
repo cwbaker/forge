@@ -236,11 +236,7 @@ function clang.append_compile_flags( toolset, target, flags, language )
     table.insert( flags, '-c' );
     table.insert( flags, '-fasm-blocks' );
 
-    local architecture = settings.architecture;
-    if architecture ~= 'native' then
-        table.insert( flags, ('-arch %s'):format(architecture) );
-    end
-
+    clang.append_arch_flags( flags, settings.architecture );
     clang.append_flags( flags, target.cppflags );
     clang.append_flags( flags, settings.cppflags );
     
@@ -330,16 +326,21 @@ function clang.append_library_directories( toolset, target, flags )
     clang.append_flags( flags, toolset.settings.library_directories, '-L "%s"' );
 end
 
+function clang.append_arch_flags( flags, architecture )
+    if architecture ~= 'native' then
+        if architecture == 'x86-64' then
+            architecture = 'x86_64';
+        end
+        table.insert( flags, ('-arch %s'):format(architecture) );
+    end
+end
+
 function clang.append_link_flags( toolset, target, flags )
     local settings = toolset.settings;
 
+    clang.append_arch_flags( flags, settings.architecture );
     clang.append_flags( flags, settings.ldflags );
     clang.append_flags( flags, target.ldflags );
-
-    local architecture = settings.architecture;
-    if architecture ~= 'native' then
-        table.insert( flags, ('-arch %s'):format(architecture) );
-    end
 
     local standard = settings.standard;
     if standard then 
