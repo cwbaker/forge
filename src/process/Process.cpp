@@ -536,6 +536,12 @@ int Process::exit_code()
         SWEET_ERROR( ExitCodeForProcessFailedError("Getting a process exit code failed - %s", error) );
     }
 
+    if ( process_ != INVALID_HANDLE_VALUE )
+    {
+        ::CloseHandle( process_ );
+        process_ = INVALID_HANDLE_VALUE;
+    }
+
     return exit_code;
 #elif defined(BUILD_OS_MACOS) || defined(BUILD_OS_LINUX)
     SWEET_ASSERT( process_ == 0 );
