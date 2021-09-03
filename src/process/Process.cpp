@@ -178,7 +178,7 @@ intptr_t Process::pipe( int child_fd )
 
 #elif defined(BUILD_OS_MACOS) || defined(BUILD_OS_LINUX)
     int fds [2] = { -1, -1 };
-    int result = ::pipe( fds );
+    int result = ::pipe2( fds, O_CLOEXEC );
     if ( result != 0 )
     {
         char error [1024];
@@ -382,11 +382,44 @@ void Process::run( const char* arguments )
             }
         }
 
+        // Make the user requested file descriptors refer to the write end
+        // of each pipe.
+        //
+        // Write file descriptors that differ from their user requested file
+        // descriptor are duplicated to the user requested file descriptor.
+        //
+        // When the two file descriptors are the same no duplication is
+        // needed.  The `FD_CLOEXEC` flag is cleared to leave the file
+        // descriptor open after `execve()` is called.
+        //
+        // File descriptors for both read and write ends of the pipe are
+        // closed on `execve()` due to their `FD_CLOEXEC` flag being set.
         for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
         {
-            close( pipe->read_fd );
-            dup2( pipe->write_fd, pipe->child_fd );
-            close( pipe->write_fd );
+            if ( pipe->write_fd != pipe->child_fd )
+            {
+                int result = dup2( pipe->write_fd, pipe->child_fd );
+                if ( result != pipe->child_fd )
+                {
+                    char message [256];
+                    fprintf( stderr, "dup2(%d, %d) failed - %s\n", int(pipe->write_fd), int(pipe->child_fd), Error::format(errno, message, sizeof(message)) );
+                    _exit( errno );
+                    return;
+                }
+                close( pipe->write_fd );
+            }
+            else
+            {
+                int flags = fcntl( pipe->write_fd, F_GETFD ) & ~FD_CLOEXEC;
+                int result = fcntl( pipe->write_fd, F_SETFD, flags );
+                if ( result != 0 )
+                {
+                    char message [256];
+                    fprintf( stderr, "fcntl(%d, F_SETFD, %d) failed - %s", int(pipe->write_fd), flags, Error::format(errno, message, sizeof(message)) );
+                    _exit( errno );
+                    return;
+                }
+            }
         }
 
         cmdline::Splitter splitter( arguments );
