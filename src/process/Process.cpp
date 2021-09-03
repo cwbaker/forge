@@ -176,7 +176,38 @@ intptr_t Process::pipe( int child_fd )
     pipe.write_fd = (intptr_t) write_fd;
     return pipe.read_fd;
 
-#elif defined(BUILD_OS_MACOS) || defined(BUILD_OS_LINUX)
+#elif defined(BUILD_OS_MACOS)
+    int fds [2] = { -1, -1 };
+    int result = ::pipe( fds );
+    if ( result != 0 )
+    {
+        char error [1024];
+        error::Error::format( errno, error, sizeof(error) );
+        SWEET_ERROR( CreatingPipeFailedError("Creating pipe for '%s' failed - %s", executable_, error) );
+    }
+    result = fcntl( fds[0], F_SETFD, 1 );
+    if ( result != 0 )
+    {
+        char error [1024];
+        error::Error::format( errno, error, sizeof(error) );
+        SWEET_ERROR( CreatingPipeFailedError("Setting read file descriptor to close on exec failed - %s", error) );
+    }
+    result = fcntl( fds[1], F_SETFD, 1 );
+    if ( result != 0 )
+    {
+        char error [1024];
+        error::Error::format( errno, error, sizeof(error) );
+        SWEET_ERROR( CreatingPipeFailedError("Setting write file descriptor to close on exec failed - %s", error) );
+    }
+
+    pipes_.push_back( Pipe() );
+    Pipe& pipe = pipes_.back();
+    pipe.child_fd = child_fd;
+    pipe.read_fd = fds[0];
+    pipe.write_fd = fds[1];
+    return pipe.read_fd;
+
+#elif defined(BUILD_OS_LINUX)
     int fds [2] = { -1, -1 };
     int result = ::pipe2( fds, O_CLOEXEC );
     if ( result != 0 )
@@ -300,27 +331,46 @@ void Process::run( const char* arguments )
         }
     }
 
+    // Make the user requested file descriptors refer to the write end of
+    // each pipe.
+    //
+    // Write file descriptors that differ from their user requested file
+    // descriptor are duplicated to the user requested file descriptor.
+    //
+    // When the two file descriptors are the same no duplication is needed.
+    // The `FD_CLOEXEC` flag is cleared to leave the file descriptor open
+    // after `execve()` is called.
+    //
+    // File descriptors for both read and write ends of the pipe are
+    // closed on `execve()` due to their `FD_CLOEXEC` flag being set.
+    posix_spawnattr_t attributes;
+    posix_spawnattr_init( &attributes );
+    posix_spawnattr_setflags( &attributes, POSIX_SPAWN_CLOEXEC_DEFAULT );
+
+    if ( start_suspended_ )
+    {
+        posix_spawnattr_setflags( &attributes, POSIX_SPAWN_START_SUSPENDED );
+        suspended_ = true;
+    }
+
     posix_spawn_file_actions_t file_actions;
     posix_spawn_file_actions_init( &file_actions );
     for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
     {
         if ( pipe->read_fd < 0 || pipe->write_fd < 0 || pipe->child_fd < 0 )
         {
+            posix_spawn_file_actions_destroy( &file_actions );
+            posix_spawnattr_destroy( &attributes );
             char message [256];
             SWEET_ERROR( CreatingPipeFailedError("Creating pipe for '%s' failed - %s", executable_, Error::format(errno, message, sizeof(message))) );
+            return;
         }
-        posix_spawn_file_actions_addclose( &file_actions, pipe->read_fd );
-        posix_spawn_file_actions_adddup2( &file_actions, pipe->write_fd, pipe->child_fd );
-        posix_spawn_file_actions_addclose( &file_actions, pipe->write_fd );
-    }
-
-    posix_spawnattr_t attributes;
-    posix_spawnattr_init( &attributes );
-
-    if ( start_suspended_ )
-    {
-        posix_spawnattr_setflags( &attributes, POSIX_SPAWN_START_SUSPENDED );
-        suspended_ = true;
+        posix_spawn_file_actions_addinherit_np( &file_actions, pipe->write_fd );
+        if ( pipe->write_fd != pipe->child_fd )
+        {
+            posix_spawn_file_actions_adddup2( &file_actions, pipe->write_fd, pipe->child_fd );
+            posix_spawn_file_actions_addclose( &file_actions, pipe->write_fd );
+        }
     }
 
     pid_t pid = 0;
@@ -333,9 +383,10 @@ void Process::run( const char* arguments )
     {
         envp = environment_->values();
     }
+
     int result = posix_spawn( &pid, executable_, &file_actions, &attributes, &splitter.arguments()[0], envp );
-    posix_spawnattr_destroy( &attributes );
     posix_spawn_file_actions_destroy( &file_actions );
+    posix_spawnattr_destroy( &attributes );
 
     for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
     {
@@ -356,6 +407,7 @@ void Process::run( const char* arguments )
     }
 
     process_ = pid;
+
 #elif defined(BUILD_OS_LINUX)
     process_ = fork();
     if ( process_ == -1 )
