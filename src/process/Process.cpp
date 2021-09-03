@@ -513,6 +513,35 @@ void Process::wait()
         SWEET_ERROR( WaitForProcessFailedError("Waiting for a process failed - %s", Error::format(errno, buffer, sizeof(buffer))) );
     }
     process_ = 0;
+#elif defined(BUILD_OS_LINUX)
+    SWEET_ASSERT( process_ != 0 );
+
+    int status = 0;
+    pid_t result = waitpid( process_, &status, 0 );
+    while ( result >= 0 && !WIFEXITED(status) && !WIFSIGNALED(status) )
+    {
+        result = waitpid( process_, &status, 0 );
+    }
+
+    if ( result == process_ )
+    {
+        if ( WIFEXITED(status) )
+        {
+            exit_code_ = WEXITSTATUS( status );
+        }
+        else if ( WIFSIGNALED(status) )
+        {
+            exit_code_ = WTERMSIG( status );
+        }
+    }
+    else
+    {
+        char buffer [1024];
+        SWEET_ERROR( WaitForProcessFailedError("Waiting for a process failed - %s", Error::format(errno, buffer, sizeof(buffer))) );
+        return;
+    }
+
+    process_ = 0;    
 #endif
 }
 
