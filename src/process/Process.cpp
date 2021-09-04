@@ -185,20 +185,6 @@ intptr_t Process::pipe( int child_fd )
         error::Error::format( errno, error, sizeof(error) );
         SWEET_ERROR( CreatingPipeFailedError("Creating pipe for '%s' failed - %s", executable_, error) );
     }
-    result = fcntl( fds[0], F_SETFD, 1 );
-    if ( result != 0 )
-    {
-        char error [1024];
-        error::Error::format( errno, error, sizeof(error) );
-        SWEET_ERROR( CreatingPipeFailedError("Setting read file descriptor to close on exec failed - %s", error) );
-    }
-    result = fcntl( fds[1], F_SETFD, 1 );
-    if ( result != 0 )
-    {
-        char error [1024];
-        error::Error::format( errno, error, sizeof(error) );
-        SWEET_ERROR( CreatingPipeFailedError("Setting write file descriptor to close on exec failed - %s", error) );
-    }
 
     pipes_.push_back( Pipe() );
     Pipe& pipe = pipes_.back();
