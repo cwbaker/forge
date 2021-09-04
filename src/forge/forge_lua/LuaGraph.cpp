@@ -94,7 +94,7 @@ int LuaGraph::add_toolset_prototype( lua_State* lua_state )
 int LuaGraph::add_toolset( lua_State* lua_state )
 {
     try
-    {        
+    {
         const int FORGE = lua_upvalueindex( 1 );
         const int IDENTIFIER = 1;
         const int TOOLSET_PROTOTYPE = 2;
