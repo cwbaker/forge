@@ -49,7 +49,7 @@ void LuaToolset::create( lua_State* lua_state )
     lua_pop( lua_state_, 1 );
 
     // Set the metatable for `Toolset` to redirect calls to create new
-    // toolsets in `Toolset.create()`.
+    // toolsets in `Toolset.new()`.
     luaxx_push( lua_state_, this );
     lua_newtable( lua_state_ );
     lua_pushcfunction( lua_state_, &LuaToolset::create_call_metamethod );
