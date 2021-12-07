@@ -29,7 +29,8 @@ Context::Context( Forge* forge )
   directories_(), 
   job_( NULL ),
   exit_code_( 0 ),
-  buildfile_calling_context_( nullptr )
+  buildfile_calling_context_( nullptr ),
+  prune_( false )
 {
     lua_State* lua_state = forge->lua_state();
     lua_state_ = lua_newthread( lua_state );
@@ -114,6 +115,16 @@ Job* Context::job() const
 int Context::exit_code() const
 {
     return exit_code_;
+}
+
+Context* Context::buildfile_calling_context() const
+{
+    return buildfile_calling_context_;
+}
+
+bool Context::prune() const
+{
+    return prune_;
 }
 
 /**
@@ -287,7 +298,7 @@ void Context::set_buildfile_calling_context( Context* context )
     buildfile_calling_context_ = context;
 }
 
-Context* Context::buildfile_calling_context()
+void Context::set_prune( bool prune )
 {
-    return buildfile_calling_context_;
+    prune_ = prune;
 }

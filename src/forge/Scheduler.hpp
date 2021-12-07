@@ -70,6 +70,7 @@ class Scheduler
 
         void execute( const std::string& command, const std::string& command_line, process::Environment* environment, Filter* dependencies_filter, Filter* stdout_filter, Filter* stderr_filter, Arguments* arguments, Context* context );
         void read( intptr_t fd_or_handle, Filter* filter, Arguments* arguments, Target* working_directory );
+        void prune();
         void wait();
         
         int postorder( Target* target, int function );        

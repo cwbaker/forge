@@ -266,6 +266,20 @@ void Scheduler::read( intptr_t fd_or_handle, Filter* filter, Arguments* argument
     ++read_jobs_;
 }
 
+void Scheduler::prune()
+{
+    if ( !active_contexts_.empty() )
+    {
+        Context* context = active_contexts_.back();
+        SWEET_ASSERT( context );
+        context->set_prune( true );
+    }
+    else
+    {
+        forge_->error( "prune called outside preorder" );
+    }
+}
+
 void Scheduler::wait()
 {
     while ( dispatch_results() )
