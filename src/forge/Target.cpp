@@ -1104,10 +1104,10 @@ Target* Target::implicit_dependency( int n ) const
 // Get the nth ordering dependency of this Target.
 //
 // @param n
-//  The index of the ordering dependency to return (assume to be > 0).
+//  The index of the ordering dependency to return (assumed >= 0).
 //
 // @return
-//  The 'nth' ordering dependency of this Target or null if 'n' is outside the
+//  The nth ordering dependency of this Target or null if 'n' is outside the
 //  range of ordering dependencies.
 */
 Target* Target::ordering_dependency( int n ) const
