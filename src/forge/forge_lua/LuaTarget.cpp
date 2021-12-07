@@ -72,6 +72,7 @@ void LuaTarget::create( lua_State* lua_state, Forge* forge )
         { "add_implicit_dependency", &LuaTarget::add_implicit_dependency },
         { "clear_implicit_dependencies", &LuaTarget::clear_implicit_dependencies },
         { "add_ordering_dependency", &LuaTarget::add_ordering_dependency },
+        { "add_transitive_dependency", &LuaTarget::add_transitive_dependency },
         { nullptr, nullptr }
     };
     luaxx_push( lua_state_, this );
@@ -596,6 +597,20 @@ int LuaTarget::add_ordering_dependency( lua_State* lua_state )
     {
         Target* dependency = (Target*) luaxx_to( lua_state, DEPENDENCY, TARGET_TYPE );
         target->add_ordering_dependency( dependency );
+    }
+    return 0;
+}
+
+int LuaTarget::add_transitive_dependency( lua_State* lua_state )
+{
+    const int TARGET = 1;
+    const int DEPENDENCY = 2;
+    Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
+    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    if ( target )
+    {
+        Target* dependency = (Target*) luaxx_to( lua_state, DEPENDENCY, TARGET_TYPE );
+        target->add_transitive_dependency( dependency );
     }
     return 0;
 }
