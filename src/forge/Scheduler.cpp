@@ -116,6 +116,29 @@ void Scheduler::call( const boost::filesystem::path& path, const std::string& fu
     }
 }
 
+bool Scheduler::preorder_visit( int function, Target* target )
+{
+    SWEET_ASSERT( target );
+
+    Context* context = allocate_context( target->working_directory(), nullptr );
+    process_begin( context );
+
+    lua_State* lua_state = context->lua_state();
+    lua_rawgeti( lua_state, LUA_REGISTRYINDEX, function );
+    luaxx_push( lua_state, target );
+    resume( lua_state, 1 );
+    
+    bool prune = context->prune();
+    int errors = process_end( context );
+    if ( errors > 0 )
+    {
+        ++failures_;
+        forge_->errorf( "Preorder visit of '%s' failed", target->id().c_str() );
+    }
+    target->set_successful( errors == 0 );
+    return !prune;
+}
+
 void Scheduler::postorder_visit( int function, Job* job )
 {
     SWEET_ASSERT( job );
@@ -287,28 +310,99 @@ void Scheduler::wait()
     }
 }
 
-int Scheduler::postorder( Target* target, int function )
+struct ScopedVisit
 {
-    struct ScopedVisit
-    {
-        Target* target_;
+    Target* target_;
 
-        ScopedVisit( Target* target )
-        : target_( target )
+    ScopedVisit( Target* target )
+    : target_( target )
+    {
+        SWEET_ASSERT( target_ );
+        SWEET_ASSERT( !target_->visiting() );
+        target_->set_visited( true );
+        target_->set_visiting( true );
+    }
+
+    ~ScopedVisit()
+    {
+        SWEET_ASSERT( target_->visiting() );
+        target_->set_visiting( false );
+    }
+};
+
+int Scheduler::preorder( Target* target, int function )
+{
+    struct Preorder
+    {
+        Forge* forge_;
+        Scheduler* scheduler_;
+        int function_;
+        int failures_;
+        
+        Preorder( Forge* forge, Scheduler* scheduler, int function )
+        : forge_( forge )
+        , scheduler_( scheduler )
+        , function_( function )
+        , failures_( 0 )
         {
-            SWEET_ASSERT( target_ );
-            SWEET_ASSERT( !target_->visiting() );
-            target_->set_visited( true );
-            target_->set_visiting( true );
+            SWEET_ASSERT( forge_ );
+            SWEET_ASSERT( scheduler_ );
+            forge_->graph()->begin_traversal();
+        }
+        
+        ~Preorder()
+        {
+            forge_->graph()->end_traversal();
         }
 
-        ~ScopedVisit()
+        void visit( Target* target )
         {
-            SWEET_ASSERT( target_->visiting() );
-            target_->set_visiting( false );
+            SWEET_ASSERT( target );
+
+            if ( !target->visited() )
+            {
+                ScopedVisit scoped_visit( target );
+
+                int i = 0;
+                Target* dependency = target->any_dependency( i );
+                while ( dependency )
+                {
+                    if ( !dependency->visiting() )
+                    {
+                        if ( scheduler_->preorder_visit(function_, dependency) )
+                        {
+                            visit( dependency );
+                        }
+                    }
+                    else
+                    {
+                        forge_->errorf( "Cyclic dependency from %s to %s in preorder", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
+                        dependency->set_successful( true );
+                        ++failures_;
+                    }
+                    ++i;
+                    dependency = target->any_dependency( i );
+                }
+
+                target->set_successful( true );
+            }
         }
     };
 
+    Graph* graph = forge_->graph();
+    if ( graph->traversal_in_progress() )
+    {
+        forge_->error( "Preorder called from within preorder or postorder" );
+        return 1;
+    }
+
+    Preorder preorder( forge_, this, function );
+    preorder.visit( target ? target : graph->root_target() );
+    return preorder.failures_;
+}
+
+int Scheduler::postorder( Target* target, int function )
+{
     struct Postorder
     {
         Forge* forge_;
@@ -395,7 +489,7 @@ int Scheduler::postorder( Target* target, int function )
                     }
                     else
                     {
-                        forge_->errorf( "Cyclic dependency from %s to %s in postorder traversal", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
+                        forge_->errorf( "Cyclic dependency from %s to %s in postorder", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
                         dependency->set_successful( true );
                         ++failures_;
                     }
@@ -421,8 +515,8 @@ int Scheduler::postorder( Target* target, int function )
     Graph* graph = forge_->graph();
     if ( graph->traversal_in_progress() )
     {
-        forge_->errorf( "Postorder called from within another bind or postorder traversal" );
-        return 0;
+        forge_->errorf( "Postorder called from within preorder or postorder" );
+        return 1;
     }
     
     Postorder postorder( forge_ );
@@ -516,6 +610,7 @@ bool Scheduler::dispatch_results()
 void Scheduler::process_begin( Context* context )
 {
     SWEET_ASSERT( context );
+    context->set_prune( false );
     active_contexts_.push_back( context );
     forge_->error_policy().push_errors();
 }

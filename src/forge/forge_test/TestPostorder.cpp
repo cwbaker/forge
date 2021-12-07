@@ -48,7 +48,7 @@ SUITE( TestPostorder )
         test( script );
         if ( messages.size() == 2 )
         {
-            CHECK_EQUAL( "[string \"local RecursivePostorderError = TargetPrototy...\"]:3: Postorder called from within another bind or postorder traversal", messages[0] );
+            CHECK_EQUAL( "[string \"local RecursivePostorderError = TargetPrototy...\"]:3: Postorder called from within preorder or postorder", messages[0] );
             CHECK_EQUAL( "Postorder visit of 'recursive_postorder_error' failed", messages[1] );
         }
         CHECK( errors == 2 );
@@ -64,7 +64,7 @@ SUITE( TestPostorder )
         test( script );
         if ( messages.size() == 2 )
         {
-            CHECK_EQUAL( "[string \"local RecursivePostorderError = TargetPrototy...\"]:3: Postorder called from within another bind or postorder traversal", messages[0] );
+            CHECK_EQUAL( "[string \"local RecursivePostorderError = TargetPrototy...\"]:3: Postorder called from within preorder or postorder", messages[0] );
             CHECK_EQUAL( "Postorder visit of 'recursive_postorder_error' failed", messages[1] );
         }
         CHECK( errors == 2 );

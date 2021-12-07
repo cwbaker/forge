@@ -51,6 +51,7 @@ void LuaGraph::create( Forge* forge, lua_State* lua_state )
         { "current_buildfile", &LuaGraph::current_buildfile },
         { "working_directory", &LuaGraph::working_directory },
         { "buildfile", &LuaGraph::buildfile },
+        { "preorder", &LuaGraph::preorder },
         { "postorder", &LuaGraph::postorder },
         { "print_dependencies", &LuaGraph::print_dependencies },
         { "print_namespace", &LuaGraph::print_namespace },
@@ -224,6 +225,33 @@ int LuaGraph::buildfile( lua_State* lua_state )
     return lua_yield( lua_state, 0 );
 }
 
+int LuaGraph::preorder( lua_State* lua_state )
+{
+    const int FORGE = lua_upvalueindex( 1 );
+    const int TARGET = 1;
+    const int FUNCTION = 2;
+
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
+    Graph* graph = forge->graph();
+    if ( graph->traversal_in_progress() )
+    {
+        return luaL_error( lua_state, "Preorder called from within preorder or postorder" );
+    }
+     
+    Target* target = nullptr;
+    if ( !lua_isnoneornil(lua_state, TARGET) )
+    {
+        target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
+    }
+
+    lua_pushvalue( lua_state, FUNCTION );
+    int function = luaL_ref( lua_state, LUA_REGISTRYINDEX );
+    int failures = forge->scheduler()->preorder( target, function );
+    lua_pushinteger( lua_state, failures );
+    luaL_unref( lua_state, LUA_REGISTRYINDEX, function );
+    return 1;
+}
+
 int LuaGraph::postorder( lua_State* lua_state )
 {
     const int FORGE = lua_upvalueindex( 1 );
@@ -234,7 +262,7 @@ int LuaGraph::postorder( lua_State* lua_state )
     Graph* graph = forge->graph();
     if ( graph->traversal_in_progress() )
     {
-        return luaL_error( lua_state, "Postorder called from within another bind or postorder traversal" );
+        return luaL_error( lua_state, "Postorder called from within preorder or postorder" );
     }
      
     Target* target = nullptr;
