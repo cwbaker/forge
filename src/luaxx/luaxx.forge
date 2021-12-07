@@ -3,6 +3,7 @@ buildfile 'luaxx_unit/luaxx_unit.forge';
 
 for _, cc in toolsets('cc.*') do
     cc:StaticLibrary '${lib}/luaxx_${architecture}' {
+        '${lib}/liblua_${platform}_${architecture}';
         cc:Cxx '${obj}/%1' {
             'luaxx.cpp'
         };

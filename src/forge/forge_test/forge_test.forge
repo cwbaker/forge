@@ -19,16 +19,9 @@ for _, cc in toolsets('cc.*') do
         cc:Executable '${bin}/forge_test' {
             '${lib}/cmdline_test_${architecture}';
             '${lib}/forge_${architecture}';
-            '${lib}/forge_lua_${architecture}';
-            '${lib}/process_${architecture}';
-            '${lib}/luaxx_${architecture}';
             '${lib}/luaxx_unit_${architecture}';
-            '${lib}/cmdline_${architecture}';
-            '${lib}/error_${architecture}';
             '${lib}/assert_${architecture}';
-            '${lib}/liblua_${platform}_${architecture}';
-            '${lib}/boost_filesystem_${architecture}';
-            '${lib}/boost_system_${architecture}';
+            '${lib}/error_${architecture}';
             '${lib}/UnitTest++_${architecture}';
 
             libraries = libraries;
