@@ -58,18 +58,12 @@ public:
     static int clear_implicit_dependencies( lua_State* lua_state );
     static int add_ordering_dependency( lua_State* lua_state );
     static int add_transitive_dependency( lua_State* lua_state );
-    static int any_dependency( lua_State* lua_state );
     static int any_dependencies_iterator( lua_State* lua_state );
     static int any_dependencies( lua_State* lua_state );
     static int explicit_dependency( lua_State* lua_state );
     static int explicit_dependencies_iterator( lua_State* lua_state );
     static int explicit_dependencies( lua_State* lua_state );
-    static int implicit_dependency( lua_State* lua_state );
-    static int implicit_dependencies_iterator( lua_State* lua_state );
-    static int implicit_dependencies( lua_State* lua_state );
     static int ordering_dependency( lua_State* lua_state );
-    static int ordering_dependencies_iterator( lua_State* lua_state );
-    static int ordering_dependencies( lua_State* lua_state );
     static int vector_string_const_iterator_gc( lua_State* lua_state );
     static int target_call_metamethod( lua_State* lua_state );
     static int depend_call_metamethod( lua_State* lua_state );
