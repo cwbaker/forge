@@ -24,6 +24,7 @@ public:
     void destroy();
     void create_target_prototype( TargetPrototype* target_prototype );
     void destroy_target_prototype( TargetPrototype* target_prototype );
+    static int id( lua_State* lua_state );
     static int create_target_prototype_call_metamethod( lua_State* lua_state );
     static int create_target_call_metamethod( lua_State *lua_state );
 };
