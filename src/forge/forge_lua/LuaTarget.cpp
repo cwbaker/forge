@@ -86,7 +86,7 @@ void LuaTarget::create( lua_State* lua_state, Forge* forge )
         { "dependency", &LuaTarget::explicit_dependency },
         { "dependencies", &LuaTarget::explicit_dependencies },
         { "ordering_dependency", &LuaTarget::ordering_dependency },
-        { "any_dependencies", &LuaTarget::any_dependencies },
+        { "all_dependencies", &LuaTarget::all_dependencies },
         { nullptr, nullptr }
     };
     luaxx_push( lua_state_, this );
@@ -611,7 +611,7 @@ int LuaTarget::add_transitive_dependency( lua_State* lua_state )
     return 0;
 }
 
-int LuaTarget::any_dependencies_iterator( lua_State* lua_state )
+int LuaTarget::all_dependencies_iterator( lua_State* lua_state )
 {
     const int TARGET = 1;
     const int INDEX = 2;
@@ -641,7 +641,7 @@ int LuaTarget::any_dependencies_iterator( lua_State* lua_state )
     return 0;
 }
 
-int LuaTarget::any_dependencies( lua_State* lua_state )
+int LuaTarget::all_dependencies( lua_State* lua_state )
 {
     const int TARGET = 1;
     const int START = 2;
@@ -660,7 +660,7 @@ int LuaTarget::any_dependencies( lua_State* lua_state )
     SWEET_ASSERT( lua_target );    
     lua_pushinteger( lua_state, finish );
     lua_pushlightuserdata( lua_state, lua_target );
-    lua_pushcclosure( lua_state, &LuaTarget::any_dependencies_iterator, 2 );
+    lua_pushcclosure( lua_state, &LuaTarget::all_dependencies_iterator, 2 );
     luaxx_push( lua_state, target );
     lua_pushinteger( lua_state, start - 1 );
     return 3;
