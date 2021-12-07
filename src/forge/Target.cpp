@@ -374,15 +374,14 @@ void Target::bind_to_dependencies()
     {
         time_t timestamp = timestamp_;
         bool outdated = outdated_;
+        int finish = int(dependencies_.size() + implicit_dependencies_.size());
 
-        int i = 0;
-        Target* target = binding_dependency( i );
-        while ( target )
+        for (int i = 0; i < finish; ++i)
         {
+            Target* target = any_dependency( i );
+            SWEET_ASSERT( target );
             outdated = outdated || target->outdated();
             timestamp = std::max( timestamp, target->timestamp() );
-            ++i;
-            target = binding_dependency( i );
         }
 
         if ( !filenames_.empty() )
