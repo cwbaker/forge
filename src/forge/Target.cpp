@@ -1141,40 +1141,6 @@ Target* Target::transitive_dependency( int n ) const
 }
 
 /**
-// Get the 'nth' binding dependency of this Target.
-//
-// The index is resolved as per `Target::any_dependency()` except that 
-// ordering dependencies are ignored.
-//
-// Explict and implicit dependencies are binding dependencies because they
-// contribute to the calculation of whether or not a target is outdated and
-// a target's timestamp.  See `Target::bind_to_dependencies()`.
-//
-// @param n
-//  The index of the binding dependency to return (assumed to be > 0).
-//
-// @return
-//  The 'nth' binding dependency.
-*/
-Target* Target::binding_dependency( int n ) const
-{
-    SWEET_ASSERT( n >= 0 );
-
-    if ( n >= 0 && n < int(dependencies_.size()) )
-    {
-        return dependencies_[n];
-    }
-
-    n -= int(dependencies_.size());
-    if ( n >= 0 && n < int(implicit_dependencies_.size()) )
-    {
-        return implicit_dependencies_[n];
-    }
-
-    return NULL;
-}
-
-/**
 // Get the 'nth' dependency of any kind from this Target.
 //
 // The index is resolved into the explicit, implicit, and ordering 
