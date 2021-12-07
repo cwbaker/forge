@@ -56,6 +56,7 @@ class Scheduler
         void command( const boost::filesystem::path& path, const std::string& command );
         int buildfile( const boost::filesystem::path& path );
         void call( const boost::filesystem::path& path, const std::string& function );
+        bool preorder_visit( int function, Target* target );
         void postorder_visit( int function, Job* job );
         void execute_finished( int exit_code, Context* context, process::Environment* environment );
         void read_finished( Filter* filter, Arguments* arguments );
@@ -73,6 +74,7 @@ class Scheduler
         void prune();
         void wait();
         
+        int preorder( Target* target, int function );        
         int postorder( Target* target, int function );        
 
         Context* context() const;

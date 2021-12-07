@@ -30,6 +30,7 @@ private:
     static int current_buildfile( lua_State* lua_state );
     static int working_directory( lua_State* lua_state );
     static int buildfile( lua_State* lua_state );
+    static int preorder( lua_State* lua_state );
     static int postorder( lua_State* lua_state );
     static int print_dependencies( lua_State* lua_state );
     static int print_namespace( lua_State* lua_state );
