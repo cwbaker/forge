@@ -58,6 +58,8 @@ void LuaTargetPrototype::create( lua_State* lua_state, Forge* forge, LuaTarget* 
     luaL_newmetatable( lua_state_, TARGET_PROTOTYPE_METATABLE );
     luaxx_push( lua_state_, lua_target );
     lua_setfield( lua_state_, -2, "__index" );
+    lua_pushcfunction( lua_state_, &LuaTargetPrototype::id );
+    lua_setfield( lua_state_, -2, "__tostring" );
     lua_pushcfunction( lua_state_, &LuaTargetPrototype::create_target_call_metamethod );
     lua_setfield( lua_state_, -2, "__call" );
     lua_pop( lua_state_, 1 );
@@ -105,6 +107,20 @@ void LuaTargetPrototype::destroy_target_prototype( TargetPrototype* target_proto
     SWEET_ASSERT( lua_state_ );
     SWEET_ASSERT( target_prototype );
     luaxx_destroy( lua_state_, target_prototype );
+}
+
+int LuaTargetPrototype::id( lua_State* lua_state )
+{
+    const int TARGET_PROTOTYPE = 1;
+    TargetPrototype* target_prototype = (TargetPrototype*) luaxx_to( lua_state, TARGET_PROTOTYPE, TARGET_PROTOTYPE_TYPE );
+    luaL_argcheck( lua_state, target_prototype != nullptr, TARGET_PROTOTYPE, "nil target prototype" );
+    if ( target_prototype )
+    {
+        const string& id = target_prototype->id();
+        lua_pushlstring( lua_state, id.c_str(), id.length() );
+        return 1;
+    }
+    return 0;
 }
 
 /**
