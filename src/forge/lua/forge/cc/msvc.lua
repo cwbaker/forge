@@ -278,16 +278,19 @@ function msvc.initialize( toolset )
 
     local StaticLibrary = FilePrototype( 'StaticLibrary' );
     StaticLibrary.identify = msvc.static_library_filename;
+    StaticLibrary.depend = cc.static_library_depend;
     StaticLibrary.build = msvc.archive;
     toolset.StaticLibrary = StaticLibrary;
 
     local DynamicLibrary = FilePrototype( 'DynamicLibrary' );
     DynamicLibrary.identify = msvc.dynamic_library_filename;
+    DynamicLibrary.prepare = cc.collect_transitive_dependencies;
     DynamicLibrary.build = msvc.link;
     toolset.DynamicLibrary = DynamicLibrary;
 
     local Executable = FilePrototype( 'Executable' );
     Executable.identify = msvc.executable_filename;
+    Executable.prepare = cc.collect_transitive_dependencies;
     Executable.build = msvc.link;
     toolset.Executable = Executable;
 
@@ -744,12 +747,15 @@ function msvc.append_link_flags( toolset, target, flags )
 end
 
 function msvc.append_libraries( toolset, target, flags )
-    local libraries = msvc.find_transitive_libraries( target );
-    for _, library in ipairs(libraries) do
-        if library.whole_archive then
-            table.insert( flags, ('/WHOLEARCHIVE:"%s"'):format(library:filename()) );
-        else
-            table.insert( flags, ('%s.lib'):format(basename(library:filename())) );
+    for _, dependency in target:dependencies() do
+        local prototype = dependency:prototype();
+        if prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary then
+            local library = dependency;
+            if library.whole_archive then
+                table.insert( flags, ('/WHOLEARCHIVE:"%s"'):format(library:filename()) );
+            else
+                table.insert( flags, ('%s.lib'):format(basename(library:filename())) );
+            end
         end
     end
 end
@@ -819,39 +825,6 @@ function msvc.dependencies_filter( toolset, output_directory, source_directory )
         end
     end
     return dependencies_filter;
-end
-
--- Collect transitive dependencies on static and dynamic libraries.
---
--- Walks immediate dependencies adding static and dynamic libraries to a list
--- of libraries.  Recursively walks the ordering dependencies of any static
--- libraries to collect transitive static library dependencies.  Removes
--- duplicate libraries preserving the most recently added duplicates at the
--- end of the list.
---
--- Returns the list of static libraries to link with this executable.
-function msvc.find_transitive_libraries( target )
-    local toolset = target.toolset;
-    local function yield_recurse_on_library( target )
-        local prototype = target:prototype();
-        local library = prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary;
-        return library, library;
-    end
-
-    local all_libraries = {};
-    local index_by_library = {};
-    for _, dependency in walk_dependencies(target, yield_recurse_on_library) do
-        table.insert( all_libraries, dependency );
-        index_by_library[dependency] = #all_libraries;
-    end
-
-    local libraries = {};
-    for index, library in ipairs(all_libraries) do
-        if index == index_by_library[library] then
-            table.insert( libraries, library );
-        end
-    end
-    return libraries;
 end
 
 return msvc;

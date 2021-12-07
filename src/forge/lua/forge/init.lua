@@ -18,6 +18,13 @@ function default()
     return build();
 end
 
+function prepare_visit( target )    
+    local prepare_function = target.prepare;
+    if prepare_function then
+        return prepare_function( target.toolset, target );
+    end
+end
+
 -- Visit a target by calling a member function "clean" if it exists or if
 -- there is no "clean" function and the target is not marked as a source file
 -- that must exist then its associated file is deleted.
@@ -57,7 +64,8 @@ end
 
 -- Provide global build command.
 function build()
-    local failures = postorder( find_initial_target(goal), build_visit );
+    local target = find_initial_target( goal );
+    local failures = preorder( target, prepare_visit ) + postorder( target, build_visit );
     forge:save();
     printf( "forge: default (build)=%dms", math.ceil(ticks()) );
     return failures;
@@ -382,27 +390,33 @@ end
 
 -- Recursively walk the dependencies of *target* until a target with a 
 -- filename is reached.
-function walk_dependencies( target, yield_recurse )
+function walk_dependencies( target, yield_recurse, dependencies )
     local yield_recurse = yield_recurse or function( dependency )
-        local phony = dependency:filename() == '';
-        return not phony, phony;
+        local yield = dependency:filename() ~= '';
+        local recurse = not yield;
+        return yield, recurse;
     end;
+    local dependencies = dependencies or Target.dependencies;
     local index = 1;
-    local function walk( target )
-        for _, dependency in target:dependencies() do
+    local function walk( target, depth )
+        for _, dependency in dependencies(target) do
             local yield, recurse = yield_recurse( dependency )
             if yield then
-                coroutine.yield( index, dependency );
+                coroutine.yield( index, dependency, depth );
                 index = index + 1;
             end
             if recurse then 
-                walk( dependency );
+                walk( dependency, depth + 1 );
             end
         end
     end
     return coroutine.wrap( function()
-        walk( target );
+        walk( target, 0 );
     end );
+end
+
+function walk_all_dependencies( target, yield_recurse )
+    return walk_dependencies( target, yield_recurse, Target.all_dependencies );
 end
 
 -- Merge fields with string keys from /source/ to /destination/.

@@ -1,6 +1,62 @@
 
 require 'forge';
 
+local cc = {};
+
+-- Collect transitive static library dependencies.
+--
+-- Walks dependencies from executables and dynamic libraries to find
+-- transitive dependencies specified as dependencies of static
+-- libraries.  Those transitive libraries are made dependencies of the
+-- executable or dynamic library at the root of the walk.
+--
+-- Duplicate libraries are removed and the libraries are ordered such that
+-- dependent libraries are listed earlier on the linker command line.
+function cc.collect_transitive_dependencies( toolset, target )
+    local function yield_recurse_on_library( target )
+        local prototype = target:prototype();
+        local yield = prototype == toolset.StaticLibrary;
+        local recurse = yield or prototype == nil;
+        return yield, recurse;
+    end
+
+    local libraries = {};
+    local index_by_library = {};
+    for _, dependency in walk_all_dependencies(target, yield_recurse_on_library) do
+        table.insert( libraries, dependency );
+        index_by_library[dependency] = #libraries;
+    end
+
+    for index, library in ipairs(libraries) do
+        if index == index_by_library[library] then
+            target:add_dependency( library );
+        end
+    end
+
+    prune();
+end
+
+-- Implement depend() with transitive dependencies for static libraries.
+--
+-- Dependencies with StaticLibrary prototypes or no prototypes are added as
+-- transitive dependencies.  Other dependencies are added as normal
+-- dependencies.
+function cc.static_library_depend( toolset, target, dependencies )
+    assert( type(dependencies) == 'table', 'Target.depend() parameter not a table as expected' );
+    forge:merge( target, dependencies );
+    for _, value in walk_tables(dependencies) do
+        local dependency = toolset:SourceFile( value );
+        local prototype = dependency:prototype();
+        if prototype == nil or prototype == toolset.StaticLibrary then
+            target:add_transitive_dependency( dependency );
+        else
+            target:add_dependency( dependency );
+        end
+    end
+end
+
+_G.cc = cc;
+
 local operating_system = _G.operating_system();
 if operating_system == 'windows' then
     return require 'forge.cc.msvc';

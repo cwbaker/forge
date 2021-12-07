@@ -32,15 +32,18 @@ function gcc.initialize( toolset )
     local StaticLibrary = FilePrototype( 'StaticLibrary' );
     StaticLibrary.identify = gcc.static_library_filename;
     StaticLibrary.build = gcc.archive;
+    StaticLibrary.depend = cc.static_library_depend;
     toolset.StaticLibrary = StaticLibrary;
 
     local DynamicLibrary = FilePrototype( 'DynamicLibrary' );
     DynamicLibrary.identify = gcc.dynamic_library_filename;
+    DynamicLibrary.prepare = cc.collect_transitive_dependencies;
     DynamicLibrary.build = gcc.link;
     toolset.DynamicLibrary = DynamicLibrary;
 
     local Executable = FilePrototype( 'Executable' );
     Executable.identify = gcc.executable_filename;
+    Executable.prepare = cc.collect_transitive_dependencies;
     Executable.build = gcc.link;
     toolset.Executable = Executable;
 
@@ -311,54 +314,24 @@ function gcc.append_link_flags( toolset, target, flags )
 end
 
 function gcc.append_libraries( toolset, target, flags )
-    local libraries = gcc.find_transitive_libraries( target );
-    for _, library in ipairs(libraries) do
-        if library.whole_archive then 
-            table.insert( flags, '-Wl,--whole-archive' );
-        end
-        table.insert( flags, ('-l%s'):format(library:id()) );
-        if library.whole_archive then 
-            table.insert( flags, '-Wl,--no-whole-archive' );
-        end
+    for _, dependency in target:dependencies() do
+        local prototype = dependency:prototype();
+        if prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary then
+            local library = dependency;
+            if library.whole_archive then 
+                table.insert( flags, '-Wl,--whole-archive' );
+            end
+            table.insert( flags, ('-l%s'):format(library:id()) );
+            if library.whole_archive then 
+                table.insert( flags, '-Wl,--no-whole-archive' );
+            end
+        end        
     end
 end
 
 function gcc.append_third_party_libraries( toolset, target, flags )
     gcc.append_flags( flags, toolset.settings.libraries, '-l%s' );
     gcc.append_flags( flags, target.libraries, '-l%s' );
-end
-
--- Collect transitive dependencies on static and dynamic libraries.
---
--- Walks immediate dependencies adding static and dynamic libraries to a list
--- of libraries.  Recursively walks the ordering dependencies of any static
--- libraries to collect transitive static library dependencies.  Removes
--- duplicate libraries preserving the most recently added duplicates at the
--- end of the list.
---
--- Returns the list of static libraries to link with this executable.
-function gcc.find_transitive_libraries( target )
-    local toolset = target.toolset;
-    local function yield_recurse_on_library( target )
-        local prototype = target:prototype();
-        local library = prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary;
-        return library, library;
-    end
-
-    local all_libraries = {};
-    local index_by_library = {};
-    for _, dependency in walk_dependencies(target, yield_recurse_on_library) do
-        table.insert( all_libraries, dependency );
-        index_by_library[dependency] = #all_libraries;
-    end
-
-    local libraries = {};
-    for index, library in ipairs(all_libraries) do
-        if index == index_by_library[library] then
-            table.insert( libraries, library );
-        end
-    end
-    return libraries;
 end
 
 return gcc;
