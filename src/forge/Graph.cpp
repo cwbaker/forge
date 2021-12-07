@@ -778,7 +778,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             }
         }
 
-        void print( Target* target, const boost::filesystem::path& directory, int level, bool ordering )
+        void print( Target* target, const boost::filesystem::path& directory, int level )
         {
             SWEET_ASSERT( target );
             SWEET_ASSERT( level >= 0 );
@@ -792,7 +792,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
             std::time_t timestamp = target->timestamp();
             struct tm* time = ::localtime( &timestamp );
-            printf( "'%s' %c%c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %" PRIx64 " %s", 
+            printf( "'%s' %c%c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %" PRIx64 "", 
                 id(target),
                 target->outdated() ? 'O' : 'o',
                 target->changed() ? 'T' : 't',
@@ -806,8 +806,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                 time ? time->tm_hour : 99, 
                 time ? time->tm_min : 99, 
                 time ? time->tm_sec : 99,
-                target->hash(),
-                ordering ? "*" : ""
+                target->hash()
             );
 
             if ( !target->filenames().empty() )
@@ -836,13 +835,13 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
         void print_recursively( Target* target, const boost::filesystem::path& directory, int level )
         {
             ScopedVisit visit( target );
-            print( target, directory, level, false );
+            print( target, directory, level );
             if ( !target->visited() )
             {
                 target->set_visited( true );            
             
                 int i = 0;
-                Target* dependency = target->binding_dependency( i );
+                Target* dependency = target->any_dependency( i );
                 while ( dependency )
                 {
                     if ( !dependency->visiting() )
@@ -856,16 +855,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                         forge->outputf( "Ignoring cyclic dependency from '%s' to '%s' while printing dependencies", target->id().c_str(), dependency->id().c_str() );
                     }
                     ++i;
-                    dependency = target->binding_dependency( i );
-                }
-
-                i = 0;
-                dependency = target->ordering_dependency( i );
-                while ( dependency )
-                {
-                    print( dependency, directory, level + 1, true );
-                    ++i;
-                    dependency = target->ordering_dependency( i );
+                    dependency = target->any_dependency( i );
                 }
             }
         }
