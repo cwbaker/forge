@@ -3,6 +3,8 @@ buildfile "process_test/process_test.forge";
 
 for _, forge in toolsets('cc.*') do
     forge:StaticLibrary '${lib}/process_${architecture}' {
+        '${lib}/assert_${architecture}';
+        '${lib}/cmdline_${architecture}';
         forge:Cxx '${obj}/%1' {
             'Error.cpp',
             'Environment.cpp',

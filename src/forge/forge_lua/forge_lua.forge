@@ -11,6 +11,9 @@ for _, forge in toolsets('cc.*') do
         warning_level = warning_level;
     };
     forge:StaticLibrary '${lib}/forge_lua_${architecture}' {
+        '${lib}/assert_${architecture}';
+        '${lib}/luaxx_${architecture}';
+
         forge:Cxx '${obj}/%1' {
             defines = {
                 'BOOST_ALL_NO_LIB', -- Disable automatic linking to Boost libraries.
