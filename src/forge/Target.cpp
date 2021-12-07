@@ -49,6 +49,7 @@ Target::Target()
   dependencies_(),
   implicit_dependencies_(),
   ordering_dependencies_(),
+  transitive_dependencies_(),
   filenames_(),
   visiting_( false ),
   visited_revision_( 0 ),
@@ -931,6 +932,21 @@ void Target::clear_ordering_dependencies()
     ordering_dependencies_.clear();
 }
 
+void Target::add_transitive_dependency( Target* target )
+{
+    bool able_to_add = target && target != this && !is_dependency( target );
+    if ( able_to_add )
+    {
+        remove_dependency( target );
+        transitive_dependencies_.push_back( target );
+    }
+}
+
+void Target::clear_transitive_dependencies()
+{
+    transitive_dependencies_.clear();
+}
+
 /**
 // Remove a dependency of this Target.
 //
@@ -1020,6 +1036,11 @@ bool Target::is_ordering_dependency( Target* target ) const
     return find( ordering_dependencies_.begin(), ordering_dependencies_.end(), target ) != ordering_dependencies_.end();
 }
 
+bool Target::is_transitive_dependency( Target* target ) const
+{
+    return find( transitive_dependencies_.begin(), transitive_dependencies_.end(), target ) != transitive_dependencies_.end();
+}
+
 /**
 // Is a Target a dependency of this Target?
 //
@@ -1035,7 +1056,8 @@ bool Target::is_dependency( Target* target ) const
     return 
         is_explicit_dependency( target ) ||
         is_implicit_dependency( target ) ||
-        is_ordering_dependency( target )
+        is_ordering_dependency( target ) ||
+        is_transitive_dependency( target )
     ;
 }
 
@@ -1097,6 +1119,26 @@ Target* Target::ordering_dependency( int n ) const
         return ordering_dependencies_[n];
     }
     return NULL;
+}
+
+/**
+// Get the nth transitive dependency of this Target.
+//
+// @param n
+//  The index of the transitive dependency to return (assumed >= 0).
+//
+// @return
+//  The nth transitive dependency of this Target or null if 'n' is outside the
+//  range of transitive dependencies.
+*/
+Target* Target::transitive_dependency( int n ) const
+{
+    SWEET_ASSERT( n >= 0 );
+    if ( n >= 0 && n < int(transitive_dependencies_.size()) )
+    {
+        return transitive_dependencies_[n];
+    }
+    return nullptr;
 }
 
 /**
@@ -1177,7 +1219,13 @@ Target* Target::any_dependency( int n ) const
         return ordering_dependencies_[n];
     }
 
-    return NULL;
+    n -= int(ordering_dependencies_.size());
+    if ( n >= 0 && n < int(transitive_dependencies_.size()) )
+    {
+        return transitive_dependencies_[n];
+    }
+
+    return nullptr;
 }
 
 /**
@@ -1443,7 +1491,7 @@ void Target::write( GraphWriter& writer )
     writer.value( built_ );
     writer.value( filenames_ );
     writer.value( targets_ );
-    writer.refer( implicit_dependencies_ );    
+    writer.refer( implicit_dependencies_ );
 }
 
 /**
@@ -1461,7 +1509,7 @@ void Target::read( GraphReader& reader )
     reader.value( &built_ );
     reader.value( &filenames_ );
     reader.value( &targets_ );
-    reader.refer( &implicit_dependencies_ );    
+    reader.refer( &implicit_dependencies_ );
 }
 
 /**
