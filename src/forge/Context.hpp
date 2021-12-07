@@ -29,7 +29,8 @@ class Context
     std::vector<boost::filesystem::path> directories_; ///< The stack of working directories for this context (the element at the top is the current working directory).
     Job* job_; ///< The current Job for this context.
     int exit_code_; ///< The exit code from the Job that was most recently executed by this context.
-    Context* buildfile_calling_context_; ///< The Context that made a `buildfile()` call and yielded
+    Context* buildfile_calling_context_; ///< The Context that made a `buildfile()` call and yielded.
+    bool prune_; ///< Set true if any Lua script calls `prune()` on a traversal.
 
     public:
         Context( Forge* forge );
@@ -41,7 +42,8 @@ class Context
         Target* working_directory() const;
         Job* job() const;
         int exit_code() const;
-        Context* buildfile_calling_context();
+        Context* buildfile_calling_context() const;
+        bool prune() const;
         boost::filesystem::path absolute( const boost::filesystem::path& path ) const;
         boost::filesystem::path relative( const boost::filesystem::path& path ) const;
 
@@ -54,6 +56,7 @@ class Context
         void set_job( Job* job );
         void set_exit_code( int exit_code );
         void set_buildfile_calling_context( Context* context );
+        void set_prune( bool prune );
 };
 
 }

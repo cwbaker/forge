@@ -34,6 +34,7 @@ private:
     static int print_dependencies( lua_State* lua_state );
     static int print_namespace( lua_State* lua_state );
     static int wait( lua_State* lua_state );
+    static int prune( lua_State* lua_state );
     static int clear( lua_State* lua_state );
     static int load_binary( lua_State* lua_state );
     static int save_binary( lua_State* lua_state );

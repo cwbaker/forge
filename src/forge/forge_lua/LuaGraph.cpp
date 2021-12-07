@@ -54,6 +54,7 @@ void LuaGraph::create( Forge* forge, lua_State* lua_state )
         { "postorder", &LuaGraph::postorder },
         { "print_dependencies", &LuaGraph::print_dependencies },
         { "print_namespace", &LuaGraph::print_namespace },
+        { "prune", &LuaGraph::prune },
         { "wait", &LuaGraph::wait },
         { "clear", &LuaGraph::clear },
         { "load_binary", &LuaGraph::load_binary },
@@ -282,6 +283,14 @@ int LuaGraph::wait( lua_State* lua_state )
     const int FORGE = lua_upvalueindex( 1 );
     Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     forge->scheduler()->wait();
+    return 0;
+}
+
+int LuaGraph::prune( lua_State* lua_state )
+{
+    const int FORGE = lua_upvalueindex( 1 );
+    Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
+    forge->scheduler()->prune();
     return 0;
 }
 
