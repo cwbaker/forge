@@ -1,7 +1,7 @@
 
 for _, forge in toolsets('cc.*') do
     forge:all {
-        forge:StaticLibrary '${lib}/cmdline_test' {
+        forge:StaticLibrary '${lib}/cmdline_test_${architecture}' {
             whole_archive = true;
             
             '${lib}/cmdline_${architecture}';

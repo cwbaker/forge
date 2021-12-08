@@ -17,7 +17,7 @@ for _, cc in toolsets('cc.*') do
     };
     cc:all {
         cc:Executable '${bin}/forge_test' {
-            '${lib}/cmdline_test';
+            '${lib}/cmdline_test_${architecture}';
             '${lib}/forge_${architecture}';
             '${lib}/forge_lua_${architecture}';
             '${lib}/process_${architecture}';
