@@ -272,7 +272,7 @@ The preorder traversal can be pruned by calling the `prune()` function from with
 
 The number of targets that failed because they generated an error during their visit.
 
-### preorder
+### prune
 
 ~~~lua
 function prune()
