@@ -251,6 +251,41 @@ end
 
 The number of targets that failed because they generated an error during their visit.
 
+### preorder
+
+~~~lua
+function preorder( target, visit_function )
+~~~
+
+Perform a preorder traversal of the dependency graph calling *visit_function* for each visited target.
+
+Preorder traversal visits each target before visiting its dependencies.  Targets are visited once per traversal even if they are depended on by more than one target.  Cyclic references are quietly ignored.
+
+The preorder traversal can be pruned by calling the `prune()` function from within the *visit_function* call.  This stops children and descendents of the current target being visited and the traversal continues at the next sibling target.
+
+**Parameters:**
+
+- `target` the target to start the traversal from
+- `visit_function` the function called to visit each target
+
+**Returns:**
+
+The number of targets that failed because they generated an error during their visit.
+
+### preorder
+
+~~~lua
+function prune()
+~~~
+
+Prune preorder traversal at the currently visited target.
+
+Stops children and descendents of the target being visited in a preorder pass and continues the traversal at the next sibling target.  Only valid to call from within the visit function of a preorder traversal.
+
+**Returns:**
+
+Nothing.
+
 ### print_dependencies
 
 ~~~lua
