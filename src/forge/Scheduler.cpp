@@ -46,7 +46,7 @@ Scheduler::Scheduler( Forge* forge )
     SWEET_ASSERT( forge_ );
 }
 
-void Scheduler::load( const boost::filesystem::path& path )
+void Scheduler::load( const std::filesystem::path& path )
 {
     SWEET_ASSERT( path.is_absolute() );
 
@@ -58,7 +58,7 @@ void Scheduler::load( const boost::filesystem::path& path )
     wait();
 }
 
-void Scheduler::script( const boost::filesystem::path& path, const std::string& script )
+void Scheduler::script( const std::filesystem::path& path, const std::string& script )
 {
     if ( !script.empty() )
     {
@@ -71,14 +71,14 @@ void Scheduler::script( const boost::filesystem::path& path, const std::string& 
     }
 }
 
-void Scheduler::command( const boost::filesystem::path& path, const std::string& function )
+void Scheduler::command( const std::filesystem::path& path, const std::string& function )
 {
     call( path, function );
     wait();
     SWEET_ASSERT( buildfile_calls_ == 0 );
 }
 
-int Scheduler::buildfile( const boost::filesystem::path& path )
+int Scheduler::buildfile( const std::filesystem::path& path )
 {
     SWEET_ASSERT( path.is_absolute() );
     SWEET_ASSERT( !active_contexts_.empty() );
@@ -102,7 +102,7 @@ int Scheduler::buildfile( const boost::filesystem::path& path )
     return yielded ? -1 : errors;
 }
 
-void Scheduler::call( const boost::filesystem::path& path, const std::string& function )
+void Scheduler::call( const std::filesystem::path& path, const std::string& function )
 {
     if ( !function.empty() )
     {

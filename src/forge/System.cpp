@@ -44,7 +44,7 @@ System::System()
 */
 bool System::exists( const std::string& path ) const
 {
-    return boost::filesystem::exists( path );
+    return std::filesystem::exists( path );
 }
 
 /**
@@ -58,7 +58,7 @@ bool System::exists( const std::string& path ) const
 */
 bool System::is_file( const std::string& path ) const
 {
-    return boost::filesystem::is_regular( path );
+    return std::filesystem::is_regular_file( path );
 }
 
 /**
@@ -72,7 +72,7 @@ bool System::is_file( const std::string& path ) const
 */
 bool System::is_directory( const std::string& path ) const
 {
-    return boost::filesystem::is_directory( path );
+    return std::filesystem::is_directory( path );
 }
 
 /**
@@ -86,7 +86,7 @@ bool System::is_directory( const std::string& path ) const
 */
 bool System::is_regular( const std::string& path ) const
 {
-    return boost::filesystem::is_regular( path );
+    return std::filesystem::is_regular_file( path );
 }
 
 /**
@@ -98,9 +98,9 @@ bool System::is_regular( const std::string& path ) const
 // @return
 //  The last write time of the file system entry \e path.
 */
-std::time_t System::last_write_time( const std::string& path ) const
+std::filesystem::file_time_type System::last_write_time( const std::string& path ) const
 {
-    return boost::filesystem::last_write_time( path );
+    return std::filesystem::last_write_time( path );
 }
 
 /**
@@ -110,14 +110,14 @@ std::time_t System::last_write_time( const std::string& path ) const
 //  The directory to list files in.
 //
 // @return
-//  A boost::filesystem::directory_iterator that iterates over the files
+//  A std::filesystem::directory_iterator that iterates over the files
 //  in the directory.
 */
-boost::filesystem::directory_iterator System::ls( const std::string& path ) const
+std::filesystem::directory_iterator System::ls( const std::string& path ) const
 {
-    return boost::filesystem::exists( path ) ? 
-        boost::filesystem::directory_iterator( path ) : 
-        boost::filesystem::directory_iterator()
+    return std::filesystem::exists( path ) ? 
+        std::filesystem::directory_iterator( path ) : 
+        std::filesystem::directory_iterator()
     ;
 }
 
@@ -128,14 +128,14 @@ boost::filesystem::directory_iterator System::ls( const std::string& path ) cons
 //  The directory to list files in.
 //
 // @return
-//  A boost::filesystem::recursive_directory_iterator that recursively 
+//  A std::filesystem::recursive_directory_iterator that recursively 
 //  iterates over the files in the directory and its children.
 */
-boost::filesystem::recursive_directory_iterator System::find( const std::string& path ) const
+std::filesystem::recursive_directory_iterator System::find( const std::string& path ) const
 {
-    return boost::filesystem::exists( path ) ? 
-        boost::filesystem::recursive_directory_iterator( path ) : 
-        boost::filesystem::recursive_directory_iterator()
+    return std::filesystem::exists( path ) ? 
+        std::filesystem::recursive_directory_iterator( path ) : 
+        std::filesystem::recursive_directory_iterator()
     ;
 }
 
@@ -165,7 +165,7 @@ std::string System::executable() const
             // path.  Skipping over it works for now but is probably the wrong
             // thing in many cases.
             const char* linked_path_without_extended_length_prefix = linked_path + 4;
-            return boost::filesystem::path( string(linked_path_without_extended_length_prefix, linked_size - 4) ).generic_string();
+            return std::filesystem::path( string(linked_path_without_extended_length_prefix, linked_size - 4) ).generic_string();
         }
     }
     return std::string();
@@ -178,13 +178,13 @@ std::string System::executable() const
     int linked_size = readlink( executable_path, linked_path, sizeof(linked_path) - 1 );
     if ( linked_size == -1 && errno == EINVAL )
     {
-        return boost::filesystem::path( string(executable_path, size) ).generic_string();
+        return std::filesystem::path( string(executable_path, size) ).generic_string();
     }
     else if ( linked_size >= 0 )
     {
         SWEET_ASSERT( linked_size >= 0 && linked_size < int(sizeof(linked_path)) );
         linked_path[linked_size] = 0;
-        return boost::filesystem::path( string(linked_path, linked_size) ).generic_string();
+        return std::filesystem::path( string(linked_path, linked_size) ).generic_string();
     }
     return std::string();
 #elif defined(BUILD_OS_LINUX)
@@ -192,7 +192,7 @@ std::string System::executable() const
     ssize_t length = readlink( "/proc/self/exe", path, sizeof(path) );
     if ( length >= 0 )
     {
-        return boost::filesystem::path( string(path, length) ).generic_string();
+        return std::filesystem::path( string(path, length) ).generic_string();
     }
     return string();
 #else
@@ -216,7 +216,7 @@ std::string System::home() const
 #endif
     
     const char* home = ::getenv( HOME );
-    return home ? boost::filesystem::path( string(home) ).generic_string() : string();
+    return home ? std::filesystem::path( string(home) ).generic_string() : string();
 }
 
 /**
@@ -227,7 +227,7 @@ std::string System::home() const
 */
 void System::mkdir( const std::string& path ) const
 {
-    boost::filesystem::create_directories( path );
+    std::filesystem::create_directories( path );
 }
 
 /**
@@ -238,7 +238,7 @@ void System::mkdir( const std::string& path ) const
 */
 void System::rmdir( const std::string& path ) const
 {
-    boost::filesystem::remove_all( path );
+    std::filesystem::remove_all( path );
 }
 
 /**
@@ -252,7 +252,7 @@ void System::rmdir( const std::string& path ) const
 */
 void System::cp( const std::string& from, const std::string& to ) const
 {
-    boost::filesystem::copy_file( from, to );
+    std::filesystem::copy_file( from, to );
 }
 
 /**
@@ -263,7 +263,7 @@ void System::cp( const std::string& from, const std::string& to ) const
 */
 void System::rm( const std::string& path ) const
 {
-    boost::filesystem::remove( path );
+    std::filesystem::remove( path );
 }
 
 /**

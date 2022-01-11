@@ -64,6 +64,11 @@ void GraphWriter::value( const char* value, size_t size )
     ostream_->write( value, size );
 }
 
+void GraphWriter::value( const std::filesystem::file_time_type& time )
+{
+    value( reinterpret_cast<const char*>(&time), sizeof(time) );
+}
+
 void GraphWriter::value( const std::vector<std::string>& values )
 {
     size_t length = values.size();

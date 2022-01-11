@@ -1,7 +1,7 @@
 #ifndef FORGE_FORGE_HPP_INCLUDED
 #define FORGE_FORGE_HPP_INCLUDED
 
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -46,10 +46,10 @@ class Forge
     Graph* graph_; ///< The dependency graph of targets used to determine which targets are outdated.
     Scheduler* scheduler_; ///< The scheduler that schedules environments to process jobs in the dependency graph.
     Executor* executor_; ///< The executor that schedules threads to process commands.
-    boost::filesystem::path root_directory_; ///< The full path to the root directory.
-    boost::filesystem::path initial_directory_; ///< The full path to the initial directory.
-    boost::filesystem::path home_directory_; ///< The full path to the user's home directory.
-    boost::filesystem::path executable_directory_; ///< The full path to the build executable directory.
+    std::filesystem::path root_directory_; ///< The full path to the root directory.
+    std::filesystem::path initial_directory_; ///< The full path to the initial directory.
+    std::filesystem::path home_directory_; ///< The full path to the user's home directory.
+    std::filesystem::path executable_directory_; ///< The full path to the build executable directory.
     bool stack_trace_enabled_; ///< Print stack traces on error when true.
 
     public:
@@ -65,16 +65,16 @@ class Forge
         Context* context() const;
         lua_State* lua_state() const;
 
-        const boost::filesystem::path& root() const;
-        boost::filesystem::path root( const boost::filesystem::path& path ) const;
-        const boost::filesystem::path& initial() const;
-        boost::filesystem::path initial( const boost::filesystem::path& path ) const;
-        const boost::filesystem::path& home() const;
-        boost::filesystem::path home( const boost::filesystem::path& path ) const;
-        const boost::filesystem::path& executable() const;
-        boost::filesystem::path executable( const boost::filesystem::path& path ) const;
-        boost::filesystem::path absolute( const boost::filesystem::path& path ) const;
-        boost::filesystem::path relative( const boost::filesystem::path& path ) const;
+        const std::filesystem::path& root() const;
+        std::filesystem::path root( const std::filesystem::path& path ) const;
+        const std::filesystem::path& initial() const;
+        std::filesystem::path initial( const std::filesystem::path& path ) const;
+        const std::filesystem::path& home() const;
+        std::filesystem::path home( const std::filesystem::path& path ) const;
+        const std::filesystem::path& executable() const;
+        std::filesystem::path executable( const std::filesystem::path& path ) const;
+        std::filesystem::path absolute( const std::filesystem::path& path ) const;
+        std::filesystem::path relative( const std::filesystem::path& path ) const;
 
         void set_stack_trace_enabled( bool stack_trace_enabled );
         bool stack_trace_enabled() const;

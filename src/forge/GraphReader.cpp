@@ -100,6 +100,11 @@ void GraphReader::value( char* value, size_t size )
     istream_->read( value, size );
 }
 
+void GraphReader::value( std::filesystem::file_time_type* time )
+{
+    value( reinterpret_cast<char*>(time), sizeof(*time) );
+}
+
 void GraphReader::value( std::vector<std::string>* values )
 {
     size_t length = 0;

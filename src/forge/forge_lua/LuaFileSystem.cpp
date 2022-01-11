@@ -11,14 +11,14 @@
 #include <lua.hpp>
 
 using std::string;
-using boost::filesystem::directory_iterator;
-using boost::filesystem::recursive_directory_iterator;
+using std::filesystem::directory_iterator;
+using std::filesystem::recursive_directory_iterator;
 using namespace sweet;
 using namespace sweet::luaxx;
 using namespace sweet::forge;
 
-static const char* DIRECTORY_ITERATOR_METATABLE = "boost::filesystem::directory_iterator";
-static const char* RECURSIVE_DIRECTORY_ITERATOR_METATABLE = "boost::filesystem::recursive_directory_iterator";
+static const char* DIRECTORY_ITERATOR_METATABLE = "std::filesystem::directory_iterator";
+static const char* RECURSIVE_DIRECTORY_ITERATOR_METATABLE = "std::filesystem::recursive_directory_iterator";
 
 LuaFileSystem::LuaFileSystem()
 : lua_state_( NULL )
@@ -90,31 +90,31 @@ void LuaFileSystem::destroy()
 int LuaFileSystem::exists( lua_State* lua_state )
 {
     const int PATH = 1;
-    boost::filesystem::path path = absolute( lua_state, PATH );
-    lua_pushboolean( lua_state, boost::filesystem::exists(path) ? 1 : 0 );
+    std::filesystem::path path = absolute( lua_state, PATH );
+    lua_pushboolean( lua_state, std::filesystem::exists(path) ? 1 : 0 );
     return 1;
 }
 
 int LuaFileSystem::is_file( lua_State* lua_state )
 {
     const int PATH = 1;
-    boost::filesystem::path path = absolute( lua_state, PATH );
-    lua_pushboolean( lua_state, boost::filesystem::is_regular_file(path) ? 1 : 0 );
+    std::filesystem::path path = absolute( lua_state, PATH );
+    lua_pushboolean( lua_state, std::filesystem::is_regular_file(path) ? 1 : 0 );
     return 1;
 }
 
 int LuaFileSystem::is_directory( lua_State* lua_state )
 {
     const int PATH = 1;
-    boost::filesystem::path path = absolute( lua_state, PATH );
-    lua_pushboolean( lua_state, boost::filesystem::is_directory(path) ? 1 : 0 );
+    std::filesystem::path path = absolute( lua_state, PATH );
+    lua_pushboolean( lua_state, std::filesystem::is_directory(path) ? 1 : 0 );
     return 1;
 }
 
 int LuaFileSystem::ls( lua_State* lua_state )
 {
     const int PATH = 1;
-    boost::filesystem::path path = absolute( lua_state, PATH );
+    std::filesystem::path path = absolute( lua_state, PATH );
     LuaFileSystem::push_directory_iterator( lua_state, directory_iterator(path) );
     lua_pushcclosure( lua_state, &LuaFileSystem::ls_iterator, 1 );
     return 1;
@@ -123,7 +123,7 @@ int LuaFileSystem::ls( lua_State* lua_state )
 int LuaFileSystem::find( lua_State* lua_state )
 {
     const int PATH = 1;
-    boost::filesystem::path path = absolute( lua_state, PATH );
+    std::filesystem::path path = absolute( lua_state, PATH );
     LuaFileSystem::push_recursive_directory_iterator( lua_state, recursive_directory_iterator(path) );
     lua_pushcclosure( lua_state, &LuaFileSystem::find_iterator, 1 );
     return 1;
@@ -132,16 +132,16 @@ int LuaFileSystem::find( lua_State* lua_state )
 int LuaFileSystem::mkdir( lua_State* lua_state )
 {
     const int PATH = 1;
-    boost::filesystem::path path = absolute( lua_state, PATH );
-    boost::filesystem::create_directories( path );
+    std::filesystem::path path = absolute( lua_state, PATH );
+    std::filesystem::create_directories( path );
     return 0;
 }
 
 int LuaFileSystem::rmdir( lua_State* lua_state )
 {
     const int PATH = 1;
-    boost::filesystem::path path = absolute( lua_state, PATH );
-    boost::filesystem::remove_all( path );
+    std::filesystem::path path = absolute( lua_state, PATH );
+    std::filesystem::remove_all( path );
     return 0;
 }
 
@@ -149,25 +149,25 @@ int LuaFileSystem::cp( lua_State* lua_state )
 {
     const int TO = 1;
     const int FROM = 2;
-    boost::filesystem::path to = absolute( lua_state, TO );
-    boost::filesystem::path from = absolute( lua_state, FROM );
-    boost::filesystem::copy_file( from, to );
+    std::filesystem::path to = absolute( lua_state, TO );
+    std::filesystem::path from = absolute( lua_state, FROM );
+    std::filesystem::copy_file( from, to );
     return 0;
 }
 
 int LuaFileSystem::rm( lua_State* lua_state )
 {
     const int PATH = 1;
-    boost::filesystem::path path = absolute( lua_state, PATH );
-    boost::filesystem::remove( path );
+    std::filesystem::path path = absolute( lua_state, PATH );
+    std::filesystem::remove( path );
     return 0;
 }
 
 int LuaFileSystem::touch( lua_State* lua_state )
 {
     const int PATH = 1;
-    boost::filesystem::path path = absolute( lua_state, PATH );
-    boost::filesystem::last_write_time( path, std::time(nullptr) );
+    std::filesystem::path path = absolute( lua_state, PATH );
+    std::filesystem::last_write_time( path, std::filesystem::file_time_type::clock::now() );
     return 0;
 }
 
@@ -177,7 +177,7 @@ int LuaFileSystem::ls_iterator( lua_State* lua_state )
     directory_iterator end;
     if ( iterator != end )
     {
-        const boost::filesystem::directory_entry& entry = *iterator;
+        const std::filesystem::directory_entry& entry = *iterator;
         lua_pushlstring( lua_state, entry.path().string().c_str(), entry.path().string().length() );
         ++iterator;
         return 1;
@@ -185,7 +185,7 @@ int LuaFileSystem::ls_iterator( lua_State* lua_state )
     return 0;
 }
 
-void LuaFileSystem::push_directory_iterator( lua_State* lua_state, const boost::filesystem::directory_iterator& iterator )
+void LuaFileSystem::push_directory_iterator( lua_State* lua_state, const std::filesystem::directory_iterator& iterator )
 {
     directory_iterator* other_iterator = (directory_iterator*) lua_newuserdata( lua_state, sizeof(directory_iterator) );
     new (other_iterator) directory_iterator( iterator );
@@ -193,7 +193,7 @@ void LuaFileSystem::push_directory_iterator( lua_State* lua_state, const boost::
     lua_setmetatable( lua_state, -2 );
 }
 
-boost::filesystem::directory_iterator* LuaFileSystem::to_directory_iterator( lua_State* lua_state, int index )
+std::filesystem::directory_iterator* LuaFileSystem::to_directory_iterator( lua_State* lua_state, int index )
 {
     directory_iterator* iterator = (directory_iterator*) luaL_checkudata( lua_state, index, DIRECTORY_ITERATOR_METATABLE );
     luaL_argcheck( lua_state, iterator != NULL, index, "directory iterator expected" );
@@ -214,7 +214,7 @@ int LuaFileSystem::find_iterator( lua_State* lua_state )
     recursive_directory_iterator end;
     if ( iterator != end )
     {
-        const boost::filesystem::directory_entry& entry = *iterator;
+        const std::filesystem::directory_entry& entry = *iterator;
         lua_pushlstring( lua_state, entry.path().string().c_str(), entry.path().string().length() );
         ++iterator;
         return 1;
@@ -222,7 +222,7 @@ int LuaFileSystem::find_iterator( lua_State* lua_state )
     return 0;
 }
 
-void LuaFileSystem::push_recursive_directory_iterator( lua_State* lua_state, const boost::filesystem::recursive_directory_iterator& iterator )
+void LuaFileSystem::push_recursive_directory_iterator( lua_State* lua_state, const std::filesystem::recursive_directory_iterator& iterator )
 {
     recursive_directory_iterator* other_iterator = (recursive_directory_iterator*) lua_newuserdata( lua_state, sizeof(recursive_directory_iterator) );
     new (other_iterator) recursive_directory_iterator( iterator );
@@ -230,7 +230,7 @@ void LuaFileSystem::push_recursive_directory_iterator( lua_State* lua_state, con
     lua_setmetatable( lua_state, -2 );
 }
 
-boost::filesystem::recursive_directory_iterator* LuaFileSystem::to_recursive_directory_iterator( lua_State* lua_state, int index )
+std::filesystem::recursive_directory_iterator* LuaFileSystem::to_recursive_directory_iterator( lua_State* lua_state, int index )
 {
     recursive_directory_iterator* iterator = (recursive_directory_iterator*) luaL_checkudata( lua_state, index, DIRECTORY_ITERATOR_METATABLE );
     luaL_argcheck( lua_state, iterator != NULL, index, "directory iterator expected" );
@@ -245,7 +245,7 @@ int LuaFileSystem::recursive_directory_iterator_gc( lua_State* lua_state )
     return 0;
 }
 
-boost::filesystem::path LuaFileSystem::absolute( lua_State* lua_state, int index )
+std::filesystem::path LuaFileSystem::absolute( lua_State* lua_state, int index )
 {
     const int FORGE = lua_upvalueindex( 1 );
     size_t length = 0;

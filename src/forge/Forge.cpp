@@ -53,7 +53,7 @@ Forge::Forge( const std::string& initial_directory, error::ErrorPolicy& error_po
   executable_directory_(),
   stack_trace_enabled_( false )
 {
-    SWEET_ASSERT( boost::filesystem::path(initial_directory).is_absolute() );
+    SWEET_ASSERT( std::filesystem::path(initial_directory).is_absolute() );
 
     root_directory_ = make_drive_uppercase( initial_directory );
     initial_directory_ = make_drive_uppercase( initial_directory );
@@ -185,84 +185,76 @@ lua_State* Forge::lua_state() const
     return lua_->lua_state();
 }
 
-const boost::filesystem::path& Forge::root() const
+const std::filesystem::path& Forge::root() const
 {
     return root_directory_;
 }
 
-boost::filesystem::path Forge::root( const boost::filesystem::path& path ) const
+std::filesystem::path Forge::root( const std::filesystem::path& path ) const
 {
-    if ( boost::filesystem::path(path).is_absolute() )
+    if ( std::filesystem::path(path).is_absolute() )
     {
         return path;
     }
 
-    boost::filesystem::path absolute_path( root_directory_ );
-    absolute_path /= path;
-    absolute_path.normalize();
-    return absolute_path;
+    std::filesystem::path absolute_path( root_directory_ / path );
+    return absolute_path.lexically_normal();
 }
 
-const boost::filesystem::path& Forge::initial() const
+const std::filesystem::path& Forge::initial() const
 {
     return initial_directory_;
 }
 
-boost::filesystem::path Forge::initial( const boost::filesystem::path& path ) const
+std::filesystem::path Forge::initial( const std::filesystem::path& path ) const
 {
-    if ( boost::filesystem::path(path).is_absolute() )
+    if ( std::filesystem::path(path).is_absolute() )
     {
         return path;
     }
 
-    boost::filesystem::path absolute_path( initial_directory_ );
-    absolute_path /= path;
-    absolute_path.normalize();
-    return absolute_path;
+    std::filesystem::path absolute_path( initial_directory_ / path );
+    return absolute_path.lexically_normal();
 }
 
-const boost::filesystem::path& Forge::home() const
+const std::filesystem::path& Forge::home() const
 {
     return home_directory_;
 }
 
-boost::filesystem::path Forge::home( const boost::filesystem::path& path ) const
+std::filesystem::path Forge::home( const std::filesystem::path& path ) const
 {
-    if ( boost::filesystem::path(path).is_absolute() )
+    if ( std::filesystem::path(path).is_absolute() )
     {
         return path;
     }
 
-    boost::filesystem::path absolute_path( home_directory_ );
-    absolute_path /= path;
-    absolute_path.normalize();
-    return absolute_path;
+    std::filesystem::path absolute_path( home_directory_ / path );
+    return absolute_path.lexically_normal();
 }
 
-const boost::filesystem::path& Forge::executable() const
+const std::filesystem::path& Forge::executable() const
 {
     return executable_directory_;
 }
 
-boost::filesystem::path Forge::executable( const boost::filesystem::path& path ) const
+std::filesystem::path Forge::executable( const std::filesystem::path& path ) const
 {
-    if ( boost::filesystem::path(path).is_absolute() )
+    if ( std::filesystem::path(path).is_absolute() )
     {
         return path;
     }
     
-    boost::filesystem::path absolute_path( executable_directory_ );
-    absolute_path /= path;
-    absolute_path.normalize();
-    return absolute_path;
+    std::filesystem::path absolute_path( executable_directory_ / path );
+    return absolute_path.lexically_normal();
 }
 
-boost::filesystem::path Forge::absolute( const boost::filesystem::path& path ) const
+std::filesystem::path Forge::absolute( const std::filesystem::path& path ) const
 {
     return context()->absolute( path );
 }
 
-boost::filesystem::path Forge::relative( const boost::filesystem::path& path ) const
+std::filesystem::path Forge::relative( const std::filesystem::path& path ) const
 {
     return context()->relative( path );
 }
@@ -391,7 +383,7 @@ void Forge::set_package_path( const std::string& path )
 void Forge::execute( const std::string& filename, const std::string& command )
 {
     error_policy_.push_errors();
-    boost::filesystem::path path( root_directory_ / filename );    
+    std::filesystem::path path( root_directory_ / filename );    
     scheduler_->load( path );
     int errors = error_policy_.pop_errors();
     if ( errors == 0 )
@@ -409,7 +401,7 @@ void Forge::execute( const std::string& filename, const std::string& command )
 void Forge::file( const std::string& filename )
 {
     error_policy_.push_errors();
-    boost::filesystem::path path( root_directory_ / filename );    
+    std::filesystem::path path( root_directory_ / filename );    
     scheduler_->load( path );
     error_policy_.pop_errors();
 }

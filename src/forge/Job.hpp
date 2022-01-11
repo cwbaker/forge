@@ -1,8 +1,6 @@
 #ifndef FORGE_JOB_HPP_INCLUDED
 #define FORGE_JOB_HPP_INCLUDED
 
-#include <string>
-
 namespace sweet
 {
 

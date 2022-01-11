@@ -1,6 +1,7 @@
 #ifndef FORGE_GRAPHREADER_HPP_INCLUDED
 #define FORGE_GRAPHREADER_HPP_INCLUDED
 
+#include <filesystem>
 #include <map>
 #include <vector>
 #include <string>
@@ -41,6 +42,7 @@ public:
     void value( std::time_t* value );
     void value( std::string* value );
     void value( char* value, size_t size );
+    void value( std::filesystem::file_time_type* time );
     void value( std::vector<std::string>* values );
     void value( std::vector<Target*>* values );
     void refer( std::vector<Target*>* references );

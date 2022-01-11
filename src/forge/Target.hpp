@@ -1,9 +1,9 @@
 #ifndef FORGE_TARGET_HPP_INCLUDED
 #define FORGE_TARGET_HPP_INCLUDED
 
-#include <ctime>
 #include <string>
 #include <vector>
+#include <filesystem>
 #include <stdint.h>
 
 namespace sweet
@@ -28,8 +28,8 @@ class Target
     mutable std::string branch_; ///< The branch path to this Target in the Target namespace.
     Graph* graph_; ///< The Graph that this Target is part of.
     TargetPrototype* prototype_; ///< The TargetPrototype for this Target or null if this Target has no TargetPrototype.
-    std::time_t timestamp_; ///< The timestamp for this Target.
-    std::time_t last_write_time_; ///< The last write time of the file that this Target is bound to.
+    std::filesystem::file_time_type timestamp_; ///< The timestamp for this Target.
+    std::filesystem::file_time_type last_write_time_; ///< The last write time of the file that this Target is bound to.
     uint64_t hash_; ///< The hash for this Target the last time that it was built.
     uint64_t pending_hash_; ///< The hash for this Target when it was created in the current run.
     bool outdated_; ///< Whether or not this Target is out of date.
@@ -84,9 +84,9 @@ class Target
         void set_built( bool built );
         bool built() const;
 
-        void set_timestamp( std::time_t timestamp );
-        std::time_t timestamp() const;
-        std::time_t last_write_time() const;
+        void set_timestamp( std::filesystem::file_time_type timestamp );
+        std::filesystem::file_time_type timestamp() const;
+        std::filesystem::file_time_type last_write_time() const;
 
         void set_outdated( bool outdated );
         bool outdated() const;

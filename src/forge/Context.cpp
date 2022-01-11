@@ -65,7 +65,7 @@ lua_State* Context::lua_state() const
 // @return
 //  The current working directory.
 */
-const boost::filesystem::path& Context::directory() const
+const std::filesystem::path& Context::directory() const
 {
     SWEET_ASSERT( !directories_.empty() );
     return directories_.back();
@@ -134,7 +134,7 @@ bool Context::prune() const
 //  The absolute path created by prepending the working directory to 
 //  \e path.
 */
-boost::filesystem::path Context::absolute( const boost::filesystem::path& path ) const
+std::filesystem::path Context::absolute( const std::filesystem::path& path ) const
 {
     return sweet::forge::absolute( path, directory() );
 }
@@ -145,7 +145,7 @@ boost::filesystem::path Context::absolute( const boost::filesystem::path& path )
 // @return
 //  The path to \e path expressed relative to the working directory.
 */
-boost::filesystem::path Context::relative( const boost::filesystem::path& path ) const
+std::filesystem::path Context::relative( const std::filesystem::path& path ) const
 {
     if ( path.is_relative() )
     {
@@ -177,7 +177,7 @@ void Context::reset_directory_to_target( Target* directory )
 //  The directory to set the working directory stack to contain (assumed
 //  to be absolute or empty).
 */
-void Context::reset_directory( const boost::filesystem::path& directory )
+void Context::reset_directory( const std::filesystem::path& directory )
 {
     SWEET_ASSERT( directory.empty() || directory.is_absolute() );
     directories_.clear();
@@ -195,7 +195,7 @@ void Context::reset_directory( const boost::filesystem::path& directory )
 // @param directory
 //  The directory to change the current working directory to.
 */
-void Context::change_directory( const boost::filesystem::path& directory )
+void Context::change_directory( const std::filesystem::path& directory )
 {
     SWEET_ASSERT( !directories_.empty() );
 
@@ -205,8 +205,8 @@ void Context::change_directory( const boost::filesystem::path& directory )
     }
     else
     {
-        directories_.back() /= directory;
-        directories_.back().normalize();
+        std::filesystem::path working_directory = directories_.back() / directory;
+        directories_.back() = working_directory.lexically_normal();
     }
 
     working_directory_ = forge_->graph()->target( directories_.back().string() );
@@ -225,7 +225,7 @@ void Context::change_directory( const boost::filesystem::path& directory )
 // @param directory
 //  The directory to change the current working directory to.
 */
-void Context::push_directory( const boost::filesystem::path& directory )
+void Context::push_directory( const std::filesystem::path& directory )
 {
     SWEET_ASSERT( !directories_.empty() );
 
@@ -235,8 +235,8 @@ void Context::push_directory( const boost::filesystem::path& directory )
     }
     else
     {
-        directories_.push_back( directories_.back() / directory );
-        directories_.back().normalize();
+        std::filesystem::path working_directory = directories_.back() / directory;
+        directories_.push_back( working_directory.lexically_normal() );
     }
 
     working_directory_ = forge_->graph()->target( directories_.back().string() );

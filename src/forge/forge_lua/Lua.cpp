@@ -19,7 +19,7 @@
 #include <string>
 
 using std::string;
-using boost::filesystem::path;
+using std::filesystem::path;
 using namespace sweet;
 using namespace sweet::luaxx;
 using namespace sweet::forge;
