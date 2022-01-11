@@ -40,7 +40,7 @@ local cc = require 'forge.cc' {
     runtime_library = variant == 'debug' and 'static_debug' or 'static_release';
     run_time_type_info = true;
     stack_size = 1048576;
-    standard = 'c++11';
+    standard = 'c++17';
     string_pooling = variant == 'shipping';
     strip = false;
     warning_level = 3;
