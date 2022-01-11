@@ -12,6 +12,7 @@
 #include "System.hpp"
 #include <assert/assert.hpp>
 #include <algorithm>
+#include <limits>
 
 using std::min;
 using std::max;
