@@ -10,6 +10,7 @@ local function print_executions()
     for _, execution in ipairs(executions) do
         printf( '%s', execution );
     end
+    printf( '\n\n' );
 end
 
 local function execute( command, command_line )
@@ -27,20 +28,27 @@ local function dependency_graph( toolset )
             'baz';
             toolset:StaticLibrary 'bar' {
                 toolset:StaticLibrary 'baz' {
-                    'baz.o';
+                    toolset:Cc 'baz.o' {
+                        'baz.c';
+                    };
                 };
-                toolset:Cc 'bar' {
+                toolset:Cc 'bar.o' {
                     'bar.c';
                 };
             };
-            'foo.o';
+            toolset:Cc 'foo.o' {
+                'foo.c';
+            };
         };
-        'exe.o';
+        toolset:Cc 'exe.o' {
+            'exe.c';
+        };
     };
     clear_executions();
     _G.execute = execute;
     _G.printf = printf;
-    _G.goal = exe;
+    _G.find_initial_target = function() return exe end;
+    _G.goal = tostring( exe );
     build();
     forge:save();
     return exe;
@@ -48,48 +56,60 @@ end
 
 remove( absolute('.forge') );
 
-if operating_system() ~= 'windows' then
+if operating_system() == 'linux' then
     require 'forge';
-    local cc = require 'forge.cc.gcc' {};
+    local cc = require 'forge.cc' {};
 
-    create( absolute('baz.o'), 1 );
+    create( absolute('baz.o.o'), 1 );
     create( absolute('libbaz.a'), 1 );
     create( absolute('bar.c'), 1 );
-    create( absolute('bar.o'), 1 );
+    create( absolute('bar.o.o'), 1 );
     create( absolute('libbar.a'), 1 );
-    create( absolute('foo.o'), 1 );
+    create( absolute('foo.o.o'), 1 );
     create( absolute('libfoo.a'), 1 );
-    create( absolute('exe.o'), 1 );
+    create( absolute('exe.o.o'), 1 );
     create( absolute('exe'), 1 );
 
     local exe = dependency_graph( cc );
-    local libraries = cc.find_transitive_libraries( exe );
-    CHECK( libraries[1] == find_target('foo') );
-    CHECK( libraries[2] == find_target('bar') );
-    CHECK( libraries[3] == find_target('baz') );
-    CHECK( find_initial_target(exe) == exe );
-    CHECK( #executions == 5 );
-    CHECK( executions[1]:find('ar') );
-    CHECK( executions[2]:find('gcc') );
-    CHECK( executions[3]:find('ar') );
-    CHECK( executions[4]:find('ar') );
-    CHECK( executions[5]:find('g++') );
+    CHECK( find_initial_target() == exe );
+    CHECK( #executions == 8 );
+    CHECK( executions[1] and executions[1]:find('gcc') );
+    CHECK( executions[2] and executions[2]:find('gcc') );
+    CHECK( executions[3] and executions[3]:find('ar') );
+    CHECK( executions[4] and executions[4]:find('gcc') );
+    CHECK( executions[5] and executions[5]:find('ar') );
+    CHECK( executions[6] and executions[6]:find('ar') );
+    CHECK( executions[7] and executions[7]:find('gcc') );
+    CHECK( executions[8] and executions[8]:find('g++') );
 
     touch( absolute('bar.c'), 2 );
 
     local exe = dependency_graph( cc );
-    CHECK( #executions == 3 );
-    CHECK( executions[1]:find('gcc') );
-    CHECK( executions[2]:find('ar') );
-    CHECK( executions[3]:find('g++') );
+    CHECK( #executions == 8 );
+    CHECK( executions[1] and executions[1]:find('gcc') );
+    CHECK( executions[2] and executions[2]:find('gcc') );
+    CHECK( executions[3] and executions[3]:find('ar') );
+    CHECK( executions[4] and executions[4]:find('gcc') );
+    CHECK( executions[5] and executions[5]:find('ar') );
+    CHECK( executions[6] and executions[6]:find('ar') );
+    CHECK( executions[7] and executions[7]:find('gcc') );
+    CHECK( executions[8] and executions[8]:find('g++') );
 
-    touch( absolute('bar.o'), 2 );
+    touch( absolute('bar.o.o'), 2 );
+    touch( absolute('baz.o.o'), 2 );
+    touch( absolute('foo.o.o'), 2 );
     touch( absolute('libbar.a'), 2 );
     touch( absolute('libfoo.a'), 2 );
     touch( absolute('exe'), 2 );
 
     local exe = dependency_graph( cc );
-    CHECK( #executions == 0 );
+    CHECK( #executions == 6 );
+    CHECK( executions[1] and executions[1]:find('gcc') );
+    CHECK( executions[2] and executions[2]:find('gcc') );
+    CHECK( executions[3] and executions[3]:find('ar') );
+    CHECK( executions[4] and executions[4]:find('ar') );
+    CHECK( executions[5] and executions[5]:find('gcc') );
+    CHECK( executions[6] and executions[6]:find('g++') );
 
     remove( absolute('.forge') );
 end
