@@ -5,20 +5,21 @@
 #include <boost/filesystem/operations.hpp>
 #include <fstream>
 
+using std::string;
 using std::vector;
 using namespace sweet::forge;
 
 FileChecker::FileChecker()
-: ErrorChecker(),
-  files_()
+: ErrorChecker()
+, files_()
 {
 }
 
 FileChecker::~FileChecker()
 {
-    for ( vector<const char*>::const_iterator i = files_.begin(); i != files_.end(); ++i )
+    for ( vector<string>::const_iterator i = files_.begin(); i != files_.end(); ++i )
     {
-        const char* filename = *i;
+        const char* filename = i->c_str();
         boost::filesystem::remove( filename );
     }
     files_.clear();
@@ -33,7 +34,7 @@ void FileChecker::create( const char* filename, const char* content, std::time_t
     std::ofstream file( filename );
     file.write( content, strlen(content) );
     file.close();
-    files_.push_back( filename );
+    files_.push_back( string(filename) );
 
     if ( last_write_time != 0 )
     {

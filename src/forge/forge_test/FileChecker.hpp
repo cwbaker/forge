@@ -1,8 +1,8 @@
-
 #ifndef FILE_CHECKER_HPP_INCLUDED
 #define FILE_CHECKER_HPP_INCLUDED
 
 #include "ErrorChecker.hpp"
+#include <string>
 #include <vector>
 #include <ctime>
 
@@ -14,7 +14,7 @@ namespace forge
 
 struct FileChecker : public ErrorChecker
 {
-    std::vector<const char*> files_;
+    std::vector<std::string> files_;
     
     FileChecker();
     ~FileChecker();
