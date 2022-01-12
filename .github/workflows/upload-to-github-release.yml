@@ -2,7 +2,7 @@ name: Upload to Github Release
 
 on:
   release:
-    types: [ published ]
+    types: [ created ]
 
 jobs:
   upload:
