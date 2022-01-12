@@ -362,28 +362,26 @@ int Scheduler::preorder( Target* target, int function )
             if ( !target->visited() )
             {
                 ScopedVisit scoped_visit( target );
-
-                int i = 0;
-                Target* dependency = target->any_dependency( i );
-                while ( dependency )
+                if ( scheduler_->preorder_visit(function_, target) )
                 {
-                    if ( !dependency->visiting() )
+                    int i = 0;
+                    Target* dependency = target->any_dependency( i );
+                    while ( dependency )
                     {
-                        if ( scheduler_->preorder_visit(function_, dependency) )
+                        if ( !dependency->visiting() )
                         {
                             visit( dependency );
                         }
+                        else
+                        {
+                            forge_->errorf( "Cyclic dependency from %s to %s in preorder", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
+                            dependency->set_successful( true );
+                            ++failures_;
+                        }
+                        ++i;
+                        dependency = target->any_dependency( i );
                     }
-                    else
-                    {
-                        forge_->errorf( "Cyclic dependency from %s to %s in preorder", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
-                        dependency->set_successful( true );
-                        ++failures_;
-                    }
-                    ++i;
-                    dependency = target->any_dependency( i );
                 }
-
                 target->set_successful( true );
             }
         }
