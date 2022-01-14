@@ -359,7 +359,7 @@ int Scheduler::preorder( Target* target, int function )
         {
             SWEET_ASSERT( target );
 
-            if ( !target->visited() )
+            if ( target->referenced_by_script() && target->working_directory() && !target->visited() )
             {
                 ScopedVisit scoped_visit( target );
                 if ( scheduler_->preorder_visit(function_, target) )
