@@ -93,14 +93,18 @@ end
 
 -- Provide global dependencies command.
 function dependencies()
-    print_dependencies( find_initial_target(goal) );
-    return 0;
+    local target = find_initial_target( goal );
+    local failures = prepare( target );
+    print_dependencies( target );
+    return failures;
 end
 
 -- Provide global namespace command.
 function namespace()
-    print_namespace( find_initial_target(goal) );
-    return 0;
+    local target = find_initial_target( goal );
+    local failures = prepare( target );
+    print_namespace( target );
+    return failures;
 end
 
 -- Provide global help command.
