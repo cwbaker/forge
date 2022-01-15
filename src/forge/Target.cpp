@@ -793,15 +793,8 @@ const std::vector<Target*>& Target::targets() const
 /**
 // Add a Target as an explicit dependency of this Target.
 //
-// If \e target is null or is already an explicit dependency of this Target 
-// then this function silently does nothing.  This allows calling code to be 
-// simpler in that optional dependencies that are not enabled can be 
-// implemented by setting the optional dependency Target to null and it saves
-// calling code from having to make sure that it doesn't add dependencies 
-// twice.
-//
-// Dependencies that create cycles in the Graph aren't checked for by this 
-// function but are detected and reported during Graph traversal.  In these
+// Dependencies that create cycles in the Graph aren't checked for here
+// but are detected and reported during Graph traversal.  In these
 // cases the graph traversal continues as if the cyclic dependency was built 
 // successfully when it is recursively visited.
 //
@@ -809,15 +802,17 @@ const std::vector<Target*>& Target::targets() const
 // Target is cleared to indicate that the outdated flag and/or timestamp are
 // potentially invalid.
 //
+// Null targets are quietly ignored.
+//
 // @param target
-//  The Target to add as a dependency.
+//  The Target to add as a dependency (quietly ignored if null or the same as
+//  this target).
 */
 void Target::add_explicit_dependency( Target* target )
 {
     bool able_to_add_explicit_dependency = 
         target && 
-        target != this && 
-        !is_explicit_dependency( target )
+        target != this
     ;
     if ( able_to_add_explicit_dependency )
     {
@@ -849,7 +844,8 @@ void Target::clear_explicit_dependencies()
 //
 // @param target
 //  The Target to add as an implicit dependency (quietly ignored if null,
-//  the same as this target, an anonymous target, or already a dependency).
+//  the same as this target, an anonymous target, or already an explicit
+//  dependency).
 */
 void Target::add_implicit_dependency( Target* target )
 {
@@ -857,8 +853,7 @@ void Target::add_implicit_dependency( Target* target )
         target &&
         target != this &&
         !target->anonymous() &&
-        !is_explicit_dependency( target ) &&
-        !is_implicit_dependency( target )
+        !is_explicit_dependency( target )
     ;
     if ( able_to_add_implicit_dependency )
     {
@@ -908,14 +903,17 @@ void Target::clear_implicit_dependencies()
 // Add an ordering dependency to this Target.
 //
 // @param target
-//  The Target to add as an ordering dependency of this Target.
+//  The Target to add as an ordering dependency of this Target (quietly
+//  ignored if null, the same as this target, or already an explicit or
+//  implicit dependency).
 */
 void Target::add_ordering_dependency( Target* target )
 {
     bool able_to_add_ordering_dependency = 
         target &&
         target != this &&
-        !is_dependency( target )
+        !is_explicit_dependency( target ) &&
+        !is_implicit_dependency( target )
     ;
     if ( able_to_add_ordering_dependency )
     {
@@ -932,16 +930,33 @@ void Target::clear_ordering_dependencies()
     ordering_dependencies_.clear();
 }
 
+/**
+// Add a transitive dependency to this Target.
+//
+// @param target
+//  The Target to add as a transitive dependency (quietly ignored if null,
+//  the same as this target, or already an explicit, implicit, or ordering
+//  dependency).
+*/
 void Target::add_transitive_dependency( Target* target )
 {
-    bool able_to_add = target && target != this && !is_dependency( target );
-    if ( able_to_add )
+    bool able_to_transitive_dependency_add = 
+        target &&
+        target != this &&
+        !is_explicit_dependency( target ) &&
+        !is_implicit_dependency( target ) &&
+        !is_ordering_dependency( target )
+    ;
+    if ( able_to_transitive_dependency_add )
     {
         remove_dependency( target );
         transitive_dependencies_.push_back( target );
     }
 }
 
+/**
+// Clear all transitive dependencies.
+*/
 void Target::clear_transitive_dependencies()
 {
     transitive_dependencies_.clear();
@@ -953,8 +968,8 @@ void Target::clear_transitive_dependencies()
 // If \e target is null or is not a dependency of this Target then this 
 // function silently does nothing.
 //
-// Targets are removed from both this Target's explicit, implicit, and 
-// ordering dependencies.
+// Targets are removed from this Target's explicit, implicit, ordering, and
+// transitive dependencies.
 //
 // If an explicit or implicit dependency is removed then the the bound to 
 // dependencies flag for this Target is cleared to indicate that the outdated
@@ -988,6 +1003,14 @@ void Target::remove_dependency( Target* target )
                 if ( i != ordering_dependencies_.end() )
                 {
                     ordering_dependencies_.erase( i );
+                }
+                else
+                {
+                    i = find( transitive_dependencies_.begin(), transitive_dependencies_.end(), target );
+                    if ( i != transitive_dependencies_.end() )
+                    {
+                        transitive_dependencies_.erase( i );
+                    }
                 }
             }
         }
