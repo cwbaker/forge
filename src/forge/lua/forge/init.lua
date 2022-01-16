@@ -62,10 +62,16 @@ function build_visit( target )
     end
 end
 
+-- Prepare dependency graph by propagating transitive dependencies.
+function prepare( target )
+    local failures = preorder( target, prepare_visit );
+    return failures;
+end
+
 -- Provide global build command.
 function build()
     local target = find_initial_target( goal );
-    local failures = preorder( target, prepare_visit ) + postorder( target, build_visit );
+    local failures = prepare( target ) + postorder( target, build_visit );
     forge:save();
     printf( "forge: default (build)=%dms", math.ceil(ticks()) );
     return failures;
