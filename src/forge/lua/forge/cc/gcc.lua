@@ -289,7 +289,7 @@ function gcc.append_link_flags( toolset, target, flags )
     end
     
     if settings.verbose_linking then
-        table.insert( flags, "-verbose" );
+        table.insert( flags, "--verbose" );
     end
     
     if settings.debug then
