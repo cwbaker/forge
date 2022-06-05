@@ -22,7 +22,7 @@ author:
 # Custom vars
 github_project: cwbaker/forge
 downloads: https://github.com/cwbaker/forge/releases
-version: 0.5
+version: 0.7
 
 plugins:
 - jekyll-mentions
