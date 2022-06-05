@@ -24,7 +24,7 @@ Forge's working directory is *not* the process working directory of of the `forg
 
 ## Functions
 
-### cd 
+### cd
 
 ~~~lua
 function cd( path )
