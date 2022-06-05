@@ -36,10 +36,6 @@ Change the directory on top of the working directory stack so that it becomes th
 
 - `path` the path to set the working directory to.
 
-**Returns:**
-
-Nothing.
-
 ### popd
 
 ~~~lua
@@ -47,10 +43,6 @@ function popd()
 ~~~
 
 Pop the current working directory and restore the working directory to the working directory saved at the time of the most recent call to `pushd()`.  If there is only one working directory on the directory stack then this function silently does nothing.
-
-**Returns:**
-
-Nothing.
 
 ### pushd
 
@@ -63,10 +55,6 @@ Push a new directory onto the working directory stack so that it becomes the cur
 **Parameters:**
 
 - `path` the path to set the working directory to.
-
-**Returns:**
-
-Nothing.
 
 ### pwd
 

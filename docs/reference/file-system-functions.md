@@ -31,10 +31,6 @@ It is an error to try and copy to an already existing file.  Use `rm()` to remov
 - `source` the path to the file to copy from
 - `destination` the path to file to copy to
 
-**Returns:**
-
-Nothing.
-
 ### exists
 
 ~~~lua
@@ -138,10 +134,6 @@ Relative paths are relative to the current working directory.  Intermediate dire
 
 - `path` the path to the directory to create
 
-**Returns:**
-
-Nothing.
-
 ### rm
 
 ~~~lua
@@ -155,10 +147,6 @@ When removing a directory only the directory itself is removed.  Attempting to r
 **Parameters:**
 
 - `path` the path to the file or directory to remove
-
-**Returns:**
-
-Nothing.
 
 ### rmdir
 
@@ -174,10 +162,6 @@ Recursively removes a directory and all of its content.  Be careful!
 
 - `path` the path to the directory to remove
 
-**Returns:**
-
-Nothing.
-
 ### touch
 
 ~~~lua
@@ -189,7 +173,3 @@ Update the timestamp of the file at *path* to the current time.
 **Parameters:**
 
 - `path` the path to the file to touch
-
-**Returns:**
-
-Nothing.

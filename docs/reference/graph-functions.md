@@ -113,10 +113,6 @@ Removes all targets, target prototypes, and resets all anonymous counters.
 
 The filename of the cache file is preserved so that the graph can still be saved without being loaded again (attempting to load a graph is the only way to set the filename that graph will be saved to).
 
-**Returns:**
-
-Nothing.
-
 ### current_buildfile
 
 ~~~lua
@@ -182,10 +178,6 @@ Function and closure values are *not* saved.  This is generally not a problem be
 **Parameters:**
 
 - `path` the path to save the current dependency graph to
-
-**Returns:**
-
-Nothing.
 
 ### postorder
 
@@ -282,10 +274,6 @@ Prune preorder traversal at the currently visited target.
 
 Stops children and descendents of the target being visited in a preorder pass and continues the traversal at the next sibling target.  Only valid to call from within the visit function of a preorder traversal.
 
-**Returns:**
-
-Nothing.
-
 ### print_dependencies
 
 ~~~lua
@@ -300,10 +288,6 @@ If `target` is nil then dependencies from the entire dependency graph are printe
 
 - `target` the target to print from or nil to print the entire graph
 
-**Returns:**
-
-Nothing.
-
 ### print_namespace
 
 ~~~lua
@@ -317,10 +301,6 @@ If `target` is nil then the namespace of the entire dependency graph is printed 
 **Parameters:**
 
 - `target` the target to print from or nil to print the entire graph
-
-**Returns:**
-
-Nothing.
 
 ### working_directory
 

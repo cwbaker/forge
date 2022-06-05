@@ -60,10 +60,6 @@ The `install()` function explicitly installs the target prototypes and default s
 
 - `toolset` the toolset to install target prototypes and settings in
 
-**Returns:**
-
-Nothing.
-
 ### initialize
 
 ~~~lua
