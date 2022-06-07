@@ -286,7 +286,6 @@ lua_Integer LuaSystem::hash_recursively( lua_State* lua_state, int table, bool h
     {
         uint64_t working_hash = fnv1a_start();
 
-        bool hash_value = false;
         int type = lua_type( lua_state, -2 );
         if ( type == LUA_TSTRING || (hash_integer_keys && type == LUA_TNUMBER) )
         {
@@ -295,13 +294,11 @@ lua_Integer LuaSystem::hash_recursively( lua_State* lua_state, int table, bool h
                 size_t length = 0;
                 const char* key = lua_tolstring( lua_state, -2, &length );
                 working_hash = fnv1a_append( working_hash, (const unsigned char*) key, length );
-                hash_value = true;
             }
             else
             {
                 lua_Integer key = lua_tointeger( lua_state, -2 );
                 working_hash = fnv1a_append( working_hash, (const unsigned char*) &key, sizeof(key) );
-                hash_value = true;
             }
 
             if ( lua_type(lua_state, -1) == LUA_TSTRING )
