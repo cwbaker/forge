@@ -49,7 +49,7 @@ public:
     LuaToolsetPrototype* lua_toolset_prototype() const;
     void create( Forge* forge );
     void destroy();
-    void assign_global_variables( const std::vector<std::string>& assignments );
+    void assign_variables( const std::vector<std::string>& assignments );
     void set_package_path( const std::string& path );
 };
     

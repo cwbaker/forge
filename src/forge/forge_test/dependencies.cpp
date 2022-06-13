@@ -36,15 +36,18 @@ SUITE( dependencies )
             path path = boost::filesystem::path( string(TEST_DIRECTORY) );
             error_policy_ = new error::ErrorPolicy;
             forge_ = new forge::Forge( path.string(), *error_policy_, this );
-            lua_unit_test_ = new LuaUnitTest( forge_->lua_state(), error_policy_ );
+            lua_unit_test_ = new LuaUnitTest;
             file_checker_ = new FileChecker;
 
+            forge_->reset();
             forge_->set_root_directory( path.generic_string() );
             forge_->set_stack_trace_enabled( true );
             forge_->set_package_path(
                 forge_->root("../lua/?.lua").generic_string() + ";" +
                 forge_->root("../lua/?/init.lua").generic_string()
             );
+
+            lua_unit_test_->create( forge_->lua_state(), error_policy_ );
 
             static const luaL_Reg file_functions [] = 
             {

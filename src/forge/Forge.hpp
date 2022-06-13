@@ -83,12 +83,13 @@ class Forge
         void set_forge_hooks_library( const std::string& forge_hooks_library );
         const std::string& forge_hooks_library() const;
 
+        void reset();
+        void destroy();
         void set_root_directory( const std::string& root_directory );
-        void assign_global_variables( const std::vector<std::string>& assignments_and_commands );
         void set_package_path( const std::string& path );
-        void execute( const std::string& filename, const std::string& command );
-        void file( const std::string& filename );
-        void script( const std::string& script );
+        int file( const std::string& filename );
+        int command( const std::vector<std::string>& assignments, const std::string& build_script, const std::string& command );
+        int script( const std::string& script );
 
         void create_target_lua_binding( Target* target );
         void update_target_lua_binding( Target* target );

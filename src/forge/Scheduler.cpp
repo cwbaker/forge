@@ -49,7 +49,6 @@ Scheduler::Scheduler( Forge* forge )
 void Scheduler::load( const boost::filesystem::path& path )
 {
     SWEET_ASSERT( path.is_absolute() );
-
     Context* context = allocate_context( forge_->graph()->target(path.parent_path().generic_string()) );
     process_begin( context );
     lua_State* lua_state = context->lua_state();
@@ -58,11 +57,11 @@ void Scheduler::load( const boost::filesystem::path& path )
     wait();
 }
 
-void Scheduler::script( const boost::filesystem::path& path, const std::string& script )
+void Scheduler::script( const boost::filesystem::path& working_directory, const std::string& script )
 {
     if ( !script.empty() )
     {
-        Context* context = allocate_context( forge_->graph()->target(path.generic_string()) );
+        Context* context = allocate_context( forge_->graph()->target(working_directory.generic_string()) );
         process_begin( context );
         lua_State* lua_state = context->lua_state();
         doscript( lua_state, script.c_str() );
@@ -71,9 +70,18 @@ void Scheduler::script( const boost::filesystem::path& path, const std::string& 
     }
 }
 
-void Scheduler::command( const boost::filesystem::path& path, const std::string& function )
-{
-    call( path, function );
+void Scheduler::command( const boost::filesystem::path& working_directory, const std::string& function )
+{    
+    if ( !function.empty() )
+    {
+        Context* context = allocate_context( forge_->graph()->target(working_directory.generic_string()) );
+        process_begin( context );
+        lua_State* lua_state = context->lua_state();
+        SWEET_ASSERT( lua_state );
+        lua_getglobal( lua_state, function.c_str() );
+        resume( lua_state, 0 );
+        process_end( context );
+    }
     wait();
     SWEET_ASSERT( buildfile_calls_ == 0 );
 }
@@ -100,20 +108,6 @@ int Scheduler::buildfile( const boost::filesystem::path& path )
     int errors = process_end( context );
     buildfile_calls_ += yielded ? 1 : 0;
     return yielded ? -1 : errors;
-}
-
-void Scheduler::call( const boost::filesystem::path& path, const std::string& function )
-{
-    if ( !function.empty() )
-    {
-        Context* context = allocate_context( forge_->graph()->target(path.parent_path().generic_string()) );
-        process_begin( context );
-        lua_State* lua_state = context->lua_state();
-        SWEET_ASSERT( lua_state );
-        lua_getglobal( lua_state, function.c_str() );
-        resume( lua_state, 0 );
-        process_end( context );
-    }
 }
 
 bool Scheduler::preorder_visit( int function, Target* target )

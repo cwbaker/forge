@@ -24,6 +24,7 @@
 
 using std::string;
 using std::vector;
+using boost::filesystem::path;
 using namespace sweet;
 using namespace sweet::forge;
 
@@ -39,19 +40,19 @@ using namespace sweet::forge;
 //  from this Forge are to be ignored.
 */
 Forge::Forge( const std::string& initial_directory, error::ErrorPolicy& error_policy, ForgeEventSink* event_sink )
-: error_policy_( error_policy ),
-  event_sink_( event_sink ),
-  lua_( NULL ),
-  system_( NULL ),
-  reader_( NULL ),
-  graph_( NULL ),
-  scheduler_( NULL ),
-  executor_( NULL ),
-  root_directory_(),
-  initial_directory_(),
-  home_directory_(),
-  executable_directory_(),
-  stack_trace_enabled_( false )
+: error_policy_( error_policy )
+, event_sink_( event_sink )
+, lua_( nullptr )
+, system_( nullptr )
+, reader_( nullptr )
+, graph_( nullptr )
+, scheduler_( nullptr )
+, executor_( nullptr )
+, root_directory_()
+, initial_directory_()
+, home_directory_()
+, executable_directory_()
+, stack_trace_enabled_( false )
 {
     SWEET_ASSERT( boost::filesystem::path(initial_directory).is_absolute() );
 
@@ -59,23 +60,6 @@ Forge::Forge( const std::string& initial_directory, error::ErrorPolicy& error_po
     initial_directory_ = make_drive_uppercase( initial_directory );
     home_directory_ = make_drive_uppercase( system_->home() );
     executable_directory_ = make_drive_uppercase( system_->executable() ).parent_path();
-
-    lua_ = new Lua( this );
-    system_ = new System;
-    reader_ = new Reader( this );
-    graph_ = new Graph( this );
-    scheduler_ = new Scheduler( this );
-    executor_ = new Executor( this );
-
-#if defined BUILD_OS_WINDOWS
-    set_forge_hooks_library( executable("forge_hooks.dll").generic_string() );
-#elif defined BUILD_OS_MACOS
-    set_forge_hooks_library( executable("forge_hooks.dylib").generic_string() );
-#else
-    set_forge_hooks_library( executable("libforge_hooks.so").generic_string() );
-#endif
-
-    set_maximum_parallel_jobs( 2 * system_->number_of_logical_processors() );
 }
 
 /**
@@ -87,12 +71,7 @@ Forge::Forge( const std::string& initial_directory, error::ErrorPolicy& error_po
 */
 Forge::~Forge()
 {
-    delete executor_;
-    delete scheduler_;
-    delete graph_;
-    delete reader_;
-    delete system_;
-    delete lua_;
+    destroy();
 }
 
 /**
@@ -350,24 +329,6 @@ void Forge::set_root_directory( const std::string& root_directory )
 }
 
 /**
-// Extract assignments from \e assignments_and_commands and use them to 
-// assign values to global variables.
-//
-// This is used to accept variable assignments on the command line and have 
-// them available for scripts to use for configuration when commands are
-// executed.
-//
-// @param assignments
-//  The assignments specified on the command line used to create global 
-//  variables before any scripts are loaded (e.g. 'variant=release' etc).
-*/
-void Forge::assign_global_variables( const std::vector<std::string>& assignments )
-{
-    SWEET_ASSERT( lua_ );
-    lua_->assign_global_variables( assignments );
-}
-
-/**
 // Set the Lua module search path in `package.path`.
 //
 // @param path
@@ -379,39 +340,75 @@ void Forge::set_package_path( const std::string& path )
     lua_->set_package_path( path );
 }
 
-/**
-// Load and execute *filename* and *command*.
-//
-// @param filename
-//  The name of the file to load and execute.
-//
-// @param command
-//  The function to call once the root file has been loaded.
-*/
-void Forge::execute( const std::string& filename, const std::string& command )
+void Forge::reset()
 {
-    error_policy_.push_errors();
-    boost::filesystem::path path( root_directory_ / filename );    
-    scheduler_->load( path );
-    int errors = error_policy_.pop_errors();
-    if ( errors == 0 )
-    {
-        scheduler_->command( path, command );
-    }
+    destroy();
+
+    lua_ = new Lua( this );
+    system_ = new System;
+    reader_ = new Reader( this );
+    graph_ = new Graph( this );
+    scheduler_ = new Scheduler( this );
+    executor_ = new Executor( this );
+
+#if defined BUILD_OS_WINDOWS
+    set_forge_hooks_library( executable("forge_hooks.dll").generic_string() );
+#elif defined BUILD_OS_MACOS
+    set_forge_hooks_library( executable("forge_hooks.dylib").generic_string() );
+#else
+    set_forge_hooks_library( executable("libforge_hooks.so").generic_string() );
+#endif
+
+    set_maximum_parallel_jobs( 2 * system_->number_of_logical_processors() );
+}
+
+void Forge::destroy()
+{
+    delete executor_;
+    delete scheduler_;
+    delete graph_;
+    delete reader_;
+    delete system_;
+    delete lua_;
 }
 
 /**
-// Load and execute *filename* and execute *command*.
+// Load and execute *filename*.
 //
 // @param filename
 //  The name of the file to load and execute.
+//
+// @return
+//  The number of errors that occurred loading and executing the file.
 */
-void Forge::file( const std::string& filename )
+int Forge::file( const std::string& filename )
 {
     error_policy_.push_errors();
     boost::filesystem::path path( root_directory_ / filename );    
     scheduler_->load( path );
-    error_policy_.pop_errors();
+    return error_policy_.pop_errors();
+}
+
+/**
+// Execute the global Lua function *command*.
+//
+// @param command
+//  The global Lua function to call to execute the command.
+//
+// @return
+//  The number of errors that occurred executing the command.
+*/
+int Forge::command( const std::vector<std::string>& assignments, const std::string& build_script, const std::string& command )
+{
+    reset();
+    error_policy_.push_errors();
+    lua_->assign_variables( assignments );
+    scheduler_->load( path(root_directory_ / build_script) );
+    if ( error_policy_.errors() == 0 )
+    {
+        scheduler_->command( root_directory_, command );
+    }
+    return error_policy_.pop_errors();
 }
 
 /**
@@ -420,9 +417,12 @@ void Forge::file( const std::string& filename )
 // @param script
 //  The Lua program to compile and run.
 */
-void Forge::script( const std::string& script )
+int Forge::script( const std::string& script )
 {
+    reset();
+    error_policy_.push_errors();
     scheduler_->script( root_directory_, script );
+    return error_policy_.pop_errors();
 }
 
 void Forge::create_target_lua_binding( Target* target )

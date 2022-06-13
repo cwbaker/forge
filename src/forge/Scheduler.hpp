@@ -52,10 +52,9 @@ class Scheduler
         Scheduler( Forge* forge );
 
         void load( const boost::filesystem::path& path );
-        void script( const boost::filesystem::path& path, const std::string& script );
-        void command( const boost::filesystem::path& path, const std::string& command );
+        void script( const boost::filesystem::path& working_directory, const std::string& script );
+        void command( const boost::filesystem::path& working_directory, const std::string& command );
         int buildfile( const boost::filesystem::path& path );
-        void call( const boost::filesystem::path& path, const std::string& function );
         bool preorder_visit( int function, Target* target );
         void postorder_visit( int function, Job* job );
         void execute_finished( int exit_code, Context* context, process::Environment* environment );

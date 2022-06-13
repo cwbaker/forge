@@ -63,11 +63,11 @@ Regenerate settings for the local machine by running *reconfigure*:
 $ forge reconfigure
 ~~~
 
-### Variables 
+### Variables
 
-Assign values to variables (e.g. *variant={debug, release, shipping}*) on the command line to configure the build.  All assignments are made to global variables in Lua before the root build script and any actions are executed.  Typically this is used to configure variant, target to build, and/or install location.
+Assign values to variables (e.g. *variant={debug, release, shipping}*) on the command line to configure the build.  All assignments are made to global variables in Lua before the root build script and commands are executed. Typically this is used to configure variant, target to build, and install prefix.
 
-Later assignments override earlier ones in the case of duplicate variables.  However because all assignments are made before any commands are executed interleaving assignments and commands is not useful.
+Assignments and commands are made and executed in order.  Only assignments made before a command on the command line are made before that command is executed.  Assignment to the same variable overwrites the previous value, this is useful to run the same command for different variants for example.
 
 The **variant** variable can be set to control the settings used when building by passing "variant=_variant_" on the command line.  The default value, used when no variant is passed on the command line, is "debug".  Other accepted values are:
 
@@ -93,6 +93,12 @@ List the dependency graph for the *release* variant:
 
 ~~~bash
 $ forge variant=release dependencies
+~~~
+
+Rebuild the debug and then the release variants:
+
+~~~bash
+$ forge variant=debug clean build variant=release clean build
 ~~~
 
 The **goal** variable can be set to to specify the target to build by passing "goal=_goal_" on the command line.  The goal is interpreted as a path to the target to build.  Relative values are considered relative to the current working directory.  The target should always be specified using forward slashes as it is a target path not an operating system path.  The default, used when no goal is passed on the command line, is to use the goal that corresponds to the current working directory.

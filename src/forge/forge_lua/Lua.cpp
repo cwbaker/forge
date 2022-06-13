@@ -150,18 +150,17 @@ void Lua::destroy()
 }
 
 /**
-// Extract assignments from \e assignments_and_commands and use them to 
-// assign values to global variables.
+// Assign variable values from *assignments* to global variables in Lua.
 //
-// This is used to accept variable assignments on the command line and have 
-// them available for scripts to use for configuration when commands are
-// executed.
+// This is used to convert assignments from the command line into Lua globals
+// for scripts to use when commands are executed.  Assignments without any
+// value (e.g. 'variant=') set the variable to nil.
 //
 // @param assignments
 //  The assignments specified on the command line used to create global 
 //  variables before any scripts are loaded (e.g. 'variant=release' etc).
 */
-void Lua::assign_global_variables( const std::vector<std::string>& assignments )
+void Lua::assign_variables( const std::vector<std::string>& assignments )
 {
     for ( std::vector<std::string>::const_iterator i = assignments.begin(); i != assignments.end(); ++i )
     {
@@ -169,8 +168,15 @@ void Lua::assign_global_variables( const std::vector<std::string>& assignments )
         if ( position != std::string::npos )
         {
             std::string attribute = i->substr( 0, position );
-            std::string value = i->substr( position + 1, std::string::npos );
-            lua_pushlstring( lua_state_, value.c_str(), value.size() );
+            if ( position + 1 < i->size() )
+            {
+                std::string value = i->substr( position + 1, std::string::npos );
+                lua_pushlstring( lua_state_, value.c_str(), value.size() );
+            }
+            else
+            {
+                lua_pushnil( lua_state_ );
+            }
             lua_setglobal( lua_state_, attribute.c_str() );
         }
     }

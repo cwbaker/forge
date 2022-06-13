@@ -457,26 +457,16 @@ end
 -- Local settings are loaded from the file *local_settings.lua* in the root
 -- directory of the project if it exists or set to an empty table otherwise.
 --
--- Returns a new toolset initialized with the local settings.
-function forge:load( settings )
+-- Returns self
+function forge:load()
     if not self.loaded then
+        local variant = _G.variant or self.variant;
         self.loaded = true;
         self.local_settings = exists( root('local_settings.lua') ) and dofile( root('local_settings.lua') ) or {};
-        self.cache = root( '.forge' );
-        if settings and settings.cache then
-            self.cache = settings.cache;
-        elseif variant or self.variant then 
-            self.cache = root( ('%s/.forge'):format(variant or self.variant) );
-        end
+        self.cache = variant and root( ('%s/.forge'):format(variant) ) or root( '.forge' );
         load_binary( self.cache );
     end
     return self;
-end
-
--- Reload cached dependencies and local settings.
-function forge:reload( settings )
-    self.loaded = nil;
-    return self:load( settings );
 end
 
 -- Save the dependency graph and local settings.
@@ -538,7 +528,7 @@ end
 
 setmetatable( forge, {
     __call = function( _, settings )
-        local forge = require( 'forge' ):load( values );
+        local forge = require( 'forge' ):load();
         local toolset = Toolset( forge.local_settings );
         return toolset:clone( settings );
     end

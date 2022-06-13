@@ -39,11 +39,11 @@ int main( int argc, char** argv )
 
         bool help = false;
         bool version = false;
-        std::string directory = initial_path<path>().generic_string();
-        std::string root_directory;
-        std::string filename = "forge.lua";
+        string directory = initial_path<path>().generic_string();
+        string root_directory;
+        string build_script = "forge.lua";
         bool stack_trace_enabled = false;    
-        std::vector<std::string> assignments_and_commands;
+        vector<string> assignments_and_commands;
 
         EventSink event_sink;
         error::ErrorPolicy error_policy;
@@ -52,14 +52,11 @@ int main( int argc, char** argv )
             ( "help", "h", "Print this message and exit", &help )
             ( "version", "v", "Print the version and exit", &version )
             ( "root", "r", "Set root directory", &root_directory )
-            ( "file", "f", "Set root build script filename", &filename )
+            ( "build-script", "b", "Set build script filename", &build_script )
             ( "stack-trace", "s", "Stack traces on error", &stack_trace_enabled )
             ( &assignments_and_commands )
         ;
         command_line_parser.parse( argc, argv );
-
-        vector<string> assignments;
-        vector<string> commands;
 
         if ( version )
         {
@@ -72,44 +69,48 @@ int main( int argc, char** argv )
             std::cout << "Usage: forge [options] [variable=value] [command] ... \n";
             std::cout << "Options: \n";
             command_line_parser.print( stdout );
-            commands.push_back( "help" );
-        }
-
-        for ( vector<string>::const_iterator i = assignments_and_commands.begin(); i != assignments_and_commands.end(); ++i )
-        {
-            string::size_type position = i->find( "=" );
-            if ( position == string::npos )
-            {
-                commands.push_back( *i );
-            }
-            else
-            {
-                assignments.push_back( *i );
-            }
-        }
-        
-        if ( commands.empty() && !version )
-        {
-            const char* DEFAULT_COMMAND = "default";
-            commands.push_back( DEFAULT_COMMAND );
+            assignments_and_commands.push_back( "help" );
         }
 
         if ( root_directory.empty() )
         {
-            root_directory = search_up_for_root_directory( directory, filename ).generic_string();
-            error_policy.error( root_directory.empty(), "The file '%s' could not be found to identify the root directory", filename.c_str() );
+            root_directory = search_up_for_root_directory( directory, build_script ).generic_string();
+            error_policy.error( root_directory.empty(), "The file '%s' could not be found to identify the root directory", build_script.c_str() );
         }
 
-        vector<string>::const_iterator command = commands.begin(); 
-        while ( error_policy.errors() == 0 && command != commands.end() )
+        if ( !root_directory.empty() )
         {
             Forge forge( directory, error_policy, &event_sink );
             forge.set_stack_trace_enabled( stack_trace_enabled );
             forge.set_root_directory( root_directory );
-            forge.assign_global_variables( assignments );
-            forge.execute( filename, *command );
-            ++command;
+            bool executed_command = false;
+            vector<string> assignments;
+
+            vector<string>::const_iterator i = assignments_and_commands.begin();
+            while ( i != assignments_and_commands.end() && error_policy.errors() == 0 )
+            {
+                string::size_type position = i->find( "=" );
+                if ( position == string::npos )
+                {
+                    const string& command = *i;
+                    forge.command( assignments, build_script, command );
+                    executed_command = true;
+                }
+                else
+                {
+                    const string& assignment = *i;
+                    assignments.push_back( assignment );
+                }
+                ++i;
+            }
+            
+            if ( !executed_command && !version )
+            {
+                const string DEFAULT_COMMAND = "default";
+                forge.command( assignments, build_script, DEFAULT_COMMAND );
+            }            
         }
+
         return error_policy.errors();
     }
 
