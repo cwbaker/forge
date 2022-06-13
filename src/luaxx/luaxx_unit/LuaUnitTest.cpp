@@ -30,11 +30,25 @@ using namespace luaxx;
 #define snprintf _snprintf
 #endif
 
-LuaUnitTest::LuaUnitTest( lua_State* lua_state, error::ErrorPolicy* error_policy )
-: lua_state_( lua_state )
-, error_policy_( error_policy )
+LuaUnitTest::LuaUnitTest()
+: lua_state_( nullptr )
+, error_policy_( nullptr )
 {
-    SWEET_ASSERT( lua_state_ );
+}
+
+LuaUnitTest::LuaUnitTest( lua_State* lua_state, error::ErrorPolicy* error_policy )
+: lua_state_( nullptr )
+, error_policy_( nullptr )
+{
+    create( lua_state, error_policy );
+}
+
+void LuaUnitTest::create( lua_State* lua_state, sweet::error::ErrorPolicy* error_policy )
+{
+    SWEET_ASSERT( lua_state );
+
+    lua_state_ = lua_state;
+    error_policy_ = error_policy;
 
     static const luaL_Reg functions[] = 
     {

@@ -29,7 +29,9 @@ class LuaUnitTest
     sweet::error::ErrorPolicy* error_policy_;
 
 public:
+    LuaUnitTest();
     LuaUnitTest( lua_State* lua_state, sweet::error::ErrorPolicy* error_policy );
+    void create( lua_State* lua_state, sweet::error::ErrorPolicy* error_policy );
     void run_tests( const char* filename );
     
 private:
