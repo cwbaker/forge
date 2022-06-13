@@ -469,12 +469,6 @@ function forge:load()
     return self;
 end
 
--- Reload cached dependencies and local settings.
-function forge:reload( settings )
-    self.loaded = nil;
-    return self:load( settings );
-end
-
 -- Save the dependency graph and local settings.
 function forge:save()
     -- Serialize values to to a Lua file (typically the local settings table).
