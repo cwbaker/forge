@@ -50,7 +50,7 @@ Target::Target()
   dependencies_(),
   implicit_dependencies_(),
   ordering_dependencies_(),
-  transitive_dependencies_(),
+  passive_dependencies_(),
   filenames_(),
   visiting_( false ),
   visited_revision_( 0 ),
@@ -931,35 +931,35 @@ void Target::clear_ordering_dependencies()
 }
 
 /**
-// Add a transitive dependency to this Target.
+// Add a passive dependency to this Target.
 //
 // @param target
-//  The Target to add as a transitive dependency (quietly ignored if null,
+//  The Target to add as a passive dependency (quietly ignored if null,
 //  the same as this target, or already an explicit, implicit, or ordering
 //  dependency).
 */
-void Target::add_transitive_dependency( Target* target )
+void Target::add_passive_dependency( Target* target )
 {
-    bool able_to_transitive_dependency_add = 
+    bool able_to_passive_dependency_add = 
         target &&
         target != this &&
         !is_explicit_dependency( target ) &&
         !is_implicit_dependency( target ) &&
         !is_ordering_dependency( target )
     ;
-    if ( able_to_transitive_dependency_add )
+    if ( able_to_passive_dependency_add )
     {
         remove_dependency( target );
-        transitive_dependencies_.push_back( target );
+        passive_dependencies_.push_back( target );
     }
 }
 
 /**
-// Clear all transitive dependencies.
+// Clear all passive dependencies.
 */
-void Target::clear_transitive_dependencies()
+void Target::clear_passive_dependencies()
 {
-    transitive_dependencies_.clear();
+    passive_dependencies_.clear();
 }
 
 /**
@@ -969,7 +969,7 @@ void Target::clear_transitive_dependencies()
 // function silently does nothing.
 //
 // Targets are removed from this Target's explicit, implicit, ordering, and
-// transitive dependencies.
+// passive dependencies.
 //
 // If an explicit or implicit dependency is removed then the the bound to 
 // dependencies flag for this Target is cleared to indicate that the outdated
@@ -1006,10 +1006,10 @@ void Target::remove_dependency( Target* target )
                 }
                 else
                 {
-                    i = find( transitive_dependencies_.begin(), transitive_dependencies_.end(), target );
-                    if ( i != transitive_dependencies_.end() )
+                    i = find( passive_dependencies_.begin(), passive_dependencies_.end(), target );
+                    if ( i != passive_dependencies_.end() )
                     {
-                        transitive_dependencies_.erase( i );
+                        passive_dependencies_.erase( i );
                     }
                 }
             }
@@ -1059,9 +1059,9 @@ bool Target::is_ordering_dependency( Target* target ) const
     return find( ordering_dependencies_.begin(), ordering_dependencies_.end(), target ) != ordering_dependencies_.end();
 }
 
-bool Target::is_transitive_dependency( Target* target ) const
+bool Target::is_passive_dependency( Target* target ) const
 {
-    return find( transitive_dependencies_.begin(), transitive_dependencies_.end(), target ) != transitive_dependencies_.end();
+    return find( passive_dependencies_.begin(), passive_dependencies_.end(), target ) != passive_dependencies_.end();
 }
 
 /**
@@ -1080,7 +1080,7 @@ bool Target::is_dependency( Target* target ) const
         is_explicit_dependency( target ) ||
         is_implicit_dependency( target ) ||
         is_ordering_dependency( target ) ||
-        is_transitive_dependency( target )
+        is_passive_dependency( target )
     ;
 }
 
@@ -1145,21 +1145,21 @@ Target* Target::ordering_dependency( int n ) const
 }
 
 /**
-// Get the nth transitive dependency of this Target.
+// Get the nth passive dependency of this Target.
 //
 // @param n
-//  The index of the transitive dependency to return (assumed >= 0).
+//  The index of the passive dependency to return (assumed >= 0).
 //
 // @return
-//  The nth transitive dependency of this Target or null if 'n' is outside the
-//  range of transitive dependencies.
+//  The nth passive dependency of this Target or null if 'n' is outside the
+//  range of passive dependencies.
 */
-Target* Target::transitive_dependency( int n ) const
+Target* Target::passive_dependency( int n ) const
 {
     SWEET_ASSERT( n >= 0 );
-    if ( n >= 0 && n < int(transitive_dependencies_.size()) )
+    if ( n >= 0 && n < int(passive_dependencies_.size()) )
     {
-        return transitive_dependencies_[n];
+        return passive_dependencies_[n];
     }
     return nullptr;
 }
@@ -1209,9 +1209,9 @@ Target* Target::any_dependency( int n ) const
     }
 
     n -= int(ordering_dependencies_.size());
-    if ( n >= 0 && n < int(transitive_dependencies_.size()) )
+    if ( n >= 0 && n < int(passive_dependencies_.size()) )
     {
-        return transitive_dependencies_[n];
+        return passive_dependencies_[n];
     }
 
     return nullptr;
