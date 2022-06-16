@@ -238,7 +238,13 @@ The working directory is the target that specifies the directory that files spec
 function Target.add_dependency( target, dependency )
 ~~~
 
-Add `dependency` as an explicit dependency of `target`.  Cyclic dependencies are not valid but are not reported by this function.  If a cyclic dependency is detected during a traversal then it is silently ignored.  If `dependency` is nil then this function will silently do nothing.
+Add `dependency` as an explicit dependency of `target`.
+
+If `dependency` is null or the same as `target` then this function quietly does nothing.
+
+If `dependency` is already an implicit, ordering, or passive dependency of `target` then it is made the last explicit dependency of `target`.  That is the dependency is removed and added as the last explicit dependency.
+
+Cyclic dependencies are not valid but are not reported here.  Cyclic dependencies are detected during traversals and silently ignored.
 
 ### remove_dependency
 
@@ -246,7 +252,7 @@ Add `dependency` as an explicit dependency of `target`.  Cyclic dependencies are
 function Target.remove_dependency( target, dependency )
 ~~~
 
-Remove `dependency` as a dependency of `target`.  Removes the dependency regardless of whether that dependency is explicit, implicit, and ordering dependencies.
+Remove `dependency` as a dependency of `target`.  Removes the dependency regardless of whether that dependency is an explicit, implicit, ordering, or passive dependency.
 
 ### add_implicit_dependency
 
@@ -255,6 +261,10 @@ function Target.add_implicit_dependency( target, dependency )
 ~~~
 
 Add `dependency` as an implicit dependency of `target`.
+
+If `dependency` is null, the same as `target`, anonymous, or already an explicit dependency of `target` then this function quietly does nothing.
+
+If `dependency` is already an implicit, ordering, or passive dependency of `target` then it is made the last implicit dependency of `target`.  That is the dependency is removed and added as the last implicit dependency.
 
 ### clear_implicit_dependencies
 
@@ -271,6 +281,22 @@ function Target.add_ordering_dependency( target, dependency )
 ~~~
 
 Add `dependency` as an ordering dependency of `target`.
+
+If `dependency` is null, the same as `target`, anonymous, or already an explicit or implicit dependency of `target` then this function quietly does nothing.
+
+If `dependency` is already an ordering or passive dependency of `target` then it is made the last ordering dependency of `target`.  That is the dependency is removed and added as the last ordering dependency.
+
+### add_passive_dependency
+
+~~~lua
+function Target.add_passive_dependency( target, dependency )
+~~~
+
+Add `dependency` as a passive dependency of `target`.
+
+If `dependency` is null, the same as `target`, anonymous, or already an explicit, implicit, or ordering dependency of `target` then this function quietly does nothing.
+
+If `dependency` is already a passive dependency of `target` then it is made the last passive dependency of `target`.  That is the dependency is removed and added as the last passive dependency.
 
 ### parent
 
