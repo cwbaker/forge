@@ -28,35 +28,35 @@ using namespace sweet::forge;
 // Constructor.
 */
 Target::Target()
-: id_(),
-  path_(),
-  branch_(),
-  graph_( nullptr ),
-  prototype_( nullptr ),
-  timestamp_( 0 ),
-  last_write_time_( 0 ),
-  hash_( 0 ),
-  pending_hash_( 0 ),
-  outdated_( false ),
-  changed_( false ),
-  bound_to_file_( false ),
-  bound_to_dependencies_( false ),
-  referenced_by_script_( false ),
-  cleanable_( false ),
-  built_( false ),
-  working_directory_( nullptr ),
-  parent_( nullptr ),
-  targets_(),
-  dependencies_(),
-  implicit_dependencies_(),
-  ordering_dependencies_(),
-  passive_dependencies_(),
-  filenames_(),
-  visiting_( false ),
-  visited_revision_( 0 ),
-  successful_revision_( 0 ),
-  postorder_height_( -1 ),
-  anonymous_( 0 )
+: id_()
+, path_()
+, branch_()
+, graph_( nullptr )
+, prototype_( nullptr )
+, timestamp_( 0 )
+, last_write_time_( 0 )
+, hash_( 0 )
+, pending_hash_( 0 )
+, outdated_( false )
+, changed_( false )
+, bound_to_file_( false )
+, bound_to_dependencies_( false )
+, referenced_by_script_( false )
+, cleanable_( false )
+, built_( false )
+, working_directory_( nullptr )
+, parent_( nullptr )
+, targets_()
+, dependencies_()
+, implicit_dependencies_()
+, ordering_dependencies_()
+, passive_dependencies_()
+, filenames_()
+, visiting_( false )
+, visited_revision_( 0 )
+, successful_revision_( 0 )
+, postorder_height_( -1 )
+, anonymous_( 0 )
 {
 }
 
@@ -70,34 +70,34 @@ Target::Target()
 //  The Graph that this Target is part of.
 */
 Target::Target( const std::string& id, Graph* graph )
-: id_( id ),
-  path_(),
-  branch_(),
-  graph_( graph ),
-  prototype_( nullptr ),
-  timestamp_( 0 ),
-  last_write_time_( 0 ),
-  hash_( 0 ),
-  pending_hash_( 0 ),
-  outdated_( false ),
-  changed_( false ),
-  bound_to_file_( false ),
-  bound_to_dependencies_( false ),
-  referenced_by_script_( false ),
-  cleanable_( false ),
-  built_( false ),
-  working_directory_( nullptr ),
-  parent_( nullptr ),
-  targets_(),
-  dependencies_(),
-  implicit_dependencies_(),
-  ordering_dependencies_(),
-  filenames_(),
-  visiting_( false ),
-  visited_revision_( 0 ),
-  successful_revision_( 0 ),
-  postorder_height_( -1 ),
-  anonymous_( 0 )
+: id_( id )
+, path_()
+, branch_()
+, graph_( graph )
+, prototype_( nullptr )
+, timestamp_( 0 )
+, last_write_time_( 0 )
+, hash_( 0 )
+, pending_hash_( 0 )
+, outdated_( false )
+, changed_( false )
+, bound_to_file_( false )
+, bound_to_dependencies_( false )
+, referenced_by_script_( false )
+, cleanable_( false )
+, built_( false )
+, working_directory_( nullptr )
+, parent_( nullptr )
+, targets_()
+, dependencies_()
+, implicit_dependencies_()
+, ordering_dependencies_()
+, filenames_()
+, visiting_( false )
+, visited_revision_( 0 )
+, successful_revision_( 0 )
+, postorder_height_( -1 )
+, anonymous_( 0 )
 {
     SWEET_ASSERT( !id_.empty() );
     SWEET_ASSERT( graph_ );
