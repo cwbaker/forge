@@ -31,8 +31,8 @@ Target::Target()
 : id_(),
   path_(),
   branch_(),
-  graph_( NULL ),
-  prototype_( NULL ),
+  graph_( nullptr ),
+  prototype_( nullptr ),
   timestamp_( 0 ),
   last_write_time_( 0 ),
   hash_( 0 ),
@@ -44,8 +44,8 @@ Target::Target()
   referenced_by_script_( false ),
   cleanable_( false ),
   built_( false ),
-  working_directory_( NULL ),
-  parent_( NULL ),
+  working_directory_( nullptr ),
+  parent_( nullptr ),
   targets_(),
   dependencies_(),
   implicit_dependencies_(),
@@ -74,7 +74,7 @@ Target::Target( const std::string& id, Graph* graph )
   path_(),
   branch_(),
   graph_( graph ),
-  prototype_( NULL ),
+  prototype_( nullptr ),
   timestamp_( 0 ),
   last_write_time_( 0 ),
   hash_( 0 ),
@@ -86,8 +86,8 @@ Target::Target( const std::string& id, Graph* graph )
   referenced_by_script_( false ),
   cleanable_( false ),
   built_( false ),
-  working_directory_( NULL ),
-  parent_( NULL ),
+  working_directory_( nullptr ),
+  parent_( nullptr ),
   targets_(),
   dependencies_(),
   implicit_dependencies_(),
@@ -126,7 +126,7 @@ Target::~Target()
 void Target::recover( Graph* graph )
 {
     SWEET_ASSERT( graph );    
-    SWEET_ASSERT( graph_ == NULL || graph_ == graph );
+    SWEET_ASSERT( graph_ == nullptr || graph_ == graph );
 
     graph_ = graph;
 
@@ -754,10 +754,10 @@ void Target::destroy_anonymous_targets()
         if ( target->anonymous() )
         {
             delete target;
-            *i = NULL;
+            *i = nullptr;
         }
     }
-    targets_.erase( remove(targets_.begin(), targets_.end(), (Target*) NULL), targets_.end() );
+    targets_.erase( remove(targets_.begin(), targets_.end(), (Target*) nullptr), targets_.end() );
 }
 
 /**
@@ -776,7 +776,7 @@ Target* Target::find_target_by_id( const std::string& id ) const
     {
         ++i;
     }
-    return i != targets_.end() ? *i : NULL;
+    return i != targets_.end() ? *i : nullptr;
 }
 
 /**
@@ -1101,7 +1101,7 @@ Target* Target::explicit_dependency( int n ) const
     {
         return dependencies_[n];
     }
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -1121,7 +1121,7 @@ Target* Target::implicit_dependency( int n ) const
     {
         return implicit_dependencies_[n];
     }
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -1141,7 +1141,7 @@ Target* Target::ordering_dependency( int n ) const
     {
         return ordering_dependencies_[n];
     }
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -1232,7 +1232,7 @@ bool Target::buildable() const
         ++i;
         target = any_dependency( i );
     }
-    return target == NULL;
+    return target == nullptr;
 }
 
 /**
@@ -1278,7 +1278,7 @@ std::string Target::failed_dependencies() const
     {
         message += "'" + id() + "'";
     }
-    else if ( prototype() != NULL )
+    else if ( prototype() != nullptr )
     {
         message += prototype()->id();
     }
