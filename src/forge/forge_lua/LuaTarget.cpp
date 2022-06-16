@@ -72,7 +72,7 @@ void LuaTarget::create( lua_State* lua_state, Forge* forge )
         { "add_implicit_dependency", &LuaTarget::add_implicit_dependency },
         { "clear_implicit_dependencies", &LuaTarget::clear_implicit_dependencies },
         { "add_ordering_dependency", &LuaTarget::add_ordering_dependency },
-        { "add_transitive_dependency", &LuaTarget::add_transitive_dependency },
+        { "add_passive_dependency", &LuaTarget::add_passive_dependency },
         { nullptr, nullptr }
     };
     luaxx_push( lua_state_, this );
@@ -597,7 +597,7 @@ int LuaTarget::add_ordering_dependency( lua_State* lua_state )
     return 0;
 }
 
-int LuaTarget::add_transitive_dependency( lua_State* lua_state )
+int LuaTarget::add_passive_dependency( lua_State* lua_state )
 {
     const int TARGET = 1;
     const int DEPENDENCY = 2;
@@ -606,7 +606,7 @@ int LuaTarget::add_transitive_dependency( lua_State* lua_state )
     if ( target )
     {
         Target* dependency = (Target*) luaxx_to( lua_state, DEPENDENCY, TARGET_TYPE );
-        target->add_transitive_dependency( dependency );
+        target->add_passive_dependency( dependency );
     }
     return 0;
 }

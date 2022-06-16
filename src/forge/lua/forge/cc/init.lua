@@ -6,7 +6,7 @@ local cc = {};
 -- Collect transitive static library dependencies.
 --
 -- Walks dependencies from executables and dynamic libraries to find
--- transitive dependencies specified as dependencies of static
+-- transitive dependencies specified as passive dependencies of static
 -- libraries.  Those transitive libraries are made dependencies of the
 -- executable or dynamic library at the root of the walk.
 --
@@ -36,11 +36,12 @@ function cc.collect_transitive_dependencies( toolset, target )
     prune();
 end
 
--- Implement depend() with transitive dependencies for static libraries.
+-- Implement depend() for transitive dependencies on static libraries.
 --
 -- Dependencies with StaticLibrary prototypes or no prototypes are added as
--- transitive dependencies.  Other dependencies are added as normal
--- dependencies.
+-- passive dependencies to be propagated to binaries in the prepare pass
+-- before the build runs.  Other dependencies (e.g. object files) are added
+-- as normal dependencies.
 function cc.static_library_depend( toolset, target, dependencies )
     assert( type(dependencies) == 'table', 'Target.depend() parameter not a table as expected' );
     forge:merge( target, dependencies );
@@ -48,7 +49,7 @@ function cc.static_library_depend( toolset, target, dependencies )
         local dependency = toolset:SourceFile( value );
         local prototype = dependency:prototype();
         if prototype == nil or prototype == toolset.StaticLibrary then
-            target:add_transitive_dependency( dependency );
+            target:add_passive_dependency( dependency );
         else
             target:add_dependency( dependency );
         end
