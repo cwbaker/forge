@@ -44,7 +44,7 @@ end
 -- as normal dependencies.
 function cc.static_library_depend( toolset, target, dependencies )
     assert( type(dependencies) == 'table', 'Target.depend() parameter not a table as expected' );
-    forge:merge( target, dependencies );
+    merge( target, dependencies );
     for _, value in walk_tables(dependencies) do
         local dependency = toolset:SourceFile( value );
         local prototype = dependency:prototype();

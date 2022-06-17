@@ -310,7 +310,7 @@ function PatternPrototype( identifier, pattern )
         local targets_metatable = {
             __call = function( targets, dependencies )
                 local identify = pattern_prototype.identify or Toolset.interpolate;
-                local attributes = forge:merge( {}, dependencies );
+                local attributes = merge( {}, dependencies );
                 for _, filename in walk_tables(dependencies) do
                     local source_file = toolset:SourceFile( filename );
                     local identifier, filename = identify( toolset, root_relative(source_file):gsub(pattern, replacement) );
@@ -318,7 +318,7 @@ function PatternPrototype( identifier, pattern )
                     target:set_filename( filename or target:path() );
                     target:set_cleanable( true );
                     target:add_ordering_dependency( toolset:Directory(branch(target)) );
-                    forge:merge( target, attributes );
+                    merge( target, attributes );
                     local created = target.created;
                     if created then
                         created( toolset, target );
@@ -345,7 +345,7 @@ function GroupPrototype( identifier, pattern )
             __call = function( targets, dependencies )
                 local identify = group_prototype.identify or Toolset.interpolate;
                 local target = targets[1];
-                forge:merge( target, dependencies );
+                merge( target, dependencies );
                 for _, filename in walk_tables(dependencies) do
                     local source_file = toolset:SourceFile( filename );
                     local identifier, filename = identify( toolset, root_relative(source_file):gsub(pattern, replacement) );
@@ -429,8 +429,10 @@ function walk_all_dependencies( target, yield_recurse )
     return walk_dependencies( target, yield_recurse, Target.all_dependencies );
 end
 
--- Merge fields with string keys from /source/ to /destination/.
-function forge:merge( destination, source )
+-- Merge fields with string keys from source to destination.
+--
+-- Returns destination.
+function merge( destination, source )
     local destination = destination or {};
     for key, value in pairs(source) do
         if type(key) == 'string' then
