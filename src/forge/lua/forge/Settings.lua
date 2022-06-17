@@ -1,21 +1,6 @@
 
 local Settings = {};
 
-local function apply( destination, source )
-    if source then
-        local destination = destination or {};
-        for key, value in pairs(source) do
-            if type(value) ~= 'table' then
-                destination[key] = value;
-            else
-                destination[key] = apply( destination[key], value );
-            end
-        end
-        return destination;
-    end
-    return destination;
-end
-
 function Settings.create( self, values )
     local values = values or forge.local_settings;
     apply( self, values );

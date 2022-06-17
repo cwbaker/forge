@@ -448,6 +448,27 @@ function forge:merge( destination, source )
     return destination;
 end
 
+-- Recursively copy values from source to destination.
+--
+-- If destination is nil then it is created as an empty table.  This function
+-- does a deep copy operation recursively over a tree of Lua tables.
+--
+-- Returns destination.
+function apply( destination, source )
+    if source then
+        local destination = destination or {};
+        for key, value in pairs(source) do
+            if type(value) ~= 'table' then
+                destination[key] = value;
+            else
+                destination[key] = apply( destination[key], value );
+            end
+        end
+        return destination;
+    end
+    return destination;
+end
+
 -- Load cached dependencies and local settings.
 --
 -- Cached dependencies are loaded from the file named *.forge* in the root
