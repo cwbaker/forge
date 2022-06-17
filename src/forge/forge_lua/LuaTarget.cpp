@@ -853,7 +853,7 @@ int LuaTarget::target_call_metamethod( lua_State* lua_state )
         lua_pop( lua_state, 1 );
 
         lua_getglobal( lua_state, "hash" );
-        lua_getfield( lua_state, TOOLSET, "settings" );
+        lua_pushvalue( lua_state, TOOLSET );
         if ( lua_istable(lua_state, -1) )
         {
             lua_call( lua_state, 1, 1 );
@@ -865,7 +865,7 @@ int LuaTarget::target_call_metamethod( lua_State* lua_state )
         // The following calculation of the hash of the settings table without
         // calling into the Lua API so much should work but crashes for some
         // reason I don't understand.
-        // lua_getfield( lua_state, TOOLSET, "settings" );
+        // lua_pushvalue( lua_state, TOOLSET );
         // lua_Integer hash = LuaSystem::hash_recursively( lua_state, -1, false );
         // lua_pop( lua_state, 1 );
     }
