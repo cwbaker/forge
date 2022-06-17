@@ -557,8 +557,6 @@ setmetatable( forge, {
     end
 } );
 
-forge.Settings = require 'forge.Settings';
-
 forge.Toolset = require 'forge.Toolset';
 
 return forge;
