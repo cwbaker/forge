@@ -2,9 +2,8 @@
 local Settings = {};
 
 function Settings.create( self, values )
-    local values = values or forge.local_settings;
-    apply( self, values );
-    return self;
+    apply( self, forge.local_settings );
+    return apply( self, values );
 end
 
 function Settings.clone( self, values )

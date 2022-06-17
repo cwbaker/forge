@@ -550,10 +550,10 @@ function forge:save()
 end
 
 setmetatable( forge, {
-    __call = function( _, settings )
+    __call = function( _, variables )
         local forge = require( 'forge' ):load();
         local toolset = Toolset( forge.local_settings );
-        return toolset:clone( settings );
+        return toolset:clone( variables );
     end
 } );
 

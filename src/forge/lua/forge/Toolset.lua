@@ -3,42 +3,38 @@ local Toolset = _G.Toolset or {};
 
 function Toolset.new( toolset_prototype, values )
     local forge = require( 'forge' ):load( values );
-    local settings = forge.Settings():apply( values );
     local identifier = Toolset.interpolate( Toolset, values.identifier or '', values );
     local toolset = add_toolset( identifier, toolset_prototype );
-    toolset.settings = settings;
+    apply( toolset, forge.local_settings );
+    apply( toolset, values );
     toolset:install();
     return toolset;
 end
 
 function Toolset:clone( values )
-    local toolset = {
-        settings = forge.Settings()
-            :apply( self.settings )
-            :apply( values )
-        ;
-    };
+    local toolset = {};
     setmetatable( toolset, {__index = self} );
+    apply( toolset, self );
+    apply( toolset, values );
     return toolset;
 end
 
 function Toolset:inherit( values )
-    local toolset = {
-        settings = self.settings:inherit( values );
-    };
+    local toolset = values or {};
     setmetatable( toolset, {__index = self} );
     return toolset;
 end
 
 function Toolset:apply( values )
-    local settings = self.settings;
-    settings:apply( values );
-    return self;
+    return apply( self, values );
 end
 
 function Toolset:defaults( values )
-    local settings = self.settings;
-    settings:defaults( values );
+    for key, value in pairs(values) do 
+        if type(key) == 'string' and self[key] == nil then
+            self[key] = value;
+        end
+    end
     return self;
 end
 
@@ -64,9 +60,8 @@ function Toolset:install( toolset_prototype )
         local local_settings = forge.local_settings;
         module_settings = local_settings[id];
         if not module_settings then
-            local settings = self.settings;
-            module_settings = configure( self, settings[id] or {} );
-            settings[id] = module_settings;
+            module_settings = configure( self, self[id] or {} );
+            self[id] = module_settings;
             local_settings[id] = module_settings;
             local_settings.updated = true;
         end
@@ -93,17 +88,12 @@ function Toolset:interpolate( template, variables )
         return output;
     end
 
-    local settings = self.settings;
-    local variables = variables or settings;
-    local interpolate = self.interpolate;
+    local variables = variables or self;
     return (template:gsub('%$(%b{})', function(word) 
-        local parameters = split( interpolate(self, word:sub(2, -2), variables) );
+        local parameters = split( self:interpolate(word:sub(2, -2), variables) );
         local identifier = parameters[1];
         local index = 1;
         local substitute = variables and variables[identifier];
-        if not substitute then 
-            substitute = settings and settings[identifier];
-        end
         if not substitute then
             substitute = self[identifier];
         end
@@ -175,7 +165,7 @@ end
 
 -- Return true if this toolset's platform matches any passed in pattern.
 function Toolset:platform_matches( ... )
-    local platform = self.settings.platform;
+    local platform = self.platform;
     if platform == nil or platform == '' then 
         return true;
     end
@@ -190,14 +180,14 @@ end
 -- Convert a target into the object directory that it should build to.
 function Toolset:obj_directory( target )
     local relative_path = relative( target:working_directory():path(), root() );
-    return absolute( relative_path, self.settings.obj );
+    return absolute( relative_path, self.obj );
 end
 
 -- Recursively copy files from *source* to *destination*.
-function Toolset:cpdir( destination, source, settings )
-    local settings = settings or self.settings;
-    local destination = self:interpolate( destination, settings );
-    local source = self:interpolate( source, settings );
+function Toolset:cpdir( destination, source, variables )
+    local variables = variables or self;
+    local destination = self:interpolate( destination, variables );
+    local source = self:interpolate( source, variables );
     pushd( source );
     for source_filename in find('') do 
         if is_file(source_filename) then
