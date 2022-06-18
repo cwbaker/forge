@@ -47,12 +47,10 @@ local cc = require 'forge.cc' {
     warnings_as_errors = true;
 };
 
-local settings = cc.settings;
-
 -- Bump the C++ standard to c++14 when building on Windows as that is the 
 -- closest standard supported by Microsoft Visual C++.
-if settings.platform == 'windows' then
-    settings.standard = 'c++14';
+if cc.platform == 'windows' then
+    cc.standard = 'c++14';
 end
 
 buildfile 'src/assert/assert.forge';
