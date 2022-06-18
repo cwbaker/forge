@@ -22,7 +22,7 @@ for _, cc in toolsets('cc.*') do
             '${lib}/luaxx_unit_${architecture}';
             '${lib}/assert_${architecture}';
             '${lib}/error_${architecture}';
-            '${lib}/UnitTest++_${architecture}';
+            '${lib}/UnitTest++_${platform}_${architecture}';
 
             libraries = libraries;
             
