@@ -1,13 +1,12 @@
 
 local Toolset = _G.Toolset or {};
 
-function Toolset.new( toolset_prototype, values )
+function Toolset.new( _, values )
     local forge = require( 'forge' ):load( values );
-    local identifier = Toolset.interpolate( Toolset, values.identifier or '', values );
-    local toolset = add_toolset( identifier, toolset_prototype );
+    local identifier = Toolset.interpolate( Toolset, values and values.identifier or '', values );
+    local toolset = add_toolset( identifier );
     apply( toolset, forge.local_settings );
     apply( toolset, values );
-    toolset:install();
     return toolset;
 end
 
@@ -38,43 +37,28 @@ function Toolset:defaults( values )
     return self;
 end
 
-function Toolset.configure( toolset, module_settings )
-    return {};
-end
-
-function Toolset.validate( toolset, module_settings )
-    return true;
-end
-
-function Toolset.initialize( toolset )
-    return true;
-end
-
-function Toolset:install( toolset_prototype )
-    local id = toolset_prototype and tostring( toolset_prototype ) or tostring( self:prototype() );
-    local toolset_prototype = toolset_prototype or self;
-
-    local module_settings;
-    local configure = toolset_prototype.configure;
-    if configure and self:prototype() then
-        local local_settings = forge.local_settings;
-        module_settings = local_settings[id];
-        if not module_settings then
-            module_settings = configure( self, self[id] or {} );
-            self[id] = module_settings;
-            local_settings[id] = module_settings;
-            local_settings.updated = true;
-        end
+function Toolset:configure_once( id, configure )
+    local local_settings = forge.local_settings;
+    local settings = local_settings[id];
+    if not settings then
+        local project_settings = self[id] or {};
+        settings = configure( self, project_settings );
+        self[id] = settings;
+        local_settings[id] = settings;
+        local_settings.updated = true;
     end
+    return settings;
+end
 
-    local validate = toolset_prototype.validate;
-    if validate and not validate( self, module_settings ) then
-        return;
+function Toolset:install( module )
+    assert( module );
+    if type(module) == 'string' then
+        module = require( module );
+        assert( type(module) == 'table' );
     end
-
-    local initialize = toolset_prototype.initialize;
-    if initialize and not initialize( self ) then
-        return;
+    local install = module.install;
+    if install then
+        install( self );
     end
 end
 
