@@ -314,7 +314,7 @@ function gcc.append_libraries( toolset, target, flags )
             if library.whole_archive then 
                 table.insert( flags, '-Wl,--no-whole-archive' );
             end
-        end        
+        end
     end
 end
 
