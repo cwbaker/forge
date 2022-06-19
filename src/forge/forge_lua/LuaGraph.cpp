@@ -42,8 +42,6 @@ void LuaGraph::create( Forge* forge, lua_State* lua_state )
 
     static const luaL_Reg functions[] = 
     {
-        { "add_toolset_prototype", &LuaGraph::add_toolset_prototype },
-        { "new_toolset", &LuaGraph::add_toolset },
         { "add_toolset", &LuaGraph::add_toolset },
         { "all_toolsets", &LuaGraph::all_toolsets },
         { "find_target", &LuaGraph::find_target },
@@ -72,38 +70,15 @@ void LuaGraph::destroy()
 {
 }
 
-int LuaGraph::add_toolset_prototype( lua_State* lua_state )
-{
-    try
-    {
-        const int FORGE = lua_upvalueindex( 1 );
-        const int IDENTIFIER = 1;
-        string id = luaL_checkstring( lua_state, IDENTIFIER );        
-        Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
-        ToolsetPrototype* toolset_prototype = forge->graph()->add_toolset_prototype( id );
-        forge->create_toolset_prototype_lua_binding( toolset_prototype );
-        luaxx_push( lua_state, toolset_prototype );
-        return 1;
-    }
-    
-    catch ( const std::exception& exception )
-    {
-        lua_pushstring( lua_state, exception.what() );
-        return lua_error( lua_state );
-    }
-}
-
 int LuaGraph::add_toolset( lua_State* lua_state )
 {
     try
     {
         const int FORGE = lua_upvalueindex( 1 );
         const int IDENTIFIER = 1;
-        const int TOOLSET_PROTOTYPE = 2;
         Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
         string id = luaL_optstring( lua_state, IDENTIFIER, "" );
-        ToolsetPrototype* toolset_prototype = (ToolsetPrototype*) luaxx_to( lua_state, TOOLSET_PROTOTYPE, TOOLSET_PROTOTYPE_TYPE );
-        Toolset* toolset = forge->graph()->add_toolset( id, toolset_prototype );
+        Toolset* toolset = forge->graph()->add_toolset( id );
         forge->create_toolset_lua_binding( toolset );
         luaxx_push( lua_state, toolset );
         return 1;

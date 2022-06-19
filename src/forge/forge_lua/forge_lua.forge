@@ -30,7 +30,6 @@ for _, forge in toolsets('cc.*') do
             'LuaTarget.cpp',
             'LuaTargetPrototype.cpp',
             'LuaToolset.cpp',
-            'LuaToolsetPrototype.cpp',
             'types.cpp'
         };
     };

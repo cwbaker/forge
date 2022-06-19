@@ -48,7 +48,6 @@ for _, cc in toolsets('cc.*') do
             'Target.cpp',
             'TargetPrototype.cpp',
             'Toolset.cpp',
-            'ToolsetPrototype.cpp',
             'path_functions.cpp'
         };
     };
