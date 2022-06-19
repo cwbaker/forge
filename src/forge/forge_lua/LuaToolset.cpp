@@ -6,7 +6,6 @@
 #include "LuaToolset.hpp"
 #include "types.hpp"
 #include <forge/Toolset.hpp>
-#include <forge/ToolsetPrototype.hpp>
 #include <forge/Forge.hpp>
 #include <luaxx/luaxx.hpp>
 #include <assert/assert.hpp>
@@ -41,7 +40,6 @@ void LuaToolset::create( lua_State* lua_state )
     static const luaL_Reg functions[] = 
     {
         { "id", &LuaToolset::id },
-        { "prototype", &LuaToolset::prototype },
         { nullptr, nullptr }
     };
     luaxx_push( lua_state_, this );
@@ -94,20 +92,9 @@ void LuaToolset::create_toolset( Toolset* toolset )
 
 void LuaToolset::update_toolset( Toolset* toolset )
 {
-    ToolsetPrototype* toolset_prototype = toolset->prototype();
-    if ( toolset_prototype )
-    {
-        luaxx_push( lua_state_, toolset );
-        luaxx_push( lua_state_, toolset_prototype );
-        lua_setmetatable( lua_state_, -2 );
-        lua_pop( lua_state_, 1 );
-    }
-    else
-    {
-        luaxx_push( lua_state_, toolset );
-        luaL_setmetatable( lua_state_, TOOLSET_METATABLE );
-        lua_pop( lua_state_, 1 );
-    }
+    luaxx_push( lua_state_, toolset );
+    luaL_setmetatable( lua_state_, TOOLSET_METATABLE );
+    lua_pop( lua_state_, 1 );
 }
 
 void LuaToolset::destroy_toolset( Toolset* toolset )
@@ -126,23 +113,6 @@ int LuaToolset::id( lua_State* lua_state )
         const string& id = toolset->id();
         lua_pushlstring( lua_state, id.c_str(), id.length() );
         return 1;
-    }
-    return 0;
-}
-
-int LuaToolset::prototype( lua_State* lua_state )
-{
-    const int TOOLSET = 1;
-    Toolset* toolset = (Toolset*) luaxx_to( lua_state, TOOLSET, TOOLSET_TYPE );
-    luaL_argcheck( lua_state, toolset != nullptr, TOOLSET, "nil toolset" );
-    if ( toolset )
-    {
-        ToolsetPrototype* toolset_prototype = toolset->prototype();
-        if ( toolset_prototype )
-        {
-            luaxx_push( lua_state, toolset_prototype );
-            return 1;
-        }
     }
     return 0;
 }
