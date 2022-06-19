@@ -7,7 +7,7 @@ for _, forge in toolsets('cc.*') do
             '${lib}/cmdline_${architecture}';
             '${lib}/error_${architecture}';
             '${lib}/assert_${architecture}';
-            '${lib}/UnitTest++_${architecture}';
+            '${lib}/UnitTest++_${platform}_${architecture}';
             
             forge:Cxx '${obj}/%1' {
                 'TestParser.cpp',

@@ -278,10 +278,19 @@ lua_Integer LuaSystem::hash_recursively( lua_State* lua_state, int table, bool h
         lua_pop( lua_state, 1 );
         return hash;
     }
+    lua_pop( lua_state, 1 );
 
-    // Initiate iteration with the nil left on top of the stack by the call
-    // to `lua_getfield()` that failed to find a "__forge_hash" field.
+    // Store a zero hash in the "__forge_hash" key in the table to prevent
+    // infinite recursion in the case of cycles in the graph of table
+    // relationships.
     lua_Integer hash = 0;
+    lua_pushstring( lua_state, HASH_KEYWORD );
+    lua_pushinteger( lua_state, hash );
+    lua_rawset( lua_state, table );
+
+    // Calculate the hash from each key and value stored in the table,
+    // recursively for table values.
+    lua_pushnil( lua_state );
     while ( lua_next(lua_state, table) )
     {
         uint64_t working_hash = fnv1a_start();

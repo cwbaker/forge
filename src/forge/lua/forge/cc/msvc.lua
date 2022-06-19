@@ -168,10 +168,9 @@ function msvc.initialize( toolset )
     -- See http://blogs.msdn.com/freik/archive/2006/04/05/569025.aspx.
     -- putenv( "VS_UNICODE_OUTPUT", "" );
 
-    local settings = toolset.settings;
-    local toolset_version = settings.msvc.toolset_version;
-    local visual_studio_directory = settings.msvc.visual_studio_directory;
-    local visual_cxx_directory = settings.msvc.visual_cxx_directory;
+    local toolset_version = toolset.msvc.toolset_version;
+    local visual_studio_directory = toolset.msvc.visual_studio_directory;
+    local visual_cxx_directory = toolset.msvc.visual_cxx_directory;
 
     local path_i386, path_x86_64, lib_i386, lib_x86_64, include;
 
@@ -233,9 +232,9 @@ function msvc.initialize( toolset )
         };
     end
     
-    local sdk_directory = settings.msvc.windows_sdk_directory;
-    local sdk_version = settings.msvc.windows_sdk_version;
-    local ucrt_directory = settings.msvc.ucrt_directory;
+    local sdk_directory = toolset.msvc.windows_sdk_directory;
+    local sdk_version = toolset.msvc.windows_sdk_version;
+    local ucrt_directory = toolset.msvc.ucrt_directory;
     if sdk_directory then 
         table.insert( include, ('%s\\Include\\%s\\ucrt'):format(ucrt_directory, sdk_version) );
         table.insert( include, ('%s\\Include\\%s\\um'):format(sdk_directory, sdk_version) );
@@ -318,9 +317,8 @@ function msvc.initialize( toolset )
 
     -- Assume that 'native' architecture on Windows means x86_64.  This isn't
     -- necessarily true but is more likely than i386 and any ARM variants.
-    local settings = toolset.settings;
-    if settings.architecture == 'native' then
-        settings.architecture = 'x86-64';
+    if toolset.architecture == 'native' then
+        toolset.architecture = 'x86-64';
     end
 
     return true;
@@ -350,8 +348,6 @@ end
 
 -- Compile C and C++.
 function msvc.compile( toolset, target, language ) 
-    local settings = toolset.settings;    
-
     local flags = {};
     msvc.append_defines( toolset, target, flags );
     msvc.append_include_directories( toolset, target, flags );
@@ -388,7 +384,7 @@ function msvc.compile( toolset, target, language )
             local ccflags = table.concat( flags, ' ' );
             local source = table.concat( sources, '" "' );
             local cl = msvc.visual_cxx_tool( toolset, 'cl.exe' );
-            local environment = msvc.environments_by_architecture[settings.architecture];
+            local environment = msvc.environments_by_architecture[toolset.architecture];
             pushd( directory );
             system( 
                 cl, 
@@ -408,13 +404,11 @@ end
 
 -- Archive objects into a static library. 
 function msvc.archive( toolset, target ) 
-    local settings = toolset.settings;
-
     local flags = {
         '/nologo'
     };
    
-    if settings.link_time_code_generation then
+    if toolset.link_time_code_generation then
         table.insert( flags, '/ltcg' );
     end
     
@@ -438,7 +432,7 @@ function msvc.archive( toolset, target )
         local arflags = table.concat( flags, ' ' );
         local arobjects = table.concat( objects, '" "' );
         local msar = msvc.visual_cxx_tool( toolset, 'lib.exe' );
-        local environment = msvc.environments_by_architecture[settings.architecture];
+        local environment = msvc.environments_by_architecture[toolset.architecture];
         system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:filename()), arobjects), environment );
     else
         touch( target );
@@ -473,13 +467,12 @@ function msvc.link( toolset, target )
     msvc.append_third_party_libraries( toolset, target, libraries );
 
     if #objects > 0 then
-        local settings = toolset.settings;
         local msld = msvc.visual_cxx_tool( toolset, "link.exe" );
         local msmt = msvc.windows_sdk_tool( toolset, "mt.exe" );
         local msrc = msvc.windows_sdk_tool( toolset, "rc.exe" );
         local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( toolset:obj_directory(target), target:id() );
 
-        if settings.incremental_linking then
+        if toolset.incremental_linking then
             local embedded_manifest = ("%s_embedded.manifest"):format( target:id() );
             local embedded_manifest_rc = ("%s_embedded_manifest.rc"):format( target:id() );
             local embedded_manifest_res = ("%s_embedded_manifest.res"):format( target:id() );
@@ -499,7 +492,7 @@ function msvc.link( toolset, target )
             local ldflags = table.concat( flags, ' ' );
             local ldlibs = table.concat( libraries, ' ' );
             local ldobjects = table.concat( objects, '" "' );
-            local environment = msvc.environments_by_architecture[settings.architecture];
+            local environment = msvc.environments_by_architecture[toolset.architecture];
 
             if exists(embedded_manifest) ~= true then
                 system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
@@ -522,7 +515,7 @@ function msvc.link( toolset, target )
             local ldflags = table.concat( flags, ' ' );
             local ldlibs = table.concat( libraries, ' ' );
             local ldobjects = table.concat( objects, '" "' );
-            local environment = msvc.environments_by_architecture[settings.architecture];
+            local environment = msvc.environments_by_architecture[toolset.architecture];
 
             system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
             sleep( 100 );
@@ -533,16 +526,15 @@ function msvc.link( toolset, target )
 end
 
 function msvc.visual_cxx_tool( toolset, tool )
-    local settings = toolset.settings;
-    local msvc = settings.msvc;
+    local msvc = toolset.msvc;
     if msvc.toolset_version >= 15 then 
-        if settings.architecture == 'x86-64' then
+        if toolset.architecture == 'x86-64' then
             return ('%s\\bin\\Hostx64\\x64\\%s'):format( msvc.visual_cxx_directory, tool );
         else
             return ('%s\\bin\\Hostx64\\x86\\%s'):format( msvc.visual_cxx_directory, tool );
         end
     else
-        if settings.architecture == 'x86-64' then
+        if toolset.architecture == 'x86-64' then
             return ('%s/VC/bin/amd64/%s'):format( msvc.visual_studio_directory, tool );
         else
             return ('%s/VC/bin/%s'):format( msvc.visual_studio_directory, tool );
@@ -551,10 +543,9 @@ function msvc.visual_cxx_tool( toolset, tool )
 end
 
 function msvc.windows_sdk_tool( toolset, tool )
-    local settings = toolset.settings;
-    local directory = settings.msvc.windows_sdk_directory;
-    local version = settings.msvc.windows_sdk_version;
-    if settings.architecture == "x86_64" then
+    local directory = toolset.msvc.windows_sdk_directory;
+    local version = toolset.msvc.windows_sdk_version;
+    if toolset.architecture == 'x86-64' then
         return ("%s\\bin\\%s\\x64\\%s"):format( directory, version, tool );
     else
         return ("%s\\bin\\%s\\x86\\%s"):format( directory, version, tool );
@@ -571,13 +562,10 @@ function msvc.append_flags( flags, values, format )
 end
 
 function msvc.append_defines( toolset, target, flags )
-    local settings = toolset.settings;
-
-    if not settings.assertions then
+    if not toolset.assertions then
         table.insert( flags, '/DNDEBUG' );
     end
-
-    msvc.append_flags( flags, settings.defines, '/D%s' );
+    msvc.append_flags( flags, toolset.defines, '/D%s' );
     msvc.append_flags( flags, target.defines, '/D%s' );
 end
 
@@ -598,12 +586,10 @@ function msvc.append_include_directories( toolset, target, flags )
         end
     end
     append_directories( flags, target.include_directories, '/I "%s"' );
-    append_directories( flags, toolset.settings.include_directories, '/I "%s"' );
+    append_directories( flags, toolset.include_directories, '/I "%s"' );
 end
 
 function msvc.append_compile_flags( toolset, target, flags, language )
-    local settings = toolset.settings;
-
     table.insert( flags, '/nologo' );
     table.insert( flags, '/FS' );
     table.insert( flags, '/FC' );
@@ -611,64 +597,64 @@ function msvc.append_compile_flags( toolset, target, flags, language )
     table.insert( flags, '/showIncludes' );
 
     msvc.append_flags( flags, target.cppflags );
-    msvc.append_flags( flags, settings.cppflags );
+    msvc.append_flags( flags, toolset.cppflags );
 
     local language = language or 'c++';
     if language == 'c' then 
         table.insert( flags, '/TC' );
     elseif language == 'c++' then
         table.insert( flags, '/TP' );
-        if settings.exceptions then
+        if toolset.exceptions then
             table.insert( flags, '/EHsc' );
         end
-        if settings.run_time_type_info then
+        if toolset.run_time_type_info then
             table.insert( flags, '/GR' );
         end
     else
         assert( false, 'Only C and C++ are supported by Microsoft Visual C++' );
     end
 
-    local standard = settings.standard;
+    local standard = toolset.standard;
     if standard then 
         table.insert( flags, ('/std:%s'):format(standard) );
     end
 
-    if settings.runtime_library == 'static' then
+    if toolset.runtime_library == 'static' then
         table.insert( flags, '/MT' );
-    elseif settings.runtime_library == 'static_debug' then
+    elseif toolset.runtime_library == 'static_debug' then
         table.insert( flags, '/MTd' );
-    elseif settings.runtime_library == 'dynamic' then
+    elseif toolset.runtime_library == 'dynamic' then
         table.insert( flags, '/MD' );
-    elseif settings.runtime_library == 'dynamic_debug' then
+    elseif toolset.runtime_library == 'dynamic_debug' then
         table.insert( flags, '/MDd' );
     end
     
-    if settings.debug then
+    if toolset.debug then
         local pdb = ('%s/%s.pdb'):format(toolset:obj_directory(target), target:working_directory():id() );
         table.insert( flags, ('/Zi /Fd%s'):format(native(pdb)) );
     end
 
-    if settings.link_time_code_generation then
+    if toolset.link_time_code_generation then
         table.insert( flags, '/GL' );
     end
 
-    if settings.optimization then
+    if toolset.optimization then
         table.insert( flags, '/GF /O2 /Ot /Oi /Ox /Oy /GS- /favor:blend' );
     end
 
-    if settings.preprocess then
+    if toolset.preprocess then
         table.insert( flags, '/P /C' );
     end
 
-    if settings.run_time_checks then
+    if toolset.run_time_checks then
         table.insert( flags, '/RTC1' );
     end
 
-    if settings.warnings_as_errors then 
+    if toolset.warnings_as_errors then 
         table.insert( flags, '/WX' );
     end
 
-    local warning_level = settings.warning_level
+    local warning_level = toolset.warning_level
     if warning_level == 0 then 
         table.insert( flags, '/w' );
     elseif warning_level == 1 then
@@ -682,67 +668,65 @@ function msvc.append_compile_flags( toolset, target, flags, language )
     end
 
     if language == 'c++' then
-        msvc.append_flags( flags, settings.cxxflags );
+        msvc.append_flags( flags, toolset.cxxflags );
         msvc.append_flags( flags, target.cxxflags );
     else
-        msvc.append_flags( flags, settings.cflags );
+        msvc.append_flags( flags, toolset.cflags );
         msvc.append_flags( flags, target.cflags );
     end
 end
 
 function msvc.append_library_directories( toolset, target, flags )
     msvc.append_flags( flags, target.library_directories, '/libpath:"%s"' );
-    msvc.append_flags( flags, toolset.settings.library_directories, '/libpath:"%s"' );
+    msvc.append_flags( flags, toolset.library_directories, '/libpath:"%s"' );
 end
 
 function msvc.append_link_flags( toolset, target, flags )
-    local settings = toolset.settings;
-
     table.insert( flags, "/nologo" );
 
-    msvc.append_flags( flags, settings.ldflags );
+    msvc.append_flags( flags, toolset.ldflags );
     msvc.append_flags( flags, target.ldflags );
 
     local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( toolset:obj_directory(target), target:id() );
     table.insert( flags, '/manifest' );
     table.insert( flags, ('/manifestfile:%s'):format(intermediate_manifest) );
     
-    if settings.subsystem then
-        table.insert( flags, ('/subsystem:%s'):format(settings.subsystem) );
+    if toolset.subsystem then
+        table.insert( flags, ('/subsystem:%s'):format(toolset.subsystem) );
     end
 
     table.insert( flags, ('/out:%s'):format(native(target:filename())) );
     if target:prototype() == toolset.DynamicLibrary then
         table.insert( flags, '/dll' );
-        table.insert( flags, ('/implib:%s'):format(native(('%s/%s.lib'):format(settings.lib, target:id()))) );
+        table.insert( flags, ('/implib:%s'):format(native(('%s/%s.lib'):format(toolset.lib, target:id()))) );
     end
     
-    if settings.verbose_linking then
+    if toolset.verbose_linking then
         table.insert( flags, '/verbose' );
     end
     
-    if settings.debug then
+    if toolset.debug then
         table.insert( flags, '/debug' );
         local pdb = ('%s/%s.pdb'):format( toolset:obj_directory(target), target:id() );
         table.insert( flags, ('/pdb:%s'):format(native(pdb)) );
     end
 
-    if settings.link_time_code_generation then
+    if toolset.link_time_code_generation then
         table.insert( flags, '/ltcg' );
     end
 
-    if settings.generate_map_file then
+    if toolset.generate_map_file then
         local map = ('%s/%s.map'):format( toolset:obj_directory(target), target:id() );
         table.insert( flags, ('/map:%s'):format(native(map)) );
     end
 
-    if settings.optimization then
+    if toolset.optimization then
         table.insert( flags, '/opt:ref' );
         table.insert( flags, '/opt:icf' );
     end
 
-    if settings.stack_size then
-        table.insert( flags, ('/stack:%d'):format(settings.stack_size) );
+    if toolset.stack_size then
+        table.insert( flags, ('/stack:%d'):format(toolset.stack_size) );
     end
 end
 
@@ -761,7 +745,7 @@ function msvc.append_libraries( toolset, target, flags )
 end
 
 function msvc.append_third_party_libraries( toolset, target, flags )
-    msvc.append_flags( flags, toolset.settings.libraries );
+    msvc.append_flags( flags, toolset.libraries );
     msvc.append_flags( flags, target.libraries );
 end
 

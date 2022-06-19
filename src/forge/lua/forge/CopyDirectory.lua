@@ -4,18 +4,15 @@ local Copy = require 'forge.Copy';
 local CopyDirectory = TargetPrototype( 'CopyDirectory' );
 
 function CopyDirectory.create( toolset, identifier )
-    local settings = toolset.settings;
-    local identifier = toolset:interpolate( identifier, settings );
+    local identifier = toolset:interpolate( identifier );
     local copy_directory = Target( toolset, anonymous(), CopyDirectory );
     copy_directory:add_ordering_dependency( toolset:Directory(absolute(identifier)) );
-    copy_directory.settings = settings;
     return copy_directory;
 end
 
 function CopyDirectory.depend( toolset, target, dependencies )
-    local settings = target.settings;
     for _, value in ipairs(dependencies) do 
-        local source_directory = toolset:interpolate( value, settings );
+        local source_directory = toolset:interpolate( value );
         local destination_directory = target:ordering_dependency():filename();
         local cache = find_target( forge.cache );
         cache:add_dependency( toolset:SourceDirectory(source_directory) );

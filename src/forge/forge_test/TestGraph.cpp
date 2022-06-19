@@ -28,14 +28,14 @@ SUITE( TestGraph )
         CHECK( errors == 0 );
     }
     
-    TEST_FIXTURE( FileChecker, files_are_not_outdated_if_they_do_exist )
+    TEST_FIXTURE( FileChecker, files_are_not_outdated_if_they_exist )
     {
         const char* script = 
             "local SourceFile = TargetPrototype( 'SourceFile' ); \n"
             "local File = TargetPrototype( 'File' ); \n"
-            "local foo_cpp = Target( forge, 'foo.cpp', SourceFile ); \n"
+            "local foo_cpp = Target( nil, 'foo.cpp', SourceFile ); \n"
             "foo_cpp:set_filename( foo_cpp:path() ); \n"
-            "local foo_obj = Target( forge, 'foo.obj', File ); \n"
+            "local foo_obj = Target( nil, 'foo.obj', File ); \n"
             "foo_obj:set_filename( foo_obj:path() ); \n"
             "foo_obj:add_dependency( foo_cpp ); \n"
             "postorder( foo_obj, function() end ); \n"

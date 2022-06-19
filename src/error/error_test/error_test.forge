@@ -4,7 +4,7 @@ for _, forge in toolsets( 'cc.*' ) do
         forge:Executable '${bin}/error_test' {
             '${lib}/error_${architecture}';
             '${lib}/assert_${architecture}';
-            '${lib}/UnitTest++_${architecture}';
+            '${lib}/UnitTest++_${platform}_${architecture}';
 
             forge:Cxx '${obj}/%1' {
                 'main.cpp'

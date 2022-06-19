@@ -92,14 +92,12 @@ end
 
 -- Compile C and C++ source to object files.
 function gcc.compile( toolset, target, language )
-    local settings = toolset.settings;
-
     local flags = {};
     gcc.append_defines( toolset, target, flags );
     gcc.append_include_directories( toolset, target, flags );
     gcc.append_compile_flags( toolset, target, flags, language );
     
-    local gcc_ = settings.gcc.gcc;
+    local gcc_ = toolset.gcc.gcc;
     local environment = { PATH = branch(gcc_) };
     local ccflags = table.concat( flags, ' ' );
     local dependencies = ('%s.d'):format( target );
@@ -118,7 +116,6 @@ end
 
 -- Archive objects into a static library. 
 function gcc.archive( toolset, target )
-    local settings = toolset.settings;
     pushd( toolset:obj_directory(target) );
     local objects =  {};
     local outdated_objects = 0;
@@ -134,7 +131,7 @@ function gcc.archive( toolset, target )
     if outdated_objects > 0 or not exists(target) then
         printf( leaf(target) );
         local objects = table.concat( objects, '" "' );
-        local ar = settings.gcc.ar;
+        local ar = toolset.gcc.ar;
         local environment = { PATH = branch(ar) };
         system( ar, ('ar -rcs "%s" "%s"'):format(native(target), objects), environment );
     else
@@ -164,11 +161,10 @@ function gcc.link( toolset, target )
     gcc.append_third_party_libraries( toolset, target, libraries );
 
     if #objects > 0 then
-        local settings = toolset.settings;
         local ldflags = table.concat( flags, ' ' );
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, ' ' );
-        local gxx = settings.gcc.gxx;
+        local gxx = toolset.gcc.gxx;
         local environment = { PATH = branch(gxx) };
         printf( leaf(target) );
         system( gxx, ('g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
@@ -187,72 +183,67 @@ function gcc.append_flags( flags, values, format )
 end
 
 function gcc.append_defines( toolset, target, flags )
-    local settings = toolset.settings;
-
-    if not settings.assertions then 
+    if not toolset.assertions then 
         table.insert( flags, '-DNDEBUG' );
     end
-
-    gcc.append_flags( flags, settings.defines, '-D%s' );
+    gcc.append_flags( flags, toolset.defines, '-D%s' );
     gcc.append_flags( flags, target.defines, '-D%s' );
 end
 
 function gcc.append_include_directories( toolset, target, flags )
     gcc.append_flags( flags, target.include_directories, '-I "%s"' );
-    gcc.append_flags( flags, toolset.settings.include_directories, '-I "%s"' );
+    gcc.append_flags( flags, toolset.include_directories, '-I "%s"' );
 end
 
 function gcc.append_compile_flags( toolset, target, flags, language )
-    local settings = toolset.settings;
-
     table.insert( flags, '-c' );
-    table.insert( flags, ('-march=%s'):format(settings.architecture) );
+    table.insert( flags, ('-march=%s'):format(toolset.architecture) );
     table.insert( flags, '-fpic' );
     
     gcc.append_flags( flags, target.cppflags );
-    gcc.append_flags( flags, settings.cppflags );
+    gcc.append_flags( flags, toolset.cppflags );
 
     local language = language or 'c++';
     table.insert( flags, ('-x %s'):format(language) );
     if string.find(language, 'c++', 1, true) then
-        if settings.exceptions then
+        if toolset.exceptions then
             table.insert( flags, '-fexceptions' );
         end
 
-        if settings.run_time_type_info then
+        if toolset.run_time_type_info then
             table.insert( flags, '-frtti' );
         end
 
-        local standard = settings.standard;
+        local standard = toolset.standard;
         if standard then 
             table.insert( flags, ('-std=%s'):format(standard) );
         end
     end
         
-    if settings.debug then
+    if toolset.debug then
         table.insert( flags, '-g3' );
     end
 
-    if settings.optimization then
+    if toolset.optimization then
         table.insert( flags, '-O3' );
         table.insert( flags, '-Ofast' );
     end
     
-    if settings.preprocess then
+    if toolset.preprocess then
         table.insert( flags, '-E' );
     end
 
-    if settings.runtime_checks then
+    if toolset.runtime_checks then
         table.insert( flags, '-fstack-protector' );
     else
         table.insert( flags, '-fno-stack-protector' );
     end
 
-    if settings.warnings_as_errors then 
+    if toolset.warnings_as_errors then 
         table.insert( flags, '-Werror' );
     end
 
-    local warning_level = settings.warning_level
+    local warning_level = toolset.warning_level
     if warning_level == 0 then 
         table.insert( flags, '-w' );
     elseif warning_level == 1 then
@@ -262,52 +253,50 @@ function gcc.append_compile_flags( toolset, target, flags, language )
     end
 
     if language:find('c++', 1, true) then
-        gcc.append_flags( flags, settings.cxxflags );
+        gcc.append_flags( flags, toolset.cxxflags );
         gcc.append_flags( flags, target.cxxflags );
     else
-        gcc.append_flags( flags, settings.cflags );
+        gcc.append_flags( flags, toolset.cflags );
         gcc.append_flags( flags, target.cflags );
     end
 end
 
 function gcc.append_library_directories( toolset, target, flags )
     gcc.append_flags( flags, target.library_directories, '-L "%s"' );
-    gcc.append_flags( flags, toolset.settings.library_directories, '-L "%s"' );
+    gcc.append_flags( flags, toolset.library_directories, '-L "%s"' );
 end
 
 function gcc.append_link_flags( toolset, target, flags )
-    local settings = toolset.settings;
-
-    gcc.append_flags( flags, settings.ldflags );
+    gcc.append_flags( flags, toolset.ldflags );
     gcc.append_flags( flags, target.ldflags );
 
-    table.insert( flags, ('-march=%s'):format(settings.architecture) );
+    table.insert( flags, ('-march=%s'):format(toolset.architecture) );
     table.insert( flags, "-std=c++11" );
 
     if target:prototype() == toolset.DynamicLibrary then
         table.insert( flags, "-shared" );
     end
     
-    if settings.verbose_linking then
+    if toolset.verbose_linking then
         table.insert( flags, "--verbose" );
     end
     
-    if settings.debug then
+    if toolset.debug then
         table.insert( flags, "-g" );
     end
 
     -- The latest GCC with Android (or clang with iOS) doesn't recognize 
     -- '-Wl,map' to specify the path to output a mapfile.
-    -- if settings.generate_map_file then
+    -- if toolset.generate_map_file then
     --     table.insert( flags, ('-Wl,-Map,"%s"'):format(native(("%s.map"):format(target:filename()))) );
     -- end
 
-    if settings.strip and not settings.generate_dsym_bundle then
+    if toolset.strip and not toolset.generate_dsym_bundle then
         table.insert( flags, "-Wl,--strip-all" );
     end
 
-    if settings.exported_symbols_list then
-        table.insert( flags, ('-exported_symbols_list "%s"'):format(absolute(settings.exported_symbols_list)) );
+    if toolset.exported_symbols_list then
+        table.insert( flags, ('-exported_symbols_list "%s"'):format(absolute(toolset.exported_symbols_list)) );
     end
 
     table.insert( flags, ('-o "%s"'):format(native(target:filename())) );
@@ -330,7 +319,7 @@ function gcc.append_libraries( toolset, target, flags )
 end
 
 function gcc.append_third_party_libraries( toolset, target, flags )
-    gcc.append_flags( flags, toolset.settings.libraries, '-l%s' );
+    gcc.append_flags( flags, toolset.libraries, '-l%s' );
     gcc.append_flags( flags, target.libraries, '-l%s' );
 end
 
