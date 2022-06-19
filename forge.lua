@@ -7,7 +7,7 @@ package.path = root('src/forge/lua/?.lua')..';'..root('src/forge/lua/?/init.lua'
 variant = variant or 'debug';
 architecture = architecture or 'native';
 
-local cc = require 'forge.cc' {
+local cc = require( 'forge' ).Toolset {
     identifier = 'cc_${platform}_${architecture}';
     platform = operating_system();
     bin = root( ('%s/bin'):format(variant) );
@@ -46,6 +46,8 @@ local cc = require 'forge.cc' {
     warning_level = 3;
     warnings_as_errors = true;
 };
+
+cc:install( require('forge.cc') );
 
 -- Bump the C++ standard to c++14 when building on Windows as that is the 
 -- closest standard supported by Microsoft Visual C++.
