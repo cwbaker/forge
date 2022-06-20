@@ -1,7 +1,7 @@
 
-local msvc = ToolsetPrototype( 'msvc' );
+local msvc = {};
 
-function msvc.configure( toolset, msvc_settings )
+function msvc.configure( toolset )
     local function vswhere()
         local vswhere = 'C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe';
         if exists( vswhere ) then 
@@ -149,15 +149,13 @@ function msvc.configure( toolset, msvc_settings )
     };
 end
 
-function msvc.validate( toolset, msvc_settings )
-    return 
-        operating_system() == 'windows' and 
-        msvc_settings.toolset_version ~= nil and 
-        msvc_settings.visual_cxx_directory ~= nil
-    ;
-end
+function msvc.install( toolset )
+    local settings = toolset:configure_once( toolset, msvc.configure );
+    if operating_system() == 'windows' then 
+        assert( settings.toolset_version ~= nil );
+        assert( settings.visual_cxx_directory ~= nil );
+    end
 
-function msvc.initialize( toolset )
     -- Make sure that the environment variable VS_UNICODE_OUTPUT is not set.
     --
     -- Visual Studio sets this to signal its tools to communicate back to 
