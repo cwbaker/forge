@@ -7,7 +7,7 @@ package.path = root('src/forge/lua/?.lua')..';'..root('src/forge/lua/?/init.lua'
 variant = variant or 'debug';
 architecture = architecture or 'native';
 
-local forge = require 'forge';
+local forge = require( 'forge' ):load( variant );
 
 local toolset = forge.Toolset {
     identifier = 'cc_${platform}_${architecture}';
