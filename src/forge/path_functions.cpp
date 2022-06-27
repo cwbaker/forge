@@ -116,8 +116,8 @@ boost::filesystem::path make_drive_uppercase( std::string path )
 // Search up from *directory* to find *filename* in the root directory.
 //
 // Searches up the directory hierarchy from *directory* to the root directory 
-// to find the highest directory containing a file named *filename*.  This 
-// directory is returned as the root directory.
+// to find the first directory containing a file named *filename*.  This
+// directory is returned as the root directory for the build.
 //
 // @param directory
 //  The directory to start the search from.
@@ -128,21 +128,16 @@ boost::filesystem::path make_drive_uppercase( std::string path )
 boost::filesystem::path search_up_for_root_directory( const std::string& directory, const std::string& filename )
 {
     using boost::filesystem::exists;
-    boost::filesystem::path root_directory;
     boost::filesystem::path current_directory( directory );
     while ( !current_directory.empty() && current_directory.has_root_directory() )
     {
         if ( exists((current_directory / filename).string()) )
         {
-            root_directory = current_directory;
+            return make_drive_uppercase( current_directory.generic_string() );
         }
         current_directory = current_directory.branch_path();
     }
-    if ( !exists((root_directory / filename).string()) )
-    {
-        return boost::filesystem::path();
-    }
-    return make_drive_uppercase( root_directory.generic_string() );
+    return boost::filesystem::path();
 }
 
 }
