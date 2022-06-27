@@ -549,14 +549,6 @@ function forge:save()
     save_binary();
 end
 
-setmetatable( forge, {
-    __call = function( _, variables )
-        local forge = require( 'forge' ):load();
-        local toolset = Toolset( forge.local_settings );
-        return toolset:clone( variables );
-    end
-} );
-
 forge.Toolset = require 'forge.Toolset';
 
 return forge;
