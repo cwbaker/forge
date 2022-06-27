@@ -1,24 +1,21 @@
 
-local clang = ToolsetPrototype( 'clang' );
+local clang = {};
 
-function clang.configure( toolset, clang_settings )
+function clang.configure( toolset, settings )
     local paths = os.getenv( 'PATH' );
     return {
-        cc = which( clang_settings.cc or os.getenv('CC') or 'clang', paths );
-        cxx = which( clang_settings.cxx or os.getenv('CXX') or 'clang++', paths );
-        ar = which( clang_settings.ar or os.getenv('AR') or 'ar', paths );
+        cc = which( settings.cc or os.getenv('CC') or 'clang', paths );
+        cxx = which( settings.cxx or os.getenv('CXX') or 'clang++', paths );
+        ar = which( settings.ar or os.getenv('AR') or 'ar', paths );
     };
 end
 
-function clang.validate( toolset, clang_settings )
-    return 
-        exists( clang_settings.cc ) and 
-        exists( clang_settings.cxx ) and 
-        exists( clang_settings.ar )
-    ;
-end
+function clang.install( toolset )
+    local settings = toolset:configure_once( 'clang', clang.configure );
+    exists( settings.cc );
+    exists( settings.cxx );
+    exists( settings.ar );
 
-function clang.initialize( toolset )
     local Cc = PatternPrototype( 'Cc' );
     Cc.identify = clang.object_filename;
     Cc.build = function( toolset, target ) clang.compile( toolset, target, 'c' ) end;

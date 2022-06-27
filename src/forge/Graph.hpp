@@ -13,7 +13,6 @@ namespace forge
 {
 
 class Environment;
-class ToolsetPrototype;
 class TargetPrototype;
 class Toolset;
 class Target;
@@ -25,9 +24,8 @@ class Forge;
 class Graph
 {
     Forge* forge_; ///< The Forge that this Graph is part of.
-    std::vector<ToolsetPrototype*> toolset_prototypes_; ///< The ToolsetPrototypes that have been created.
     std::vector<TargetPrototype*> target_prototypes_; ///< The TargetPrototypes that have been created.
-    std::vector<Toolset*> toolsets_; ///< The TargetPrototypes that have been created.
+    std::vector<Toolset*> toolsets_; ///< The Toolsets that have been created.
     std::string filename_; ///< The filename that this Graph was most recently loaded from.
     std::unique_ptr<Target> root_target_; ///< The root Target for this Graph.
     Target* cache_target_; ///< The cache Target for this Graph.
@@ -51,9 +49,8 @@ class Graph
         int visited_revision() const;
         int successful_revision() const;             
 
-        ToolsetPrototype* add_toolset_prototype( const std::string& id );
         TargetPrototype* add_target_prototype( const std::string& id );
-        Toolset* add_toolset( const std::string& id, ToolsetPrototype* toolset_prototype );
+        Toolset* add_toolset( const std::string& id );
         Target* target( const std::string& id );
         Target* add_or_find_target( const std::string& id, Target* working_directory = nullptr );
         Target* find_target( const std::string& path, Target* working_directory );

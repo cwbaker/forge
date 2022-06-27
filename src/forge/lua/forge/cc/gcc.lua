@@ -1,24 +1,21 @@
 
-local gcc = ToolsetPrototype( 'gcc' );
+local gcc = {};
 
-function gcc.configure( toolset, gcc_settings )
+function gcc.configure( toolset, settings )
     local paths = os.getenv( 'PATH' );
     return {
-        gcc = which( gcc_settings.gcc or os.getenv('CC') or 'gcc', paths );
-        gxx = which( gcc_settings.gxx or os.getenv('CXX') or 'g++', paths );
-        ar = which( gcc_settings.ar or os.getenv('AR') or 'ar', paths );
+        gcc = which( settings.gcc or os.getenv('CC') or 'gcc', paths );
+        gxx = which( settings.gxx or os.getenv('CXX') or 'g++', paths );
+        ar = which( settings.ar or os.getenv('AR') or 'ar', paths );
     };
 end
 
-function gcc.validate( toolset, gcc_settings )
-    return 
-        exists( gcc_settings.gcc ) and 
-        exists( gcc_settings.gxx ) and 
-        exists( gcc_settings.ar )
-    ;
-end
+function gcc.install( toolset )
+    local settings = toolset:configure_once( 'gcc', gcc.configure );
+    assert( exists(settings.gcc) );
+    assert( exists(settings.gxx) );
+    assert( exists(settings.ar) );
 
-function gcc.initialize( toolset )
     local Cc = PatternPrototype( 'Cc' );
     Cc.identify = gcc.object_filename;
     Cc.build = function( toolset, target ) gcc.compile( toolset, target, 'c' ) end;

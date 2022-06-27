@@ -21,7 +21,6 @@ public:
     void destroy();
 
 private:
-    static int add_toolset_prototype( lua_State* lua_state );
     static int add_toolset( lua_State* lua_state );
     static int all_toolsets_iterator( lua_State* lua_state );
     static int all_toolsets( lua_State* lua_state );

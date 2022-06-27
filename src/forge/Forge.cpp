@@ -18,7 +18,6 @@
 #include <forge/forge_lua/LuaTarget.hpp>
 #include <forge/forge_lua/LuaTargetPrototype.hpp>
 #include <forge/forge_lua/LuaToolset.hpp>
-#include <forge/forge_lua/LuaToolsetPrototype.hpp>
 #include <error/ErrorPolicy.hpp>
 #include <assert/assert.hpp>
 
@@ -474,18 +473,6 @@ void Forge::destroy_target_prototype_lua_binding( TargetPrototype* target_protot
 {
     SWEET_ASSERT( lua_ );
     lua_->lua_target_prototype()->destroy_target_prototype( target_prototype );
-}
-
-void Forge::create_toolset_prototype_lua_binding( ToolsetPrototype* toolset_prototype )
-{
-    SWEET_ASSERT( lua_ );
-    lua_->lua_toolset_prototype()->create_toolset_prototype( toolset_prototype );
-}
-
-void Forge::destroy_toolset_prototype_lua_binding( ToolsetPrototype* toolset_prototype )
-{
-    SWEET_ASSERT( lua_ );
-    lua_->lua_toolset_prototype()->destroy_toolset_prototype( toolset_prototype );
 }
 
 /**

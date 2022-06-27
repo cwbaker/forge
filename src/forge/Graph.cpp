@@ -4,7 +4,6 @@
 //
 
 #include "Graph.hpp"
-#include "ToolsetPrototype.hpp"
 #include "TargetPrototype.hpp"
 #include "Toolset.hpp"
 #include "Target.hpp"
@@ -32,16 +31,15 @@ using namespace sweet::forge;
 // Constructor.
 */
 Graph::Graph()
-: forge_( nullptr ),
-  toolset_prototypes_(),
-  target_prototypes_(),
-  toolsets_(),
-  filename_(),
-  root_target_( nullptr ),
-  cache_target_( nullptr ),
-  traversal_in_progress_( false ),
-  visited_revision_( 0 ),
-  successful_revision_( 0 )
+: forge_( nullptr )
+, target_prototypes_()
+, toolsets_()
+, filename_()
+, root_target_( nullptr )
+, cache_target_( nullptr )
+, traversal_in_progress_( false )
+, visited_revision_( 0 )
+, successful_revision_( 0 )
 {
 }
 
@@ -52,16 +50,15 @@ Graph::Graph()
 //  The Forge that this Graph is part of.
 */
 Graph::Graph( Forge* forge )
-: forge_( forge ),
-  toolset_prototypes_(),
-  target_prototypes_(),
-  toolsets_(),
-  filename_(),
-  root_target_(),
-  cache_target_(),
-  traversal_in_progress_( false ),
-  visited_revision_( 0 ),
-  successful_revision_( 0 )
+: forge_( forge )
+, target_prototypes_()
+, toolsets_()
+, filename_()
+, root_target_()
+, cache_target_()
+, traversal_in_progress_( false )
+, visited_revision_( 0 )
+, successful_revision_( 0 )
 {
     SWEET_ASSERT( forge_ );
     root_target_.reset( new Target("$$root", this) );
@@ -79,12 +76,6 @@ Graph::~Graph()
     {
         delete target_prototypes_.back();
         target_prototypes_.pop_back();
-    }
-
-    while ( !toolset_prototypes_.empty() )
-    {
-        delete toolset_prototypes_.back();
-        toolset_prototypes_.pop_back();
     }
 }
 
@@ -208,22 +199,6 @@ int Graph::successful_revision() const
 }
 
 /**
-// Create a new toolset prototype.
-//
-// @param id
-//  The identifier of the toolset prototype to create.
-//
-// @return
-//  The ToolsetPrototype.
-*/
-ToolsetPrototype* Graph::add_toolset_prototype( const std::string& id )
-{   
-    unique_ptr<ToolsetPrototype> toolset_prototype( new ToolsetPrototype(id, forge_) );
-    toolset_prototypes_.push_back( toolset_prototype.get() );
-    return toolset_prototype.release();
-}
-
-/**
 // Create a new target prototype.
 //
 // @param id
@@ -239,9 +214,9 @@ TargetPrototype* Graph::add_target_prototype( const std::string& id )
     return target_prototype.release();
 }
 
-Toolset* Graph::add_toolset( const std::string& id, ToolsetPrototype* toolset_prototype )
+Toolset* Graph::add_toolset( const std::string& id )
 {
-    unique_ptr<Toolset> toolset( new Toolset(id, toolset_prototype, this) );
+    unique_ptr<Toolset> toolset( new Toolset(id, this) );
     toolsets_.push_back( toolset.get() );
     return toolset.release();
 }

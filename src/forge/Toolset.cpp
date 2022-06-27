@@ -4,7 +4,6 @@
 //
 
 #include "Toolset.hpp"
-#include "ToolsetPrototype.hpp"
 #include "Graph.hpp"
 #include "Forge.hpp"
 #include <assert/assert.hpp>
@@ -12,10 +11,9 @@
 using namespace sweet;
 using namespace sweet::forge;
 
-Toolset::Toolset( const std::string& id, ToolsetPrototype* toolset_prototype, Graph* graph )
-: id_( id ),
-  graph_( graph ),
-  prototype_( toolset_prototype )
+Toolset::Toolset( const std::string& id, Graph* graph )
+: id_( id )
+, graph_( graph )
 {
     SWEET_ASSERT( graph_ );
 }
@@ -36,9 +34,4 @@ const std::string& Toolset::id() const
 Graph* Toolset::graph() const
 {
     return graph_;
-}
-
-ToolsetPrototype* Toolset::prototype() const
-{
-    return prototype_;
 }

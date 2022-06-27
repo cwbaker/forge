@@ -1,20 +1,21 @@
 
-require 'forge';
-local cc = require 'forge.cc' {};
+local forge = require 'forge';
+local toolset = forge.Toolset();
+toolset:install( 'forge.cc' );
 
 TestSuite {
     transitive_dependencies_found = function()
-        local exe = cc:Executable 'exe' {
+        local exe = toolset:Executable 'exe' {
             'foo';
             'baz';
         };
-        local foo = cc:StaticLibrary 'foo' {
+        local foo = toolset:StaticLibrary 'foo' {
             'bar';
         };
-        local bar = cc:StaticLibrary 'bar' {
+        local bar = toolset:StaticLibrary 'bar' {
             'baz';
         };
-        local baz = cc:StaticLibrary 'baz' {            
+        local baz = toolset:StaticLibrary 'baz' {            
         };
 
         CHECK( exe:dependency(1) == foo );
