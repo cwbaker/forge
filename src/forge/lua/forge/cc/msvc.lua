@@ -150,7 +150,7 @@ function msvc.configure( toolset )
 end
 
 function msvc.install( toolset )
-    local settings = toolset:configure_once( toolset, msvc.configure );
+    local settings = toolset:configure_once( 'msvc', msvc.configure );
     if operating_system() == 'windows' then 
         assert( settings.toolset_version ~= nil );
         assert( settings.visual_cxx_directory ~= nil );
