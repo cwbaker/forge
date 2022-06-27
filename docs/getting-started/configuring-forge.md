@@ -8,7 +8,7 @@ nav_order: 2
 - TOC
 {:toc}
 
-When invoked Forge searches from the current directory up to root directory looking for a file named *forge.lua*.  The *forge.lua* file found in the highest level directory is the root build script.  The directory containing the root build script becomes the root directory of the project.
+When invoked `forge` searches up from the current working directory, until it finds a file named `forge.lua`.  That file is the build script, executed to configure the build.  The directory containing `forge.lua` becomes the root directory of the project.
 
 The root build script is a plain Lua script.  When executed it defines the dependency graph describing the build.  Typically the root build script first creates toolsets to represent the tools and settings used in the build and then loads one or more buildfiles that use those toolsets to define the dependency graph.
 
