@@ -481,12 +481,19 @@ end
 -- directory of the project if it exists or set to an empty table otherwise.
 --
 -- Returns self
-function forge:load()
+function forge:load( cache_directory )
     if not self.loaded then
-        local variant = _G.variant or self.variant;
+        if cache_directory then
+            local local_settings = root( ('%s/local_settings.lua'):format(cache_directory) );
+            self.cache_directory = cache_directory;
+            self.local_settings = exists( local_settings ) and dofile( local_settings ) or {};
+            self.cache = root( ('%s/.forge'):format(cache_directory) );
+        else
+            local local_settings = root( 'local_settings.lua' );
+            self.local_settings = exists( local_settings ) and dofile( local_settings ) or {};
+            self.cache = root( '.forge' );
+        end
         self.loaded = true;
-        self.local_settings = exists( root('local_settings.lua') ) and dofile( root('local_settings.lua') ) or {};
-        self.cache = variant and root( ('%s/.forge'):format(variant) ) or root( '.forge' );
         load_binary( self.cache );
     end
     return self;
@@ -539,7 +546,8 @@ function forge:save()
     local local_settings = self.local_settings;
     if local_settings and local_settings.updated then
         local_settings.updated = nil;
-        local filename = root( 'local_settings.lua' );
+        local cache_directory = self.cache_directory;
+        local filename = cache_directory and root( ('%s/local_settings.lua'):format(cache_directory) ) or root( 'local_settings.lua' );
         local file = io.open( filename, 'wb' );
         assertf( file, 'Opening "%s" to write settings failed', filename );
         serialize( file, local_settings, 0 );
@@ -548,14 +556,6 @@ function forge:save()
     mkdir( branch(forge.cache) );
     save_binary();
 end
-
-setmetatable( forge, {
-    __call = function( _, variables )
-        local forge = require( 'forge' ):load();
-        local toolset = Toolset( forge.local_settings );
-        return toolset:clone( variables );
-    end
-} );
 
 forge.Toolset = require 'forge.Toolset';
 
