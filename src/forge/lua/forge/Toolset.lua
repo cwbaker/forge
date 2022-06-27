@@ -2,10 +2,11 @@
 local Toolset = _G.Toolset or {};
 
 function Toolset.new( _, values )
-    local forge = require( 'forge' ):load( values );
+    local local_settings = require( 'forge' ).local_settings;
+    assertf( local_settings, 'missing local settings' );
     local identifier = Toolset.interpolate( Toolset, values and values.identifier or '', values );
     local toolset = add_toolset( identifier );
-    apply( toolset, forge.local_settings );
+    apply( toolset, local_settings );
     apply( toolset, values );
     return toolset;
 end
@@ -38,11 +39,12 @@ function Toolset:defaults( values )
 end
 
 function Toolset:configure_once( id, configure )
-    local local_settings = forge.local_settings;
+    local local_settings = require( 'forge' ).local_settings;
+    assertf( local_settings, 'missing local settings' );
     local settings = local_settings[id];
     if not settings then
-        local project_settings = self[id] or {};
-        settings = configure( self, project_settings );
+        local module_settings = self[id] or {};
+        settings = configure( self, module_settings );
         self[id] = settings;
         local_settings[id] = settings;
         local_settings.updated = true;
