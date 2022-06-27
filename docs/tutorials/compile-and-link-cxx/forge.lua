@@ -1,7 +1,9 @@
 
 variant = variant or 'debug';
 
-local cc = require 'forge.cc' {
+local forge = require( 'forge' ):load( variant );
+
+local cc = forge.Toolset {
     identifier = 'cc_${platform}_${architecture}';
     platform = operating_system();
     architecture = 'x86-64';
@@ -17,6 +19,8 @@ local cc = require 'forge.cc' {
     assertions = variant ~= 'shipping';
     debug = variant ~= 'shipping';
 };
+
+cc:install( 'forge.cc' );
 
 cc:all {
     'src/executable/all';

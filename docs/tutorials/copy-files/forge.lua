@@ -1,6 +1,10 @@
--- Initialize Forge and configure the output directory to *output*
+
+-- Initialize Forge and load any existing dependency graph.
+local forge = require( 'forge' ):load();
+
+-- Configure a toolset with the output directory to *output*
 -- relative to the root directory that contains *forge.lua*.
-local toolset = require 'forge' {
+local toolset = forge.Toolset {
     output = root( 'output' );
 };
 
