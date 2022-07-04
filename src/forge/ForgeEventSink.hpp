@@ -1,5 +1,4 @@
-#ifndef FORGE_BUILDTOOLEVENTSINK_HPP_INCLUDED
-#define FORGE_BUILDTOOLEVENTSINK_HPP_INCLUDED
+#pragma once
 
 namespace sweet
 {
@@ -25,5 +24,3 @@ class ForgeEventSink
 }
 
 }
-
-#endif
