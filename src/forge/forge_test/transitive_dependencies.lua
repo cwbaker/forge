@@ -1,5 +1,5 @@
 
-local forge = require 'forge';
+local forge = require( 'forge' ):load();
 local toolset = forge.Toolset();
 toolset:install( 'forge.cc' );
 
