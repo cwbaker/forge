@@ -27,6 +27,7 @@ using std::list;
 using std::vector;
 using std::string;
 using std::unique_ptr;
+using std::function;
 using namespace sweet;
 using namespace sweet::lua;
 using namespace sweet::luaxx;
@@ -40,7 +41,6 @@ Scheduler::Scheduler( Forge* forge )
 , results_()
 , pending_results_( 0 )
 , buildfile_calls_( 0 )
-, failures_( 0 )
 {
     SWEET_ASSERT( forge_ );
 }
@@ -109,11 +109,17 @@ int Scheduler::buildfile( const boost::filesystem::path& path )
     return yielded ? -1 : errors;
 }
 
-bool Scheduler::preorder_visit( int function, Target* target )
+void Scheduler::preorder_visit( int function, Job* job )
 {
-    SWEET_ASSERT( target );
+    SWEET_ASSERT( job );
 
-    Context* context = allocate_context( target->working_directory(), nullptr );
+    Target* target = job->target();
+    SWEET_ASSERT( target );
+    SWEET_ASSERT( !target->visiting() );
+    target->set_visited( true );
+    target->set_visiting( true );
+
+    Context* context = allocate_context( target->working_directory(), job );
     process_begin( context );
 
     lua_State* lua_state = context->lua_state();
@@ -121,44 +127,42 @@ bool Scheduler::preorder_visit( int function, Target* target )
     luaxx_push( lua_state, target );
     resume( lua_state, 1 );
     
-    bool prune = context->prune();
     int errors = process_end( context );
     if ( errors > 0 )
     {
-        ++failures_;
         forge_->errorf( "Preorder visit of '%s' failed", target->id().c_str() );
     }
     target->set_successful( errors == 0 );
-    return !prune;
 }
 
 void Scheduler::postorder_visit( int function, Job* job )
 {
     SWEET_ASSERT( job );
 
-    if ( job->target()->buildable() )
+    Target* target = job->target();
+    SWEET_ASSERT( target );
+
+    if ( target->buildable() )
     {
         Context* context = allocate_context( job->working_directory(), job );
         process_begin( context );
 
         lua_State* lua_state = context->lua_state();
         lua_rawgeti( lua_state, LUA_REGISTRYINDEX, function );
-        luaxx_push( lua_state, job->target() );
+        luaxx_push( lua_state, target );
         resume( lua_state, 1 );
         
         int errors = process_end( context );
         if ( errors > 0 )
         {
-            ++failures_;
-            forge_->errorf( "Postorder visit of '%s' failed", job->target()->id().c_str() );
+            forge_->errorf( "Postorder visit of '%s' failed", target->id().c_str() );
         }
-
         job->target()->set_successful( errors == 0 );
     }
     else
     {
-        forge_->error( job->target()->failed_dependencies().c_str() );
-        job->target()->set_successful( false );
+        forge_->error( target->failed_dependencies().c_str() );
+        target->set_successful( false );
         job->set_state( JOB_COMPLETE );
     }    
 }
@@ -330,18 +334,13 @@ int Scheduler::preorder( Target* target, int function )
     struct Preorder
     {
         Forge* forge_;
-        Scheduler* scheduler_;
-        int function_;
-        int failures_;
+        list<Job> jobs_;
         
-        Preorder( Forge* forge, Scheduler* scheduler, int function )
+        Preorder( Forge* forge )
         : forge_( forge )
-        , scheduler_( scheduler )
-        , function_( function )
-        , failures_( 0 )
+        , jobs_()
         {
             SWEET_ASSERT( forge_ );
-            SWEET_ASSERT( scheduler_ );
             forge_->graph()->begin_traversal();
         }
         
@@ -350,35 +349,83 @@ int Scheduler::preorder( Target* target, int function )
             forge_->graph()->end_traversal();
         }
 
-        void visit( Target* target )
+        void begin_traversal( Target* target )
         {
             SWEET_ASSERT( target );
-
-            if ( target->referenced_by_script() && target->working_directory() && !target->visited() )
+            SWEET_ASSERT( !target->visited() );
+            if ( target->referenced_by_script() && target->working_directory() )
             {
-                ScopedVisit scoped_visit( target );
-                if ( scheduler_->preorder_visit(function_, target) )
-                {
-                    int i = 0;
-                    Target* dependency = target->any_dependency( i );
-                    while ( dependency )
-                    {
-                        if ( !dependency->visiting() )
-                        {
-                            visit( dependency );
-                        }
-                        else
-                        {
-                            forge_->errorf( "Cyclic dependency from %s to %s in preorder", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
-                            dependency->set_successful( true );
-                            ++failures_;
-                        }
-                        ++i;
-                        dependency = target->any_dependency( i );
-                    }
-                }
-                target->set_successful( true );
+                jobs_.push_back( Job(target) );
             }
+        }
+
+        Job* pull_job()
+        {
+            remove_complete_jobs();
+
+            list<Job>::iterator job = jobs_.begin();
+            while ( job != jobs_.end() && job->state() != JOB_WAITING )
+            {
+                ++job;
+            }
+
+            if ( job != jobs_.end() )
+            {
+                SWEET_ASSERT( job->state() == JOB_WAITING );
+                job->set_state( JOB_PROCESSING );
+            }
+
+            return job != jobs_.end() ? &(*job) : nullptr;
+        }
+        
+        void remove_complete_jobs()
+        {
+            list<Job>::iterator job = jobs_.begin();
+            list<Job>::iterator end = jobs_.end();
+            while ( job != end )
+            {
+                if ( job->state() == JOB_COMPLETE )
+                {
+                    Target* target = job->target();
+                    SWEET_ASSERT( target );
+                    SWEET_ASSERT( target->visiting() );
+
+                    if ( target->successful() && !job->prune() )
+                    {
+                        int i = 0;
+                        Target* dependency = target->any_dependency( i );
+                        while ( dependency )
+                        {
+                            if ( dependency->referenced_by_script() && dependency->working_directory() && !dependency->visited() )
+                            {
+                                if ( !dependency->visiting() )
+                                {
+                                    jobs_.push_back( Job(dependency) );
+                                }
+                                else
+                                {
+                                    forge_->errorf( "Cyclic dependency from %s to %s in preorder", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
+                                    dependency->set_successful( true );
+                                }
+                            }
+                            ++i;
+                            dependency = target->any_dependency( i );
+                        }
+                    }
+
+                    target->set_visiting( false );
+                    job = jobs_.erase( job );
+                }
+                else
+                {
+                    ++job;
+                }
+            }
+        }
+
+        bool empty() const
+        {
+            return jobs_.empty();
         }
     };
 
@@ -389,9 +436,24 @@ int Scheduler::preorder( Target* target, int function )
         return 1;
     }
 
-    Preorder preorder( forge_, this, function );
-    preorder.visit( target ? target : graph->root_target() );
-    return preorder.failures_;
+    error::ErrorPolicy& error_policy = forge_->error_policy();
+    error_policy.push_errors();
+
+    Preorder preorder( forge_ );
+    preorder.begin_traversal( target ? target : graph->root_target() );
+    while ( !preorder.empty() )
+    {
+        Job* job = preorder.pull_job();
+        while ( job )
+        {
+            preorder_visit( function, job );
+            job = preorder.pull_job();
+        }
+        dispatch_results();
+    }
+    wait();
+
+    return error_policy.pop_errors();
 }
 
 int Scheduler::postorder( Target* target, int function )
@@ -400,12 +462,10 @@ int Scheduler::postorder( Target* target, int function )
     {
         Forge* forge_;
         list<Job> jobs_;
-        int failures_;
         
         Postorder( Forge* forge )
-        : forge_( forge ),
-          jobs_(),
-          failures_( 0 )
+        : forge_( forge )
+        , jobs_()
         {
             SWEET_ASSERT( forge_ );
             forge_->graph()->begin_traversal();
@@ -416,24 +476,10 @@ int Scheduler::postorder( Target* target, int function )
             forge_->graph()->end_traversal();
         }
     
-        void remove_complete_jobs()
-        {
-            list<Job>::iterator job = jobs_.begin();
-            while ( job != jobs_.end() )
-            {
-                if ( job->state() == JOB_COMPLETE )
-                {
-                    job = jobs_.erase( job );
-                }
-                else
-                {
-                    ++job;
-                }
-            }
-        }
-
         Job* pull_job()
         {
+            remove_complete_jobs();
+
             int height = INT_MAX;
             list<Job>::iterator job = jobs_.begin();
 
@@ -452,14 +498,25 @@ int Scheduler::postorder( Target* target, int function )
             return job != jobs_.end() ? &(*job) : NULL;
         }
         
+        void remove_complete_jobs()
+        {
+            list<Job>::iterator job = jobs_.begin();
+            while ( job != jobs_.end() )
+            {
+                if ( job->state() == JOB_COMPLETE )
+                {
+                    job = jobs_.erase( job );
+                }
+                else
+                {
+                    ++job;
+                }
+            }
+        }
+
         bool empty() const
         {
             return jobs_.empty();
-        }
-
-        int failures() const
-        {
-            return failures_;
         }
 
         void visit( Target* target )
@@ -484,7 +541,6 @@ int Scheduler::postorder( Target* target, int function )
                     {
                         forge_->errorf( "Cyclic dependency from %s to %s in postorder", target->error_identifier().c_str(), dependency->error_identifier().c_str() );
                         dependency->set_successful( true );
-                        ++failures_;
                     }
 
                     ++i;
@@ -512,27 +568,27 @@ int Scheduler::postorder( Target* target, int function )
         return 1;
     }
     
+    error::ErrorPolicy& error_policy = forge_->error_policy();
+    error_policy.push_errors();
+
     Postorder postorder( forge_ );
     postorder.visit( target ? target : graph->root_target() );
-    failures_ = postorder.failures();
-    if ( failures_ == 0 )
+    if ( error_policy.errors() == 0 )
     {
-        postorder.remove_complete_jobs();
         while ( !postorder.empty() )
         {
-            postorder.remove_complete_jobs();
             Job* job = postorder.pull_job();
             while ( job )
             {
                 postorder_visit( function, job );
-                postorder.remove_complete_jobs();
                 job = postorder.pull_job();
             }
             dispatch_results();
         }
         wait();
     }
-    return failures_;
+
+    return error_policy.pop_errors();
 }
 
 Context* Scheduler::context() const
@@ -558,6 +614,7 @@ void Scheduler::free_context( Context* context )
     if ( job )
     {
         job->set_state( JOB_COMPLETE );
+        job->set_prune( context->prune() );
     }
 
     delete context;
@@ -571,6 +628,7 @@ void Scheduler::destroy_context( Context* context )
     if ( job )
     {
         job->set_state( JOB_COMPLETE );
+        job->set_prune( true );
         job->target()->set_successful( false );
     }
 
@@ -587,7 +645,7 @@ bool Scheduler::dispatch_results()
 
     while ( !results_.empty() )
     {
-        std::function<void()> result = results_.front();
+        function<void()> result = move( results_.front() );
         results_.pop_front();
         lock.unlock();
         result();
