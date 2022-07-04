@@ -23,16 +23,8 @@ for _, forge in toolsets('cc.*') do
 
     forge:all {
         forge:Executable '${bin}/forge' {
-            '${lib}/forge_${architecture}';
-            '${lib}/forge_lua_${architecture}';
-            '${lib}/process_${architecture}';
-            '${lib}/luaxx_${architecture}';
             '${lib}/cmdline_${architecture}';
-            '${lib}/error_${architecture}';
-            '${lib}/assert_${architecture}';
-            '${lib}/liblua_${platform}_${architecture}';
-            '${lib}/boost_filesystem_${architecture}';
-            '${lib}/boost_system_${architecture}';
+            '${lib}/forge_${architecture}';
 
             libraries = libraries;
             

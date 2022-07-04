@@ -20,8 +20,10 @@ for _, cc in toolsets('cc.*') do
         '${lib}/boost_filesystem_${architecture}';
         '${lib}/boost_system_${architecture}';
         '${lib}/error_${architecture}';
-        '${lib}/process_${architecture}';
         '${lib}/forge_lua_${architecture}';
+        '${lib}/liblua_${platform}_${architecture}';
+        '${lib}/luaxx_${architecture}';
+        '${lib}/process_${architecture}';
 
         cc:Cxx '${obj}/%1' {
             defines = {
