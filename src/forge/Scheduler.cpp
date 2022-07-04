@@ -33,15 +33,14 @@ using namespace sweet::luaxx;
 using namespace sweet::forge;
 
 Scheduler::Scheduler( Forge* forge )
-: forge_( forge ),
-  active_contexts_(),
-  results_mutex_(),
-  results_condition_(),
-  results_(),
-  execute_jobs_( 0 ),
-  read_jobs_( 0 ),
-  buildfile_calls_( 0 ),
-  failures_( 0 )
+: forge_( forge )
+, active_contexts_()
+, results_mutex_()
+, results_condition_()
+, results_()
+, pending_results_( 0 )
+, buildfile_calls_( 0 )
+, failures_( 0 )
 {
     SWEET_ASSERT( forge_ );
 }
@@ -255,7 +254,8 @@ void Scheduler::push_errorf( const char* format, ... )
 void Scheduler::push_execute_finished( int exit_code, Context* context, process::Environment* environment )
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
-    --execute_jobs_;
+    SWEET_ASSERT( pending_results_ > 0 );
+    --pending_results_;
     results_.push_back( std::bind(&Scheduler::execute_finished, this, exit_code, context, environment) );
     results_condition_.notify_all();
 }
@@ -263,7 +263,8 @@ void Scheduler::push_execute_finished( int exit_code, Context* context, process:
 void Scheduler::push_read_finished( Filter* filter, Arguments* arguments )
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
-    --read_jobs_;
+    SWEET_ASSERT( pending_results_ > 0 );
+    --pending_results_;
     results_.push_back( std::bind(&Scheduler::read_finished, this, filter, arguments) );
     results_condition_.notify_all();
 }
@@ -273,14 +274,14 @@ void Scheduler::execute( const std::string& command, const std::string& command_
     SWEET_ASSERT( !command.empty() );
     std::unique_lock<std::mutex> lock( results_mutex_ );
     forge_->executor()->execute( command, command_line, environment, dependencies_filter, stdout_filter, stderr_filter, arguments, context );
-    ++execute_jobs_;
+    ++pending_results_;
 }
 
 void Scheduler::read( intptr_t fd_or_handle, Filter* filter, Arguments* arguments, Target* working_directory )
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
     forge_->reader()->read( fd_or_handle, filter, arguments, working_directory );
-    ++read_jobs_;
+    ++pending_results_;
 }
 
 void Scheduler::prune()
@@ -579,12 +580,9 @@ void Scheduler::destroy_context( Context* context )
 bool Scheduler::dispatch_results()
 {
     std::unique_lock<std::mutex> lock( results_mutex_ );
-    if ( results_.empty() )
+    while ( results_.empty() && pending_results_ > 0 )
     {
-        if ( execute_jobs_ > 0 || read_jobs_ > 0 )
-        {
-            results_condition_.wait( lock );            
-        }
+        results_condition_.wait( lock );
     }
 
     while ( !results_.empty() )
@@ -596,7 +594,7 @@ bool Scheduler::dispatch_results()
         lock.lock();
     }
     
-    return execute_jobs_ > 0 || read_jobs_ > 0;
+    return pending_results_ > 0;
 }
 
 void Scheduler::process_begin( Context* context )

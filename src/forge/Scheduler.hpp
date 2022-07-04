@@ -43,8 +43,7 @@ class Scheduler
     std::condition_variable results_condition_; ///< The Condition that is used to wait for results.
     std::deque<std::function<void()> > results_; ///< The functions to be executed as a result of jobs processing in the thread pool.
     std::vector<Target*> buildfiles_stack_; ///< The stack of currently processing buildfiles.
-    int execute_jobs_; ///< The number of outstanding execute jobs.
-    int read_jobs_; ///< The number of outstanding read jobs.
+    int pending_results_; ///< The number of results waiting on execute and read tasks to finish.
     int buildfile_calls_; ///< The number of outstanding calls made to load buildfiles.
     int failures_; ///< The number of failures in the most recent postorder traversal.
 
