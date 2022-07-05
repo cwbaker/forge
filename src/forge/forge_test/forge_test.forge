@@ -17,11 +17,11 @@ for _, cc in toolsets('cc.*') do
     };
     cc:all {
         cc:Executable '${bin}/forge_test' {
+            '${lib}/assert_${architecture}';
             '${lib}/cmdline_test_${architecture}';
+            '${lib}/error_${architecture}';
             '${lib}/forge_${architecture}';
             '${lib}/luaxx_unit_${architecture}';
-            '${lib}/assert_${architecture}';
-            '${lib}/error_${architecture}';
             '${lib}/UnitTest++_${platform}_${architecture}';
 
             libraries = libraries;
@@ -33,6 +33,7 @@ for _, cc in toolsets('cc.*') do
                 };
                 'dependencies.cpp',
                 'main.cpp',
+                'preorder.cpp',
                 'ErrorChecker.cpp',
                 'FileChecker.cpp',
                 'ForgeLuaFixture.cpp',
