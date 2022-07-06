@@ -56,7 +56,7 @@ void LuaToolset::create( lua_State* lua_state )
     lua_pop( lua_state_, 1 );
 
     // Create a metatable for toolsets that redirects index operations to
-    // `Toolset` and calls to `Toolset.inherit()`.
+    // `Toolset` and string conversion to `Toolset::id()`.
     luaL_newmetatable( lua_state_, TOOLSET_METATABLE );
     luaxx_push( lua_state_, this );
     lua_setfield( lua_state_, -2, "__index" );
