@@ -1,6 +1,6 @@
 
 local forge = require( 'forge' ):load();
-local toolset = forge.Toolset();
+local toolset = forge.Toolset() {};
 toolset:install( 'forge.cc' );
 
 TestSuite {
