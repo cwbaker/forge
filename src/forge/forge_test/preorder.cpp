@@ -1,5 +1,5 @@
 //
-// dependencies.cpp
+// preorder.cpp
 // Copyright (c) Charles Baker. All rights reserved.
 //
 
@@ -9,10 +9,10 @@
 
 using namespace sweet::forge;
 
-SUITE( dependencies )
+SUITE( preorder )
 {
-    TEST_FIXTURE( ForgeLuaFixture, transitive_dependencies )
+    TEST_FIXTURE( ForgeLuaFixture, preorder )
     {
-        forge->file( "transitive_dependencies.lua" );
+        forge->file( "preorder.lua" );
     }
 }

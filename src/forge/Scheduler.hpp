@@ -45,7 +45,6 @@ class Scheduler
     std::vector<Target*> buildfiles_stack_; ///< The stack of currently processing buildfiles.
     int pending_results_; ///< The number of results waiting on execute and read tasks to finish.
     int buildfile_calls_; ///< The number of outstanding calls made to load buildfiles.
-    int failures_; ///< The number of failures in the most recent postorder traversal.
 
     public:
         Scheduler( Forge* forge );
@@ -54,7 +53,7 @@ class Scheduler
         void script( const boost::filesystem::path& working_directory, const std::string& script );
         void command( const boost::filesystem::path& working_directory, const std::string& command );
         int buildfile( const boost::filesystem::path& path );
-        bool preorder_visit( int function, Target* target );
+        void preorder_visit( int function, Job* job );
         void postorder_visit( int function, Job* job );
         void execute_finished( int exit_code, Context* context, process::Environment* environment );
         void read_finished( Filter* filter, Arguments* arguments );
