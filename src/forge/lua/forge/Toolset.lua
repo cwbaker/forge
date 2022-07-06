@@ -1,14 +1,17 @@
 
 local Toolset = _G.Toolset or {};
 
-function Toolset.new( _, values )
-    local local_settings = require( 'forge' ).local_settings;
-    assertf( local_settings, 'missing local settings' );
-    local identifier = Toolset.interpolate( Toolset, values and values.identifier or '', values );
-    local toolset = add_toolset( identifier );
-    apply( toolset, local_settings );
-    apply( toolset, values );
-    return toolset;
+function Toolset.new( _, template )
+    local function generate_toolset( values )
+        local local_settings = require( 'forge' ).local_settings;
+        assertf( local_settings, 'missing local settings' );
+        local identifier = Toolset.interpolate( Toolset, template or '', values );
+        local toolset = add_toolset( identifier );
+        apply( toolset, local_settings );
+        apply( toolset, values );
+        return toolset;
+    end;
+    return generate_toolset;
 end
 
 function Toolset:clone( values )
