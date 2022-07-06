@@ -13,6 +13,7 @@ SUITE( dependencies )
 {
     TEST_FIXTURE( ForgeLuaFixture, transitive_dependencies )
     {
-        forge->file( "transitive_dependencies.lua" );
+        int errors = forge->file( "transitive_dependencies.lua" );
+        CHECK( errors == 0 );
     }
 }
