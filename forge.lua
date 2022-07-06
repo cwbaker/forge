@@ -9,8 +9,7 @@ architecture = architecture or 'native';
 
 local forge = require( 'forge' ):load( variant );
 
-local toolset = forge.Toolset {
-    identifier = 'cc_${platform}_${architecture}';
+local toolset = forge.Toolset 'cc_${platform}_${architecture}' {
     platform = operating_system();
     bin = root( ('%s/bin'):format(variant) );
     lib = root( ('%s/lib'):format(variant) );
