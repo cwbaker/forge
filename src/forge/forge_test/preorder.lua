@@ -1,7 +1,7 @@
 
 local function dependency_graph()
     local forge = require( 'forge' ):load();
-    local toolset = forge.Toolset();
+    local toolset = forge.Toolset() {};
     local one = toolset:Target 'one' {'two'; 'three';};
     local two = toolset:Target 'two' {'four'; 'three';};
     local three = toolset:Target 'three' {};
