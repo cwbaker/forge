@@ -12,10 +12,11 @@ namespace sweet
 namespace forge
 {
 
-struct FileChecker : public ErrorChecker
+class FileChecker : public ErrorChecker
 {
     std::vector<std::string> files_;
     
+public:
     FileChecker();
     ~FileChecker();
     void create( const char* filename, const char* content, std::time_t last_write_time = 0 );
