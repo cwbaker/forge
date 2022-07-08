@@ -87,7 +87,9 @@ end
 
 -- Provide global reconfigure command.
 function reconfigure()
-    rm( root('local_settings.lua') );
+    local cache_directory = forge.cache_directory;
+    local filename = cache_directory and root( ('%s/local_settings.lua'):format(cache_directory) ) or root( 'local_settings.lua' );
+    rm( filename );
     return 0;
 end
 
