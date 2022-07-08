@@ -3,8 +3,7 @@ variant = variant or 'debug';
 
 local forge = require( 'forge' ):load( variant );
 
-local cc = forge.Toolset {
-    identifier = 'cc_${platform}_${architecture}';
+local cc = forge.Toolset 'cc_${platform}_${architecture}' {
     platform = operating_system();
     architecture = 'x86-64';
     bin = root( ('%s/bin'):format(variant) );

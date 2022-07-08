@@ -4,7 +4,7 @@ local forge = require( 'forge' ):load();
 
 -- Configure a toolset with the output directory to *output*
 -- relative to the root directory that contains *forge.lua*.
-local toolset = forge.Toolset {
+local toolset = forge.Toolset() {
     output = root( 'output' );
 };
 
