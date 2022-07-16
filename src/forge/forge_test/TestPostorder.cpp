@@ -17,7 +17,7 @@ SUITE( TestPostorder )
             "postorder( error_in_postorder_visit, function(target) error('Error in postorder visit') end ); \n"
         ;        
         test( script );
-        CHECK_EQUAL( "[string \"local ErrorInPostorderVisit = Rule...\"]:3: Error in postorder visit", messages[0] );
+        CHECK_EQUAL( "[string \"local ErrorInPostorderVisit = Rule( 'ErrorInP...\"]:3: Error in postorder visit", messages[0] );
         CHECK_EQUAL( "Postorder visit of 'error_in_postorder_visit' failed", messages[1] );
         CHECK( errors == 2 );
     }
@@ -32,7 +32,7 @@ SUITE( TestPostorder )
         test( script );
         if ( messages.size() == 2 )
         {
-            CHECK_EQUAL( "[string \"local UnexpectedErrorInPostorderVisit = Targe...\"]:3: attempt to index a nil value (global 'foo')", messages[0] );
+            CHECK_EQUAL( "[string \"local UnexpectedErrorInPostorderVisit = Rule(...\"]:3: attempt to index a nil value (global 'foo')", messages[0] );
             CHECK_EQUAL( "Postorder visit of 'unexpected_error_in_postorder_visit' failed", messages[1] );
         }
         CHECK( errors == 2 );
@@ -48,7 +48,7 @@ SUITE( TestPostorder )
         test( script );
         if ( messages.size() == 2 )
         {
-            CHECK_EQUAL( "[string \"local RecursivePostorderError = TargetPrototy...\"]:3: Postorder called from within preorder or postorder", messages[0] );
+            CHECK_EQUAL( "[string \"local RecursivePostorderError = Rule( 'Recurs...\"]:3: Postorder called from within preorder or postorder", messages[0] );
             CHECK_EQUAL( "Postorder visit of 'recursive_postorder_error' failed", messages[1] );
         }
         CHECK( errors == 2 );
@@ -64,7 +64,7 @@ SUITE( TestPostorder )
         test( script );
         if ( messages.size() == 2 )
         {
-            CHECK_EQUAL( "[string \"local RecursivePostorderError = TargetPrototy...\"]:3: Postorder called from within preorder or postorder", messages[0] );
+            CHECK_EQUAL( "[string \"local RecursivePostorderError = Rule( 'Recurs...\"]:3: Postorder called from within preorder or postorder", messages[0] );
             CHECK_EQUAL( "Postorder visit of 'recursive_postorder_error' failed", messages[1] );
         }
         CHECK( errors == 2 );

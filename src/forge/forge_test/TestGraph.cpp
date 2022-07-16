@@ -71,7 +71,7 @@ SUITE( TestGraph )
     TEST_FIXTURE( ErrorChecker, creating_the_same_target_with_different_prototypes_fails )
     {
         const char* expected_message = 
-            "The target 'foo.cpp' has been created with prototypes 'SourceFile' and 'File'"
+            "The target 'foo.cpp' has been created with rules 'SourceFile' and 'File'"
         ;
         const char* script =
             "local SourceFile = Rule( 'SourceFile' ); \n"
