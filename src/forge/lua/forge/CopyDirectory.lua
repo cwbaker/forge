@@ -1,7 +1,7 @@
 
-local Copy = require 'forge.Copy';
+local Copy = require( 'forge.Copy' );
 
-local CopyDirectory = TargetPrototype( 'CopyDirectory' );
+local CopyDirectory = Rule( 'CopyDirectory' );
 
 function CopyDirectory.create( toolset, identifier )
     local identifier = toolset:interpolate( identifier );

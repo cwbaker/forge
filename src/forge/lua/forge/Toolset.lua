@@ -222,8 +222,8 @@ function Toolset:all( dependencies )
     return all;
 end
 
-function Toolset:File( identifier, target_prototype )
-    local target = Target( self, self:interpolate(identifier), target_prototype );
+function Toolset:File( identifier, rule )
+    local target = Target( self, self:interpolate(identifier), rule );
     target:set_filename( target:path() );
     target:set_cleanable( true );
     target:add_ordering_dependency( self:Directory(branch(target)) );

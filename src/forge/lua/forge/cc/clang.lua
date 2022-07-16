@@ -16,39 +16,39 @@ function clang.install( toolset )
     exists( settings.cxx );
     exists( settings.ar );
 
-    local Cc = PatternPrototype( 'Cc' );
+    local Cc = PatternRule( 'Cc' );
     Cc.identify = clang.object_filename;
     Cc.build = function( toolset, target ) clang.compile( toolset, target, 'c' ) end;
     toolset.Cc = Cc;
 
-    local Cxx = PatternPrototype( 'Cxx' );
+    local Cxx = PatternRule( 'Cxx' );
     Cxx.identify = clang.object_filename;
     Cxx.build = function( toolset, target ) clang.compile( toolset, target, 'c++' ) end;
     toolset.Cxx = Cxx;
 
-    local ObjC = PatternPrototype( 'ObjC' );
+    local ObjC = PatternRule( 'ObjC' );
     ObjC.identify = clang.object_filename;
     ObjC.build = function( toolset, target ) clang.compile( toolset, target, 'objective-c' ) end;
     toolset.ObjC = ObjC;
 
-    local ObjCxx = PatternPrototype( 'ObjCxx' );
+    local ObjCxx = PatternRule( 'ObjCxx' );
     ObjCxx.identify = clang.object_filename;
     ObjCxx.build = function( toolset, target ) clang.compile( toolset, target, 'objective-c++' ) end;
     toolset.ObjCxx = ObjCxx;
 
-    local StaticLibrary = FilePrototype( 'StaticLibrary' );
+    local StaticLibrary = FileRule( 'StaticLibrary' );
     StaticLibrary.identify = clang.static_library_filename;
     StaticLibrary.depend = cc.static_library_depend;
     StaticLibrary.build = clang.archive;
     toolset.StaticLibrary = StaticLibrary;
 
-    local DynamicLibrary = FilePrototype( 'DynamicLibrary' );
+    local DynamicLibrary = FileRule( 'DynamicLibrary' );
     DynamicLibrary.identify = clang.dynamic_library_filename;
     DynamicLibrary.prepare = cc.collect_transitive_dependencies;
     DynamicLibrary.build = clang.link;
     toolset.DynamicLibrary = DynamicLibrary;
 
-    local Executable = FilePrototype( 'Executable' );
+    local Executable = FileRule( 'Executable' );
     Executable.identify = clang.executable_filename;
     Executable.prepare = cc.collect_transitive_dependencies;
     Executable.build = clang.link;
@@ -145,8 +145,8 @@ function clang.archive( toolset, target )
     local objects =  {};
     local outdated_objects = 0;
     for _, dependency in target:dependencies() do
-        local prototype = dependency:prototype();
-        if prototype ~= toolset.Directory and prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary then
+        local rule = dependency:rule();
+        if rule ~= toolset.Directory and rule ~= toolset.StaticLibrary and rule ~= toolset.DynamicLibrary then
             table.insert( objects, relative(dependency) );
             if dependency:outdated() then
                 outdated_objects = outdated_objects + 1;
@@ -170,8 +170,8 @@ function clang.link( toolset, target )
     local objects = {};
     pushd( toolset:obj_directory(target) );
     for _, dependency in walk_dependencies(target) do
-        local prototype = dependency:prototype();
-        if prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary and prototype ~= toolset.Directory then
+        local rule = dependency:rule();
+        if rule ~= toolset.StaticLibrary and rule ~= toolset.DynamicLibrary and rule ~= toolset.Directory then
             table.insert( objects, relative(dependency) );
         end
     end
@@ -341,7 +341,7 @@ function clang.append_link_flags( toolset, target, flags )
         table.insert( flags, ('-stdlib=%s'):format(standard_library) );
     end
 
-    if target:prototype() == toolset.DynamicLibrary then
+    if target:rule() == toolset.DynamicLibrary then
         table.insert( flags, '-Xlinker -dylib' );
     end
     
@@ -366,8 +366,8 @@ end
 
 function clang.append_libraries( toolset, target, flags )
     for _, dependency in target:dependencies() do
-        local prototype = dependency:prototype();
-        if prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary then
+        local rule = dependency:rule();
+        if rule == toolset.StaticLibrary or rule == toolset.DynamicLibrary then
             local library = dependency;
             if library.whole_archive then
                 table.insert( flags, ('-force_load "%s"'):format(library:filename()) );

@@ -16,29 +16,29 @@ function gcc.install( toolset )
     assert( exists(settings.gxx) );
     assert( exists(settings.ar) );
 
-    local Cc = PatternPrototype( 'Cc' );
+    local Cc = PatternRule( 'Cc' );
     Cc.identify = gcc.object_filename;
     Cc.build = function( toolset, target ) gcc.compile( toolset, target, 'c' ) end;
     toolset.Cc = Cc;
 
-    local Cxx = PatternPrototype( 'Cxx' );
+    local Cxx = PatternRule( 'Cxx' );
     Cxx.identify = gcc.object_filename;
     Cxx.build = function( toolset, target ) gcc.compile( toolset, target, 'c++' ) end;
     toolset.Cxx = Cxx;
 
-    local StaticLibrary = FilePrototype( 'StaticLibrary' );
+    local StaticLibrary = FileRule( 'StaticLibrary' );
     StaticLibrary.identify = gcc.static_library_filename;
     StaticLibrary.build = gcc.archive;
     StaticLibrary.depend = cc.static_library_depend;
     toolset.StaticLibrary = StaticLibrary;
 
-    local DynamicLibrary = FilePrototype( 'DynamicLibrary' );
+    local DynamicLibrary = FileRule( 'DynamicLibrary' );
     DynamicLibrary.identify = gcc.dynamic_library_filename;
     DynamicLibrary.prepare = cc.collect_transitive_dependencies;
     DynamicLibrary.build = gcc.link;
     toolset.DynamicLibrary = DynamicLibrary;
 
-    local Executable = FilePrototype( 'Executable' );
+    local Executable = FileRule( 'Executable' );
     Executable.identify = gcc.executable_filename;
     Executable.prepare = cc.collect_transitive_dependencies;
     Executable.build = gcc.link;
@@ -117,8 +117,8 @@ function gcc.archive( toolset, target )
     local objects =  {};
     local outdated_objects = 0;
     for _, dependency in target:dependencies() do
-        local prototype = dependency:prototype();
-        if prototype ~= toolset.Directory and prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary then
+        local rule = dependency:rule();
+        if rule ~= toolset.Directory and rule ~= toolset.StaticLibrary and rule ~= toolset.DynamicLibrary then
             table.insert( objects, relative(dependency) );
             if dependency:outdated() then
                 outdated_objects = outdated_objects + 1;
@@ -143,8 +143,8 @@ function gcc.link( toolset, target )
 
     local objects = {};
     for _, dependency in walk_dependencies(target) do
-        local prototype = dependency:prototype();
-        if prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary and prototype ~= toolset.Directory then
+        local rule = dependency:rule();
+        if rule ~= toolset.StaticLibrary and rule ~= toolset.DynamicLibrary and rule ~= toolset.Directory then
             table.insert( objects, relative(dependency) );
         end
     end
@@ -270,7 +270,7 @@ function gcc.append_link_flags( toolset, target, flags )
     table.insert( flags, ('-march=%s'):format(toolset.architecture) );
     table.insert( flags, "-std=c++11" );
 
-    if target:prototype() == toolset.DynamicLibrary then
+    if target:rule() == toolset.DynamicLibrary then
         table.insert( flags, "-shared" );
     end
     
@@ -301,8 +301,8 @@ end
 
 function gcc.append_libraries( toolset, target, flags )
     for _, dependency in target:dependencies() do
-        local prototype = dependency:prototype();
-        if prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary then
+        local rule = dependency:rule();
+        if rule == toolset.StaticLibrary or rule == toolset.DynamicLibrary then
             local library = dependency;
             if library.whole_archive then 
                 table.insert( flags, '-Wl,--whole-archive' );
