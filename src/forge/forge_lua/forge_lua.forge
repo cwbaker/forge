@@ -26,9 +26,9 @@ for _, forge in toolsets('cc.*') do
             'LuaContext.cpp',
             'LuaFileSystem.cpp',
             'LuaGraph.cpp',
+            'LuaRule.cpp',
             'LuaSystem.cpp',
             'LuaTarget.cpp',
-            'LuaTargetPrototype.cpp',
             'LuaToolset.cpp',
             'types.cpp'
         };

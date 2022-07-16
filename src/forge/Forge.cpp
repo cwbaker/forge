@@ -16,7 +16,7 @@
 #include "path_functions.hpp"
 #include <forge/forge_lua/Lua.hpp>
 #include <forge/forge_lua/LuaTarget.hpp>
-#include <forge/forge_lua/LuaTargetPrototype.hpp>
+#include <forge/forge_lua/LuaRule.hpp>
 #include <forge/forge_lua/LuaToolset.hpp>
 #include <error/ErrorPolicy.hpp>
 #include <assert/assert.hpp>
@@ -463,16 +463,16 @@ void Forge::destroy_toolset_lua_binding( Toolset* toolset )
     }
 }
 
-void Forge::create_target_prototype_lua_binding( TargetPrototype* target_prototype )
+void Forge::create_rule_lua_binding( Rule* rule )
 {
     SWEET_ASSERT( lua_ );
-    lua_->lua_target_prototype()->create_target_prototype( target_prototype );
+    lua_->lua_rule()->create_rule( rule );
 }
 
-void Forge::destroy_target_prototype_lua_binding( TargetPrototype* target_prototype )
+void Forge::destroy_rule_lua_binding( Rule* rule )
 {
     SWEET_ASSERT( lua_ );
-    lua_->lua_target_prototype()->destroy_target_prototype( target_prototype );
+    lua_->lua_rule()->destroy_rule( rule );
 }
 
 /**

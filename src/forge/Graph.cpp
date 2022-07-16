@@ -4,7 +4,7 @@
 //
 
 #include "Graph.hpp"
-#include "TargetPrototype.hpp"
+#include "Rule.hpp"
 #include "Toolset.hpp"
 #include "Target.hpp"
 #include "Forge.hpp"
@@ -32,7 +32,7 @@ using namespace sweet::forge;
 */
 Graph::Graph()
 : forge_( nullptr )
-, target_prototypes_()
+, rules_()
 , toolsets_()
 , filename_()
 , root_target_( nullptr )
@@ -51,7 +51,7 @@ Graph::Graph()
 */
 Graph::Graph( Forge* forge )
 : forge_( forge )
-, target_prototypes_()
+, rules_()
 , toolsets_()
 , filename_()
 , root_target_()
@@ -72,10 +72,10 @@ Graph::~Graph()
         toolsets_.pop_back();
     }
 
-    while ( !target_prototypes_.empty() )
+    while ( !rules_.empty() )
     {
-        delete target_prototypes_.back();
-        target_prototypes_.pop_back();
+        delete rules_.back();
+        rules_.pop_back();
     }
 }
 
@@ -199,19 +199,19 @@ int Graph::successful_revision() const
 }
 
 /**
-// Create a new target prototype.
+// Create a new rule.
 //
 // @param id
-//  The identifier of the target prototype to create.
+//  The identifier of the rule to create.
 //
 // @return
-//  The TargetPrototype.
+//  The Rule.
 */
-TargetPrototype* Graph::add_target_prototype( const std::string& id )
+Rule* Graph::add_rule( const std::string& id )
 {   
-    unique_ptr<TargetPrototype> target_prototype( new TargetPrototype(id, forge_) );
-    target_prototypes_.push_back( target_prototype.get() );
-    return target_prototype.release();
+    unique_ptr<Rule> rule( new Rule(id, forge_) );
+    rules_.push_back( rule.get() );
+    return rule.release();
 }
 
 Toolset* Graph::add_toolset( const std::string& id )
@@ -243,8 +243,8 @@ Target* Graph::target( const std::string& id )
 // the current relative parent and the next element is considered.
 //
 // If \e id refers to an already existing Target that doesn't have a 
-// TargetPrototype set then the existing Target is updated to have 
-// \e target_prototype as its TargetPrototype and \e working_directory as its
+// Rule set then the existing Target is updated to have 
+// \e rule as its Rule and \e working_directory as its
 // working directory.
 //
 // The working directory is updated to allow Targets for C/C++ libraries to be
@@ -252,11 +252,11 @@ Target* Graph::target( const std::string& id )
 // libraries themselves are defined.  When the library is lazily defined by 
 // the executable reference the working directory is the working directory 
 // for the executable.  When the library is defined it specifies the correct
-// TargetPrototype and working directory.
+// Rule and working directory.
 //
 // If \e id refers to an already existing Target that already has a 
-// TargetPrototype set then an error is generated as it is not clear which
-// TargetPrototype applies.
+// Rule set then an error is generated as it is not clear which
+// Rule applies.
 //
 // Any drive portion of the path is forced to uppercase to avoid drives 
 // appearing as upper- or lowercase when the build tool is run from different
@@ -760,9 +760,9 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
             indent( level );
 
-            if ( target->prototype() )
+            if ( target->rule() )
             {
-                printf( "%s ", target->prototype()->id().c_str() );
+                printf( "%s ", target->rule()->id().c_str() );
             }
 
             std::time_t timestamp = target->timestamp();
@@ -882,9 +882,9 @@ void Graph::print_namespace( Target* target )
 
                 printf( "%p ", target );
 
-                if ( target->prototype() )
+                if ( target->rule() )
                 {
-                    printf( "%s ", target->prototype()->id().c_str() );
+                    printf( "%s ", target->rule()->id().c_str() );
                 }                
 
                 printf( "'%s'", target->id().c_str() );

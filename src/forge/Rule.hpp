@@ -1,5 +1,4 @@
-#ifndef FORGE_TARGET_PROTOTYPE_HPP_INCLUDED
-#define FORGE_TARGET_PROTOTYPE_HPP_INCLUDED
+#pragma once
 
 #include <string>
 
@@ -14,19 +13,17 @@ class Forge;
 /**
 // A prototype for Targets.
 */
-class TargetPrototype
+class Rule
 {
-    std::string id_; ///< The identifier for this TargetPrototype.
-    Forge* forge_; ///< The Forge that this TargetPrototype is part of.
+    std::string id_; ///< The identifier for this rule.
+    Forge* forge_; ///< The Forge that this rule is part of.
 
-    public:
-        TargetPrototype( const std::string& id, Forge* forge );
-        ~TargetPrototype();
-        const std::string& id() const;
+public:
+    Rule( const std::string& id, Forge* forge );
+    ~Rule();
+    const std::string& id() const;
 };
 
 }
 
 }
-
-#endif

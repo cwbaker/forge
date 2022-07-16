@@ -31,8 +31,8 @@ SUITE( TestGraph )
     TEST_FIXTURE( FileChecker, files_are_not_outdated_if_they_exist )
     {
         const char* script = 
-            "local SourceFile = TargetPrototype( 'SourceFile' ); \n"
-            "local File = TargetPrototype( 'File' ); \n"
+            "local SourceFile = Rule( 'SourceFile' ); \n"
+            "local File = Rule( 'File' ); \n"
             "local foo_cpp = Target( nil, 'foo.cpp', SourceFile ); \n"
             "foo_cpp:set_filename( foo_cpp:path() ); \n"
             "local foo_obj = Target( nil, 'foo.obj', File ); \n"
@@ -74,8 +74,8 @@ SUITE( TestGraph )
             "The target 'foo.cpp' has been created with prototypes 'SourceFile' and 'File'"
         ;
         const char* script =
-            "local SourceFile = TargetPrototype( 'SourceFile' ); \n"
-            "local File = TargetPrototype( 'File' ); \n"
+            "local SourceFile = Rule( 'SourceFile' ); \n"
+            "local File = Rule( 'File' ); \n"
             "Target( forge, 'foo.cpp', SourceFile ); \n"
             "Target( forge, 'foo.cpp', File ); \n"
         ;
@@ -87,7 +87,7 @@ SUITE( TestGraph )
     TEST_FIXTURE( ErrorChecker, targets_are_children_of_the_working_directory_when_they_are_created )
     {
         const char* script =
-            "local SourceFile = TargetPrototype( 'File' ); \n"
+            "local SourceFile = Rule( 'File' ); \n"
             "local foo_cpp = Target( forge, 'foo.cpp', SourceFile ); \n"
             "assert( foo_cpp:parent() == foo_cpp:working_directory() ); \n"
         ;

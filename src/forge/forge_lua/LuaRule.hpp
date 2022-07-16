@@ -10,22 +10,22 @@ namespace forge
 {
 
 class LuaTarget;
-class TargetPrototype;
+class Rule;
 class Forge;
 
-class LuaTargetPrototype
+class LuaRule
 {
     lua_State* lua_state_; ///< The main Lua virtual machine to create the target API in.
 
 public:
-    LuaTargetPrototype();
-    ~LuaTargetPrototype();
+    LuaRule();
+    ~LuaRule();
     void create( lua_State* lua_state, Forge* forge, LuaTarget* lua_target );
     void destroy();
-    void create_target_prototype( TargetPrototype* target_prototype );
-    void destroy_target_prototype( TargetPrototype* target_prototype );
+    void create_rule( Rule* rule );
+    void destroy_rule( Rule* rule );
     static int id( lua_State* lua_state );
-    static int create_target_prototype_call_metamethod( lua_State* lua_state );
+    static int create_rule_call_metamethod( lua_State* lua_state );
     static int create_target_call_metamethod( lua_State *lua_state );
 };
     

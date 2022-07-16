@@ -13,7 +13,7 @@ namespace forge
 {
 
 class Environment;
-class TargetPrototype;
+class Rule;
 class Toolset;
 class Target;
 class Forge;
@@ -24,7 +24,7 @@ class Forge;
 class Graph
 {
     Forge* forge_; ///< The Forge that this Graph is part of.
-    std::vector<TargetPrototype*> target_prototypes_; ///< The TargetPrototypes that have been created.
+    std::vector<Rule*> rules_; ///< The Rules that have been created.
     std::vector<Toolset*> toolsets_; ///< The Toolsets that have been created.
     std::string filename_; ///< The filename that this Graph was most recently loaded from.
     std::unique_ptr<Target> root_target_; ///< The root Target for this Graph.
@@ -49,7 +49,7 @@ class Graph
         int visited_revision() const;
         int successful_revision() const;             
 
-        TargetPrototype* add_target_prototype( const std::string& id );
+        Rule* add_rule( const std::string& id );
         Toolset* add_toolset( const std::string& id );
         Target* target( const std::string& id );
         Target* add_or_find_target( const std::string& id, Target* working_directory = nullptr );
