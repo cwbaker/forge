@@ -45,12 +45,12 @@ Because building a target implies building its dependencies adding targets as de
 
 Adding "all" targets from sub-directories to the "all" target of the root directory is the recommended way to specify targets that are built by default when building a project.
 
-## Copy Prototype
+## Copy Rule
 
-The `Copy` target prototype is defined as follows:
+The `Copy` rule is defined as follows:
 
 ~~~lua
-local Copy = PatternPrototype( 'Copy' );
+local Copy = PatternRule( 'Copy' );
 
 function Copy.build( toolset, target )
     rm( target );
@@ -60,8 +60,8 @@ end
 return Copy;
 ~~~
 
-The call to `PatternPrototype()` creates a target prototype that generates targets from patterns.  Behind the scenes this function creates a callable table that generates output targets by pattern matching and replacing the filename of each dependency passed to it.
+The call to `PatternRule()` creates a rule that generates targets from patterns.  Behind the scenes this function creates a callable table that generates output targets by pattern matching and replacing the filename of each dependency passed to it.
 
-The definition of `Copy.build()` defines the actions carried out when targets created with this prototype are built.  Here the destination file is removed and copied from the source file.  In general any actions can be carried out from a build function including executing external processes.
+The definition of `Copy.build()` defines the actions carried out when targets created with this rule are built.  Here the destination file is removed and copied from the source file.  In general any actions can be carried out from a build function including executing external processes.
 
 Executing external processes is a parallel operation.  The build functions are called in separate Lua coroutines that yield on calls to `execute()`.  The yield suspends the coroutine until the executed process completes.  Other coroutines continue to execute to process as much of the dependency graph as possible.

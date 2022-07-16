@@ -46,7 +46,7 @@ Configure the *cc* module using the following settings specified in the toolset 
 
 - Expected dependencies: `StaticLibrary`, `Cc`, `Cxx`, `ObjC`, `ObjCxx`
 
-- The executable's identifier should be without any platform specific extension like *.exe*.  The underlying prototype decorates the filename as necessary.
+- The executable's identifier should be without any platform specific extension like *.exe*.  The underlying rule decorates the filename as necessary.
 
 - The executable target's identifier remains platform independent and portable so that it can be referenced by other buildfiles and/or build scripts without the need to add additional code to decorate the filename all over the place.
 

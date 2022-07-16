@@ -39,7 +39,7 @@ to the table and second to a function stored in that table.  The table is passed
 
 > A call of the form f{fields} is syntactic sugar for f({fields}); that is, the argument list is a single new table. A call of the form f'string' (or f"string" or f[[string]]) is syntactic sugar for f('string'); that is, the argument list is a single literal string.
 
-An identifier followed by a string literal or a table constructor is syntactic sugar for a function call.  This syntax shows up in Forge as the use of *target_prototype* [*identifier* \| **(** *identifier*, *...* **)**] to create a target and the use of *target* **{** *dependencies* **}** to add dependencies to an already specified target.
+An identifier followed by a string literal or a table constructor is syntactic sugar for a function call.  This syntax shows up in Forge as the use of *rule* [*identifier* \| **(** *identifier*, *...* **)**] to create a target and the use of *target* **{** *dependencies* **}** to add dependencies to an already specified target.
 
 Adding the omitted parentheses and parameters makes the function calls and their arguments a little clearer:
 
@@ -57,11 +57,11 @@ toolset.all( toolset, {
 } );
 ~~~
 
-These two idioms and the fact that dependent targets may be specified directly as part of *dependencies* allow convenient chaining of target creation and dependencies into **prototype** (*identifier* \| **(** *identifier* **,** *...* **)**) **{** *dependencies* **}** to provide the declarative syntax used in buildfiles.
+These two idioms and the fact that dependent targets may be specified directly as part of *dependencies* allow convenient chaining of target creation and dependencies into **rule** (*identifier* \| **(** *identifier* **,** *...* **)**) **{** *dependencies* **}** to provide the declarative syntax used in buildfiles.
 
 With syntax explained we can work through what this script actually means in the context of a build.  The logical split into two steps is quite clear with the first step being the creation of the toolset and the second step the calls to create targets and specify dependencies.
 
-The toolset is created by requiring the `forge` module and then making a call on it passing the settings for apply to the toolset as the sole argument (recall that calls with a single table argument may omit parentheses).  The required module acts as a prototype for toolsets and calling it creates a toolset with behavior defined by that prototype.
+The toolset is created by requiring the `forge` module and then making a call on it passing the settings for apply to the toolset as the sole argument (recall that calls with a single table argument may omit parentheses).  The required module acts as a rule for toolsets and calling it creates a toolset with behavior defined by that rule.
 
 The toolset is then used to define the dependency graph of files and actions in the build.  The call to `toolset.all()` makes the output files dependencies of the special "all" target so that they are built by default when `forge` is run from that directory.  The `toolset.Copy()` call creates targets that copy the source files into the output directory using pattern matching and replacement to generate the output filenames from the inputs.
 

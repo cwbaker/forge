@@ -14,16 +14,15 @@ nav_order: 8
 function Toolset( values )
 ~~~
 
-Calling a toolset prototype creates and registers a new toolset with behavior defined by that toolset prototype.
+Calling a toolset defines the initial settings values in the toolset. 
 
 **Parameters:**
 
-- `toolset_prototype` the toolset prototype being called to create a toolset
 - `values` settings used to override toolset defaults
 
 **Returns:**
 
-The created toolset or nothing if the toolset prototype fails to configure, validate, or initialize (see below).
+The created toolset or nothing if the toolset fails to initialize.
 
 ## Overrides
 
@@ -54,11 +53,11 @@ A table containing per-machine settings for the toolset.
 function Toolset.install( toolset )
 ~~~
 
-The `install()` function explicitly installs the target prototypes and default settings for the toolset.
+The `install()` function explicitly installs the rules and default settings for the toolset.
 
 **Parameters:**
 
-- `toolset` the toolset to install target prototypes and settings in
+- `toolset` the toolset to install rules and default settings in
 
 ### initialize
 
@@ -66,7 +65,7 @@ The `install()` function explicitly installs the target prototypes and default s
 function Toolset.initialize( toolset )
 ~~~
 
-The `initialize()` function initializes a toolset for use.  Typically this means adding the appropriate target prototypes and default settings to the toolset.  Initialization runs at least once per toolset per build.
+The `initialize()` function initializes a toolset for use.  Typically this means adding rules and default settings to the toolset.  Initialization runs at least once per toolset per build.
 
 **Parameters:**
 
@@ -147,14 +146,6 @@ function Toolset.defaults( toolset, destination, source )
 
 Set fields in that aren't already set in `destination` to values from `source`.
 
-### copy_settings
-
-~~~lua
-function Toolset.copy_settings( toolset, destination, source )
-~~~
-
-Recursively copy fields from `source` to `destination`.
-
 ### interpolate
 
 ~~~lua
@@ -220,7 +211,7 @@ Return the *all* target for the current working directory adding any targets tha
 ### File
 
 ~~~lua
-function Toolset.File( toolset, identifier, target_prototype )
+function Toolset.File( toolset, identifier, rule )
 ~~~
 
 Define a generated file.  It doesn't generally appear in buildfiles but is used internally to expand other targets during the build.
@@ -236,7 +227,7 @@ Defines a source file that must exist.  It doesn't generally appear in buildfile
 ### Target
 
 ~~~lua
-function Toolset.Target( toolset, identifier, target_prototype )
+function Toolset.Target( toolset, identifier, rule )
 ~~~
 
 ### Directory

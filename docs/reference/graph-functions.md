@@ -16,9 +16,9 @@ Targets exist in a hierarchical namespace with POSIX path like semantics.  Each 
 
 Add or find targets in the dependency graph with the `add_target()` and `find_target()` functions.  When no existing target is found `add_target()` function will add one and return it while `find_target()` will simply return nil.  Buildfiles usually call domain specific language functions like `Executable`, `StaticLibrary`, etc to create targets rather than calling `add_target()` and `find_target()` directly.
 
-Add target prototypes with the `add_target_prototype()` function.  Target prototypes are usually created through the higher level functions `TargetPrototype()`, `PatternProtoype()`, and `GroupPrototype()`.
+Add rules with the `add_rule()` function.  Rules are usually created through the higher level functions `Rule()`, `FileRule()`, `PatternRule()`, and `GroupRule()`.
 
-Run a build by visiting the targets in a post-order traversal with `postorder()`.  This visits and builds all dependencies before the targets that depend on them.  Each target is visited by calling a short Lua script that typically calls a function like `build` or `clean` defined on the target prototype of each visited target.
+Run a build by visiting the targets in a post-order traversal with `postorder()`.  This visits and builds all dependencies before the targets that depend on them.  Each target is visited by calling a short Lua script that typically calls a function like `build` or `clean` defined on the rule of each visited target.
 
 Define the dependency graph by loading buildfiles with `buildfile()`.  This sets the working directory to the directory containing the buildfile then loads and executes the buildfile as a Lua script.
 
@@ -31,41 +31,41 @@ Debug builds by printing the dependency graph with `print_dependencies()` functi
 ### add_target
 
 ~~~lua
-function add_target( id, [target_prototype] )
+function add_target( id, [rule] )
 ~~~
 
 Find an existing or create a new target.
 
 The `id` parameter specifies a target path that uniquely identifies the target to find or create.  Relative paths are considered relative to the current working directory.  If `id` is the empty string or nil then an anonymous target is created using an identifier unique within the current working directory.
 
-The `target_prototype` parameter specifies the target prototype to use when creating the target.  It is an error for the same target to be created with more than one target prototype.  If `target_prototype` is omitted or nil then a target without any target prototype is created.
+The `rule` parameter specifies the rule to use when creating the target.  It is an error for the same target to be created with more than one rule.  If `rule` is omitted or nil then a target without any rule is created.
 
 **Parameters:**
 
 - `id` the identifier of the target to find or create (optional)
-- `target_prototype` the target prototype of the target to create (optional)
+- `rule` the rule of the target to create (optional)
 
 **Returns:**
 
 The existing or newly created target identified by `id`. 
 
-### add_target_prototype
+### add_rule
 
 ~~~lua
-function add_target_prototype( id )
+function add_rule( id )
 ~~~
 
-Add a target prototype for use in this dependency graph.
+Add a rule for use in this dependency graph.
 
 The identifier is used only to describe the type of a target when displaying the dependencies or namespace for a dependency graph.  It should be unique enough to be useful for this purpose.  It doesn't necessarily need to be unique across the entire build.
 
 **Parameters:**
 
-- `id` the identifier of the target prototype to add
+- `id` the identifier of the rule to add
 
 **Returns:**
 
-The new target prototype.
+The new rule.
 
 ### anonymous
 
@@ -109,7 +109,7 @@ function clear()
 
 Clear the dependency graph.
 
-Removes all targets, target prototypes, and resets all anonymous counters.
+Removes all targets, rules, and resets all anonymous counters.
 
 The filename of the cache file is preserved so that the graph can still be saved without being loaded again (attempting to load a graph is the only way to set the filename that graph will be saved to).
 
@@ -173,7 +173,7 @@ Save the current dependency graph to `path`.
 
 The boolean, numeric, string, and table values stored in the Lua tables representing targets are saved and reloaded as part of the cache.  This includes correctly persisting cyclic relationships between tables and tables that are recursively related to target tables.
 
-Function and closure values are *not* saved.  This is generally not a problem because functions and closures are defined in target prototypes and the target prototype relationship of each target is preserved across a save and a load.
+Function and closure values are *not* saved.  This is generally not a problem because functions and closures are defined in rules and the rule relationship of each target is preserved across a save and a load.
 
 **Parameters:**
 
