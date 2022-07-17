@@ -33,7 +33,6 @@ class Target
     uint64_t hash_; ///< The hash for this Target the last time that it was built.
     uint64_t pending_hash_; ///< The hash for this Target when it was created in the current run.
     bool outdated_; ///< Whether or not this Target is out of date.
-    bool changed_; ///< Whether or not this Target's timestamp has changed since the last time it was bound to a file.
     bool bound_to_file_; ///< Whether or not this Target is bound to a file.
     bool bound_to_dependencies_; ///< Whether or not this Target is bound to its dependencies.
     bool referenced_by_script_; ///< Whether or not this Target is referenced by a scripting object.  
@@ -90,7 +89,6 @@ class Target
 
         void set_outdated( bool outdated );
         bool outdated() const;
-        bool changed() const;
         bool bound_to_file() const;
 
         void add_filename( const std::string& filename );
