@@ -767,10 +767,9 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
             std::time_t timestamp = target->timestamp();
             struct tm* time = ::localtime( &timestamp );
-            printf( "'%s' %c%c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %" PRIx64 "", 
+            printf( "'%s' %c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %" PRIx64 "", 
                 id(target),
                 target->outdated() ? 'O' : 'o',
-                target->changed() ? 'T' : 't',
                 target->bound_to_file() ? 'F' : 'f',
                 target->referenced_by_script() ? 'S' : 's',
                 target->cleanable() ? 'C' : 'c',

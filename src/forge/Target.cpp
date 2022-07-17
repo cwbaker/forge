@@ -38,7 +38,6 @@ Target::Target()
 , hash_( 0 )
 , pending_hash_( 0 )
 , outdated_( false )
-, changed_( false )
 , bound_to_file_( false )
 , bound_to_dependencies_( false )
 , referenced_by_script_( false )
@@ -80,7 +79,6 @@ Target::Target( const std::string& id, Graph* graph )
 , hash_( 0 )
 , pending_hash_( 0 )
 , outdated_( false )
-, changed_( false )
 , bound_to_file_( false )
 , bound_to_dependencies_( false )
 , referenced_by_script_( false )
@@ -335,7 +333,6 @@ void Target::bind_to_file()
                 }
             }
 
-            changed_ = last_write_time_ != earliest_last_write_time;
             timestamp_ = latest_last_write_time;
             last_write_time_ = earliest_last_write_time;
             outdated_ = outdated || hash_ != pending_hash_;
@@ -343,7 +340,6 @@ void Target::bind_to_file()
         }
         else
         {
-            changed_ = last_write_time_ != 0;
             timestamp_ = 0;
             last_write_time_ = 0;
             outdated_ = !built_ || hash_ != pending_hash_;
@@ -550,18 +546,6 @@ void Target::set_outdated( bool outdated )
 bool Target::outdated() const
 {
     return outdated_;
-}
-
-/**
-// Is this Target's last write time changed since it was last bound?
-//
-// @return
-//  True if this Target's last write time has changed between its previous
-//  and most recent bindings.
-*/
-bool Target::changed() const
-{
-    return changed_;
 }
 
 /**
