@@ -529,7 +529,7 @@ int Scheduler::postorder( Target* target, int function )
 
                 int height = 0;
                 int i = 0;
-                Target* dependency = target->any_dependency( i );
+                Target* dependency = target->binding_dependency( i );
                 while ( dependency )
                 {
                     if ( !dependency->visiting() )
@@ -544,7 +544,7 @@ int Scheduler::postorder( Target* target, int function )
                     }
 
                     ++i;
-                    dependency = target->any_dependency( i );
+                    dependency = target->binding_dependency( i );
                 }
 
                 if ( target->referenced_by_script() && target->working_directory() )

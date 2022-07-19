@@ -1149,12 +1149,11 @@ Target* Target::passive_dependency( int n ) const
 }
 
 /**
-// Get the 'nth' dependency of any kind from this Target.
+// Get the 'nth' binding dependency from this Target.
 //
 // The index is resolved into the explicit, implicit, and ordering 
 // dependencies of this Target by treating all of the dependencies to be in a
-// single array in the order of explicit, implicit, and then ordering 
-// dependencies.
+// single array in the order of explicit, implicit, and ordering.
 //
 // A value of 'n' in the range [0, #explicit) selects an explicit dependency, 
 // a value of 'n' in the range [#explicit, #explicit + #implicit) selects an 
@@ -1163,6 +1162,44 @@ Target* Target::passive_dependency( int n ) const
 // ordering dependency.
 //
 // Any value of 'n' outside of those ranges selects null.
+//
+// @param n
+//  The index of the dependency to return (assumed to be > 0).
+//
+// @return
+//  The \e nth dependency of this Target or null if 'n' is outside the range
+//  of valid dependencies.
+*/
+Target* Target::binding_dependency( int n ) const
+{
+    SWEET_ASSERT( n >= 0 );
+
+    if ( n >= 0 && n < int(dependencies_.size()) )
+    {
+        return dependencies_[n];
+    }
+
+    n -= int(dependencies_.size());
+    if ( n >= 0 && n < int(implicit_dependencies_.size()) )
+    {
+        return implicit_dependencies_[n];
+    }
+
+    n -= int(implicit_dependencies_.size());
+    if ( n >= 0 && n < int(ordering_dependencies_.size()) )
+    {
+        return ordering_dependencies_[n];
+    }
+
+    return nullptr;
+}
+
+/**
+// Get the 'nth' dependency of any kind from this Target.
+//
+// The index is resolved into the explicit, implicit, ordering, and passive 
+// dependencies of this Target by treating all dependencies to be in a single
+// array in the order of explicit, implicit, ordering, and passive.
 //
 // @param n
 //  The index of the dependency to return (assumed to be > 0).
@@ -1210,11 +1247,11 @@ Target* Target::any_dependency( int n ) const
 bool Target::buildable() const
 {
     int i = 0;
-    Target* target = any_dependency( i );
+    Target* target = binding_dependency( i );
     while ( target && target->successful() ) 
     {
         ++i;
-        target = any_dependency( i );
+        target = binding_dependency( i );
     }
     return target == nullptr;
 }

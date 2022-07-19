@@ -128,6 +128,7 @@ class Target
         Target* implicit_dependency( int n ) const;
         Target* ordering_dependency( int n ) const;
         Target* passive_dependency( int n ) const;
+        Target* binding_dependency( int n ) const;
         Target* any_dependency( int n ) const;
 
         bool buildable() const;
