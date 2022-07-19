@@ -314,7 +314,6 @@ void Target::bind_to_file()
         {
             time_t latest_last_write_time = 0;
             time_t earliest_last_write_time = std::numeric_limits<time_t>::max();
-            bool outdated = false;
 
             for ( vector<string>::const_iterator filename = filenames_.begin(); filename != filenames_.end(); ++filename )
             {
@@ -329,21 +328,16 @@ void Target::bind_to_file()
                 {
                     latest_last_write_time = std::numeric_limits<time_t>::max();
                     earliest_last_write_time = 0;
-                    outdated = true;
                 }
             }
 
             timestamp_ = latest_last_write_time;
             last_write_time_ = earliest_last_write_time;
-            outdated_ = outdated || hash_ != pending_hash_;
-            hash_ = pending_hash_;
         }
         else
         {
             timestamp_ = 0;
             last_write_time_ = 0;
-            outdated_ = !built_ || hash_ != pending_hash_;
-            hash_ = pending_hash_;
         }
         
         bound_to_file_ = true;
@@ -381,15 +375,16 @@ void Target::bind_to_dependencies()
             timestamp = std::max( timestamp, target->timestamp() );
         }
 
-        if ( !filenames_.empty() )
-        {
-            outdated = outdated_ || timestamp > last_write_time();
-        }
+        outdated = 
+            outdated ||
+            (!filenames_.empty() && timestamp > last_write_time()) ||
+            hash_ != pending_hash_ ||
+            (cleanable_ && !built_)
+        ;
 
-        outdated = outdated || (cleanable_ && !built_);
-
-        set_outdated( outdated );
-        set_timestamp( timestamp );
+        outdated_ = outdated;
+        timestamp_ = timestamp;
+        hash_ = pending_hash_;
         bound_to_dependencies_ = true;
     }
 }
