@@ -22,10 +22,10 @@ toolset:all {
 };
 ~~~
 
-The Lua script that defines the `Copy` target used in the Lua-based domain specific language above is defined as follows:
+The Lua script that defines the `Copy` rule:
 
 ~~~lua
-local Copy = PatternPrototype( 'Copy' );
+local Copy = PatternRule( 'Copy' );
 
 function Copy.build( toolset, target )
     rm( target );
@@ -43,7 +43,7 @@ $ forge
 
 ## Documentation
 
-See [https://cwbaker.github.io/forge/](https://cwbaker.github.io/forge/) for documentation including:
+See [User Manual](https://cwbaker.github.io/forge/) for more information including:
 
 - [Installation](https://cwbaker.github.io/forge/installation/) in development and build environments.
 
