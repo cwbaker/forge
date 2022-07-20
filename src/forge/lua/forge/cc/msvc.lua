@@ -10,14 +10,14 @@ function msvc.configure( toolset )
                 SystemRoot = getenv( 'SystemRoot' );
             };
             local values = {};
-            system( vswhere, 'vswhere -latest', environment, nil, function(line)
+            run( vswhere, 'vswhere -latest', environment, nil, function(line)
                 local key, value = line:match( '([%w_]+): ([^\n\r]+)' );
                 if key and value then 
                     values[key] = value;
                 end
             end );
             if #values == 0 then 
-                system( vswhere, 'vswhere -products Microsoft.VisualStudio.Product.BuildTools', environment, nil, function(line)
+                run( vswhere, 'vswhere -products Microsoft.VisualStudio.Product.BuildTools', environment, nil, function(line)
                     local key, value = line:match( '([%w_]+): ([^\n\r]+)' );
                     if key and value then 
                         values[key] = value;
@@ -40,7 +40,7 @@ function msvc.configure( toolset )
         local values = {};
         local reg = "C:/Windows/system32/reg.exe";
         local arguments = ('reg query "%s"'):format( key );
-        system( reg, arguments, nil, nil, function(line)
+        run( reg, arguments, nil, nil, function(line)
             local REG_QUERY_PATTERN = "%s* ([%w_]+) %s* ([%w_]+) %s* ([^\n\r]+)";
             local key, type_, value = line:match( REG_QUERY_PATTERN );
             if key and type_ and value then 
@@ -384,7 +384,7 @@ function msvc.compile( toolset, target, language )
             local cl = msvc.visual_cxx_tool( toolset, 'cl.exe' );
             local environment = msvc.environments_by_architecture[toolset.architecture];
             pushd( directory );
-            system( 
+            run( 
                 cl, 
                 ('cl %s /Fo%s "%s"'):format(ccflags, output_directory, source), 
                 environment, 
@@ -431,7 +431,7 @@ function msvc.archive( toolset, target )
         local arobjects = table.concat( objects, '" "' );
         local msar = msvc.visual_cxx_tool( toolset, 'lib.exe' );
         local environment = msvc.environments_by_architecture[toolset.architecture];
-        system( msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:filename()), arobjects), environment );
+        run( msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:filename()), arobjects), environment );
     else
         touch( target );
     end
@@ -493,9 +493,9 @@ function msvc.link( toolset, target )
             local environment = msvc.environments_by_architecture[toolset.architecture];
 
             if exists(embedded_manifest) ~= true then
-                system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
-                system( msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest), environment );
-                system( msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
+                run( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+                run( msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest), environment );
+                run( msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
             end
 
             table.insert( objects, embedded_manifest_res );
@@ -503,10 +503,10 @@ function msvc.link( toolset, target )
             local ldflags = table.concat( flags, ' ' );
             local ldobjects = table.concat( objects, '" "' );
 
-            system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
-            system( msmt, ('mt /nologo /out:"%s" /manifest %s'):format(embedded_manifest, intermediate_manifest), environment );
-            system( msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
-            system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+            run( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+            run( msmt, ('mt /nologo /out:"%s" /manifest %s'):format(embedded_manifest, intermediate_manifest), environment );
+            run( msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
+            run( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
         else
             table.insert( flags, "/incremental:no" );
 
@@ -515,9 +515,9 @@ function msvc.link( toolset, target )
             local ldobjects = table.concat( objects, '" "' );
             local environment = msvc.environments_by_architecture[toolset.architecture];
 
-            system( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+            run( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
             sleep( 100 );
-            system( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(native(target:filename()), intermediate_manifest), environment );
+            run( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(native(target:filename()), intermediate_manifest), environment );
         end
     end
     popd();

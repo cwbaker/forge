@@ -153,7 +153,7 @@ function toolsets( ... )
 end
 
 -- Execute command raising an error if it doesn't return 0.
-function system( command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... )
+function run( command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... )
     if type(arguments) == 'table' then
         arguments = table.concat( arguments, ' ' );
     end
