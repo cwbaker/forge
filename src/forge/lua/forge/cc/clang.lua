@@ -131,7 +131,7 @@ function clang.compile( toolset, target, language )
     local dependencies = ('%s.d'):format( target );
     local output = target:filename();
     local input = absolute( source );
-    system( 
+    run( 
         cc, 
         ('%s %s -MMD -MF "%s" -o "%s" "%s"'):format(leaf(cc), ccflags, dependencies, output, input),
         environment
@@ -158,7 +158,7 @@ function clang.archive( toolset, target )
         local objects = table.concat( objects, '" "' );
         local ar = toolset.clang.ar;
         local environment = { PATH = branch(ar) };
-        system( ar, ('ar -rcs "%s" "%s"'):format(native(target), objects), environment );
+        run( ar, ('ar -rcs "%s" "%s"'):format(native(target), objects), environment );
     else
         touch( target );
     end
@@ -191,7 +191,7 @@ function clang.link( toolset, target )
         local ldflags = table.concat( flags, ' ' );
         local ldobjects = table.concat( objects, '" "' );
         local ldlibs = table.concat( libraries, ' ' );
-        system( cxx, ('clang++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+        run( cxx, ('clang++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
     end
     popd();
 end

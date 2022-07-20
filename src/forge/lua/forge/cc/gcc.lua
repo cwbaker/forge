@@ -103,7 +103,7 @@ function gcc.compile( toolset, target, language )
     local input = absolute( source:filename() );
     printf( leaf(source:id()) );
     target:clear_implicit_dependencies();
-    system(
+    run(
         gcc_, 
         ('gcc %s -MMD -MF "%s" -o "%s" "%s"'):format(ccflags, dependencies, output, input), 
         environment,
@@ -130,7 +130,7 @@ function gcc.archive( toolset, target )
         local objects = table.concat( objects, '" "' );
         local ar = toolset.gcc.ar;
         local environment = { PATH = branch(ar) };
-        system( ar, ('ar -rcs "%s" "%s"'):format(native(target), objects), environment );
+        run( ar, ('ar -rcs "%s" "%s"'):format(native(target), objects), environment );
     else
         touch( target );
     end
@@ -164,7 +164,7 @@ function gcc.link( toolset, target )
         local gxx = toolset.gcc.gxx;
         local environment = { PATH = branch(gxx) };
         printf( leaf(target) );
-        system( gxx, ('g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+        run( gxx, ('g++ %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
     end
 
     popd();
