@@ -71,9 +71,9 @@ The loop over `toolsets('^cc.*')` iterates over the toolsets that were registere
 
 ### Targets and Dependencies
 
-Targets are the nodes in the dependency graph.  Typically each target has an associated file that it builds, a target prototype to define its behavior, and a list of dependencies that must be built first.
+Targets are the nodes in the dependency graph.  Typically each target has an associated file that it builds, a rule to define its behavior, and a list of dependencies that must be built first.
 
-Create targets by calling the target prototypes defined on a toolset like the calls made to `cc:StaticLibrary` and `cc:Cxx` below.  Identifiers are interpolated with settings or functions looked up from the toolset, global variables, and environment variables in that order.
+Create targets by calling the rules defined on a toolset like the calls made to `cc:StaticLibrary` and `cc:Cxx` below.  Identifiers are interpolated with settings or functions looked up from the toolset, global variables, and environment variables in that order.
 
 Add dependencies by making a call on the depending target passing the dependencies in a table.  Strings passed in this call are implicitly converted into targets representing source files also with interpolation.
 
@@ -161,7 +161,7 @@ end
 
 ### Per-Target Settings
 
-Some settings are available to be set on each target by passing fields with string keys in a dependency call.  See the documentation for each target prototype for the exact settings that this is available for.
+Some settings are available to be set on each target by passing fields with string keys in a dependency call.  See the documentation for each rule for the exact settings that this is available for.
 
 For example pre-processor macros are specified by setting the `defines` attribute of the dependencies call to for a `Cc` or `Cxx` target.  Consecutive calls are cumulative with each other and with defines specified in the settings.
 

@@ -1,5 +1,5 @@
 
-local Copy = PatternPrototype( 'Copy' );
+local Copy = PatternRule( 'Copy' );
 
 function Copy.build( toolset, target )
     rm( target );

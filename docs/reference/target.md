@@ -32,7 +32,7 @@ Although targets usually bind to a single file it is possible to create targets 
 
 The string passed to create a target is that target's identifier or is used to generate the identifier for multiple targets.  A target's identifier is often different from its filename.  In the example above the static library target's identifier is `hello_world` but it will build to a file named *libhello_world.a* or *hello_world.lib* when built with Unix and Windows toolchains respectively.
 
-Targets without target prototypes are valid.  These targets are typically source files that aren't updated by the build system and but still need to be tracked in order to determine when intermediate files that depend on them are outdated.
+Targets without rules are valid.  These targets are typically source files that aren't updated by the build system and but still need to be tracked in order to determine when intermediate files that depend on them are outdated.
 
 Create dependencies conditionally by storing a target in a local variable and making further dependency calls on it.  Alternatively passing the same identifier (after string substitution) will return an already created target.  So really all that needs to happen is the dependency call is made conditionally onto the same target.
 
@@ -43,12 +43,12 @@ Create dependencies dynamically using the same pattern as for conditional depend
 ### create
 
 ~~~lua
-function Target.create( toolset, identifier, target_prototype )
+function Target.create( toolset, identifier, rule )
 ~~~
 
-The `create()` function is called whenever a target for that target prototype is created by calling the target prototype table returned from `build.TargetPrototype()`.
+The `create()` function is called whenever a target for that rule is created by calling the rule table returned from `Rule()`.
 
-The parameters passed are the toolset that the target is being created with, the identifier that was specified, and the target prototype that was used to create the target (possibly nil).
+The parameters passed are the toolset that the target is being created with, the identifier that was specified, and the rule that was used to create the target (possibly nil).
 
 ### depend
 
@@ -56,7 +56,7 @@ The parameters passed are the toolset that the target is being created with, the
 function Target.depend( toolset, target, dependencies )
 ~~~
 
-The `depend()` function is called whenever a call is made on a target for that target prototype.  Typically this captures the use of calls of the form *target* **{** *dependencies* **}** to add dependencies or further define a target.
+The `depend()` function is called whenever a call is made on a target for that rule.  Typically this captures the use of calls of the form *target* **{** *dependencies* **}** to add dependencies or further define a target.
 
 The parameters passed are the toolset that the target was created with, the target itself, and the dependencies that were passed in.
 
@@ -108,13 +108,13 @@ function Target.branch( target )
 
 Return the directory part of the path of this target.
 
-### prototype
+### rule
 
 ~~~lua
-function Target.prototype( target )
+function Target.rule( target )
 ~~~
 
-Return the target prototype for this target or nil if this target was implicitly created as a working directory for other targets or doesn't have a target prototype.
+Return the rule for this target or nil for target's without rules.
 
 ### set_cleanable
 

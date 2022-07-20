@@ -14,9 +14,9 @@ local cc = {};
 -- dependent libraries are listed earlier on the linker command line.
 function cc.collect_transitive_dependencies( toolset, target )
     local function yield_recurse_on_library( target )
-        local prototype = target:prototype();
-        local yield = prototype == toolset.StaticLibrary;
-        local recurse = yield or prototype == nil;
+        local rule = target:rule();
+        local yield = rule == toolset.StaticLibrary;
+        local recurse = yield or rule == nil;
         return yield, recurse;
     end
 
@@ -38,17 +38,17 @@ end
 
 -- Implement depend() for transitive dependencies on static libraries.
 --
--- Dependencies with StaticLibrary prototypes or no prototypes are added as
--- passive dependencies to be propagated to binaries in the prepare pass
--- before the build runs.  Other dependencies (e.g. object files) are added
--- as normal dependencies.
+-- Dependencies with StaticLibrary rules or no rules are added as passive
+-- dependencies to be propagated to binaries in the prepare pass before the
+-- build runs.  Other dependencies (e.g. object files) are added as normal
+-- dependencies.
 function cc.static_library_depend( toolset, target, dependencies )
     assert( type(dependencies) == 'table', 'Target.depend() parameter not a table as expected' );
     merge( target, dependencies );
     for _, value in walk_tables(dependencies) do
         local dependency = toolset:SourceFile( value );
-        local prototype = dependency:prototype();
-        if prototype == nil or prototype == toolset.StaticLibrary then
+        local rule = dependency:rule();
+        if rule == nil or rule == toolset.StaticLibrary then
             target:add_passive_dependency( dependency );
         else
             target:add_dependency( dependency );

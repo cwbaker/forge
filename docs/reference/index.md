@@ -15,7 +15,7 @@ Reference for the Forge API.
 
 - [Path Functions](path-functions.md) describes functions for treating strings as native and portable paths.
 
-- [Prototype Functions](prototype-functions.md) describes functions that create target and toolset prototypes.
+- [Rule Functions](rule-functions.md) describes functions that create rules.
 
 - [System Functions](system-functions.md) describes functions that interact with the system including executing tools as external processes.
 

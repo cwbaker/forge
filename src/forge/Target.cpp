@@ -4,7 +4,7 @@
 //
 
 #include "Target.hpp"
-#include "TargetPrototype.hpp"
+#include "Rule.hpp"
 #include "Graph.hpp"
 #include "GraphWriter.hpp"
 #include "GraphReader.hpp"
@@ -32,7 +32,7 @@ Target::Target()
 , path_()
 , branch_()
 , graph_( nullptr )
-, prototype_( nullptr )
+, rule_( nullptr )
 , timestamp_( 0 )
 , last_write_time_( 0 )
 , hash_( 0 )
@@ -74,7 +74,7 @@ Target::Target( const std::string& id, Graph* graph )
 , path_()
 , branch_()
 , graph_( graph )
-, prototype_( nullptr )
+, rule_( nullptr )
 , timestamp_( 0 )
 , last_write_time_( 0 )
 , hash_( 0 )
@@ -256,18 +256,18 @@ Graph* Target::graph() const
 }
 
 /**
-// Set the TargetPrototype for this Target.
+// Set the Rule for this Target.
 //
-// @param target_prototype
-//  The TargetPrototype to set this Target to have or null to set this Target to have
-//  no TargetPrototype.
+// @param rule
+//  The Rule to set this Target to have or null to set this Target to have
+//  no Rule.
 */
-void Target::set_prototype( TargetPrototype* target_prototype )
+void Target::set_rule( Rule* rule )
 {
-    SWEET_ASSERT( !prototype_ || prototype_ == target_prototype );    
-    if ( !prototype_ || prototype_ != target_prototype )
+    SWEET_ASSERT( !rule_ || rule_ == rule );    
+    if ( !rule_ || rule_ != rule )
     {
-        prototype_ = target_prototype;
+        rule_ = rule;
         if ( referenced_by_script() )
         {
             graph_->forge()->update_target_lua_binding( this );
@@ -276,14 +276,14 @@ void Target::set_prototype( TargetPrototype* target_prototype )
 }
 
 /**
-// Get the TargetPrototype for this Target.
+// Get the Rule for this Target.
 //
 // @return
-//  The TargetPrototype or null if this Target has no TargetPrototype.
+//  The Rule or null if this Target has no Rule.
 */
-TargetPrototype* Target::prototype() const
+Rule* Target::rule() const
 {
-    return prototype_;
+    return rule_;
 }
 
 /**
@@ -1236,7 +1236,7 @@ bool Target::buildable() const
 }
 
 /**
-// Generate a string containing the prototype of this Target and its full 
+// Generate a string containing the rule of this Target and its full 
 // path for use in error reporting.
 //
 // @return
@@ -1245,9 +1245,9 @@ bool Target::buildable() const
 std::string Target::error_identifier() const
 {
     char buffer [1024];
-    if ( prototype_ )
+    if ( rule_ )
     {
-        snprintf( buffer, sizeof(buffer), "%s '%s'", prototype_->id().c_str(), path().c_str() );
+        snprintf( buffer, sizeof(buffer), "%s '%s'", rule_->id().c_str(), path().c_str() );
         buffer [sizeof(buffer) - 1] = 0;
         return string( buffer );
     }
@@ -1278,9 +1278,9 @@ std::string Target::failed_dependencies() const
     {
         message += "'" + id() + "'";
     }
-    else if ( prototype() != nullptr )
+    else if ( rule() != nullptr )
     {
-        message += prototype()->id();
+        message += rule()->id();
     }
     else
     {
@@ -1310,9 +1310,9 @@ std::string Target::failed_dependencies() const
         {
             message += "'" + target->id() + "'";
         }
-        else if ( target->prototype() )
+        else if ( target->rule() )
         {
-            message += target->prototype()->id();
+            message += target->rule()->id();
         }
         else
         {
@@ -1334,9 +1334,9 @@ std::string Target::failed_dependencies() const
             {
                 message += ", '" + target->id() + "'";
             }
-            else if ( target->prototype() != 0 )
+            else if ( target->rule() != 0 )
             {
-                message += ", " + target->prototype()->id();
+                message += ", " + target->rule()->id();
             }
             else
             {

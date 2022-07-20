@@ -13,4 +13,4 @@ Read this section in any order.  Earlier documents introduce concepts used later
 
 - [Writing Buildfiles](writing-buildfiles.md) describes specifying which files are built form which source files by writing buildfiles.
 
-- [Targets and Toolsets](targets-and-toolsets.md) describes adding support for new tools with target and toolset prototypes.
+- [Rules and Modules](targets-and-toolsets.md) describes adding support for new tools with rules and modules.

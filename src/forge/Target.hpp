@@ -14,7 +14,7 @@ namespace forge
 
 class GraphWriter;
 class GraphReader;
-class TargetPrototype;
+class Rule;
 class Graph;
 class Forge;
 
@@ -27,7 +27,7 @@ class Target
     mutable std::string path_; ///< The full path to this Target in the Target namespace.
     mutable std::string branch_; ///< The branch path to this Target in the Target namespace.
     Graph* graph_; ///< The Graph that this Target is part of.
-    TargetPrototype* prototype_; ///< The TargetPrototype for this Target or null if this Target has no TargetPrototype.
+    Rule* rule_; ///< The rule for this Target or null if this Target has no rule.
     std::time_t timestamp_; ///< The timestamp for this Target.
     std::time_t last_write_time_; ///< The last write time of the file that this Target is bound to.
     uint64_t hash_; ///< The hash for this Target the last time that it was built.
@@ -66,8 +66,8 @@ class Target
         bool anonymous() const;
         uint64_t hash() const;
 
-        void set_prototype( TargetPrototype* target_prototype );
-        TargetPrototype* prototype() const;
+        void set_rule( Rule* rule );
+        Rule* rule() const;
 
         void bind();
         void bind_to_file();

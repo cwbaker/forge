@@ -11,7 +11,6 @@ namespace sweet
 namespace forge
 {
 
-class TargetPrototype;
 class Target;
 class Forge;    
 
@@ -35,7 +34,7 @@ public:
     static int path( lua_State* lua_state );
     static int branch( lua_State* lua_state );
     static int parent( lua_State* lua_state );
-    static int prototype( lua_State* lua_state );
+    static int rule( lua_State* lua_state );
     static int set_cleanable( lua_State* lua_state );
     static int cleanable( lua_State* lua_state );
     static int set_built( lua_State* lua_state );

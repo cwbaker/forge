@@ -11,7 +11,6 @@
 #include <forge/Graph.hpp>
 #include <forge/Toolset.hpp>
 #include <forge/Target.hpp>
-#include <forge/TargetPrototype.hpp>
 #include <luaxx/luaxx.hpp>
 #include <assert/assert.hpp>
 #include <lua.hpp>

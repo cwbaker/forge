@@ -263,29 +263,29 @@ function msvc.install( toolset )
         };
     };
 
-    local Cc = GroupPrototype( 'Cc' );
+    local Cc = GroupRule( 'Cc' );
     Cc.identify = msvc.object_filename;
     Cc.build = function( toolset, target ) msvc.compile( toolset, target, 'c' ) end;
     toolset.Cc = Cc;
 
-    local Cxx = GroupPrototype( 'Cxx' );
+    local Cxx = GroupRule( 'Cxx' );
     Cxx.identify = msvc.object_filename;
     Cxx.build = function( toolset, target ) msvc.compile( toolset, target, 'c++' ) end;
     toolset.Cxx = Cxx;
 
-    local StaticLibrary = FilePrototype( 'StaticLibrary' );
+    local StaticLibrary = FileRule( 'StaticLibrary' );
     StaticLibrary.identify = msvc.static_library_filename;
     StaticLibrary.depend = cc.static_library_depend;
     StaticLibrary.build = msvc.archive;
     toolset.StaticLibrary = StaticLibrary;
 
-    local DynamicLibrary = FilePrototype( 'DynamicLibrary' );
+    local DynamicLibrary = FileRule( 'DynamicLibrary' );
     DynamicLibrary.identify = msvc.dynamic_library_filename;
     DynamicLibrary.prepare = cc.collect_transitive_dependencies;
     DynamicLibrary.build = msvc.link;
     toolset.DynamicLibrary = DynamicLibrary;
 
-    local Executable = FilePrototype( 'Executable' );
+    local Executable = FileRule( 'Executable' );
     Executable.identify = msvc.executable_filename;
     Executable.prepare = cc.collect_transitive_dependencies;
     Executable.build = msvc.link;
@@ -414,8 +414,8 @@ function msvc.archive( toolset, target )
     local objects = {};
     local outdated_objects = 0;
     for _, dependency in target:dependencies() do
-        local prototype = dependency:prototype();
-        if prototype ~= toolset.Directory and prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary then
+        local rule = dependency:rule();
+        if rule ~= toolset.Directory and rule ~= toolset.StaticLibrary and rule ~= toolset.DynamicLibrary then
             for _, object in dependency:dependencies() do
                 table.insert( objects, relative(object:filename()) );
                 if object:outdated() then
@@ -445,11 +445,11 @@ function msvc.link( toolset, target )
     local objects = {};
     pushd( toolset:obj_directory(target) );
     for _, dependency in target:dependencies() do
-        local prototype = dependency:prototype();
-        if prototype ~= toolset.StaticLibrary and prototype ~= toolset.DynamicLibrary and prototype ~= toolset.Directory then
+        local rule = dependency:rule();
+        if rule ~= toolset.StaticLibrary and rule ~= toolset.DynamicLibrary and rule ~= toolset.Directory then
             assertf( target.architecture == dependency.architecture, "Architectures for '%s' (%s) and '%s' (%s) don't match", target:path(), tostring(target.architecture), dependency:path(), tostring(dependency.architecture) );
             for _, object in dependency:dependencies() do
-                if object:prototype() == nil then
+                if object:rule() == nil then
                     table.insert( objects, relative(object:filename()) );
                 end
             end
@@ -478,7 +478,7 @@ function msvc.link( toolset, target )
             if not exists(embedded_manifest_rc) then        
                 local rc = io.open( absolute(embedded_manifest_rc), "wb" );
                 assertf( rc, "Opening '%s' to write manifest failed", absolute(embedded_manifest_rc) );
-                if target:prototype() == Executable then
+                if target:rule() == Executable then
                     rc:write( ('1 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "%s_embedded.manifest"'):format(target:id()) );
                 else
                     rc:write( ('2 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "%s_embedded.manifest"'):format(target:id()) );
@@ -694,7 +694,7 @@ function msvc.append_link_flags( toolset, target, flags )
     end
 
     table.insert( flags, ('/out:%s'):format(native(target:filename())) );
-    if target:prototype() == toolset.DynamicLibrary then
+    if target:rule() == toolset.DynamicLibrary then
         table.insert( flags, '/dll' );
         table.insert( flags, ('/implib:%s'):format(native(('%s/%s.lib'):format(toolset.lib, target:id()))) );
     end
@@ -730,8 +730,8 @@ end
 
 function msvc.append_libraries( toolset, target, flags )
     for _, dependency in target:dependencies() do
-        local prototype = dependency:prototype();
-        if prototype == toolset.StaticLibrary or prototype == toolset.DynamicLibrary then
+        local rule = dependency:rule();
+        if rule == toolset.StaticLibrary or rule == toolset.DynamicLibrary then
             local library = dependency;
             if library.whole_archive then
                 table.insert( flags, ('/WHOLEARCHIVE:"%s"'):format(library:filename()) );

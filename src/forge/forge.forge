@@ -45,10 +45,10 @@ for _, cc in toolsets('cc.*') do
             'GraphWriter.cpp',
             'Job.cpp',
             'Reader.cpp', 
+            'Rule.cpp',
             'Scheduler.cpp', 
             'System.cpp',
             'Target.cpp',
-            'TargetPrototype.cpp',
             'Toolset.cpp',
             'path_functions.cpp'
         };

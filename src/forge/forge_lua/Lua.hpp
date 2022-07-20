@@ -14,14 +14,14 @@ namespace forge
 {
 
 class Target;
-class TargetPrototype;
+class Rule;
 class Forge;
 class LuaFileSystem;
 class LuaContext;
 class LuaGraph;
 class LuaSystem;
 class LuaTarget;
-class LuaTargetPrototype;
+class LuaRule;
 class LuaToolset;
 
 class Lua
@@ -33,7 +33,7 @@ class Lua
     LuaGraph* lua_graph_;
     LuaSystem* lua_system_;
     LuaTarget* lua_target_;
-    LuaTargetPrototype* lua_target_prototype_;
+    LuaRule* lua_rule_;
     LuaToolset* lua_toolset_;
 
 public:
@@ -41,7 +41,7 @@ public:
     ~Lua();
     lua_State* lua_state() const;
     LuaTarget* lua_target() const;
-    LuaTargetPrototype* lua_target_prototype() const;
+    LuaRule* lua_rule() const;
     LuaToolset* lua_toolset() const;
     void create( Forge* forge );
     void destroy();

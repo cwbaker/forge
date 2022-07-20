@@ -267,12 +267,12 @@ function find_initial_target( goal )
     return nil;
 end
 
-function FilePrototype( identifier )
-    local file_prototype = TargetPrototype( identifier );
-    file_prototype.create = function( toolset, identifier, target_prototype )
-        local identify = target_prototype.identify or Toolset.interpolate;
+function FileRule( identifier )
+    local file_rule = Rule( identifier );
+    file_rule.create = function( toolset, identifier, rule )
+        local identify = rule.identify or Toolset.interpolate;
         local identifier, filename = identify( toolset, identifier );
-        local target = Target( toolset, identifier, target_prototype );
+        local target = Target( toolset, identifier, rule );
         target:set_filename( filename or target:path() );
         target:set_cleanable( true );
         target:add_ordering_dependency( toolset:Directory(branch(target)) );
@@ -282,16 +282,16 @@ function FilePrototype( identifier )
         end
         return target;
     end
-    return file_prototype;
+    return file_rule;
 end
 
-function JavaStylePrototype( identifier, pattern )
+function JavaStyleRule( identifier, pattern )
     local output_directory_modifier = Toolset.interpolate;
     local pattern = pattern or '(.-([^\\/]-))%.?([^%.\\/]*)$';
-    local java_style_prototype = TargetPrototype( identifier );
-    function java_style_prototype.create( toolset, output_directory, target_prototype )
+    local java_style_rule = Rule( identifier );
+    function java_style_rule.create( toolset, output_directory, rule )
         local output_directory = root_relative():gsub( pattern, output_directory_modifier(toolset, output_directory) );
-        local target = Target( toolset, anonymous(), target_prototype );
+        local target = Target( toolset, anonymous(), rule );
         target:set_cleanable( true );
         target:add_ordering_dependency( toolset:Directory(output_directory) );
         local created = target.created;
@@ -300,23 +300,23 @@ function JavaStylePrototype( identifier, pattern )
         end
         return target;
     end
-    return java_style_prototype;
+    return java_style_rule;
 end
 
-function PatternPrototype( identifier, pattern )
+function PatternRule( identifier, pattern )
     local pattern = pattern or '(.-([^\\/]-))%.?([^%.\\/]*)$';
-    local pattern_prototype = TargetPrototype( identifier );
-    pattern_prototype.create = function( toolset, replacement )
+    local pattern_rule = Rule( identifier );
+    pattern_rule.create = function( toolset, replacement )
         local targets = {};
         local replacement = toolset:interpolate( replacement );
         local targets_metatable = {
             __call = function( targets, dependencies )
-                local identify = pattern_prototype.identify or Toolset.interpolate;
+                local identify = pattern_rule.identify or Toolset.interpolate;
                 local attributes = merge( {}, dependencies );
                 for _, filename in walk_tables(dependencies) do
                     local source_file = toolset:SourceFile( filename );
                     local identifier, filename = identify( toolset, root_relative(source_file):gsub(pattern, replacement) );
-                    local target = Target( toolset, identifier, pattern_prototype );
+                    local target = Target( toolset, identifier, pattern_rule );
                     target:set_filename( filename or target:path() );
                     target:set_cleanable( true );
                     target:add_ordering_dependency( toolset:Directory(branch(target)) );
@@ -334,18 +334,18 @@ function PatternPrototype( identifier, pattern )
         setmetatable( targets, targets_metatable );
         return targets;
     end
-    return pattern_prototype;
+    return pattern_rule;
 end
 
-function GroupPrototype( identifier, pattern )
+function GroupRule( identifier, pattern )
     local pattern = pattern or '(.-([^\\/]-))%.?([^%.\\/]*)$';
-    local group_prototype = TargetPrototype( identifier );
-    group_prototype.create = function( toolset, replacement )
+    local group_rule = Rule( identifier );
+    group_rule.create = function( toolset, replacement )
         local targets = {};
         local replacement = toolset:interpolate( replacement );
         local targets_metatable = {
             __call = function( targets, dependencies )
-                local identify = group_prototype.identify or Toolset.interpolate;
+                local identify = group_rule.identify or Toolset.interpolate;
                 local target = targets[1];
                 merge( target, dependencies );
                 for _, filename in walk_tables(dependencies) do
@@ -365,12 +365,12 @@ function GroupPrototype( identifier, pattern )
                 return targets;
             end
         };
-        local target = Target( toolset, anonymous(), group_prototype );
+        local target = Target( toolset, anonymous(), group_rule );
         table.insert( targets, target );
         setmetatable( targets, targets_metatable );
         return targets;
     end
-    return group_prototype;
+    return group_rule;
 end
 
 -- Recursively walk the tables passed in *dependencies* until reaching targets

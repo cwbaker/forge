@@ -64,11 +64,12 @@ Forge is mostly agnostic towards variables (some exceptions being `variant` abov
 
 ### Toolsets
 
-The toolset for the build is created by requiring the C/C++ module `cc` to retrieve a toolset prototype and then calling that to create the toolset.  Settings to override the defaults are passed in a table to the toolset creation call.
+The toolset for a build is created by calling `forge.Toolset` passing an identifier, and then calling that again passing a table of settings that define the toolset.  Variables referenced in the identifier are interpolated when the settings are provided, so variables like `platform` and `architecture` can provide values properly.  The toolset is further defined by installing modules, like `forge.cc` below, to define rules used to create targets in the dependency graph and any default settings not already set when defining the toolset.
 
 ~~~lua
-local cc = require 'forge.cc' {
-    identifier = 'cc_${platform}_${architecture}';
+local forge = require( 'forge.cc' ):load( variant );
+
+local cc = forge.Toolset 'cc_${platform}_${architecture}' {
     platform = operating_system();
     architecture = 'x86_64';
     bin = root( ('%s/bin'):format(variant) );
@@ -83,9 +84,9 @@ local cc = require 'forge.cc' {
     assertions = variant ~= 'shipping';
     debug = variant ~= 'shipping';
 };
-~~~
 
-The `identifier` variable is special in that it is interpolated and used to identify the toolset later when defining the dependency graph.  The `identifier` variable must be set when creating a top-level toolset.  No other variables appearing in the settings are interpolated.  See the the `add_toolset()` and `toolsets()` functions in the reference section.
+cc:install( 'forge.cc' );
+~~~
 
 The `bin`, `lib`, and `obj` settings are directories specified per variant to keep variant compilations independent.  Keeping these files separate means there's no need to clean a previous build when building a different variant and switching variants won't cause a full rebuild.
 

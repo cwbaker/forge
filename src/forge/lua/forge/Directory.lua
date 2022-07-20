@@ -1,5 +1,5 @@
 
-local Directory = TargetPrototype( 'Directory' );
+local Directory = Rule( 'Directory' );
 
 function Directory.create( toolset, identifier )
     local identifier = toolset:interpolate( identifier );
