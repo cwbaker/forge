@@ -56,6 +56,14 @@ function print( text )
 
 Print `text` to stdout.
 
+### run
+
+~~~lua
+function run( command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... );
+~~~
+
+Executes `command` as for [`execute()`](#execute) but raises an error if the process exits with a non-zero exit code.
+
 ### sleep
 
 ~~~lua
