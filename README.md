@@ -43,7 +43,7 @@ $ forge
 
 ## Documentation
 
-See the [User Manual](https://cwbaker.github.io/forge/) for more information including:
+The [User Manual](https://cwbaker.github.io/forge/) has more documentation including:
 
 - [Installation](https://cwbaker.github.io/forge/installation/) in development and build environments.
 
