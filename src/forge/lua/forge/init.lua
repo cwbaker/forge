@@ -113,8 +113,8 @@ end
 function help()
     printf [[
 Variables:
-  goal={goal}        Target to build.
-  variant={variant}  Variant to build.
+  goal={goal}        Target to build, default is all.
+  variant={variant}  Variant to build, default is debug.
 Commands:
   build              Build outdated targets.
   clean              Clean all targets.
