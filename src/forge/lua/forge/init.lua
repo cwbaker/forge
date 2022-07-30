@@ -13,12 +13,13 @@ function assertf( condition, format, ... )
     end
 end
 
--- Provide global default command that calls through to `build()`.
+-- Default action calling through to `build()`.
 function default()
     return build();
 end
 
-function prepare_visit( target )    
+-- Call prepare on targets that provide it.
+function prepare_visit( target )
     local prepare_function = target.prepare;
     if prepare_function then
         return prepare_function( target.toolset, target );
@@ -68,7 +69,7 @@ function prepare( target )
     return failures;
 end
 
--- Provide global build command.
+-- Build action.
 function build()
     local target = find_initial_target( goal );
     local failures = prepare( target ) + postorder( target, build_visit );
@@ -77,7 +78,7 @@ function build()
     return failures;
 end
 
--- Provide global clean command.
+-- Clean action.
 function clean()
     local failures = postorder( find_initial_target(goal), clean_visit );
     forge:save();
@@ -93,7 +94,7 @@ function reconfigure()
     return 0;
 end
 
--- Provide global dependencies command.
+-- Dependencies action.
 function dependencies()
     local target = find_initial_target( goal );
     local failures = prepare( target );
@@ -101,7 +102,7 @@ function dependencies()
     return failures;
 end
 
--- Provide global namespace command.
+-- Namespace action.
 function namespace()
     local target = find_initial_target( goal );
     local failures = prepare( target );
@@ -109,7 +110,7 @@ function namespace()
     return failures;
 end
 
--- Provide global help command.
+-- Help action.
 function help()
     printf [[
 Variables:
