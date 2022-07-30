@@ -193,7 +193,7 @@ end
 -- Find first existing file named *filename* in *paths*.
 --
 -- Searching is not performed when *filename* is an absolute path.  In this 
--- case *filename* is returned immediately only if it names an existing file.
+-- case *filename* is returned immediately if it names an existing file.
 --
 -- The *paths* variable can be a string containing a `:` or `;` delimited list
 -- of paths or a table containing those paths.  If *paths* is nil then its 
