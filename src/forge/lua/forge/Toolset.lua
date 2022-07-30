@@ -194,8 +194,8 @@ end
 -- The *filename* variable is interpolated and any variables referenced with 
 -- the `${}` syntax are expanded.  See `Toolset:interpolate()` for details.
 --
--- Searching is not performed when *filename* is absolute path.  In this case
--- *filename* is returned immediately only if it names an existing file.
+-- Searching is not performed when *filename* is an absolute path.  In this
+-- case *filename* is returned immediately if it names an existing file.
 --
 -- The *paths* variable can be a string containing a `:` or `;` delimited list
 -- of paths or a table containing those paths.  If *paths* is nil then its 
