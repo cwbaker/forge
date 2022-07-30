@@ -80,3 +80,18 @@ function install()
         toolset:cpdir( '${prefix}/lua', 'src/forge/lua' );
     end
 end
+
+function help()
+    printf [[
+Variables:
+  goal={goal}        Target to build, default is all.
+  variant={variant}  Variant to build, default is debug.
+  prefix={prefix}    Variant to build, default is home('forge').
+Commands:
+  build              Build outdated targets.
+  clean              Clean all targets.
+  reconfigure        Re-run auto-detected configuration.
+  dependencies       Print dependency hierarchy.
+  namespace          Print namespace hierarchy.
+]];
+end
