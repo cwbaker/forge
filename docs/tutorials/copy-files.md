@@ -7,12 +7,15 @@ nav_order: 1
 
 A simple example that copies the files `{bar,baz,foo}.in` to `output/{bar,baz,foo}.out` when the input files change or the output files don't exist:
 
-The root build script, *forge.lua*, that sets up the build is the following:
+The build script, *forge.lua*, that sets up the build is the following:
 
 ~~~lua
--- Initialize Forge and configure the output directory to *output*
+-- Initialize Forge and load any existing dependency graph.
+local forge = require( 'forge' ):load();
+
+-- Configure a toolset with the output directory to *output*
 -- relative to the root directory that contains *forge.lua*.
-local toolset = require 'forge' {
+local toolset = forge.Toolset() {
     output = root( 'output' );
 };
 

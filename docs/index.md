@@ -42,3 +42,7 @@ Execute the build by running `forge` from a directory within the project:
 ~~~bash
 $ forge
 ~~~
+
+## Disclaimer
+
+This user guide is a work in progress.  If you see a mistake please open an [issue](https://github.com/cwbaker/forge/issues/new/choose).  Thank you!
