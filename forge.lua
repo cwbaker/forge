@@ -74,7 +74,7 @@ toolset:all {
 
 function install()
     prefix = prefix and root( prefix ) or home( 'forge' );
-    local failures = default();
+    local failures = build();
     if failures == 0 then 
         toolset:cpdir( '${prefix}/bin', '${bin}' );
         toolset:cpdir( '${prefix}/lua', 'src/forge/lua' );
