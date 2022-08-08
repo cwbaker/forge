@@ -16,40 +16,33 @@ function clang.install( toolset )
     exists( settings.cxx );
     exists( settings.ar );
 
-    local Cc = PatternRule( 'Cc' );
-    Cc.identify = clang.object_filename;
+    local Cc = PatternRule( 'Cc', clang.object_filename );
     Cc.build = function( toolset, target ) clang.compile( toolset, target, 'c' ) end;
     toolset.Cc = Cc;
 
-    local Cxx = PatternRule( 'Cxx' );
-    Cxx.identify = clang.object_filename;
+    local Cxx = PatternRule( 'Cxx', clang.object_filename );
     Cxx.build = function( toolset, target ) clang.compile( toolset, target, 'c++' ) end;
     toolset.Cxx = Cxx;
 
-    local ObjC = PatternRule( 'ObjC' );
-    ObjC.identify = clang.object_filename;
+    local ObjC = PatternRule( 'ObjC', clang.object_filename );
     ObjC.build = function( toolset, target ) clang.compile( toolset, target, 'objective-c' ) end;
     toolset.ObjC = ObjC;
 
-    local ObjCxx = PatternRule( 'ObjCxx' );
-    ObjCxx.identify = clang.object_filename;
+    local ObjCxx = PatternRule( 'ObjCxx', clang.object_filename );
     ObjCxx.build = function( toolset, target ) clang.compile( toolset, target, 'objective-c++' ) end;
     toolset.ObjCxx = ObjCxx;
 
-    local StaticLibrary = FileRule( 'StaticLibrary' );
-    StaticLibrary.identify = clang.static_library_filename;
+    local StaticLibrary = FileRule( 'StaticLibrary', clang.static_library_filename );
     StaticLibrary.depend = cc.static_library_depend;
     StaticLibrary.build = clang.archive;
     toolset.StaticLibrary = StaticLibrary;
 
-    local DynamicLibrary = FileRule( 'DynamicLibrary' );
-    DynamicLibrary.identify = clang.dynamic_library_filename;
+    local DynamicLibrary = FileRule( 'DynamicLibrary', clang.dynamic_library_filename );
     DynamicLibrary.prepare = cc.collect_transitive_dependencies;
     DynamicLibrary.build = clang.link;
     toolset.DynamicLibrary = DynamicLibrary;
 
-    local Executable = FileRule( 'Executable' );
-    Executable.identify = clang.executable_filename;
+    local Executable = FileRule( 'Executable', clang.executable_filename );
     Executable.prepare = cc.collect_transitive_dependencies;
     Executable.build = clang.link;
     toolset.Executable = Executable;

@@ -16,30 +16,25 @@ function gcc.install( toolset )
     assert( exists(settings.gxx) );
     assert( exists(settings.ar) );
 
-    local Cc = PatternRule( 'Cc' );
-    Cc.identify = gcc.object_filename;
+    local Cc = PatternRule( 'Cc', gcc.object_filename );
     Cc.build = function( toolset, target ) gcc.compile( toolset, target, 'c' ) end;
     toolset.Cc = Cc;
 
-    local Cxx = PatternRule( 'Cxx' );
-    Cxx.identify = gcc.object_filename;
+    local Cxx = PatternRule( 'Cxx', gcc.object_filename );
     Cxx.build = function( toolset, target ) gcc.compile( toolset, target, 'c++' ) end;
     toolset.Cxx = Cxx;
 
-    local StaticLibrary = FileRule( 'StaticLibrary' );
-    StaticLibrary.identify = gcc.static_library_filename;
+    local StaticLibrary = FileRule( 'StaticLibrary', gcc.static_library_filename );
     StaticLibrary.build = gcc.archive;
     StaticLibrary.depend = cc.static_library_depend;
     toolset.StaticLibrary = StaticLibrary;
 
-    local DynamicLibrary = FileRule( 'DynamicLibrary' );
-    DynamicLibrary.identify = gcc.dynamic_library_filename;
+    local DynamicLibrary = FileRule( 'DynamicLibrary', gcc.dynamic_library_filename );
     DynamicLibrary.prepare = cc.collect_transitive_dependencies;
     DynamicLibrary.build = gcc.link;
     toolset.DynamicLibrary = DynamicLibrary;
 
-    local Executable = FileRule( 'Executable' );
-    Executable.identify = gcc.executable_filename;
+    local Executable = FileRule( 'Executable', gcc.executable_filename );
     Executable.prepare = cc.collect_transitive_dependencies;
     Executable.build = gcc.link;
     toolset.Executable = Executable;

@@ -263,30 +263,25 @@ function msvc.install( toolset )
         };
     };
 
-    local Cc = GroupRule( 'Cc' );
-    Cc.identify = msvc.object_filename;
+    local Cc = GroupRule( 'Cc', msvc.object_filename );
     Cc.build = function( toolset, target ) msvc.compile( toolset, target, 'c' ) end;
     toolset.Cc = Cc;
 
-    local Cxx = GroupRule( 'Cxx' );
-    Cxx.identify = msvc.object_filename;
+    local Cxx = GroupRule( 'Cxx', msvc.object_filename );
     Cxx.build = function( toolset, target ) msvc.compile( toolset, target, 'c++' ) end;
     toolset.Cxx = Cxx;
 
-    local StaticLibrary = FileRule( 'StaticLibrary' );
-    StaticLibrary.identify = msvc.static_library_filename;
+    local StaticLibrary = FileRule( 'StaticLibrary', msvc.static_library_filename );
     StaticLibrary.depend = cc.static_library_depend;
     StaticLibrary.build = msvc.archive;
     toolset.StaticLibrary = StaticLibrary;
 
-    local DynamicLibrary = FileRule( 'DynamicLibrary' );
-    DynamicLibrary.identify = msvc.dynamic_library_filename;
+    local DynamicLibrary = FileRule( 'DynamicLibrary', msvc.dynamic_library_filename );
     DynamicLibrary.prepare = cc.collect_transitive_dependencies;
     DynamicLibrary.build = msvc.link;
     toolset.DynamicLibrary = DynamicLibrary;
 
-    local Executable = FileRule( 'Executable' );
-    Executable.identify = msvc.executable_filename;
+    local Executable = FileRule( 'Executable', msvc.executable_filename );
     Executable.prepare = cc.collect_transitive_dependencies;
     Executable.build = msvc.link;
     toolset.Executable = Executable;

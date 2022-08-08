@@ -268,10 +268,10 @@ function find_initial_target( goal )
     return nil;
 end
 
-function FileRule( identifier )
+function FileRule( identifier, identify )
+    local identify = identify or Toolset.identify;
     local file_rule = Rule( identifier );
     file_rule.create = function( toolset, identifier, rule )
-        local identify = rule.identify or Toolset.interpolate;
         local identifier, filename = identify( toolset, identifier );
         local target = Target( toolset, identifier, rule );
         target:set_filename( filename or target:path() );
@@ -304,7 +304,8 @@ function JavaStyleRule( identifier, pattern )
     return java_style_rule;
 end
 
-function PatternRule( identifier, pattern )
+function PatternRule( identifier, identify, pattern )
+    local identify = identify or Toolset.interpolate;
     local pattern = pattern or '(.-([^\\/]-))%.?([^%.\\/]*)$';
     local pattern_rule = Rule( identifier );
     pattern_rule.create = function( toolset, replacement )
@@ -312,7 +313,6 @@ function PatternRule( identifier, pattern )
         local replacement = toolset:interpolate( replacement );
         local targets_metatable = {
             __call = function( targets, dependencies )
-                local identify = pattern_rule.identify or Toolset.interpolate;
                 local attributes = merge( {}, dependencies );
                 for _, filename in walk_tables(dependencies) do
                     local source_file = toolset:SourceFile( filename );
@@ -338,7 +338,8 @@ function PatternRule( identifier, pattern )
     return pattern_rule;
 end
 
-function GroupRule( identifier, pattern )
+function GroupRule( identifier, identify, pattern )
+    local identify = identify or Toolset.interpolate;
     local pattern = pattern or '(.-([^\\/]-))%.?([^%.\\/]*)$';
     local group_rule = Rule( identifier );
     group_rule.create = function( toolset, replacement )
@@ -346,7 +347,6 @@ function GroupRule( identifier, pattern )
         local replacement = toolset:interpolate( replacement );
         local targets_metatable = {
             __call = function( targets, dependencies )
-                local identify = group_rule.identify or Toolset.interpolate;
                 local target = targets[1];
                 merge( target, dependencies );
                 for _, filename in walk_tables(dependencies) do
