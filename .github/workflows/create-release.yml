@@ -12,10 +12,11 @@ jobs:
     - name: Collect Release Notes
       id: release_notes
       run: |
-        last_release_commit=`git log -n1 --pretty=format:%H -- version.txt`
+        last_version_commit=`git log -n1 --pretty=format:%H -- version.txt`
         commits=`git rev-list --count $last_release_commit..HEAD`
         version=`cat version.txt`.$commits
-        git log --pretty=format:"- %s" $last_release_commit..HEAD >release_notes.txt
+        last_release_tag=`git describe --tags --match "v*.*.*" --abbrev=0`
+        git log --pretty=format:"- %s" $last_release_tag..HEAD >release_notes.txt
         echo "::set-output name=version::${version}"
       shell: bash
     - name: Create Release
