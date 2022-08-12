@@ -562,7 +562,7 @@ int luaxx_stack_trace_for_call( lua_State* lua_state )
         // Application provided name or other implicit location information.
         if ( *debug.namewhat != '\0' )
         {
-            lua_pushfstring( lua_state, "in function " LUA_QS, debug.name );
+            lua_pushfstring( lua_state, "in function '%s'", debug.name );
         }
         else 
         {
@@ -648,7 +648,7 @@ const char* luaxx_stack_trace_for_resume( lua_State* lua_state, bool stack_trace
             // Application provided name or other implicit location information.
             if ( *debug.namewhat != '\0' )
             {
-                written += snprintf( message + written, max(length - written, 0), "in function " LUA_QS, debug.name );
+                written += snprintf( message + written, max(length - written, 0), "in function '%s'", debug.name );
             }
             else 
             {

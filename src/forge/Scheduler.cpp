@@ -719,13 +719,6 @@ void Scheduler::dofile( lua_State* lua_state, const char* filename )
             break;
         }
 
-        case LUA_ERRGCMM:
-        {
-            error::ErrorPolicy* error_policy = &forge_->error_policy();
-            error_policy->error( true, "Error running garbage collection metamethod loading '%s'", filename );
-            break;
-        }
-
         case LUA_ERRFILE:
         {
             error::ErrorPolicy* error_policy = &forge_->error_policy();
@@ -769,13 +762,6 @@ void Scheduler::doscript( lua_State* lua_state, const char* script )
             break;
         }
 
-        case LUA_ERRGCMM:
-        {
-            error::ErrorPolicy* error_policy = &forge_->error_policy();
-            error_policy->error( true, "Error running garbage collection metamethod loading script" );
-            break;
-        }
-
         case LUA_ERRFILE:
         {
             error::ErrorPolicy* error_policy = &forge_->error_policy();
@@ -797,7 +783,8 @@ void Scheduler::resume( lua_State* lua_state, int parameters )
     SWEET_ASSERT( lua_state );
     SWEET_ASSERT( parameters >= 0 );
 
-    int result = lua_resume( lua_state, nullptr, parameters );
+    int results = 0;
+    int result = lua_resume( lua_state, nullptr, parameters, &results );
     switch ( result )
     {
         case 0:
