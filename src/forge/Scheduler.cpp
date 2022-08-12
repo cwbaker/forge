@@ -719,13 +719,6 @@ void Scheduler::dofile( lua_State* lua_state, const char* filename )
             break;
         }
 
-        case LUA_ERRGCMM:
-        {
-            error::ErrorPolicy* error_policy = &forge_->error_policy();
-            error_policy->error( true, "Error running garbage collection metamethod loading '%s'", filename );
-            break;
-        }
-
         case LUA_ERRFILE:
         {
             error::ErrorPolicy* error_policy = &forge_->error_policy();
@@ -766,13 +759,6 @@ void Scheduler::doscript( lua_State* lua_state, const char* script )
         {
             error::ErrorPolicy* error_policy = &forge_->error_policy();
             error_policy->error( true, "Out of memory loading script" );
-            break;
-        }
-
-        case LUA_ERRGCMM:
-        {
-            error::ErrorPolicy* error_policy = &forge_->error_policy();
-            error_policy->error( true, "Error running garbage collection metamethod loading script" );
             break;
         }
 
