@@ -783,7 +783,8 @@ void Scheduler::resume( lua_State* lua_state, int parameters )
     SWEET_ASSERT( lua_state );
     SWEET_ASSERT( parameters >= 0 );
 
-    int result = lua_resume( lua_state, nullptr, parameters );
+    int results = 0;
+    int result = lua_resume( lua_state, nullptr, parameters, &results );
     switch ( result )
     {
         case 0:
