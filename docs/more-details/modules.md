@@ -23,7 +23,7 @@ function lalr.configure( toolset, lalr_settings )
     };
 end
 
-function lalr.initialize( toolset )
+function lalr.install( toolset )
     local settings = toolset:configure_once( 'lalr',
         lalr.configure
     );
