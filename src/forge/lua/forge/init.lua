@@ -269,7 +269,7 @@ function find_initial_target( goal )
 end
 
 function FileRule( identifier, identify )
-    local identify = identify or Toolset.identify;
+    local identify = identify or Toolset.interpolate;
     local file_rule = Rule( identifier );
     file_rule.create = function( toolset, identifier, rule )
         local identifier, filename = identify( toolset, identifier );
