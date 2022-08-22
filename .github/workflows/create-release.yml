@@ -13,7 +13,7 @@ jobs:
       id: release_notes
       run: |
         last_version_commit=`git log -n1 --pretty=format:%H -- version.txt`
-        commits=`git rev-list --count $last_release_commit..HEAD`
+        commits=`git rev-list --count $last_version_commit..HEAD`
         version=`cat version.txt`.$commits
         last_release_tag=`git describe --tags --match "v*.*.*" --abbrev=0`
         git log --pretty=format:"- %s" $last_release_tag..HEAD >release_notes.txt
