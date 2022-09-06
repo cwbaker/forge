@@ -29,9 +29,9 @@ Commands:
   namespace          Print target hierarchy.
 ~~~
 
-Run `forge` from a directory within the project.  Forge searches up from that directory looking for files named *forge.lua*.  The file found in the highest directory is the root build script executed to define the build.  The directory containing the root build script is the root directory of the project.
+Run `forge` from a directory within the project.  When invoked `forge` searches up from the current working directory looking for files named `forge.lua`.  The file in the highest level directory is the root build script, executed to configure the build.  The directory containing `forge.lua` becomes the root directory of the project.
 
-The directory that `forge` is run from is the initial working directory.  By default the target named *all* in this initial directory is built.  Building from the root directory of the project typically builds all useful outputs for a project.  Building from sub-directories of the project typically builds targets defined in that directory only.
+The directory that `forge` is run from is the initial working directory.  By default the target named *all* in this directory is built.  Building from the root directory of the project typically builds all useful outputs for a project.  Building from sub-directories of the project typically builds targets defined in that directory only.
 
 ### Commands
 
