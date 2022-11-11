@@ -8,9 +8,11 @@ nav_order: 10
 - TOC
 {:toc}
 
-Commands are the high-level steps taken in a build, e.g. build, clean, or install.  They are implemented as global functions within Lua and should be defined once the build script has finished executing in order to be successfully used.
+Commands are the high-level steps taken in a build, e.g. build, clean, install etc.  They are implemented as global functions within Lua defined once the build script has finished executing.
 
-Pass commands to carry out on the command line when invoking `forge`.  These commands are called as global functions with no arguments.  Pass arguments, if needed, by setting variables on the command line to have that value assigned to a global of the same name.  Order is important so that variables must be set before commands that use them.
+Run commands by passing them on the command line when invoking `forge`.  The commands functions are called with no arguments.  Pass parameters by setting variables on the command line, these variables are set as global variables within Lua that the command function can then access.  Order of commands and variables on the command line is important, variables must be set on the command line before any commands that use them.
+
+A command function is expected to return the number of errors that occured during the command or nothing at all.
 
 ## Build Command
 
@@ -77,7 +79,7 @@ end
 
 ## Compound Commands
 
-Commands can also call other commands.  Here the install command for Forge calls `default()` to build Forge before copying the required files to the install destination specified by `prefix`:
+Commands can call other commands.  The install command for Forge builds the project by calling `build()` before copying the required files to the install destination specified by `prefix`:
 
 ~~~lua
 function install()
