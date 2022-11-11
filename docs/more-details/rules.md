@@ -37,8 +37,6 @@ There are five functions to override target behavior.  The `create()` and `depen
 
 - `Rule.prepare()` is called in a preorder traversal as part of the build command.  This function propagates transitive dependencies between targets before they're built.
 
-- `Rule.prepare()` is called in a preorder traversal as part of the build command.  This function propagates transitive dependencies and other transitive information between targets before they're built.
-
 - `Rule.build()` is called when an outdated target is visited as part of a build pass.  The function should build the file(s) represented by the target.
 
 - `Rule.clean()` is called when a target is visited as part of a clean pass.  The function should remove files that were generated during a build.  The default clean action for targets marked as cleanable is to delete the file(s) represented by the target, a custom function is only needed if cleaning a target needs to do more than remove file(s).
