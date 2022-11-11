@@ -2,7 +2,7 @@
 layout: page
 title: Rules
 parent: More Details
-nav_order: 10
+nav_order: 20
 ---
 
 Rules define behavior for creating targets, adding dependencies, and building and cleaning targets as part of the build and clean commands respectively.  Rules are to targets as classes are to objects in an object oriented language such as C++ or Java.

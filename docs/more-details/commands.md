@@ -2,7 +2,7 @@
 layout: page
 title: Commands
 parent: More Details
-nav_order: 30
+nav_order: 10
 ---
 
 - TOC
