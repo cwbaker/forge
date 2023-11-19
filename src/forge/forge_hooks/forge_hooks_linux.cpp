@@ -7,20 +7,21 @@
 #include <string.h>
 #include <sys/uio.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 namespace
 {
 
 static const int FILE_DESCRIPTOR = 3;
 
-static void log_file_access( const char* filename, bool read_only )
+static void log_access( const char* path, bool read_only )
 {
     if ( read_only )
     {
         struct iovec iovecs[] =
         {
             { (void*) "== read '", 9 },
-            { (void*) filename, strlen(filename) },
+            { (void*) path, strlen(path) },
             { (void*) "'\n", 2 }
         };
         size_t written = writev( FILE_DESCRIPTOR, iovecs, 3 );
@@ -31,7 +32,7 @@ static void log_file_access( const char* filename, bool read_only )
         struct iovec iovecs[] =
         {
             { (void*) "== write '", 10 },
-            { (void*) filename, strlen(filename) },
+            { (void*) path, strlen(path) },
             { (void*) "'\n", 2 }
         };
         size_t written = writev( FILE_DESCRIPTOR, iovecs, 3 );
@@ -39,15 +40,39 @@ static void log_file_access( const char* filename, bool read_only )
     }
 }
 
-static void log_file_access( int fd, const char* filename, int oflag )
+static void log_open( int fd, bool read_only )
 {
     if ( fd >= 0 )
     {
         struct stat stat;
         if ( fstat(fd, &stat) == 0 && (stat.st_mode & S_IFREG) != 0 ) 
         {
-            log_file_access( filename, (oflag & (O_WRONLY | O_RDWR)) == 0 );
+            char fd_path [PATH_MAX];
+            snprintf( fd_path, sizeof(fd_path), "/proc/self/fd/%d", fd );
+            char path [PATH_MAX];
+            ssize_t size = readlink( fd_path, path, sizeof(path) - 1 );
+            if ( size >= 0 && size_t(size) < sizeof(path) )
+            {
+                path[size] = 0;
+                log_access( path, read_only );
+            }
         }
+    }
+}
+
+static void log_open( int fd, int oflag )
+{
+    const bool read_only = (oflag & (O_WRONLY | O_RDWR)) == 0;
+    log_open( fd, read_only );
+}
+
+static void log_open( FILE* file, const char* mode )
+{
+    int fd = fileno( file );
+    if ( fd != -1 )
+    {
+        const bool read_only = mode[0] == 'r';
+        log_open( fd, read_only );
     }
 }
 
@@ -78,7 +103,12 @@ int open( const char* filename, int oflag, ... )
     {
         fd = original_open( filename, oflag );
     }
-    log_file_access( fd, filename, oflag );
+
+    if ( fd != -1 )
+    {
+        log_open( fd, oflag );
+    }
+
     return fd;
 }
 
@@ -104,7 +134,11 @@ int open64( const char* filename, int oflag, ... )
     {
         fd = original_open64( filename, oflag );
     }
-    log_file_access( fd, filename, oflag );
+
+    if ( fd != -1 )
+    {
+        log_open( fd, oflag );
+    }
     return fd;
 }
 
@@ -130,7 +164,11 @@ int openat( int dirfd, const char* filename, int oflag, ... )
     {
         fd = original_openat( dirfd, filename, oflag );
     }
-    log_file_access( fd, filename, oflag );
+
+    if ( fd != -1 )
+    {
+        log_open( fd, oflag );
+    }
     return fd;    
 }
 
@@ -142,7 +180,7 @@ FILE* fopen( const char* filename, const char* mode )
     FILE* file = original_fopen( filename, mode );
     if ( file )
     {
-        log_file_access( filename, mode[0] == 'r' );
+        log_open( file, mode );
     }
     return file;
 }
@@ -155,7 +193,7 @@ FILE* fopen64( const char* filename, const char* mode )
     FILE* file = original_fopen64( filename, mode );
     if ( file )
     {
-        log_file_access( filename, mode[0] == 'r' );
+        log_open( file, mode );
     }
     return file;
 }
