@@ -88,24 +88,29 @@ static NtCreateFileFunction original_nt_create_file = NULL;
 // Windows APIs.  Forge scripts that handle these are expecting paths
 // without these prefixes.
 // See https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#win32-file-namespaces.
-static const char* skip_win32_file_namespace( const char* filename )
+static const char* skip_win32_file_namespace( const char* path )
 {
-    if ( filename[0] == '\\' && (filename[1] == '\\' || filename[1] == '?') && filename[2] == '?' && filename[3] == '\\' )
+    if ( path[0] == '\\' && (path[1] == '\\' || path[1] == '?') && path[2] == '?' && path[3] == '\\' )
     {
-        return filename + 4;
+        return path + 4;
     }
-    return filename;
+    return path;
 }
 
-static void log_file_access( const char* namespaced_path, int write )
+static void log_access( HANDLE file, bool read_only )
 {
-    DWORD bytes_written = 0;
-    HANDLE pipe = build_hooks_dependencies_pipe;
-    const char* access = write ? "== write '" : "== read '";
-    const char* path = skip_win32_file_namespace( namespaced_path );
-    WriteFile( pipe, access, (DWORD) strlen(access), &bytes_written, NULL );
-    WriteFile( pipe, path, (DWORD) strlen(path), &bytes_written, NULL );
-    WriteFile( pipe, "'\n", 2, &bytes_written, NULL );
+    char namespaced_path [32767];
+    DWORD result = GetFinalPathNameByHandleA( file, namespaced_path, sizeof(namespaced_path), VOLUME_NAME_DOS );
+    if (result > 0)
+    {
+        DWORD bytes_written = 0;
+        HANDLE pipe = build_hooks_dependencies_pipe;
+        const char* path = skip_win32_file_namespace( namespaced_path );
+        const char* access = read_only ? "== read '" : "== write '";
+        WriteFile( pipe, access, (DWORD) strlen(access), &bytes_written, NULL );
+        WriteFile( pipe, path, (DWORD) strlen(path), &bytes_written, NULL );
+        WriteFile( pipe, "'\n", 2, &bytes_written, NULL );    
+    }
 }
 
 static HANDLE WINAPI create_file_a_hook( LPCSTR filename, DWORD desired_access, DWORD share_mode, LPSECURITY_ATTRIBUTES security_attributes, DWORD creation_disposition, DWORD flags, HANDLE template_file )
@@ -121,7 +126,8 @@ static HANDLE WINAPI create_file_a_hook( LPCSTR filename, DWORD desired_access, 
     );
     if ( handle != INVALID_HANDLE_VALUE && (flags & FILE_ATTRIBUTE_TEMPORARY) == 0 )
     {
-        log_file_access( filename, desired_access & GENERIC_WRITE );
+        const bool read_only = (desired_access & GENERIC_WRITE) == 0;
+        log_access( handle, read_only );
     }
     return handle;
 }
@@ -142,7 +148,8 @@ static HANDLE WINAPI create_file_w_hook( LPCWSTR wide_filename, DWORD desired_ac
         char filename [MAX_PATH + 1];
         int count = WideCharToMultiByte( CP_UTF8, 0, wide_filename, (int) wcslen(wide_filename), filename, (int) sizeof(filename), NULL, NULL );
         filename[count] = 0;
-        log_file_access( filename, desired_access & GENERIC_WRITE );
+        const bool read_only = (desired_access & GENERIC_WRITE) == 0;
+        log_access( handle, read_only );
     }
     return handle;
 }
@@ -163,7 +170,8 @@ static HANDLE WINAPI create_file_transacted_a_hook( LPCSTR filename, DWORD desir
     );
     if ( handle != INVALID_HANDLE_VALUE && (flags & FILE_ATTRIBUTE_TEMPORARY) == 0 )
     {
-        log_file_access( filename, desired_access & GENERIC_WRITE );
+        const bool read_only = (desired_access & GENERIC_WRITE) == 0;
+        log_access( handle, read_only );
     }
     return handle;
 }
@@ -187,7 +195,8 @@ static HANDLE WINAPI create_file_transacted_w_hook( LPCWSTR wide_filename, DWORD
         char filename [MAX_PATH + 1];
         int count = WideCharToMultiByte( CP_UTF8, 0, wide_filename, (int) wcslen(wide_filename), filename, (int) sizeof(filename), NULL, NULL );
         filename[count] = 0;
-        log_file_access( filename, desired_access & GENERIC_WRITE );
+        const bool read_only = (desired_access & GENERIC_WRITE) == 0;
+        log_access( handle, read_only );
     }
     return handle;
 }
@@ -213,7 +222,8 @@ static NTSTATUS WINAPI nt_create_file_hook( PHANDLE file_handle, ACCESS_MASK des
         char path [MAX_PATH + 1];
         int count = WideCharToMultiByte( CP_UTF8, 0, wide_path, (int) wcslen(wide_path), path, (int) sizeof(path), NULL, NULL );
         path[count] = 0;
-        log_file_access( path, desired_access & (FILE_WRITE_DATA | FILE_APPEND_DATA) );
+        const bool read_only = (desired_access & (FILE_WRITE_DATA | FILE_APPEND_DATA)) == 0;
+        log_access( path, read_only );
     }
     return status;
 }
