@@ -119,7 +119,7 @@ static HANDLE WINAPI create_file_a_hook( LPCSTR filename, DWORD desired_access, 
         flags,
         template_file
     );
-    if ( handle != INVALID_HANDLE_VALUE )
+    if ( handle != INVALID_HANDLE_VALUE && (flags & FILE_ATTRIBUTE_TEMPORARY) == 0 )
     {
         log_file_access( filename, desired_access & GENERIC_WRITE );
     }
@@ -137,7 +137,7 @@ static HANDLE WINAPI create_file_w_hook( LPCWSTR wide_filename, DWORD desired_ac
         flags,
         template_file
     );
-    if ( handle != INVALID_HANDLE_VALUE )
+    if ( handle != INVALID_HANDLE_VALUE && (flags & FILE_ATTRIBUTE_TEMPORARY) == 0 )
     {
         char filename [MAX_PATH + 1];
         int count = WideCharToMultiByte( CP_UTF8, 0, wide_filename, (int) wcslen(wide_filename), filename, (int) sizeof(filename), NULL, NULL );
@@ -161,7 +161,7 @@ static HANDLE WINAPI create_file_transacted_a_hook( LPCSTR filename, DWORD desir
         mini_version,
         extended_parameter
     );
-    if ( handle != INVALID_HANDLE_VALUE )
+    if ( handle != INVALID_HANDLE_VALUE && (flags & FILE_ATTRIBUTE_TEMPORARY) == 0 )
     {
         log_file_access( filename, desired_access & GENERIC_WRITE );
     }
@@ -182,7 +182,7 @@ static HANDLE WINAPI create_file_transacted_w_hook( LPCWSTR wide_filename, DWORD
         mini_version,
         extended_parameter
     );
-    if ( handle != INVALID_HANDLE_VALUE )
+    if ( handle != INVALID_HANDLE_VALUE && (flags & FILE_ATTRIBUTE_TEMPORARY) == 0 )
     {
         char filename [MAX_PATH + 1];
         int count = WideCharToMultiByte( CP_UTF8, 0, wide_filename, (int) wcslen(wide_filename), filename, (int) sizeof(filename), NULL, NULL );
