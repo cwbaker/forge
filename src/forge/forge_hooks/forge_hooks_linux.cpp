@@ -66,7 +66,7 @@ int open( const char* filename, int oflag, ... )
     }
 
     int fd = -1;
-    if ( oflag & (O_CREAT | O_TMPFILE) )
+    if ( oflag & O_CREAT )
     {
         va_list args;
         va_start( args, oflag );
@@ -92,7 +92,7 @@ int open64( const char* filename, int oflag, ... )
     }
 
     int fd = -1;
-    if ( oflag & (O_CREAT | O_TMPFILE) )
+    if ( oflag & O_CREAT )
     {
         va_list args;
         va_start( args, oflag );
@@ -118,7 +118,7 @@ int openat( int dirfd, const char* filename, int oflag, ... )
     }
 
     int fd = -1;
-    if ( oflag & (O_CREAT | O_TMPFILE) )
+    if ( oflag & O_CREAT )
     {
         va_list args;
         va_start( args, oflag );
