@@ -61,7 +61,7 @@ int main( int argc, char** argv )
         if ( version )
         {
             std::cout << "Forge " << BUILD_VERSION << " \n";
-            std::cout << "Copyright (c) 2007 - 2022 Charles Baker.  All rights reserved. \n";
+            std::cout << "Copyright (c) 2007 - 2023 Charles Baker.  All rights reserved. \n";
         }
 
         if ( help )
