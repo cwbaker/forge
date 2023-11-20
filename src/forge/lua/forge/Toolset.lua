@@ -108,9 +108,9 @@ function Toolset:dependencies_filter( target )
     target:clear_implicit_dependencies();
     return function( line )
         if line:match('^==') then 
-            local READ_PATTERN = "^== read '([^']*)'";
-            local path = line:match( READ_PATTERN );
-            if path then
+            local ACCESS_PATTERN = "^== (%a+) '([^']*)'";
+            local access, path = line:match( ACCESS_PATTERN );
+            if access and path and access == 'read' then
                 local relative_path = relative( absolute(path), root() );
                 local within_source_tree = is_relative(relative_path) and relative_path:find( '..', 1, true ) == nil;
                 if within_source_tree then 
@@ -132,13 +132,13 @@ function Toolset:filenames_filter( target )
     local output_directory = target:ordering_dependency():filename();
     return function( line )
         if line:match('^==') then
-            local READ_WRITE_PATTERN = "^== (%a+) '([^']*)'";
-            local read_write, path = line:match( READ_WRITE_PATTERN );
-            if read_write and path then
+            local ACCESS_PATTERN = "^== (%a+) '([^']*)'";
+            local access, path = line:match( ACCESS_PATTERN );
+            if access and path then
                 local relative_path = relative( absolute(path), output_directory );
                 local within_source_tree = is_relative(relative_path) and relative_path:find( '..', 1, true ) == nil;
                 if within_source_tree then 
-                    if read_write == 'write' then
+                    if access == 'write' then
                         target:add_filename( path );
                     else
                         local source_file = self:SourceFile( path );
