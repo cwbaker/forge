@@ -348,9 +348,6 @@ static BOOL WINAPI create_process_w_hook( LPCWSTR application_name, LPWSTR comma
         startup_info,
         process_information 
     );
-    char filename [MAX_PATH + 1];
-    int count = WideCharToMultiByte( CP_UTF8, 0, application_name, (int) wcslen(application_name), filename, (int) sizeof(filename), NULL, NULL );
-    filename[count] = 0;
     return success;
 }
 
@@ -387,9 +384,6 @@ static BOOL WINAPI create_process_as_user_w_hook( HANDLE token, LPCWSTR applicat
         startup_info,
         process_information
     );
-    char filename [MAX_PATH + 1];
-    int count = WideCharToMultiByte( CP_UTF8, 0, application_name, (int) wcslen(application_name), filename, (int) sizeof(filename), NULL, NULL );
-    filename[count] = 0;
     return success;
 }
 
@@ -408,9 +402,6 @@ static BOOL WINAPI create_process_with_logon_w_hook( LPCWSTR username, LPCWSTR d
         startup_info,
         process_information        
     );
-    char filename [MAX_PATH + 1];
-    int count = WideCharToMultiByte( CP_UTF8, 0, application_name, (int) wcslen(application_name), filename, (int) sizeof(filename), NULL, NULL );
-    filename[count] = 0;
     return success;
 }
 
@@ -427,9 +418,6 @@ static BOOL WINAPI create_process_with_token_w_hook( HANDLE token, DWORD logon_f
         startup_info, 
         process_information    
     );
-    char filename [MAX_PATH + 1];
-    int count = WideCharToMultiByte( CP_UTF8, 0, application_name, (int) wcslen(application_name), filename, (int) sizeof(filename), NULL, NULL );
-    filename[count] = 0;
     return success;
 }
 
