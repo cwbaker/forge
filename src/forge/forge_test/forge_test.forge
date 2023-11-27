@@ -32,6 +32,7 @@ for _, cc in toolsets('cc.*') do
                     ([[TEST_DIRECTORY=\"%s/\"]]):format( pwd() );
                 };
                 'dependencies.cpp',
+                'hooks.cpp',
                 'main.cpp',
                 'preorder.cpp',
                 'ErrorChecker.cpp',
@@ -40,6 +41,17 @@ for _, cc in toolsets('cc.*') do
                 'TestDirectoryApi.cpp',
                 'TestGraph.cpp',
                 'TestPostorder.cpp'
+            };
+        };
+
+        cc:Executable '${bin}/forge_test_open_files_for_hooks' {
+            cc:Cxx '${obj}/%1' {
+                pdb = 'forge_test_open_files_for_hooks';
+                defines = {
+                    ([[TEST_DIRECTORY=\"%s/\"]]):format( pwd() );
+                    ([[WIDE_TEST_DIRECTORY=L\"%s/\"]]):format( pwd() );
+                };
+                'forge_test_open_files_for_hooks.cpp';
             };
         };
     };
