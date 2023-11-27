@@ -91,7 +91,7 @@ int open( const char* filename, int oflag, ... )
     }
 
     int fd = -1;
-    if ( oflag & O_CREAT )
+    if ( oflag & (O_CREAT | O_TMPFILE) )
     {
         va_list args;
         va_start( args, oflag );
@@ -104,7 +104,7 @@ int open( const char* filename, int oflag, ... )
         fd = original_open( filename, oflag );
     }
 
-    if ( fd != -1 )
+    if ( fd != -1 && !(oflag & O_TMPFILE) )
     {
         log_open( fd, oflag );
     }
@@ -122,7 +122,7 @@ int open64( const char* filename, int oflag, ... )
     }
 
     int fd = -1;
-    if ( oflag & O_CREAT )
+    if ( oflag & (O_CREAT | O_TMPFILE) )
     {
         va_list args;
         va_start( args, oflag );
@@ -135,7 +135,7 @@ int open64( const char* filename, int oflag, ... )
         fd = original_open64( filename, oflag );
     }
 
-    if ( fd != -1 )
+    if ( fd != -1 && !(oflag & O_TMPFILE) )
     {
         log_open( fd, oflag );
     }
@@ -152,7 +152,7 @@ int openat( int dirfd, const char* filename, int oflag, ... )
     }
 
     int fd = -1;
-    if ( oflag & O_CREAT )
+    if ( oflag & (O_CREAT | O_TMPFILE) )
     {
         va_list args;
         va_start( args, oflag );
@@ -165,7 +165,7 @@ int openat( int dirfd, const char* filename, int oflag, ... )
         fd = original_openat( dirfd, filename, oflag );
     }
 
-    if ( fd != -1 )
+    if ( fd != -1 && !(oflag & O_TMPFILE) )
     {
         log_open( fd, oflag );
     }
