@@ -268,6 +268,24 @@ function find_initial_target( goal )
     return nil;
 end
 
+
+-- Decode file access output from the hooks library.
+--
+-- Matches lines starting with "^==", an access mode, and a full path
+-- that are returned from the hooks library that intercepts file access
+-- from spawned processes.  Access mode is "read" or "write" and the
+-- full path is the full path to the file accessed.  Files opened for
+-- read can be assumed to be dependencies.  Files opened for writing can be
+-- assumed to be outputs.
+--
+-- Returns access and path to file or nil for lines that don't match the
+-- pattern.
+function decode_access( line )
+    local ACCESS_PATTERN = "^== (%a+) '([^']*)'";
+    local access, path = line:match( ACCESS_PATTERN );
+    return access, path;
+end
+
 function FileRule( identifier, identify )
     local identify = identify or Toolset.interpolate;
     local file_rule = Rule( identifier );
