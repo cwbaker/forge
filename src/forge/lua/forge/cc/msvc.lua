@@ -623,7 +623,7 @@ function msvc.append_compile_flags( toolset, target, flags, language )
     end
     
     if toolset.debug then
-        local pdb = ('%s/%s.pdb'):format(toolset:obj_directory(target), target:working_directory():id() );
+        local pdb = ('%s/%s.pdb'):format(toolset:obj_directory(target), target.pdb or target:working_directory():id() );
         table.insert( flags, ('/Zi /Fd%s'):format(native(pdb)) );
     end
 
