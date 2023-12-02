@@ -26,10 +26,9 @@ static void log_open( int fd, int oflag )
         if ( fstat(fd, &stat) == 0 && (stat.st_mode & S_IFREG) != 0 ) 
         {
             char path [PATH_MAX];
-            ssize_t size = fcntl( fd, F_GETPATH, path );
-            if ( size >= 0 && size_t(size) < sizeof(path) )
+            int result = fcntl( fd, F_GETPATH, path );
+            if ( result == 0 )
             {
-                path[size] = 0;
                 const bool read_only = (oflag & (O_WRONLY | O_RDWR)) == 0;
                 if ( read_only )
                 {
