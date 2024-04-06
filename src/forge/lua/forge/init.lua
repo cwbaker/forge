@@ -471,20 +471,22 @@ function merge( destination, source )
     return destination;
 end
 
--- Recursively copy values from source to destination.
+-- Recursively copy a tree of Lua tables.
 --
--- If destination is nil then it is created as an empty table.  This function
--- does a deep copy operation recursively over a tree of Lua tables.
+-- Destination tables are created as necessary.  When source or destination
+-- types aren't both tables the the source value is copied to the
+-- destination.
 --
--- Returns destination.
+-- Returns destination, newly allocated if destination was nil on input.
 function apply( destination, source )
     if source then
         local destination = destination or {};
         for key, value in pairs(source) do
-            if type(value) ~= 'table' then
+            local destination_value = destination[key];
+            if type(value) ~= 'table' or type(destination_value) ~= 'table' then
                 destination[key] = value;
             else
-                destination[key] = apply( destination[key], value );
+                destination[key] = apply( destination_value, value );
             end
         end
         return destination;
