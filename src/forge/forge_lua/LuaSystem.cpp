@@ -129,7 +129,14 @@ int LuaSystem::execute( lua_State* lua_state )
                 if ( lua_isstring(lua_state, -2) )
                 {
                     const char* key = lua_tostring( lua_state, -2 );
+                    SWEET_ASSERT( key );
+
                     const char* value = lua_tostring( lua_state, -1 );
+                    if ( !value )
+                    {
+                        lua_pushfstring( lua_state, "nil value for '%s' in environment table", key );
+                        return lua_error( lua_state );
+                    }
                     environment->append( key, value );
                 }
                 lua_pop( lua_state, 1 );
