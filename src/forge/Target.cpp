@@ -375,10 +375,10 @@ void Target::bind_to_dependencies()
             timestamp = std::max( timestamp, target->timestamp() );
         }
 
-        outdated = 
+        outdated =
             outdated ||
-            (!filenames_.empty() && timestamp > last_write_time()) ||
             hash_ != pending_hash_ ||
+            (cleanable_ && timestamp > last_write_time()) ||
             (cleanable_ && !built_)
         ;
 
