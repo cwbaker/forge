@@ -42,7 +42,7 @@ int main( int argc, char** argv )
         string directory = initial_path<path>().generic_string();
         string root_directory;
         string build_script = "forge.lua";
-        bool stack_trace_enabled = false;    
+        bool stack_trace_enabled = false;
         vector<string> assignments_and_commands;
 
         EventSink event_sink;
@@ -61,7 +61,7 @@ int main( int argc, char** argv )
         if ( version )
         {
             std::cout << "Forge " << BUILD_VERSION << " \n";
-            std::cout << "Copyright (c) 2007 - 2023 Charles Baker.  All rights reserved. \n";
+            std::cout << "Copyright (c) Charles Baker.  All rights reserved. \n";
         }
 
         if ( help )
@@ -103,12 +103,12 @@ int main( int argc, char** argv )
                 }
                 ++i;
             }
-            
+
             if ( !executed_command && !version )
             {
                 const string DEFAULT_COMMAND = "default";
                 forge.command( assignments, build_script, DEFAULT_COMMAND );
-            }            
+            }
         }
 
         return error_policy.errors();
