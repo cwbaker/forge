@@ -1,19 +1,18 @@
+local Directory = Rule('Directory');
 
-local Directory = Rule( 'Directory' );
-
-function Directory.create( toolset, identifier )
-    local identifier = toolset:interpolate( identifier );
-    local target = toolset:Target( identifier, Directory );
-    target:set_filename( target:path() );
-    target:set_cleanable( true );
+function Directory.create(toolset, identifier)
+    local identifier = toolset:interpolate(identifier);
+    local target = toolset:Target(identifier, Directory);
+    target:set_filename(target:path());
+    target:set_cleanable(true);
     return target;
 end
 
-function Directory.build( toolset, target )
-    mkdir( target );
+function Directory.build(toolset, target)
+    mkdir(target);
 end
 
-function Directory.clean( toolset, target )
+function Directory.clean(toolset, target)
 end
 
 return Directory;

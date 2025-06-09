@@ -1,99 +1,98 @@
-
 local msvc = {};
 
-function msvc.configure( toolset )
+function msvc.configure(toolset)
     local function vswhere()
         local vswhere = 'C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe';
-        if exists( vswhere ) then 
+        if exists(vswhere) then
             local environment = {
-                ProgramData = getenv( 'ProgramData' );
-                SystemRoot = getenv( 'SystemRoot' );
+                ProgramData = getenv('ProgramData');
+                SystemRoot = getenv('SystemRoot');
             };
             local values = {};
-            run( vswhere, 'vswhere -latest', environment, nil, function(line)
-                local key, value = line:match( '([%w_]+): ([^\n\r]+)' );
-                if key and value then 
+            run(vswhere, 'vswhere -latest', environment, nil, function (line)
+                local key, value = line:match('([%w_]+): ([^\n\r]+)');
+                if key and value then
                     values[key] = value;
                 end
-            end );
-            if #values == 0 then 
-                run( vswhere, 'vswhere -products Microsoft.VisualStudio.Product.BuildTools', environment, nil, function(line)
-                    local key, value = line:match( '([%w_]+): ([^\n\r]+)' );
-                    if key and value then 
+            end);
+            if #values == 0 then
+                run(vswhere, 'vswhere -products Microsoft.VisualStudio.Product.BuildTools', environment, nil, function (line)
+                    local key, value = line:match('([%w_]+): ([^\n\r]+)');
+                    if key and value then
                         values[key] = value;
                     end
-                end );
+                end);
             end
             return values;
         end
     end
 
-    local function vc_default_version( installation_path )
-        local filename = ('%s/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt'):format( installation_path );
-        local file = assert( io.open(filename, 'rb') );
-        local version = file:read( '*all' );
+    local function vc_default_version(installation_path)
+        local filename = ('%s/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt'):format(installation_path);
+        local file = assert(io.open(filename, 'rb'));
+        local version = file:read('*all');
         file:close();
         return version:match('([^\n\r]+)');
     end
 
-    local function registry( key )
+    local function registry(key)
         local values = {};
         local reg = "C:/Windows/system32/reg.exe";
-        local arguments = ('reg query "%s"'):format( key );
-        run( reg, arguments, nil, nil, function(line)
+        local arguments = ('reg query "%s"'):format(key);
+        run(reg, arguments, nil, nil, function (line)
             local REG_QUERY_PATTERN = "%s* ([%w_]+) %s* ([%w_]+) %s* ([^\n\r]+)";
-            local key, type_, value = line:match( REG_QUERY_PATTERN );
-            if key and type_ and value then 
+            local key, type_, value = line:match(REG_QUERY_PATTERN);
+            if key and type_ and value then
                 values[key] = value;
             end
-        end );
+        end);
         return values;
     end
 
     local function autodetect_toolset_version()
         local visual_studio_directory;
         local values = vswhere();
-        if values then 
+        if values then
             return 15;
         end
-        for version = 14, 10, -1 do 
-            local visual_studio_directory = os.getenv( ('VS%d0COMNTOOLS'):format(version) );
-            if visual_studio_directory then 
+        for version = 14, 10, -1 do
+            local visual_studio_directory = os.getenv(('VS%d0COMNTOOLS'):format(version));
+            if visual_studio_directory then
                 return version;
             end
         end
     end
 
-    local function autodetect_visual_studio_directory( toolset_version )
-        if toolset_version >= 15 then 
+    local function autodetect_visual_studio_directory(toolset_version)
+        if toolset_version >= 15 then
             local visual_studio_directory;
             local values = vswhere();
-            if values then 
+            if values then
                 return values.installationPath;
             end
         end
-        local visual_studio_directory = os.getenv( ("VS%d0COMNTOOLS"):format(toolset_version) );
+        local visual_studio_directory = os.getenv(("VS%d0COMNTOOLS"):format(toolset_version));
         if visual_studio_directory then
-            visual_studio_directory = string.gsub( visual_studio_directory, "\\Common7\\Tools\\", "" );
+            visual_studio_directory = string.gsub(visual_studio_directory, "\\Common7\\Tools\\", "");
             return visual_studio_directory;
         end
     end
 
-    local function autodetect_visual_cxx_directory( toolset_version )
-        if toolset_version >= 15 then 
+    local function autodetect_visual_cxx_directory(toolset_version)
+        if toolset_version >= 15 then
             local values = vswhere();
-            if values then 
+            if values then
                 local visual_studio_directory = values.installationPath;
-                local vc_version = vc_default_version( visual_studio_directory );
+                local vc_version = vc_default_version(visual_studio_directory);
                 if visual_studio_directory and vc_version then
-                    return ('%s\\VC\\Tools\\MSVC\\%s'):format( visual_studio_directory, vc_version );
+                    return ('%s\\VC\\Tools\\MSVC\\%s'):format(visual_studio_directory, vc_version);
                 end
             end
         end
-        local visual_studio_directory = os.getenv( ("VS%d0COMNTOOLS"):format(toolset_version) );
+        local visual_studio_directory = os.getenv(("VS%d0COMNTOOLS"):format(toolset_version));
         if visual_studio_directory then
-            visual_studio_directory = string.gsub( visual_studio_directory, "\\Common7\\Tools\\", "" );
-            return ('%s\\VC'):format( visual_studio_directory );
+            visual_studio_directory = string.gsub(visual_studio_directory, "\\Common7\\Tools\\", "");
+            return ('%s\\VC'):format(visual_studio_directory);
         end
     end
 
@@ -106,8 +105,8 @@ function msvc.configure( toolset )
 
     local function autodetect_windows_sdk_directory()
         for _, root in ipairs(REGISTRY_ROOTS) do
-            local windows_sdk = registry( ([[%s\Microsoft\Microsoft SDKs\Windows\v10.0]]):format(root) );
-            if windows_sdk.InstallationFolder then 
+            local windows_sdk = registry(([[%s\Microsoft\Microsoft SDKs\Windows\v10.0]]):format(root));
+            if windows_sdk.InstallationFolder then
                 return windows_sdk.InstallationFolder;
             end
         end
@@ -115,8 +114,8 @@ function msvc.configure( toolset )
 
     local function autodetect_ucrt_directory()
         for _, root in ipairs(REGISTRY_ROOTS) do
-            local windows_sdk = registry( ([[%s\Microsoft\Windows Kits\Installed Roots]]):format(root) );
-            if windows_sdk.KitsRoot10 then 
+            local windows_sdk = registry(([[%s\Microsoft\Windows Kits\Installed Roots]]):format(root));
+            if windows_sdk.KitsRoot10 then
                 return windows_sdk.KitsRoot10;
             end
         end
@@ -124,11 +123,11 @@ function msvc.configure( toolset )
 
     local function autodetect_windows_sdk_version()
         for _, root in ipairs(REGISTRY_ROOTS) do
-            local windows_sdk = registry( ([[%s\Microsoft\Windows Kits\Installed Roots]]):format(root) );
+            local windows_sdk = registry(([[%s\Microsoft\Windows Kits\Installed Roots]]):format(root));
             if windows_sdk.KitsRoot10 then
                 local latest_version;
                 for filename in ls(('%s/bin'):format(windows_sdk.KitsRoot10)) do
-                    local version = leaf( filename ):match('10%.%d+%.%d+%.%d+');
+                    local version = leaf(filename):match('10%.%d+%.%d+%.%d+');
                     if version then
                         latest_version = version;
                     end
@@ -141,25 +140,25 @@ function msvc.configure( toolset )
     local toolset_version = autodetect_toolset_version();
     return {
         toolset_version = toolset_version;
-        visual_studio_directory = autodetect_visual_studio_directory( toolset_version );
-        visual_cxx_directory = autodetect_visual_cxx_directory( toolset_version );
+        visual_studio_directory = autodetect_visual_studio_directory(toolset_version);
+        visual_cxx_directory = autodetect_visual_cxx_directory(toolset_version);
         windows_sdk_directory = autodetect_windows_sdk_directory();
         windows_sdk_version = autodetect_windows_sdk_version();
         ucrt_directory = autodetect_ucrt_directory();
     };
 end
 
-function msvc.install( toolset )
-    local settings = toolset:configure_once( 'msvc', msvc.configure );
-    if operating_system() == 'windows' then 
-        assert( settings.toolset_version ~= nil );
-        assert( settings.visual_cxx_directory ~= nil );
+function msvc.install(toolset)
+    local settings = toolset:configure_once('msvc', msvc.configure);
+    if operating_system() == 'windows' then
+        assert(settings.toolset_version ~= nil);
+        assert(settings.visual_cxx_directory ~= nil);
     end
 
     -- Make sure that the environment variable VS_UNICODE_OUTPUT is not set.
     --
-    -- Visual Studio sets this to signal its tools to communicate back to 
-    -- Visual Studio using named pipes rather than stdout so that unicode output 
+    -- Visual Studio sets this to signal its tools to communicate back to
+    -- Visual Studio using named pipes rather than stdout so that unicode output
     -- works better but this then prevents the build tool from intercepting
     -- and collating this output.
     --
@@ -172,116 +171,116 @@ function msvc.install( toolset )
 
     local path_i386, path_x86_64, lib_i386, lib_x86_64, include;
 
-    if toolset_version >= 15 then 
+    if toolset_version >= 15 then
         path_i386 = {
-            ('%s\\bin\\Hostx64\\x86'):format( visual_cxx_directory ),
-            ('%s\\Common7\\IDE'):format( visual_studio_directory ),
-            ('%s\\Common7\\Tools'):format( visual_studio_directory ),
+            ('%s\\bin\\Hostx64\\x86'):format(visual_cxx_directory);
+            ('%s\\Common7\\IDE'):format(visual_studio_directory);
+            ('%s\\Common7\\Tools'):format(visual_studio_directory);
         };
 
         path_x86_64 = {
-            ('%s\\bin\\Hostx64\\x64'):format( visual_cxx_directory ),
-            ('%s\\Common7\\IDE'):format( visual_studio_directory ),
-            ('%s\\Common7\\Tools'):format( visual_studio_directory ),
+            ('%s\\bin\\Hostx64\\x64'):format(visual_cxx_directory);
+            ('%s\\Common7\\IDE'):format(visual_studio_directory);
+            ('%s\\Common7\\Tools'):format(visual_studio_directory);
         };
-        
+
         lib_i386 = {
-            ('%s\\atlmfc\\lib\\x86'):format( visual_cxx_directory ),
-            ('%s\\lib\\x86'):format( visual_cxx_directory )
+            ('%s\\atlmfc\\lib\\x86'):format(visual_cxx_directory);
+            ('%s\\lib\\x86'):format(visual_cxx_directory)
         };
 
         lib_x86_64 = {
-            ('%s\\VC\\atlmfc\\lib\\x64'):format( visual_cxx_directory ),
-            ('%s\\lib\\x64'):format( visual_cxx_directory )
+            ('%s\\VC\\atlmfc\\lib\\x64'):format(visual_cxx_directory);
+            ('%s\\lib\\x64'):format(visual_cxx_directory)
         };
 
         include = {
-            ('%s\\atlmfc\\include'):format( visual_cxx_directory ),
-            ('%s\\include'):format( visual_cxx_directory ),
+            ('%s\\atlmfc\\include'):format(visual_cxx_directory);
+            ('%s\\include'):format(visual_cxx_directory);
         };
     else
         path_i386 = {
-            ('%s\\VC\\bin\\amd64_x86'):format( visual_studio_directory ),
-            ('%s\\Common7\\IDE'):format( visual_studio_directory ),
-            ('%s\\Common7\\Tools'):format( visual_studio_directory ),
-            ('%s\\VC\\vcpackages'):format( visual_studio_directory ),
+            ('%s\\VC\\bin\\amd64_x86'):format(visual_studio_directory);
+            ('%s\\Common7\\IDE'):format(visual_studio_directory);
+            ('%s\\Common7\\Tools'):format(visual_studio_directory);
+            ('%s\\VC\\vcpackages'):format(visual_studio_directory);
         };
 
         path_x86_64 = {
-            ('%s\\VC\\bin\\amd64'):format( visual_studio_directory ),
-            ('%s\\Common7\\IDE'):format( visual_studio_directory ),
-            ('%s\\Common7\\Tools'):format( visual_studio_directory ),
-            ('%s\\VC\\vcpackages'):format( visual_studio_directory ),
+            ('%s\\VC\\bin\\amd64'):format(visual_studio_directory);
+            ('%s\\Common7\\IDE'):format(visual_studio_directory);
+            ('%s\\Common7\\Tools'):format(visual_studio_directory);
+            ('%s\\VC\\vcpackages'):format(visual_studio_directory);
         };
-        
+
         lib_i386 = {
-            ('%s\\VC\\atlmfc\\lib'):format( visual_studio_directory ),
-            ('%s\\VC\\lib'):format( visual_studio_directory )
+            ('%s\\VC\\atlmfc\\lib'):format(visual_studio_directory);
+            ('%s\\VC\\lib'):format(visual_studio_directory)
         };
 
         lib_x86_64 = {
-            ('%s\\VC\\atlmfc\\lib\\amd64'):format( visual_studio_directory ),
-            ('%s\\VC\\lib\\amd64'):format( visual_studio_directory )
+            ('%s\\VC\\atlmfc\\lib\\amd64'):format(visual_studio_directory);
+            ('%s\\VC\\lib\\amd64'):format(visual_studio_directory)
         };
 
         include = {
-            ('%s\\VC\\atlmfc\\include'):format( visual_studio_directory ),
-            ('%s\\VC\\include'):format( visual_studio_directory ),
+            ('%s\\VC\\atlmfc\\include'):format(visual_studio_directory);
+            ('%s\\VC\\include'):format(visual_studio_directory);
         };
     end
-    
+
     local sdk_directory = toolset.msvc.windows_sdk_directory;
     local sdk_version = toolset.msvc.windows_sdk_version;
     local ucrt_directory = toolset.msvc.ucrt_directory;
-    if sdk_directory then 
-        table.insert( include, ('%s\\Include\\%s\\ucrt'):format(ucrt_directory, sdk_version) );
-        table.insert( include, ('%s\\Include\\%s\\um'):format(sdk_directory, sdk_version) );
-        table.insert( include, ('%s\\Include\\%s\\shared'):format(sdk_directory, sdk_version) );
-        table.insert( include, ('%s\\Include\\%s\\winrt'):format(sdk_directory, sdk_version) );
-        table.insert( lib_i386, ('%s\\Lib\\%s\\um\\x86'):format(sdk_directory, sdk_version) );
-        table.insert( lib_i386, ('%s\\Lib\\%s\\ucrt\\x86'):format(ucrt_directory, sdk_version) );
-        table.insert( lib_x86_64, ('%s\\Lib\\%s\\um\\x64'):format(sdk_directory, sdk_version) );
-        table.insert( lib_x86_64, ('%s\\Lib\\%s\\ucrt\\x64'):format(ucrt_directory, sdk_version) );
+    if sdk_directory then
+        table.insert(include, ('%s\\Include\\%s\\ucrt'):format(ucrt_directory, sdk_version));
+        table.insert(include, ('%s\\Include\\%s\\um'):format(sdk_directory, sdk_version));
+        table.insert(include, ('%s\\Include\\%s\\shared'):format(sdk_directory, sdk_version));
+        table.insert(include, ('%s\\Include\\%s\\winrt'):format(sdk_directory, sdk_version));
+        table.insert(lib_i386, ('%s\\Lib\\%s\\um\\x86'):format(sdk_directory, sdk_version));
+        table.insert(lib_i386, ('%s\\Lib\\%s\\ucrt\\x86'):format(ucrt_directory, sdk_version));
+        table.insert(lib_x86_64, ('%s\\Lib\\%s\\um\\x64'):format(sdk_directory, sdk_version));
+        table.insert(lib_x86_64, ('%s\\Lib\\%s\\ucrt\\x64'):format(ucrt_directory, sdk_version));
     end
 
     msvc.environments_by_architecture = {
         ['i386'] = {
-            PATH = table.concat( path_i386, ';' );
-            LIB = table.concat( lib_i386, ';' );
-            LIBPATH = table.concat( lib_i386, ';' );
-            INCLUDE = table.concat( include, ';' );
-            SYSTEMROOT = os.getenv( 'SYSTEMROOT' );
-            TMP = os.getenv( 'TMP' );
+            PATH = table.concat(path_i386, ';');
+            LIB = table.concat(lib_i386, ';');
+            LIBPATH = table.concat(lib_i386, ';');
+            INCLUDE = table.concat(include, ';');
+            SYSTEMROOT = os.getenv('SYSTEMROOT');
+            TMP = os.getenv('TMP');
         };
         ['x86-64'] = {
-            PATH = table.concat( path_x86_64, ';' );
-            LIB = table.concat( lib_x86_64, ';' );
-            LIBPATH = table.concat( lib_x86_64, ';' );
-            INCLUDE = table.concat( include, ';' );
-            SYSTEMROOT = os.getenv( 'SYSTEMROOT' );
-            TMP = os.getenv( 'TMP' );
+            PATH = table.concat(path_x86_64, ';');
+            LIB = table.concat(lib_x86_64, ';');
+            LIBPATH = table.concat(lib_x86_64, ';');
+            INCLUDE = table.concat(include, ';');
+            SYSTEMROOT = os.getenv('SYSTEMROOT');
+            TMP = os.getenv('TMP');
         };
     };
 
-    local Cc = GroupRule( 'Cc', msvc.object_filename );
-    Cc.build = function( toolset, target ) msvc.compile( toolset, target, 'c' ) end;
+    local Cc = GroupRule('Cc', msvc.object_filename);
+    Cc.build = function (toolset, target) msvc.compile(toolset, target, 'c') end;
     toolset.Cc = Cc;
 
-    local Cxx = GroupRule( 'Cxx', msvc.object_filename );
-    Cxx.build = function( toolset, target ) msvc.compile( toolset, target, 'c++' ) end;
+    local Cxx = GroupRule('Cxx', msvc.object_filename);
+    Cxx.build = function (toolset, target) msvc.compile(toolset, target, 'c++') end;
     toolset.Cxx = Cxx;
 
-    local StaticLibrary = FileRule( 'StaticLibrary', msvc.static_library_filename );
+    local StaticLibrary = FileRule('StaticLibrary', msvc.static_library_filename);
     StaticLibrary.depend = cc.static_library_depend;
     StaticLibrary.build = msvc.archive;
     toolset.StaticLibrary = StaticLibrary;
 
-    local DynamicLibrary = FileRule( 'DynamicLibrary', msvc.dynamic_library_filename );
+    local DynamicLibrary = FileRule('DynamicLibrary', msvc.dynamic_library_filename);
     DynamicLibrary.prepare = cc.collect_transitive_dependencies;
     DynamicLibrary.build = msvc.link;
     toolset.DynamicLibrary = DynamicLibrary;
 
-    local Executable = FileRule( 'Executable', msvc.executable_filename );
+    local Executable = FileRule('Executable', msvc.executable_filename);
     Executable.prepare = cc.collect_transitive_dependencies;
     Executable.build = msvc.link;
     toolset.Executable = Executable;
@@ -317,51 +316,51 @@ function msvc.install( toolset )
     return true;
 end
 
-function msvc.object_filename( toolset, identifier )
-    return ('%s.obj'):format( identifier );
+function msvc.object_filename(toolset, identifier)
+    return ('%s.obj'):format(identifier);
 end
 
-function msvc.static_library_filename( toolset, identifier )
-    local identifier = absolute( toolset:interpolate(identifier) );
-    local filename = ('%s.lib'):format( identifier );
+function msvc.static_library_filename(toolset, identifier)
+    local identifier = absolute(toolset:interpolate(identifier));
+    local filename = ('%s.lib'):format(identifier);
     return identifier, filename;
 end
 
-function msvc.dynamic_library_filename( toolset, identifier )
-    local identifier = absolute( toolset:interpolate(identifier) );
-    local filename = ('%s.dll'):format( identifier );
+function msvc.dynamic_library_filename(toolset, identifier)
+    local identifier = absolute(toolset:interpolate(identifier));
+    local filename = ('%s.dll'):format(identifier);
     return identifier, filename;
 end
 
-function msvc.executable_filename( toolset, identifier )
-    local identifier = toolset:interpolate( identifier );
-    local filename = ('%s.exe'):format( identifier );
+function msvc.executable_filename(toolset, identifier)
+    local identifier = toolset:interpolate(identifier);
+    local filename = ('%s.exe'):format(identifier);
     return identifier, filename;
 end
 
 -- Compile C and C++.
-function msvc.compile( toolset, target, language ) 
+function msvc.compile(toolset, target, language)
     local flags = {};
-    msvc.append_defines( toolset, target, flags );
-    msvc.append_include_directories( toolset, target, flags );
-    msvc.append_compile_flags( toolset, target, flags, language );
+    msvc.append_defines(toolset, target, flags);
+    msvc.append_include_directories(toolset, target, flags);
+    msvc.append_compile_flags(toolset, target, flags, language);
 
     local objects_by_source = {};
     local sources_by_directory = {};
     for _, object in target:dependencies() do
         if object:outdated() then
             local source = object:dependency();
-            local directory = branch( source:filename() );
+            local directory = branch(source:filename());
             local sources = sources_by_directory[directory];
-            if not sources then 
+            if not sources then
                 sources = {};
                 sources_by_directory[directory] = sources;
             end
             local source = object:dependency();
-            table.insert( sources, source:id() );
+            table.insert(sources, source:id());
             objects_by_source[leaf(source:id())] = object;
             object:clear_implicit_dependencies();
-        end    
+        end
     end
 
     for directory, sources in pairs(sources_by_directory) do
@@ -369,20 +368,20 @@ function msvc.compile( toolset, target, language )
             -- Make sure that the output directory has a trailing slash so
             -- that Visual C++ doesn't interpret it as a file when a single
             -- source file is compiled.
-            local output_directory = native( ('%s/%s'):format(toolset:obj_directory(target), relative(directory)) );
-            if output_directory:sub(-1) ~= '\\' then 
-                output_directory = ('%s\\'):format( output_directory );
+            local output_directory = native(('%s/%s'):format(toolset:obj_directory(target), relative(directory)));
+            if output_directory:sub(-1) ~= '\\' then
+                output_directory = ('%s\\'):format(output_directory);
             end
 
-            local ccflags = table.concat( flags, ' ' );
-            local source = table.concat( sources, '" "' );
-            local cl = msvc.visual_cxx_tool( toolset, 'cl.exe' );
+            local ccflags = table.concat(flags, ' ');
+            local source = table.concat(sources, '" "');
+            local cl = msvc.visual_cxx_tool(toolset, 'cl.exe');
             local environment = msvc.environments_by_architecture[toolset.architecture];
-            pushd( directory );
-            run( 
-                cl, 
-                ('cl %s /Fo%s "%s"'):format(ccflags, output_directory, source), 
-                environment, 
+            pushd(directory);
+            run(
+                cl,
+                ('cl %s /Fo%s "%s"'):format(ccflags, output_directory, source),
+                environment,
                 nil,
                 msvc.dependencies_filter(toolset, output_directory, absolute(directory))
             );
@@ -391,178 +390,178 @@ function msvc.compile( toolset, target, language )
     end
 
     for _, object in pairs(objects_by_source) do
-        object:set_built( true );
+        object:set_built(true);
     end
 end
 
--- Archive objects into a static library. 
-function msvc.archive( toolset, target ) 
+-- Archive objects into a static library.
+function msvc.archive(toolset, target)
     local flags = {
         '/nologo'
     };
-   
+
     if toolset.link_time_code_generation then
-        table.insert( flags, '/ltcg' );
+        table.insert(flags, '/ltcg');
     end
-    
-    pushd( toolset:obj_directory(target) );
+
+    pushd(toolset:obj_directory(target));
     local objects = {};
     local outdated_objects = 0;
     for _, dependency in target:dependencies() do
         local rule = dependency:rule();
         if rule ~= toolset.Directory and rule ~= toolset.StaticLibrary and rule ~= toolset.DynamicLibrary then
             for _, object in dependency:dependencies() do
-                table.insert( objects, relative(object:filename()) );
+                table.insert(objects, relative(object:filename()));
                 if object:outdated() then
                     outdated_objects = outdated_objects + 1;
                 end
             end
         end
     end
-    
+
     if outdated_objects > 0 or not exists(target) then
-        printf( leaf(target) );
-        local arflags = table.concat( flags, ' ' );
-        local arobjects = table.concat( objects, '" "' );
-        local msar = msvc.visual_cxx_tool( toolset, 'lib.exe' );
+        printf(leaf(target));
+        local arflags = table.concat(flags, ' ');
+        local arobjects = table.concat(objects, '" "');
+        local msar = msvc.visual_cxx_tool(toolset, 'lib.exe');
         local environment = msvc.environments_by_architecture[toolset.architecture];
-        run( msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:filename()), arobjects), environment );
+        run(msar, ('lib %s /out:"%s" "%s"'):format(arflags, native(target:filename()), arobjects), environment);
     else
-        touch( target );
+        touch(target);
     end
     popd();
 end
 
 -- Link dynamic libraries and executables.
-function msvc.link( toolset, target ) 
-    printf( leaf(target) );
+function msvc.link(toolset, target)
+    printf(leaf(target));
 
     local objects = {};
-    pushd( toolset:obj_directory(target) );
+    pushd(toolset:obj_directory(target));
     for _, dependency in target:dependencies() do
         local rule = dependency:rule();
         if rule ~= toolset.StaticLibrary and rule ~= toolset.DynamicLibrary and rule ~= toolset.Directory then
-            assertf( target.architecture == dependency.architecture, "Architectures for '%s' (%s) and '%s' (%s) don't match", target:path(), tostring(target.architecture), dependency:path(), tostring(dependency.architecture) );
+            assertf(target.architecture == dependency.architecture, "Architectures for '%s' (%s) and '%s' (%s) don't match", target:path(), tostring(target.architecture), dependency:path(), tostring(dependency.architecture));
             for _, object in dependency:dependencies() do
                 if object:rule() == nil then
-                    table.insert( objects, relative(object:filename()) );
+                    table.insert(objects, relative(object:filename()));
                 end
             end
         end
     end
 
     local flags = {};
-    msvc.append_link_flags( toolset, target, flags );
-    msvc.append_library_directories( toolset, target, flags );
+    msvc.append_link_flags(toolset, target, flags);
+    msvc.append_library_directories(toolset, target, flags);
 
     local libraries = {};
-    msvc.append_libraries( toolset, target, libraries );
-    msvc.append_third_party_libraries( toolset, target, libraries );
+    msvc.append_libraries(toolset, target, libraries);
+    msvc.append_third_party_libraries(toolset, target, libraries);
 
     if #objects > 0 then
-        local msld = msvc.visual_cxx_tool( toolset, "link.exe" );
-        local msmt = msvc.windows_sdk_tool( toolset, "mt.exe" );
-        local msrc = msvc.windows_sdk_tool( toolset, "rc.exe" );
-        local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( toolset:obj_directory(target), target:id() );
+        local msld = msvc.visual_cxx_tool(toolset, "link.exe");
+        local msmt = msvc.windows_sdk_tool(toolset, "mt.exe");
+        local msrc = msvc.windows_sdk_tool(toolset, "rc.exe");
+        local intermediate_manifest = ('%s/%s_intermediate.manifest'):format(toolset:obj_directory(target), target:id());
 
         if toolset.incremental_linking then
-            local embedded_manifest = ("%s_embedded.manifest"):format( target:id() );
-            local embedded_manifest_rc = ("%s_embedded_manifest.rc"):format( target:id() );
-            local embedded_manifest_res = ("%s_embedded_manifest.res"):format( target:id() );
+            local embedded_manifest = ("%s_embedded.manifest"):format(target:id());
+            local embedded_manifest_rc = ("%s_embedded_manifest.rc"):format(target:id());
+            local embedded_manifest_res = ("%s_embedded_manifest.res"):format(target:id());
 
-            if not exists(embedded_manifest_rc) then        
-                local rc = io.open( absolute(embedded_manifest_rc), "wb" );
-                assertf( rc, "Opening '%s' to write manifest failed", absolute(embedded_manifest_rc) );
+            if not exists(embedded_manifest_rc) then
+                local rc = io.open(absolute(embedded_manifest_rc), "wb");
+                assertf(rc, "Opening '%s' to write manifest failed", absolute(embedded_manifest_rc));
                 if target:rule() == Executable then
-                    rc:write( ('1 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "%s_embedded.manifest"'):format(target:id()) );
+                    rc:write(('1 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "%s_embedded.manifest"'):format(target:id()));
                 else
-                    rc:write( ('2 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "%s_embedded.manifest"'):format(target:id()) );
+                    rc:write(('2 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "%s_embedded.manifest"'):format(target:id()));
                 end
                 rc:close();
             end
 
-            local ignore_filter = function() end;
-            local ldflags = table.concat( flags, ' ' );
-            local ldlibs = table.concat( libraries, ' ' );
-            local ldobjects = table.concat( objects, '" "' );
+            local ignore_filter = function () end;
+            local ldflags = table.concat(flags, ' ');
+            local ldlibs = table.concat(libraries, ' ');
+            local ldobjects = table.concat(objects, '" "');
             local environment = msvc.environments_by_architecture[toolset.architecture];
 
             if exists(embedded_manifest) ~= true then
-                run( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
-                run( msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest), environment );
-                run( msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
+                run(msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment);
+                run(msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest), environment);
+                run(msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter);
             end
 
-            table.insert( objects, embedded_manifest_res );
-            table.insert( flags, "/incremental" );
-            local ldflags = table.concat( flags, ' ' );
-            local ldobjects = table.concat( objects, '" "' );
+            table.insert(objects, embedded_manifest_res);
+            table.insert(flags, "/incremental");
+            local ldflags = table.concat(flags, ' ');
+            local ldobjects = table.concat(objects, '" "');
 
-            run( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
-            run( msmt, ('mt /nologo /out:"%s" /manifest %s'):format(embedded_manifest, intermediate_manifest), environment );
-            run( msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter );
-            run( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
+            run(msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment);
+            run(msmt, ('mt /nologo /out:"%s" /manifest %s'):format(embedded_manifest, intermediate_manifest), environment);
+            run(msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter);
+            run(msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment);
         else
-            table.insert( flags, "/incremental:no" );
+            table.insert(flags, "/incremental:no");
 
-            local ldflags = table.concat( flags, ' ' );
-            local ldlibs = table.concat( libraries, ' ' );
-            local ldobjects = table.concat( objects, '" "' );
+            local ldflags = table.concat(flags, ' ');
+            local ldlibs = table.concat(libraries, ' ');
+            local ldobjects = table.concat(objects, '" "');
             local environment = msvc.environments_by_architecture[toolset.architecture];
 
-            run( msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment );
-            sleep( 100 );
-            run( msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(native(target:filename()), intermediate_manifest), environment );
+            run(msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment);
+            sleep(100);
+            run(msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(native(target:filename()), intermediate_manifest), environment);
         end
     end
     popd();
 end
 
-function msvc.visual_cxx_tool( toolset, tool )
+function msvc.visual_cxx_tool(toolset, tool)
     local msvc = toolset.msvc;
-    if msvc.toolset_version >= 15 then 
+    if msvc.toolset_version >= 15 then
         if toolset.architecture == 'x86-64' then
-            return ('%s\\bin\\Hostx64\\x64\\%s'):format( msvc.visual_cxx_directory, tool );
+            return ('%s\\bin\\Hostx64\\x64\\%s'):format(msvc.visual_cxx_directory, tool);
         else
-            return ('%s\\bin\\Hostx64\\x86\\%s'):format( msvc.visual_cxx_directory, tool );
+            return ('%s\\bin\\Hostx64\\x86\\%s'):format(msvc.visual_cxx_directory, tool);
         end
     else
         if toolset.architecture == 'x86-64' then
-            return ('%s/VC/bin/amd64/%s'):format( msvc.visual_studio_directory, tool );
+            return ('%s/VC/bin/amd64/%s'):format(msvc.visual_studio_directory, tool);
         else
-            return ('%s/VC/bin/%s'):format( msvc.visual_studio_directory, tool );
+            return ('%s/VC/bin/%s'):format(msvc.visual_studio_directory, tool);
         end
     end
 end
 
-function msvc.windows_sdk_tool( toolset, tool )
+function msvc.windows_sdk_tool(toolset, tool)
     local directory = toolset.msvc.windows_sdk_directory;
     local version = toolset.msvc.windows_sdk_version;
     if toolset.architecture == 'x86-64' then
-        return ("%s\\bin\\%s\\x64\\%s"):format( directory, version, tool );
+        return ("%s\\bin\\%s\\x64\\%s"):format(directory, version, tool);
     else
-        return ("%s\\bin\\%s\\x86\\%s"):format( directory, version, tool );
+        return ("%s\\bin\\%s\\x86\\%s"):format(directory, version, tool);
     end
 end
 
-function msvc.append_flags( flags, values, format )
+function msvc.append_flags(flags, values, format)
     local format = format or '%s';
     if values then
         for _, flag in ipairs(values) do
-            table.insert( flags, format:format(flag) );
+            table.insert(flags, format:format(flag));
         end
     end
 end
 
-function msvc.append_defines( toolset, target, flags )
+function msvc.append_defines(toolset, target, flags)
     if not toolset.assertions then
-        table.insert( flags, '/DNDEBUG' );
+        table.insert(flags, '/DNDEBUG');
     end
-    msvc.append_flags( flags, toolset.defines, '/D%s' );
-    msvc.append_flags( flags, target.defines, '/D%s' );
+    msvc.append_flags(flags, toolset.defines, '/D%s');
+    msvc.append_flags(flags, target.defines, '/D%s');
 end
 
-function msvc.append_include_directories( toolset, target, flags )
+function msvc.append_include_directories(toolset, target, flags)
     -- Convert directories to absolute paths before appending them to the
     -- compiler flags as Visual C++ compilation changes to the source
     -- directory of each set of source files before compilation and this
@@ -571,178 +570,178 @@ function msvc.append_include_directories( toolset, target, flags )
     -- The directory is changed before compilation to allow the /showIncludes
     -- output to be interpreted correctly.  If automatic dependency capture
     -- worked with Visual C++ compilation then this hack could be removed.
-    local function append_directories( flags, directories )
+    local function append_directories(flags, directories)
         if directories then
             for _, directory in ipairs(directories) do
-                table.insert( flags, ('/I "%s"'):format(absolute(directory)) );
+                table.insert(flags, ('/I "%s"'):format(absolute(directory)));
             end
         end
     end
-    append_directories( flags, target.include_directories, '/I "%s"' );
-    append_directories( flags, toolset.include_directories, '/I "%s"' );
+    append_directories(flags, target.include_directories, '/I "%s"');
+    append_directories(flags, toolset.include_directories, '/I "%s"');
 end
 
-function msvc.append_compile_flags( toolset, target, flags, language )
-    table.insert( flags, '/nologo' );
-    table.insert( flags, '/FS' );
-    table.insert( flags, '/FC' );
-    table.insert( flags, '/c' );
-    table.insert( flags, '/showIncludes' );
+function msvc.append_compile_flags(toolset, target, flags, language)
+    table.insert(flags, '/nologo');
+    table.insert(flags, '/FS');
+    table.insert(flags, '/FC');
+    table.insert(flags, '/c');
+    table.insert(flags, '/showIncludes');
 
-    msvc.append_flags( flags, target.cppflags );
-    msvc.append_flags( flags, toolset.cppflags );
+    msvc.append_flags(flags, target.cppflags);
+    msvc.append_flags(flags, toolset.cppflags);
 
     local language = language or 'c++';
-    if language == 'c' then 
-        table.insert( flags, '/TC' );
+    if language == 'c' then
+        table.insert(flags, '/TC');
     elseif language == 'c++' then
-        table.insert( flags, '/TP' );
+        table.insert(flags, '/TP');
         if toolset.exceptions then
-            table.insert( flags, '/EHsc' );
+            table.insert(flags, '/EHsc');
         end
         if toolset.run_time_type_info then
-            table.insert( flags, '/GR' );
+            table.insert(flags, '/GR');
         end
     else
-        assert( false, 'Only C and C++ are supported by Microsoft Visual C++' );
+        assert(false, 'Only C and C++ are supported by Microsoft Visual C++');
     end
 
     local standard = toolset.standard;
-    if standard then 
-        table.insert( flags, ('/std:%s'):format(standard) );
+    if standard then
+        table.insert(flags, ('/std:%s'):format(standard));
     end
 
     if toolset.runtime_library == 'static' then
-        table.insert( flags, '/MT' );
+        table.insert(flags, '/MT');
     elseif toolset.runtime_library == 'static_debug' then
-        table.insert( flags, '/MTd' );
+        table.insert(flags, '/MTd');
     elseif toolset.runtime_library == 'dynamic' then
-        table.insert( flags, '/MD' );
+        table.insert(flags, '/MD');
     elseif toolset.runtime_library == 'dynamic_debug' then
-        table.insert( flags, '/MDd' );
+        table.insert(flags, '/MDd');
     end
-    
+
     if toolset.debug then
-        local pdb = ('%s/%s.pdb'):format(toolset:obj_directory(target), target.pdb or target:working_directory():id() );
-        table.insert( flags, ('/Zi /Fd%s'):format(native(pdb)) );
+        local pdb = ('%s/%s.pdb'):format(toolset:obj_directory(target), target.pdb or target:working_directory():id());
+        table.insert(flags, ('/Zi /Fd%s'):format(native(pdb)));
     end
 
     if toolset.link_time_code_generation then
-        table.insert( flags, '/GL' );
+        table.insert(flags, '/GL');
     end
 
     if toolset.optimization then
-        table.insert( flags, '/GF /O2 /Ot /Oi /Ox /Oy /GS- /favor:blend' );
+        table.insert(flags, '/GF /O2 /Ot /Oi /Ox /Oy /GS- /favor:blend');
     end
 
     if toolset.preprocess then
-        table.insert( flags, '/P /C' );
+        table.insert(flags, '/P /C');
     end
 
     if toolset.run_time_checks then
-        table.insert( flags, '/RTC1' );
+        table.insert(flags, '/RTC1');
     end
 
-    if toolset.warnings_as_errors then 
-        table.insert( flags, '/WX' );
+    if toolset.warnings_as_errors then
+        table.insert(flags, '/WX');
     end
 
     local warning_level = toolset.warning_level
-    if warning_level == 0 then 
-        table.insert( flags, '/w' );
+    if warning_level == 0 then
+        table.insert(flags, '/w');
     elseif warning_level == 1 then
-        table.insert( flags, '/W1' );
+        table.insert(flags, '/W1');
     elseif warning_level == 2 then
-        table.insert( flags, '/W2' );
+        table.insert(flags, '/W2');
     elseif warning_level == 3 then
-        table.insert( flags, '/W3' );
+        table.insert(flags, '/W3');
     elseif warning_level >= 4 then
-        table.insert( flags, '/W4' );
+        table.insert(flags, '/W4');
     end
 
     if language == 'c++' then
-        msvc.append_flags( flags, toolset.cxxflags );
-        msvc.append_flags( flags, target.cxxflags );
+        msvc.append_flags(flags, toolset.cxxflags);
+        msvc.append_flags(flags, target.cxxflags);
     else
-        msvc.append_flags( flags, toolset.cflags );
-        msvc.append_flags( flags, target.cflags );
+        msvc.append_flags(flags, toolset.cflags);
+        msvc.append_flags(flags, target.cflags);
     end
 end
 
-function msvc.append_library_directories( toolset, target, flags )
-    msvc.append_flags( flags, target.library_directories, '/libpath:"%s"' );
-    msvc.append_flags( flags, toolset.library_directories, '/libpath:"%s"' );
+function msvc.append_library_directories(toolset, target, flags)
+    msvc.append_flags(flags, target.library_directories, '/libpath:"%s"');
+    msvc.append_flags(flags, toolset.library_directories, '/libpath:"%s"');
 end
 
-function msvc.append_link_flags( toolset, target, flags )
-    table.insert( flags, "/nologo" );
+function msvc.append_link_flags(toolset, target, flags)
+    table.insert(flags, "/nologo");
 
-    msvc.append_flags( flags, toolset.ldflags );
-    msvc.append_flags( flags, target.ldflags );
+    msvc.append_flags(flags, toolset.ldflags);
+    msvc.append_flags(flags, target.ldflags);
 
-    local intermediate_manifest = ('%s/%s_intermediate.manifest'):format( toolset:obj_directory(target), target:id() );
-    table.insert( flags, '/manifest' );
-    table.insert( flags, ('/manifestfile:%s'):format(intermediate_manifest) );
-    
+    local intermediate_manifest = ('%s/%s_intermediate.manifest'):format(toolset:obj_directory(target), target:id());
+    table.insert(flags, '/manifest');
+    table.insert(flags, ('/manifestfile:%s'):format(intermediate_manifest));
+
     if toolset.subsystem then
-        table.insert( flags, ('/subsystem:%s'):format(toolset.subsystem) );
+        table.insert(flags, ('/subsystem:%s'):format(toolset.subsystem));
     end
 
-    table.insert( flags, ('/out:%s'):format(native(target:filename())) );
+    table.insert(flags, ('/out:%s'):format(native(target:filename())));
     if target:rule() == toolset.DynamicLibrary then
-        table.insert( flags, '/dll' );
-        table.insert( flags, ('/implib:%s'):format(native(('%s/%s.lib'):format(toolset.lib, target:id()))) );
+        table.insert(flags, '/dll');
+        table.insert(flags, ('/implib:%s'):format(native(('%s/%s.lib'):format(toolset.lib, target:id()))));
     end
-    
+
     if toolset.verbose_linking then
-        table.insert( flags, '/verbose' );
+        table.insert(flags, '/verbose');
     end
-    
+
     if toolset.debug then
-        table.insert( flags, '/debug' );
-        local pdb = ('%s/%s.pdb'):format( toolset:obj_directory(target), target:id() );
-        table.insert( flags, ('/pdb:%s'):format(native(pdb)) );
+        table.insert(flags, '/debug');
+        local pdb = ('%s/%s.pdb'):format(toolset:obj_directory(target), target:id());
+        table.insert(flags, ('/pdb:%s'):format(native(pdb)));
     end
 
     if toolset.link_time_code_generation then
-        table.insert( flags, '/ltcg' );
+        table.insert(flags, '/ltcg');
     end
 
     if toolset.generate_map_file then
-        local map = ('%s/%s.map'):format( toolset:obj_directory(target), target:id() );
-        table.insert( flags, ('/map:%s'):format(native(map)) );
+        local map = ('%s/%s.map'):format(toolset:obj_directory(target), target:id());
+        table.insert(flags, ('/map:%s'):format(native(map)));
     end
 
     if toolset.optimization then
-        table.insert( flags, '/opt:ref' );
-        table.insert( flags, '/opt:icf' );
+        table.insert(flags, '/opt:ref');
+        table.insert(flags, '/opt:icf');
     end
 
     if toolset.stack_size then
-        table.insert( flags, ('/stack:%d'):format(toolset.stack_size) );
+        table.insert(flags, ('/stack:%d'):format(toolset.stack_size));
     end
 end
 
-function msvc.append_libraries( toolset, target, flags )
+function msvc.append_libraries(toolset, target, flags)
     for _, dependency in target:dependencies() do
         local rule = dependency:rule();
         if rule == toolset.StaticLibrary or rule == toolset.DynamicLibrary then
             local library = dependency;
             if library.whole_archive then
-                table.insert( flags, ('/WHOLEARCHIVE:"%s"'):format(library:filename()) );
+                table.insert(flags, ('/WHOLEARCHIVE:"%s"'):format(library:filename()));
             else
-                table.insert( flags, ('%s.lib'):format(basename(library:filename())) );
+                table.insert(flags, ('%s.lib'):format(basename(library:filename())));
             end
         end
     end
 end
 
-function msvc.append_third_party_libraries( toolset, target, flags )
-    msvc.append_flags( flags, toolset.libraries );
-    msvc.append_flags( flags, target.libraries );
+function msvc.append_third_party_libraries(toolset, target, flags)
+    msvc.append_flags(flags, toolset.libraries);
+    msvc.append_flags(flags, target.libraries);
 end
 
-function msvc.dependencies_filter( toolset, output_directory, source_directory )
+function msvc.dependencies_filter(toolset, output_directory, source_directory)
     local object;
     local current_directory = source_directory;
     local directories = { source_directory };
@@ -750,55 +749,55 @@ function msvc.dependencies_filter( toolset, output_directory, source_directory )
     -- Strip the backslash delimited prefix from _include_path_ and return the
     -- remaining portion.  This remaining portion is the correct relative path to
     -- a header.
-    local function relative_include_path( include_path )
+    local function relative_include_path(include_path)
         local position = 1;
-        local start, finish = include_path:find( "\\", position, false );
-        while start do 
+        local start, finish = include_path:find("\\", position, false);
+        while start do
             position = finish + 1;
-            start, finish = include_path:find( "\\", position, false );
+            start, finish = include_path:find("\\", position, false);
         end
-        return include_path:sub( position );
+        return include_path:sub(position);
     end
 
     -- Match lines that indicate source files and header files in Microsoft
     -- Visual C++ output to gather dependencies for source file compilation.
-    local function dependencies_filter( line )
+    local function dependencies_filter(line)
         local SHOW_INCLUDES_PATTERN = "^Note: including file:(%s*)([^\n\r]*)[\n\r]*$";
-        local indent, path = line:match( SHOW_INCLUDES_PATTERN );
+        local indent, path = line:match(SHOW_INCLUDES_PATTERN);
         if indent and path then
             local indent = #indent;
             if indent < #directories then
-                while indent < #directories do 
-                    table.remove( directories );
+                while indent < #directories do
+                    table.remove(directories);
                 end
             end
-            if indent > #directories then 
-                table.insert( directories, current_directory );
+            if indent > #directories then
+                table.insert(directories, current_directory);
             end
 
             local LOWER_CASE_DRIVE_PATTERN = "^%l:";
-            local lower_case_path = path:find( LOWER_CASE_DRIVE_PATTERN );
-            if lower_case_path then 
+            local lower_case_path = path:find(LOWER_CASE_DRIVE_PATTERN);
+            if lower_case_path then
                 local directory = directories[#directories];
-                path = ("%s/%s"):format( directory, relative_include_path(path) );
+                path = ("%s/%s"):format(directory, relative_include_path(path));
             end
 
-            local relative_path = relative( path, root() );
-            local within_source_tree = is_relative( relative_path ) and relative_path:find( '..', 1, true ) == nil;
+            local relative_path = relative(path, root());
+            local within_source_tree = is_relative(relative_path) and relative_path:find('..', 1, true) == nil;
             if within_source_tree then
-                local header = toolset:SourceFile( path );
-                object:add_implicit_dependency( header );
+                local header = toolset:SourceFile(path);
+                object:add_implicit_dependency(header);
             end
-            current_directory = branch( path );
+            current_directory = branch(path);
         else
             local SOURCE_FILE_PATTERN = "^[^%.]*%.?[^\n\r]*[\n\r]*$";
-            local start, finish = line:find( SOURCE_FILE_PATTERN );
-            if start and finish then 
-                local obj_name = function( name ) return ("%s.obj"):format( basename(name) ); end;
-                object = toolset:File( ("%s/%s"):format(output_directory, obj_name(line)) );
+            local start, finish = line:find(SOURCE_FILE_PATTERN);
+            if start and finish then
+                local obj_name = function (name) return ("%s.obj"):format(basename(name)); end;
+                object = toolset:File(("%s/%s"):format(output_directory, obj_name(line)));
                 object:clear_implicit_dependencies();
             end
-            printf( '%s', line );
+            printf('%s', line);
         end
     end
     return dependencies_filter;
