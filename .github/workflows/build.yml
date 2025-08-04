@@ -31,7 +31,7 @@ jobs:
         release/bin/forge_test
       shell: bash
     - name: Upload
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: forge-${{ runner.os }}
         path: forge/**
