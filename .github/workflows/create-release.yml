@@ -1,6 +1,6 @@
 name: Create Release
 
-on: 
+on:
   workflow_dispatch:
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
         version=`cat version.txt`.$commits
         last_release_tag=`git describe --tags --match "v*.*.*" --abbrev=0`
         git log --pretty=format:"- %s" $last_release_tag..HEAD >release_notes.txt
-        echo "::set-output name=version::${version}"
+        echo "version=${version}" >> $GITHUB_OUTPUT
       shell: bash
     - name: Create Release
       uses: actions/create-release@v1
