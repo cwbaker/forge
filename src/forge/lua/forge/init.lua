@@ -190,6 +190,12 @@ function root_relative(path)
     return relative(absolute(path), root());
 end
 
+-- Make *path* absolute relative to the calling Lua script.
+function script(path)
+    local script_directory = branch(debug.getinfo(2, 'S').source:sub(2));
+    return absolute(path, script_directory);
+end
+
 -- Find first existing file named *filename* in *paths*.
 --
 -- Searching is not performed when *filename* is an absolute path.  In this

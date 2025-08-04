@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Path Functions
+title: Path and String Functions
 parent: Reference
 nav_order: 4
 ---
@@ -10,7 +10,7 @@ nav_order: 4
 
 ## Overview
 
-The path functions operate on file system paths expressed as strings.  Unless stated the path format is always a portable representation using forward slashes ("/") rather than back slashes ("\\").
+Path functions operate on paths expressed as strings, they have no interaction with the filesystem.  Unless stated the path format is always a portable representation with forward slashes ("/").  Back slashes ("\\") are supported in all situations when parsing and are generated from the `native()` function on Windows.
 
 ## Functions
 
@@ -22,7 +22,7 @@ function absolute( path, working_directory )
 
 Convert a path into an absolute path.
 
-Converts `path` into an absolute path by prepending `working_directory` or the 
+Converts `path` into an absolute path by prepending `working_directory` or the
 current working directory if `working_directory` is not specified.  If `path` is already absolute then it is returned unchanged.
 
 **Parameters:**
@@ -42,8 +42,8 @@ function basename( path )
 
 Get the basename of a path.
 
-Extract the basename from `path` (everything except for the extension of which 
-the dot "." is considered part, i.e. the dot "." is not returned as part of 
+Extract the basename from `path` (everything except for the extension of which
+the dot "." is considered part, i.e. the dot "." is not returned as part of
 the basename).
 
 **Parameters:**
@@ -62,7 +62,7 @@ function branch( path )
 
 Get the branch portion of a path.
 
-The branch portion of a path is all elements excluding the last, right-most element. 
+The branch portion of a path is all elements excluding the last, right-most element.
 
 **Parameters:**
 
@@ -252,6 +252,26 @@ If the optional `path` parameter is omitted then the initial directory is return
 **Returns:**
 
 The relative path `path` expressed as an absolute path relative to the root directory.
+
+### script
+
+~~~lua
+function script( path )
+~~~
+
+Convert a path into an absolute path relative to the calling Lua script.
+
+Converts `path` to be absolute by prepending the current script's directory.
+
+If the optional `path` parameter is omitted then the calling script's directory is returned.  If `path` is already absolute then it is returned unchanged.
+
+**Parameters:**
+
+- `path` the path to make absolute relative to the script directory
+
+**Returns:**
+
+The path `path` expressed as absolute relative to the calling Lua script's directory.
 
 ### upper
 
