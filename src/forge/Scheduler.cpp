@@ -645,7 +645,7 @@ bool Scheduler::dispatch_results()
 
     while ( !results_.empty() )
     {
-        function<void()> result = move( results_.front() );
+        function<void()> result = std::move( results_.front() );
         results_.pop_front();
         lock.unlock();
         result();
