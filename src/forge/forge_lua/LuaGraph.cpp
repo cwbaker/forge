@@ -39,7 +39,7 @@ void LuaGraph::create( Forge* forge, lua_State* lua_state )
 
     destroy();
 
-    static const luaL_Reg functions[] = 
+    static const luaL_Reg functions[] =
     {
         { "add_toolset", &LuaGraph::add_toolset },
         { "all_toolsets", &LuaGraph::all_toolsets },
@@ -86,7 +86,7 @@ int LuaGraph::add_toolset( lua_State* lua_state )
     catch ( const std::exception& exception )
     {
         lua_pushstring( lua_state, exception.what() );
-        return lua_error( lua_state );        
+        return lua_error( lua_state );
     }
 }
 
@@ -211,7 +211,7 @@ int LuaGraph::preorder( lua_State* lua_state )
     {
         return luaL_error( lua_state, "Preorder called from within preorder or postorder" );
     }
-     
+
     Target* target = nullptr;
     if ( !lua_isnoneornil(lua_state, TARGET) )
     {
@@ -238,7 +238,7 @@ int LuaGraph::postorder( lua_State* lua_state )
     {
         return luaL_error( lua_state, "Postorder called from within preorder or postorder" );
     }
-     
+
     Target* target = nullptr;
     if ( !lua_isnoneornil(lua_state, TARGET) )
     {
