@@ -70,7 +70,7 @@ void Scheduler::script( const boost::filesystem::path& working_directory, const 
 }
 
 void Scheduler::command( const boost::filesystem::path& working_directory, const std::string& function )
-{    
+{
     if ( !function.empty() )
     {
         Context* context = allocate_context( forge_->graph()->target(working_directory.generic_string()) );
@@ -126,7 +126,7 @@ void Scheduler::preorder_visit( int function, Job* job )
     lua_rawgeti( lua_state, LUA_REGISTRYINDEX, function );
     luaxx_push( lua_state, target );
     resume( lua_state, 1 );
-    
+
     int errors = process_end( context );
     if ( errors > 0 )
     {
@@ -151,7 +151,7 @@ void Scheduler::postorder_visit( int function, Job* job )
         lua_rawgeti( lua_state, LUA_REGISTRYINDEX, function );
         luaxx_push( lua_state, target );
         resume( lua_state, 1 );
-        
+
         int errors = process_end( context );
         if ( errors > 0 )
         {
@@ -164,7 +164,7 @@ void Scheduler::postorder_visit( int function, Job* job )
         forge_->error( target->failed_dependencies().c_str() );
         target->set_successful( false );
         job->set_state( JOB_COMPLETE );
-    }    
+    }
 }
 
 void Scheduler::execute_finished( int exit_code, Context* context, process::Environment* environment )
@@ -177,7 +177,7 @@ void Scheduler::execute_finished( int exit_code, Context* context, process::Envi
     resume( lua_state, 1 );
     process_end( context );
 
-    // The environment is deleted here for symmetry with its construction in 
+    // The environment is deleted here for symmetry with its construction in
     // the main thread in the Lua bindings along with filters and arguments.
     delete environment;
 }
@@ -185,8 +185,8 @@ void Scheduler::execute_finished( int exit_code, Context* context, process::Envi
 void Scheduler::read_finished( Filter* filter, Arguments* arguments )
 {
     // Delete filters and arguments on the main thread to avoid accessing the
-    // Lua virtual machine from multiple threads as happens if the filter or 
-    // arguments are deleted in the worker threads provided by the Executor.  
+    // Lua virtual machine from multiple threads as happens if the filter or
+    // arguments are deleted in the worker threads provided by the Executor.
     delete filter;
     delete arguments;
 }
@@ -224,7 +224,7 @@ void Scheduler::output( const std::string& output, Filter* filter, Arguments* ar
         process_end( context );
     }
     else
-    {    
+    {
         forge_->output( output.c_str() );
     }
 }
@@ -335,7 +335,7 @@ int Scheduler::preorder( Target* target, int function )
     {
         Forge* forge_;
         list<Job> jobs_;
-        
+
         Preorder( Forge* forge )
         : forge_( forge )
         , jobs_()
@@ -343,7 +343,7 @@ int Scheduler::preorder( Target* target, int function )
             SWEET_ASSERT( forge_ );
             forge_->graph()->begin_traversal();
         }
-        
+
         ~Preorder()
         {
             forge_->graph()->end_traversal();
@@ -377,7 +377,7 @@ int Scheduler::preorder( Target* target, int function )
 
             return job != jobs_.end() ? &(*job) : nullptr;
         }
-        
+
         void remove_complete_jobs()
         {
             list<Job>::iterator job = jobs_.begin();
@@ -462,7 +462,7 @@ int Scheduler::postorder( Target* target, int function )
     {
         Forge* forge_;
         list<Job> jobs_;
-        
+
         Postorder( Forge* forge )
         : forge_( forge )
         , jobs_()
@@ -470,12 +470,12 @@ int Scheduler::postorder( Target* target, int function )
             SWEET_ASSERT( forge_ );
             forge_->graph()->begin_traversal();
         }
-        
+
         ~Postorder()
         {
             forge_->graph()->end_traversal();
         }
-    
+
         Job* pull_job()
         {
             remove_complete_jobs();
@@ -497,7 +497,7 @@ int Scheduler::postorder( Target* target, int function )
 
             return job != jobs_.end() ? &(*job) : NULL;
         }
-        
+
         void remove_complete_jobs()
         {
             list<Job>::iterator job = jobs_.begin();
@@ -567,7 +567,7 @@ int Scheduler::postorder( Target* target, int function )
         forge_->errorf( "Postorder called from within preorder or postorder" );
         return 1;
     }
-    
+
     error::ErrorPolicy& error_policy = forge_->error_policy();
     error_policy.push_errors();
 
@@ -599,7 +599,7 @@ Context* Scheduler::context() const
 Context* Scheduler::allocate_context( Target* working_directory, Job* job )
 {
     SWEET_ASSERT( working_directory );
-    SWEET_ASSERT( !job || job->working_directory() == working_directory );    
+    SWEET_ASSERT( !job || job->working_directory() == working_directory );
     Context* context = new Context( forge_ );
     context->reset_directory_to_target( working_directory );
     context->set_job( job );
@@ -651,7 +651,7 @@ bool Scheduler::dispatch_results()
         result();
         lock.lock();
     }
-    
+
     return pending_results_ > 0;
 }
 
@@ -791,7 +791,7 @@ void Scheduler::resume( lua_State* lua_state, int parameters )
             break;
 
         case LUA_YIELD:
-            break;            
+            break;
 
         case LUA_ERRRUN:
         {
@@ -816,7 +816,7 @@ void Scheduler::resume( lua_State* lua_state, int parameters )
             error_policy->error( true, "Error handler failed - %s", luaxx_stack_trace_for_resume(lua_state, forge_->stack_trace_enabled(), message, sizeof(message)) );
             break;
         }
-        
+
         case -1:
         {
             char message [1024];
@@ -833,5 +833,5 @@ void Scheduler::resume( lua_State* lua_state, int parameters )
             error_policy->error( true, "Execution failed in an unexpected way - %s", luaxx_stack_trace_for_resume(lua_state, forge_->stack_trace_enabled(), message, sizeof(message)) );
             break;
         }
-    }    
+    }
 }
