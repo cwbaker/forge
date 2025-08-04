@@ -149,8 +149,8 @@ int LuaGraph::anonymous( lua_State* lua_state )
     Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     Context* context = forge->context();
     Target* working_directory = context->working_directory();
-    char anonymous [256];
-    size_t length = sprintf( anonymous, "$$%d", working_directory->next_anonymous_index() );
+    char anonymous [256] = {};
+    size_t length = snprintf( anonymous, sizeof(anonymous), "$$%d", working_directory->next_anonymous_index() );
     anonymous[min(length, sizeof(anonymous) - 1)] = 0;
     lua_pushlstring( lua_state, anonymous, length );
     return 1;
