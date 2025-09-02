@@ -126,14 +126,14 @@ Forge* Graph::forge() const
 }
 
 /**
-// Mark this graph as being traversed and increment the visited and 
+// Mark this graph as being traversed and increment the visited and
 // successful revisions.
 //
 // The graph is marked as being traversed so that recursive calls to preorder
 // or postorder can be detected and report errors.
 //
-// The visited and successful revisions are incremented so that any Targets 
-// that were previously visited now have different visit and success 
+// The visited and successful revisions are incremented so that any Targets
+// that were previously visited now have different visit and success
 // revisions and will be considered not visited and not successful.
 */
 void Graph::begin_traversal()
@@ -168,11 +168,11 @@ bool Graph::traversal_in_progress() const
 // Get the current visited revision for this Graph.
 //
 // This is used to determine whether or not Targets have been visited during
-// a pass.  At the begining of the pass Graph::increment_revisions() 
-// is called to increment the visited and successful revisions for the pass.  
-// Then when a Target is visited its visited revision is set to be the same 
-// as the visited revision in the Graph.  A Target can then be checked to see 
-// if it has been visited by checking if its visited revision is the same as 
+// a pass.  At the begining of the pass Graph::increment_revisions()
+// is called to increment the visited and successful revisions for the pass.
+// Then when a Target is visited its visited revision is set to be the same
+// as the visited revision in the Graph.  A Target can then be checked to see
+// if it has been visited by checking if its visited revision is the same as
 // the current visited revision for its Graph.
 //
 // @return
@@ -186,7 +186,7 @@ int Graph::visited_revision() const
 /**
 // Get the current success revision for this Graph.
 //
-// This is used to determine whether or not Targets have been visited 
+// This is used to determine whether or not Targets have been visited
 // successfully during a pass.  See Graph::visited_revision() for a
 // description of how the revision values are used.
 //
@@ -208,7 +208,7 @@ int Graph::successful_revision() const
 //  The Rule.
 */
 Rule* Graph::add_rule( const std::string& id )
-{   
+{
     unique_ptr<Rule> rule( new Rule(id, forge_) );
     rules_.push_back( rule.get() );
     return rule.release();
@@ -235,35 +235,35 @@ Target* Graph::target( const std::string& id )
 // Add or find a Target.
 //
 // Finds or create the Target by breaking \e id into '/' delimited elements
-// and searching up or down the target hierarchy relative to 
-// \e working_directory or the root directory.  
+// and searching up or down the target hierarchy relative to
+// \e working_directory or the root directory.
 //
-// If a ".." element is encountered then the relative parent is moved up a 
-// level otherwise a new Target is added with that identifier as a child of 
+// If a ".." element is encountered then the relative parent is moved up a
+// level otherwise a new Target is added with that identifier as a child of
 // the current relative parent and the next element is considered.
 //
-// If \e id refers to an already existing Target that doesn't have a 
-// Rule set then the existing Target is updated to have 
+// If \e id refers to an already existing Target that doesn't have a
+// Rule set then the existing Target is updated to have
 // \e rule as its Rule and \e working_directory as its
 // working directory.
 //
 // The working directory is updated to allow Targets for C/C++ libraries to be
-// lazily created as plain file Targets by depending executables before the 
-// libraries themselves are defined.  When the library is lazily defined by 
-// the executable reference the working directory is the working directory 
+// lazily created as plain file Targets by depending executables before the
+// libraries themselves are defined.  When the library is lazily defined by
+// the executable reference the working directory is the working directory
 // for the executable.  When the library is defined it specifies the correct
 // Rule and working directory.
 //
-// If \e id refers to an already existing Target that already has a 
+// If \e id refers to an already existing Target that already has a
 // Rule set then an error is generated as it is not clear which
 // Rule applies.
 //
-// Any drive portion of the path is forced to uppercase to avoid drives 
+// Any drive portion of the path is forced to uppercase to avoid drives
 // appearing as upper- or lowercase when the build tool is run from different
 // environments on Windows doesn't create separate target hierarchies.
 //
-// Skip over any '/' character that occurs to indicate the root 
-// directory in an absolute path as this character is not expected to 
+// Skip over any '/' character that occurs to indicate the root
+// directory in an absolute path as this character is not expected to
 // occur as a target identifier.
 //
 // @param id
@@ -309,8 +309,8 @@ Target* Graph::add_or_find_target( const std::string& id, Target* working_direct
 /**
 // Find a Target in this Graph.
 //
-// Find the Target by breaking the id into '/' delimited elements and 
-// searching up or down the Target hierarchy relative to 
+// Find the Target by breaking the id into '/' delimited elements and
+// searching up or down the Target hierarchy relative to
 // \e working_directory.
 //
 // @param id
@@ -351,7 +351,7 @@ Target* Graph::find_target( const std::string& id, Target* working_directory )
         {
             target = find_target_by_element( target, i->generic_string() );
             ++i;
-        }    
+        }
     }
     return target;
 }
@@ -390,7 +390,7 @@ Target* Graph::find_target_by_element( Target* target, const std::string& elemen
 }
 
 /**
-// Find or create a child target of \e target with an identifier matching 
+// Find or create a child target of \e target with an identifier matching
 // \e element.
 //
 // @param target
@@ -439,17 +439,17 @@ Target* Graph::find_or_create_target_by_element( Target* target, const std::stri
 // @param filename
 //  The name of the buildfile to load.
 //
-// @return 
-//  The number of errors that occured while loading and executing the 
+// @return
+//  The number of errors that occured while loading and executing the
 //  buildfile or -1 if the buildfile yields (0 indicates successful
 //  completion of the call).
 */
 int Graph::buildfile( const std::string& filename )
 {
     SWEET_ASSERT( forge_ );
-    SWEET_ASSERT( root_target_ );     
+    SWEET_ASSERT( root_target_ );
     boost::filesystem::path path( forge_->absolute(filename) );
-    SWEET_ASSERT( path.is_absolute() );   
+    SWEET_ASSERT( path.is_absolute() );
     Target* buildfile_target = Graph::target( path.generic_string() );
     buildfile_target->set_filename( path.generic_string(), 0 );
     if ( cache_target_ )
@@ -484,7 +484,7 @@ struct Bind
 {
     Forge* forge_;
     int failures_;
-    
+
     Bind( Forge* forge )
     : forge_( forge ),
       failures_( 0 )
@@ -492,7 +492,7 @@ struct Bind
         SWEET_ASSERT( forge_ );
         forge_->graph()->begin_traversal();
     }
-    
+
     ~Bind()
     {
         forge_->graph()->end_traversal();
@@ -534,7 +534,7 @@ struct Bind
 // Make a postorder pass over this Graph to bind its Targets.
 //
 // @param target
-//  The Target to begin the visit at or null to begin the visitation from 
+//  The Target to begin the visit at or null to begin the visitation from
 //  the root of the Graph.
 //
 // @return
@@ -573,7 +573,7 @@ void Graph::swap( Graph& graph )
 //
 // The name of the file that this Graph was most recently loaded from is used
 // to create the implicit cache target in the newly cleared Graph.  This gives
-// an implicit target for the cache file that buildfiles are able to depend 
+// an implicit target for the cache file that buildfiles are able to depend
 // on (see Graph::buildfile()) so that the cache can be marked as outdated if
 // any buildfiles change and become newer than the cache.
 //
@@ -640,7 +640,7 @@ Target* Graph::load_binary( const std::string& filename )
     SWEET_ASSERT( !filename.empty() );
     SWEET_ASSERT( boost::filesystem::path(filename).is_absolute() );
     SWEET_ASSERT( forge_ );
-    
+
     filename_ = filename;
     cache_target_ = NULL;
 
@@ -656,7 +656,7 @@ Target* Graph::load_binary( const std::string& filename )
             return cache_target_;
         }
     }
-    
+
     recover();
     return nullptr;
 }
@@ -676,7 +676,7 @@ void Graph::save_binary()
     }
     else
     {
-        forge_->error( "Unable to save a dependency graph without trying to load it first" );        
+        forge_->error( "Unable to save a dependency graph without trying to load it first" );
     }
 }
 
@@ -714,19 +714,19 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
     struct RecursivePrinter
     {
         Graph* graph_;
-        
+
         RecursivePrinter( Graph* graph )
         : graph_( graph )
         {
             SWEET_ASSERT( graph_ );
             graph_->begin_traversal();
         }
-        
+
         ~RecursivePrinter()
         {
             graph_->end_traversal();
         }
-    
+
         static const char* id( Target* target )
         {
             SWEET_ASSERT( target );
@@ -743,7 +743,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                 return target->filename(0).c_str();
             }
         }
-        
+
         void indent( int level )
         {
             printf( "\n" );
@@ -767,18 +767,18 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
             std::time_t timestamp = target->timestamp();
             struct tm* time = ::localtime( &timestamp );
-            printf( "'%s' %c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %" PRIx64 "", 
+            printf( "'%s' %c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %" PRIx64 "",
                 id(target),
                 target->outdated() ? 'O' : 'o',
                 target->bound_to_file() ? 'F' : 'f',
                 target->referenced_by_script() ? 'S' : 's',
                 target->cleanable() ? 'C' : 'c',
                 target->built() ? 'B' : 'b',
-                time ? time->tm_year + 1900 : 9999, 
-                time ? time->tm_mon + 1 : 99, 
-                time ? time->tm_mday : 99, 
-                time ? time->tm_hour : 99, 
-                time ? time->tm_min : 99, 
+                time ? time->tm_year + 1900 : 9999,
+                time ? time->tm_mon + 1 : 99,
+                time ? time->tm_mday : 99,
+                time ? time->tm_hour : 99,
+                time ? time->tm_min : 99,
                 time ? time->tm_sec : 99,
                 target->hash()
             );
@@ -787,13 +787,13 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             {
                 timestamp = target->last_write_time();
                 time = ::localtime( &timestamp );
-                printf( "%04d-%02d-%02d %02d:%02d:%02d", 
-                    time->tm_year + 1900, 
-                    time->tm_mon + 1, 
-                    time->tm_mday, 
-                    time->tm_hour, 
-                    time->tm_min, 
-                    time->tm_sec 
+                printf( " %04d-%02d-%02d %02d:%02d:%02d",
+                    time->tm_year + 1900,
+                    time->tm_mon + 1,
+                    time->tm_mday,
+                    time->tm_hour,
+                    time->tm_min,
+                    time->tm_sec
                 );
 
                 const vector<string>& filenames = target->filenames();
@@ -812,8 +812,8 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             print( target, directory, level );
             if ( !target->visited() )
             {
-                target->set_visited( true );            
-            
+                target->set_visited( true );
+
                 int i = 0;
                 Target* dependency = target->any_dependency( i );
                 while ( dependency )
@@ -853,14 +853,14 @@ void Graph::print_namespace( Target* target )
     struct RecursivePrinter
     {
         Graph* graph_;
-        
+
         RecursivePrinter( Graph* graph )
         : graph_( graph )
         {
             SWEET_ASSERT( graph_ );
             graph_->begin_traversal();
         }
-        
+
         ~RecursivePrinter()
         {
             graph_->end_traversal();
@@ -884,7 +884,7 @@ void Graph::print_namespace( Target* target )
                 if ( target->rule() )
                 {
                     printf( "%s ", target->rule()->id().c_str() );
-                }                
+                }
 
                 printf( "'%s'", target->id().c_str() );
 
@@ -902,8 +902,8 @@ void Graph::print_namespace( Target* target )
 
             if ( !target->visited() )
             {
-                target->set_visited( true );            
-            
+                target->set_visited( true );
+
                 const vector<Target*>& targets = target->targets();
                 for ( vector<Target*>::const_iterator i = targets.begin(); i != targets.end(); ++i )
                 {

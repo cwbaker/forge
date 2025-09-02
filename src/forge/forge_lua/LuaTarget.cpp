@@ -47,7 +47,7 @@ void LuaTarget::create( lua_State* lua_state, Forge* forge )
     lua_state_ = lua_state;
     luaxx_create( lua_state_, this, TARGET_TYPE );
 
-    static const luaL_Reg functions[] = 
+    static const luaL_Reg functions[] =
     {
         { "id", &LuaTarget::id },
         { "path", &LuaTarget::path },
@@ -79,7 +79,7 @@ void LuaTarget::create( lua_State* lua_state, Forge* forge )
     luaL_setfuncs( lua_state_, functions, 0 );
     lua_pop( lua_state_, 1 );
 
-    static const luaL_Reg implicit_creation_functions [] = 
+    static const luaL_Reg implicit_creation_functions [] =
     {
         { "parent", &LuaTarget::parent },
         { "working_directory", &LuaTarget::working_directory },
@@ -91,7 +91,7 @@ void LuaTarget::create( lua_State* lua_state, Forge* forge )
     };
     luaxx_push( lua_state_, this );
     lua_pushlightuserdata( lua_state_, this );
-    luaL_setfuncs( lua_state_, implicit_creation_functions, 1 );    
+    luaL_setfuncs( lua_state_, implicit_creation_functions, 1 );
     lua_pop( lua_state_, 1 );
 
     // Set the metatable for `Target` to redirect calls to create new targets.
@@ -103,7 +103,7 @@ void LuaTarget::create( lua_State* lua_state, Forge* forge )
     lua_setmetatable( lua_state_, -2 );
     lua_pop( lua_state_, 1 );
 
-    // Create a metatable for targets to redirect index operations to 
+    // Create a metatable for targets to redirect index operations to
     // `forge.Target`, string conversions to `LuaTarget::filename()`, and
     // calls to `Target.depend()` via `LuaTarget::depend_call_metamethod()`.
     luaL_newmetatable( lua_state_, TARGET_METATABLE );
@@ -187,7 +187,7 @@ int LuaTarget::id( lua_State* lua_state )
     {
         const string& id = target->id();
         lua_pushlstring( lua_state, id.c_str(), id.size() );
-        return 1; 
+        return 1;
     }
     return 0;
 }
@@ -201,7 +201,7 @@ int LuaTarget::path( lua_State* lua_state )
     {
         const string& path = target->path();
         lua_pushlstring( lua_state, path.c_str(), path.size() );
-        return 1; 
+        return 1;
     }
     return 0;
 }
@@ -215,7 +215,7 @@ int LuaTarget::branch( lua_State* lua_state )
     {
         const string& branch = target->branch();
         lua_pushlstring( lua_state, branch.c_str(), branch.size() );
-        return 1; 
+        return 1;
     }
     return 0;
 }
@@ -458,7 +458,7 @@ int LuaTarget::filenames( lua_State* lua_state )
     luaL_argcheck( lua_state, start >= 1, START, "expected start >= 1" );
 
     int finish = static_cast<int>( luaL_optinteger(lua_state, FINISH, INT_MAX) );
-    luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );   
+    luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );
 
     const vector<string>& filenames = target->filenames();
     finish = min( finish, int(filenames.size()) );
@@ -515,7 +515,7 @@ int LuaTarget::working_directory( lua_State* lua_state )
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
     luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
     if ( target )
-    {    
+    {
         Target* working_directory = target->working_directory();
         if ( !working_directory->referenced_by_script() )
         {
@@ -657,7 +657,7 @@ int LuaTarget::all_dependencies( lua_State* lua_state )
     luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );
 
     LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( lua_target );    
+    SWEET_ASSERT( lua_target );
     lua_pushinteger( lua_state, finish );
     lua_pushlightuserdata( lua_state, lua_target );
     lua_pushcclosure( lua_state, &LuaTarget::all_dependencies_iterator, 2 );
@@ -743,7 +743,7 @@ int LuaTarget::explicit_dependencies( lua_State* lua_state )
     luaL_argcheck( lua_state, finish >= start, FINISH, "expected finish >= start" );
 
     LuaTarget* lua_target = reinterpret_cast<LuaTarget*>( lua_touserdata(lua_state, lua_upvalueindex(1)) );
-    SWEET_ASSERT( lua_target );    
+    SWEET_ASSERT( lua_target );
     lua_pushinteger( lua_state, finish );
     lua_pushlightuserdata( lua_state, lua_target );
     lua_pushcclosure( lua_state, &LuaTarget::explicit_dependencies_iterator, 2 );
@@ -843,7 +843,7 @@ int LuaTarget::target_call_metamethod( lua_State* lua_state )
     // This also happens when the target rule is set for the first time
     // so that targets that are lazily defined after they have been created by
     // another target depending on them have access to the Forge instance they
-    // are defined in rather than just the first Forge instance that first 
+    // are defined in rather than just the first Forge instance that first
     // referenced them which is difficult to control and typically incorrect.
     if ( update_rule || update_working_directory || create_lua_binding )
     {
@@ -870,7 +870,7 @@ int LuaTarget::target_call_metamethod( lua_State* lua_state )
         // lua_pop( lua_state, 1 );
     }
 
-    luaxx_push( lua_state, target );    
+    luaxx_push( lua_state, target );
     return 1;
 }
 
@@ -878,7 +878,7 @@ int LuaTarget::target_call_metamethod( lua_State* lua_state )
 // Redirect calls made on target objects to `Target.depend()`.
 //
 // The call to `Target.depend()` may be overridden by providing `depend()`
-// methods on `forge.Target`, individual target prototypes, and even 
+// methods on `forge.Target`, individual target prototypes, and even
 // individual targets if necessary.
 //
 // ~~~lua
