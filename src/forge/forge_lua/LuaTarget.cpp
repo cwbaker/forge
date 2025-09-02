@@ -562,10 +562,11 @@ int LuaTarget::add_implicit_dependency( lua_State* lua_state )
     const int TARGET = 1;
     const int DEPENDENCY = 2;
     Target* target = (Target*) luaxx_to( lua_state, TARGET, TARGET_TYPE );
-    luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
+    luaL_argcheck( lua_state, target, TARGET, "nil target" );
+    Target* dependency = (Target*) luaxx_to( lua_state, DEPENDENCY, TARGET_TYPE );
+    luaL_argcheck( lua_state, dependency, DEPENDENCY, "dependency is not a target" );
     if ( target )
     {
-        Target* dependency = (Target*) luaxx_to( lua_state, DEPENDENCY, TARGET_TYPE );
         target->add_implicit_dependency( dependency );
     }
     return 0;
