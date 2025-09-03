@@ -265,7 +265,6 @@ function clang.append_compile_flags(toolset, target, flags, language)
 
     if toolset.optimization then
         table.insert(flags, '-O3');
-        table.insert(flags, '-Ofast');
     end
 
     if toolset.preprocess then
