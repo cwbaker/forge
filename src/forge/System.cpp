@@ -170,9 +170,8 @@ std::string System::executable() const
     }
     return std::string();
 #elif defined(BUILD_OS_MACOS)
-    uint32_t size = 0;
-    _NSGetExecutablePath( NULL, &size );
-    char executable_path [size];
+    uint32_t size = PATH_MAX;
+    char executable_path [PATH_MAX];
     _NSGetExecutablePath( executable_path, &size );
     char linked_path [PATH_MAX];
     int linked_size = readlink( executable_path, linked_path, sizeof(linked_path) - 1 );
