@@ -164,17 +164,17 @@ end
 
 -- Execute a command through the host system's native shell - either
 -- "C:/windows/system32/cmd.exe" on Windows system or "/bin/sh" anywhere else.
-function shell(arguments, dependencies_filter, stdout_filter, stderr_filter, ...)
+function shell(arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ...)
     if type(arguments) == 'table' then
         arguments = table.concat(arguments, ' ');
     end
     if operating_system() == 'windows' then
         local cmd = 'C:/windows/system32/cmd.exe';
-        local result = execute(cmd, ('cmd /c "%s"'):format(arguments), dependencies_filter, stdout_filter, stderr_filter, ...);
+        local result = execute(cmd, ('cmd /c "%s"'):format(arguments), environment, dependencies_filter, stdout_filter, stderr_filter, ...);
         assertf(result == 0, '[[%s]] failed (result=%d)', arguments, result);
     else
         local sh = '/bin/sh';
-        local result = execute(sh, ('sh -c "%s"'):format(arguments), dependencies_filter, stdout_filter, stderr_filter, ...);
+        local result = execute(sh, ('sh -c "%s"'):format(arguments), environment, dependencies_filter, stdout_filter, stderr_filter, ...);
         assertf(result == 0, '[[%s]] failed (result=%d)', arguments, tonumber(result));
     end
 end

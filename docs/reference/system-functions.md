@@ -64,6 +64,14 @@ function run( command, arguments, environment, dependencies_filter, stdout_filte
 
 Executes `command` as for [`execute()`](#execute) but raises an error if the process exits with a non-zero exit code.
 
+### shell
+
+~~~lua
+function shell( arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ... );
+~~~
+
+Executes `arguments` in the systems native shell, i.e. `cmd.exe` on Windows, `bash` on Linux/MacOS.  Raises an error if the shell process exits with a non-zero exit code.
+
 ### sleep
 
 ~~~lua
