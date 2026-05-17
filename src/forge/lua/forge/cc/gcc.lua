@@ -261,7 +261,11 @@ function gcc.append_link_flags(toolset, target, flags)
     gcc.append_flags(flags, target.ldflags);
 
     table.insert(flags, ('-march=%s'):format(toolset.architecture));
-    table.insert(flags, "-std=c++11");
+
+    local standard = toolset.standard or target.standard;
+    if standard then
+        table.insert(flags, ("-std=%s"):format(standard));
+    end
 
     if target:rule() == toolset.DynamicLibrary then
         table.insert(flags, "-shared");
