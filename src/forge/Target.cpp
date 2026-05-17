@@ -641,7 +641,7 @@ const std::vector<std::string>& Target::filenames() const
 std::string Target::directory( int n ) const
 {
     SWEET_ASSERT( n >= 0 && n < int(filenames_.size()) );
-    return boost::filesystem::path( filenames_[n] ).parent_path().generic_string();
+    return std::filesystem::path( filenames_[n] ).parent_path().generic_string();
 }
 
 /**

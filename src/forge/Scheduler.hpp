@@ -1,7 +1,7 @@
 #ifndef FORGE_SCHEDULER_HPP_INCLUDED
 #define FORGE_SCHEDULER_HPP_INCLUDED
 
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 #include <deque>
 #include <vector>
 #include <functional>
@@ -49,10 +49,10 @@ class Scheduler
     public:
         Scheduler( Forge* forge );
 
-        void load( const boost::filesystem::path& path );
-        void script( const boost::filesystem::path& working_directory, const std::string& script );
-        void command( const boost::filesystem::path& working_directory, const std::string& command );
-        int buildfile( const boost::filesystem::path& path );
+        void load( const std::filesystem::path& path );
+        void script( const std::filesystem::path& working_directory, const std::string& script );
+        void command( const std::filesystem::path& working_directory, const std::string& command );
+        int buildfile( const std::filesystem::path& path );
         void preorder_visit( int function, Job* job );
         void postorder_visit( int function, Job* job );
         void execute_finished( int exit_code, Context* context, process::Environment* environment );

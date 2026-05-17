@@ -2,7 +2,9 @@
 #include "stdafx.hpp"
 #include "FileChecker.hpp"
 #include <assert/assert.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <chrono>
+#include <cstring>
+#include <filesystem>
 #include <fstream>
 
 using std::string;
@@ -20,17 +22,17 @@ FileChecker::~FileChecker()
     for ( vector<string>::const_iterator i = files_.begin(); i != files_.end(); ++i )
     {
         const char* filename = i->c_str();
-        boost::filesystem::remove( filename );
+        std::filesystem::remove( filename );
     }
     files_.clear();
-}        
+}
 
 void FileChecker::create( const char* filename, const char* content, std::time_t last_write_time )
 {
     SWEET_ASSERT( filename );
     SWEET_ASSERT( content );
-    
-    boost::filesystem::remove( filename );
+
+    std::filesystem::remove( filename );
     std::ofstream file( filename );
     file.write( content, strlen(content) );
     file.close();
@@ -45,11 +47,15 @@ void FileChecker::create( const char* filename, const char* content, std::time_t
 void FileChecker::remove( const char* filename )
 {
     SWEET_ASSERT( filename );
-    boost::filesystem::remove( filename );
+    std::filesystem::remove( filename );
 }
 
 void FileChecker::touch( const char* filename, std::time_t last_write_time )
 {
-    SWEET_ASSERT( filename );            
-    boost::filesystem::last_write_time( filename, last_write_time );
+    SWEET_ASSERT( filename );
+    const auto sctp = std::chrono::system_clock::from_time_t( last_write_time );
+    const auto ftime = std::chrono::time_point_cast<std::filesystem::file_time_type::duration>(
+        sctp - std::chrono::system_clock::now() + std::filesystem::file_time_type::clock::now()
+    );
+    std::filesystem::last_write_time( filename, ftime );
 }

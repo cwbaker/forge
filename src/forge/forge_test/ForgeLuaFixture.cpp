@@ -11,15 +11,14 @@
 #include <assert/assert.hpp>
 #include <lua.hpp>
 #include <UnitTest++/UnitTest++.h>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 #include <string>
 
 using std::string;
 using namespace sweet;
 using namespace sweet::forge;
 using namespace luaxx;
-using namespace boost::filesystem;
+using namespace std::filesystem;
 
 ForgeLuaFixture::ForgeLuaFixture()
 : forge( nullptr )
@@ -27,7 +26,7 @@ ForgeLuaFixture::ForgeLuaFixture()
 , file_checker( nullptr )
 , show_errors( false )
 {
-    path path = boost::filesystem::path( string(TEST_DIRECTORY) );
+    path path = std::filesystem::path( string(TEST_DIRECTORY) );
     forge = new forge::Forge( path.string(), *this, this );
     lua_unit_test = new LuaUnitTest;
     file_checker = new FileChecker;

@@ -4,11 +4,10 @@
 #include <forge/Forge.hpp>
 #include <error/ErrorPolicy.hpp>
 #include <assert/assert.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 using std::string;
-using namespace boost::filesystem;
+using namespace std::filesystem;
 using namespace sweet::forge;
 
 ErrorChecker::ErrorChecker()
@@ -34,7 +33,7 @@ void ErrorChecker::test( const char* script )
     SWEET_ASSERT( script );
     messages.clear();
     errors = 0;          
-    path path = initial_path<boost::filesystem::path>();
+    path path = current_path();
     Forge forge( path.string(), *this, this );
     forge.set_root_directory( path.generic_string() );
     forge.script( string(script) );

@@ -1,8 +1,7 @@
 
 #pragma once
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/convenience.hpp>
+#include <filesystem>
 
 #ifndef NOMINMAX
 #define NOMINMAX

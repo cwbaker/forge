@@ -10,7 +10,7 @@
 #include <cmdline/Parser.hpp>
 #include <error/ErrorPolicy.hpp>
 #include <assert/assert.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -24,7 +24,6 @@
 
 using std::string;
 using std::vector;
-using namespace boost::filesystem;
 using namespace sweet;
 using namespace sweet::forge;
 
@@ -39,7 +38,7 @@ int main( int argc, char** argv )
 
         bool help = false;
         bool version = false;
-        string directory = initial_path<path>().generic_string();
+        string directory = std::filesystem::current_path().generic_string();
         string root_directory;
         string build_script = "forge.lua";
         bool stack_trace_enabled = false;

@@ -1,7 +1,7 @@
 #ifndef FORGE_LUAFILESYSTEM_HPP_INCLUDED
 #define FORGE_LUAFILESYSTEM_HPP_INCLUDED
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 struct lua_State;
 
@@ -39,16 +39,16 @@ private:
     static int touch( lua_State* lua_state );
 
     static int ls_iterator( lua_State* lua_state );
-    static void push_directory_iterator( lua_State* lua_state, const boost::filesystem::directory_iterator& iterator );
-    static boost::filesystem::directory_iterator* to_directory_iterator( lua_State* lua_state, int index );
+    static void push_directory_iterator( lua_State* lua_state, const std::filesystem::directory_iterator& iterator );
+    static std::filesystem::directory_iterator* to_directory_iterator( lua_State* lua_state, int index );
     static int directory_iterator_gc( lua_State* lua_state );
 
     static int find_iterator( lua_State* lua_state );
-    static void push_recursive_directory_iterator( lua_State* lua_state, const boost::filesystem::recursive_directory_iterator& iterator );
-    static boost::filesystem::recursive_directory_iterator* to_recursive_directory_iterator( lua_State* lua_state, int index );
+    static void push_recursive_directory_iterator( lua_State* lua_state, const std::filesystem::recursive_directory_iterator& iterator );
+    static std::filesystem::recursive_directory_iterator* to_recursive_directory_iterator( lua_State* lua_state, int index );
     static int recursive_directory_iterator_gc( lua_State* lua_state );
 
-    static boost::filesystem::path absolute( lua_State* lua_state, int index );
+    static std::filesystem::path absolute( lua_State* lua_state, int index );
 }; 
 
 }

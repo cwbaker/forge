@@ -17,8 +17,6 @@ for _, cc in toolsets('cc.*') do
     };
     cc:StaticLibrary '${lib}/forge_${architecture}' {
         '${lib}/assert_${architecture}';
-        '${lib}/boost_filesystem_${architecture}';
-        '${lib}/boost_system_${architecture}';
         '${lib}/error_${architecture}';
         '${lib}/forge_lua_${architecture}';
         '${lib}/liblua_${platform}_${architecture}';

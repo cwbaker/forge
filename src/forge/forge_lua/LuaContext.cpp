@@ -9,7 +9,7 @@
 #include <forge/Forge.hpp>
 #include <forge/Context.hpp>
 #include <luaxx/luaxx.hpp>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 #include <stdlib.h>
 
 using std::string;
@@ -77,7 +77,7 @@ int LuaContext::cd( lua_State* lua_state )
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, PATH, &length );
     Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
-    forge->context()->change_directory( boost::filesystem::path(string(path, length)) );
+    forge->context()->change_directory( std::filesystem::path(string(path, length)) );
     return 0;
 }
 
@@ -88,7 +88,7 @@ int LuaContext::pushd( lua_State* lua_state )
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, PATH, &length );
     Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
-    forge->context()->push_directory( boost::filesystem::path(string(path, length)) );
+    forge->context()->push_directory( std::filesystem::path(string(path, length)) );
     return 0;
 }
 
@@ -104,7 +104,7 @@ int LuaContext::pwd( lua_State* lua_state )
 {
     const int FORGE = lua_upvalueindex( 1 );
     Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
-    const boost::filesystem::path& path = forge->context()->directory();
+    const std::filesystem::path& path = forge->context()->directory();
     lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     return 1;
 }
@@ -120,13 +120,13 @@ int LuaContext::absolute( lua_State* lua_state )
     {
         const char* base_path = luaL_tolstring( lua_state, BASE_PATH, nullptr );
         const char* relative_path = !lua_isnoneornil( lua_state, PATH ) ? luaL_tolstring( lua_state, PATH, nullptr ) : "";
-        boost::filesystem::path path = sweet::forge::absolute( boost::filesystem::path(relative_path), boost::filesystem::path(base_path) );
+        std::filesystem::path path = sweet::forge::absolute( std::filesystem::path(relative_path), std::filesystem::path(base_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
         const char* relative_path = !lua_isnoneornil( lua_state, PATH ) ? luaL_tolstring( lua_state, PATH, nullptr ) : "";
-        boost::filesystem::path path = forge->absolute( boost::filesystem::path(relative_path) );
+        std::filesystem::path path = forge->absolute( std::filesystem::path(relative_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     return 1;
@@ -143,13 +143,13 @@ int LuaContext::relative( lua_State* lua_state )
     {
         const char* base_path = luaL_tolstring( lua_state, BASE_PATH, nullptr );
         const char* absolute_path = !lua_isnoneornil( lua_state, PATH ) ? luaL_tolstring( lua_state, PATH, nullptr ) : "";
-        boost::filesystem::path path = sweet::forge::relative( boost::filesystem::path(absolute_path), boost::filesystem::path(base_path) );
+        std::filesystem::path path = sweet::forge::relative( std::filesystem::path(absolute_path), std::filesystem::path(base_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
         const char* absolute_path = !lua_isnoneornil( lua_state, PATH ) ? luaL_tolstring( lua_state, PATH, nullptr ) : "";
-        boost::filesystem::path path = forge->relative( boost::filesystem::path(absolute_path) );
+        std::filesystem::path path = forge->relative( std::filesystem::path(absolute_path) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     return 1;
@@ -163,12 +163,12 @@ int LuaContext::root( lua_State* lua_state )
     Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     if ( lua_isnoneornil(lua_state, PATH) )
     {
-        const boost::filesystem::path& path = forge->root();
+        const std::filesystem::path& path = forge->root();
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
-        boost::filesystem::path path = forge->root( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
+        std::filesystem::path path = forge->root( std::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
 
@@ -183,12 +183,12 @@ int LuaContext::initial( lua_State* lua_state )
     Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     if ( lua_isnoneornil(lua_state, PATH) )
     {
-        const boost::filesystem::path& path = forge->initial();
+        const std::filesystem::path& path = forge->initial();
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
-        boost::filesystem::path path = forge->initial( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
+        std::filesystem::path path = forge->initial( std::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
 
@@ -203,12 +203,12 @@ int LuaContext::executable( lua_State* lua_state )
     Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     if ( lua_isnoneornil(lua_state, PATH) )
     {
-        const boost::filesystem::path& path = forge->executable();
+        const std::filesystem::path& path = forge->executable();
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
-        boost::filesystem::path path = forge->executable( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
+        std::filesystem::path path = forge->executable( std::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
 
@@ -223,12 +223,12 @@ int LuaContext::home( lua_State* lua_state )
     Forge* forge = (Forge*) lua_touserdata( lua_state, FORGE );
     if ( lua_isnoneornil(lua_state, PATH) )
     {
-        const boost::filesystem::path& path = forge->home();
+        const std::filesystem::path& path = forge->home();
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
     else
     {
-        boost::filesystem::path path = forge->home( boost::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
+        std::filesystem::path path = forge->home( std::filesystem::path(luaL_tolstring(lua_state, PATH, nullptr)) );
         lua_pushlstring( lua_state, path.generic_string().c_str(), path.generic_string().length() );
     }
 
@@ -272,7 +272,7 @@ int LuaContext::native( lua_State* lua_state )
     const int PATH = 1;
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, PATH, &length );
-    string native_path = boost::filesystem::path( string(path, length) ).make_preferred().string();
+    string native_path = std::filesystem::path( string(path, length) ).make_preferred().string();
     lua_pushlstring( lua_state, native_path.c_str(), native_path.length() );
     return 1;
 }
@@ -282,7 +282,7 @@ int LuaContext::branch( lua_State* lua_state )
     const int PATH = 1;
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, PATH, &length ); 
-    string branch = boost::filesystem::path( string(path, length) ).parent_path().generic_string();
+    string branch = std::filesystem::path( string(path, length) ).parent_path().generic_string();
     lua_pushlstring( lua_state, branch.c_str(), branch.length() );
     return 1;
 }
@@ -292,7 +292,7 @@ int LuaContext::leaf( lua_State* lua_state )
     const int PATH = 1;
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, PATH, &length );
-    string leaf = boost::filesystem::path( string(path, length) ).filename().generic_string();
+    string leaf = std::filesystem::path( string(path, length) ).filename().generic_string();
     lua_pushlstring( lua_state, leaf.c_str(), leaf.length() );
     return 1;
 }
@@ -300,7 +300,7 @@ int LuaContext::leaf( lua_State* lua_state )
 int LuaContext::basename( lua_State* lua_state )
 {
     const int PATH = 1;
-    string basename = boost::filesystem::path( luaL_tolstring(lua_state, PATH, nullptr) ).stem().generic_string();
+    string basename = std::filesystem::path( luaL_tolstring(lua_state, PATH, nullptr) ).stem().generic_string();
     lua_pushlstring( lua_state, basename.c_str(), basename.length() );
     return 1;
 }
@@ -308,7 +308,7 @@ int LuaContext::basename( lua_State* lua_state )
 int LuaContext::extension( lua_State* lua_state )
 {
     const int PATH = 1;
-    string extension = boost::filesystem::path( luaL_tolstring(lua_state, PATH, nullptr) ).extension().generic_string();
+    string extension = std::filesystem::path( luaL_tolstring(lua_state, PATH, nullptr) ).extension().generic_string();
     lua_pushlstring( lua_state, extension.c_str(), extension.length() );
     return 1;
 }
@@ -318,7 +318,7 @@ int LuaContext::is_absolute( lua_State* lua_state )
     const int PATH = 1;
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, PATH, &length );
-    bool absolute = boost::filesystem::path( string(path, length) ).is_absolute();
+    bool absolute = std::filesystem::path( string(path, length) ).is_absolute();
     lua_pushboolean( lua_state, absolute ? 1 : 0 );
     return 1;
 }
@@ -328,7 +328,7 @@ int LuaContext::is_relative( lua_State* lua_state )
     const int PATH = 1;
     size_t length = 0;
     const char* path = luaL_tolstring( lua_state, PATH, &length );
-    bool relative = boost::filesystem::path( string(path, length) ).is_relative();
+    bool relative = std::filesystem::path( string(path, length) ).is_relative();
     lua_pushboolean( lua_state, relative ? 1 : 0 );
     return 1;
 }

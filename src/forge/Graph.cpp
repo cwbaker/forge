@@ -14,6 +14,8 @@
 #include "GraphReader.hpp"
 #include "GraphWriter.hpp"
 #include <assert/assert.hpp>
+#include <algorithm>
+#include <list>
 #include <memory>
 #include <fstream>
 #define __STDC_FORMAT_MACROS
@@ -278,11 +280,11 @@ Target* Graph::target( const std::string& id )
 */
 Target* Graph::add_or_find_target( const std::string& id, Target* working_directory )
 {
-    boost::filesystem::path path( id );
+    std::filesystem::path path( id );
     Target* target = working_directory && path.is_relative() ? working_directory : root_target_.get();
     SWEET_ASSERT( target );
 
-    boost::filesystem::path::const_iterator i = path.begin();
+    std::filesystem::path::const_iterator i = path.begin();
 
     if ( path.has_root_name() )
     {
@@ -328,9 +330,9 @@ Target* Graph::find_target( const std::string& id, Target* working_directory )
     Target* target = NULL;
     if ( !id.empty() )
     {
-        boost::filesystem::path path( id );
+        std::filesystem::path path( id );
         target = working_directory && path.is_relative() ? working_directory : root_target_.get();
-        boost::filesystem::path::const_iterator i = path.begin();
+        std::filesystem::path::const_iterator i = path.begin();
         SWEET_ASSERT( target );
 
         if ( path.has_root_name() )
@@ -448,7 +450,7 @@ int Graph::buildfile( const std::string& filename )
 {
     SWEET_ASSERT( forge_ );
     SWEET_ASSERT( root_target_ );
-    boost::filesystem::path path( forge_->absolute(filename) );
+    std::filesystem::path path( forge_->absolute(filename) );
     SWEET_ASSERT( path.is_absolute() );
     Target* buildfile_target = Graph::target( path.generic_string() );
     buildfile_target->set_filename( path.generic_string(), 0 );
@@ -638,7 +640,7 @@ void Graph::recover()
 Target* Graph::load_binary( const std::string& filename )
 {
     SWEET_ASSERT( !filename.empty() );
-    SWEET_ASSERT( boost::filesystem::path(filename).is_absolute() );
+    SWEET_ASSERT( std::filesystem::path(filename).is_absolute() );
     SWEET_ASSERT( forge_ );
 
     filename_ = filename;
@@ -753,7 +755,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
             }
         }
 
-        void print( Target* target, const boost::filesystem::path& directory, int level )
+        void print( Target* target, const std::filesystem::path& directory, int level )
         {
             SWEET_ASSERT( target );
             SWEET_ASSERT( level >= 0 );
@@ -799,14 +801,14 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                 const vector<string>& filenames = target->filenames();
                 for ( vector<string>::const_iterator filename = filenames.begin(); filename != filenames.end(); ++filename )
                 {
-                    boost::filesystem::path generic_filename = sweet::forge::relative( boost::filesystem::path(*filename), directory );
+                    std::filesystem::path generic_filename = sweet::forge::relative( std::filesystem::path(*filename), directory );
                     indent( level + 1 );
                     printf( ">'%s'", generic_filename.generic_string().c_str() );
                 }
             }
         }
 
-        void print_recursively( Target* target, const boost::filesystem::path& directory, int level )
+        void print_recursively( Target* target, const std::filesystem::path& directory, int level )
         {
             ScopedVisit visit( target );
             print( target, directory, level );
@@ -837,7 +839,7 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
 
     bind( target );
     RecursivePrinter recursive_printer( this );
-    recursive_printer.print_recursively( target ? target : root_target_.get(), boost::filesystem::path(directory), 0 );
+    recursive_printer.print_recursively( target ? target : root_target_.get(), std::filesystem::path(directory), 0 );
     printf( "\n\n" );
 }
 

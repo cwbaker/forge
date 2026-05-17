@@ -16,7 +16,6 @@ local toolset = forge.Toolset 'cc_${platform}_${architecture}' {
     obj = root( ('%s/obj/cc_%s_x86_64'):format(variant, operating_system()) );
     include_directories = {
         root( 'src' );
-        root( 'src/boost' );
         root( 'src/lua/src' );
         root( 'src/unittest-cpp' );
     };
@@ -41,7 +40,6 @@ local toolset = forge.Toolset 'cc_${platform}_${architecture}' {
     runtime_library = variant == 'debug' and 'static_debug' or 'static_release';
     run_time_type_info = true;
     stack_size = 1048576;
-    standard = 'c++11';
     string_pooling = variant == 'shipping';
     strip = false;
     warning_level = 3;
@@ -50,14 +48,7 @@ local toolset = forge.Toolset 'cc_${platform}_${architecture}' {
 
 toolset:install( 'forge.cc' );
 
--- Bump the C++ standard to c++14 when building on Windows as that is the 
--- closest standard supported by Microsoft Visual C++.
-if toolset.platform == 'windows' then
-    toolset.standard = 'c++14';
-end
-
 buildfile 'src/assert/assert.forge';
-buildfile 'src/boost/boost.forge';
 buildfile 'src/cmdline/cmdline.forge';
 buildfile 'src/error/error.forge';
 buildfile 'src/forge/forge.forge';

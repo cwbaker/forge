@@ -9,11 +9,17 @@
 #include <error/Error.hpp>
 #include <assert/assert.hpp>
 #include <stdlib.h>
+#include <string.h>
 #include <memory>
 
 #if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
 #elif defined(BUILD_OS_MACOS)
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
+#include <errno.h>
+#elif defined(BUILD_OS_LINUX)
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>

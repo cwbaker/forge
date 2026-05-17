@@ -1,7 +1,7 @@
 #ifndef FORGE_PATH_FUNCTIONS_HPP_INCLUDED
 #define FORGE_PATH_FUNCTIONS_HPP_INCLUDED
 
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 #include <string>
 
 namespace sweet
@@ -10,10 +10,10 @@ namespace sweet
 namespace forge
 {
 
-boost::filesystem::path absolute( const boost::filesystem::path& path, const boost::filesystem::path& base_path );
-boost::filesystem::path relative( const boost::filesystem::path& path, const boost::filesystem::path& base_path );
-boost::filesystem::path make_drive_uppercase( std::string path );
-boost::filesystem::path search_up_for_root_directory( const std::string& directory, const std::string& filename );
+std::filesystem::path absolute( const std::filesystem::path& path, const std::filesystem::path& base_path );
+std::filesystem::path relative( const std::filesystem::path& path, const std::filesystem::path& base_path );
+std::filesystem::path make_drive_uppercase( std::string path );
+std::filesystem::path search_up_for_root_directory( const std::string& directory, const std::string& filename );
 
 }
 

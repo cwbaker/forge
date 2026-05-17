@@ -32,8 +32,8 @@ Forge is a Lua-scriptable build tool. The C++ core builds a dependency graph of 
 
 ## Conventions and guardrails
 
-- C++ is generally C++11; MSVC builds use C++14. Warnings are treated as errors.
-- Follow surrounding C++ style and existing `sweet::forge` namespaces. Use Boost.Filesystem rather than introducing `std::filesystem`.
+- C++ is generally C++17. Warnings are treated as errors.
+- Follow surrounding C++ style and existing `sweet::forge` namespaces.
 - Lua/buildfiles use 4-space indentation, semicolon-separated table entries, and portable `/` paths. Convert to native paths only when passing paths to external tools.
 - Do not edit generated or ignored outputs such as `bootstrap/`, `debug/`, `release/`, `shipping/`, `.forge`, `*.o`, or `*.obj`.
 - When changing behavior, check whether corresponding updates are needed in the C++ core, Lua bindings/rules, docs/reference, and `src/forge/forge_test`.
