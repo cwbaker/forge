@@ -34,6 +34,7 @@ for _, forge in toolsets('cc.*') do
                     'BOOST_ALL_NO_LIB'; -- Disable automatic linking to Boost libraries.
                     ('BUILD_VERSION="\\"%s\\""'):format( version );
                 };
+                'ConsoleOutputCodePage.cpp',
                 'EventSink.cpp',
                 'forge.cpp'
             };

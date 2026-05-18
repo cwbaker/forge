@@ -4,6 +4,7 @@
 //
 
 #include "stdafx.hpp"
+#include "ConsoleOutputCodePage.hpp"
 #include "EventSink.hpp"
 #include <forge/Forge.hpp>
 #include <forge/path_functions.hpp>
@@ -20,6 +21,7 @@
 #ifdef BUILD_OS_WINDOWS
 #include <io.h>
 #include <fcntl.h>
+#include <windows.h>
 #endif
 
 using std::string;
@@ -34,6 +36,7 @@ int main( int argc, char** argv )
 #ifdef BUILD_OS_WINDOWS
         _setmode( _fileno(stdout), _O_BINARY );
         _setmode( _fileno(stderr), _O_BINARY );
+        ConsoleOutputCodePage utf8_console_output( CP_UTF8 );
 #endif
 
         bool help = false;
