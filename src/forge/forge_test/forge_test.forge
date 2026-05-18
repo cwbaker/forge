@@ -25,6 +25,7 @@ for _, cc in toolsets('cc.*') do
             '${lib}/UnitTest++_${platform}_${architecture}';
 
             libraries = libraries;
+            manifests = { root('src/forge/forge/forge.manifest') };
 
             cc:Cxx '${obj}/%1' {
                 defines = {

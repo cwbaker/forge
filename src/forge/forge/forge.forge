@@ -27,15 +27,16 @@ for _, forge in toolsets('cc.*') do
             '${lib}/forge_${architecture}';
 
             libraries = libraries;
-            
+            manifests = { root('src/forge/forge/forge.manifest') };
+
             forge:Cxx '${obj}/%1' {
-                defines = {    
+                defines = {
                     'BOOST_ALL_NO_LIB'; -- Disable automatic linking to Boost libraries.
                     ('BUILD_VERSION="\\"%s\\""'):format( version );
                 };
-                'EventSink.cpp', 
+                'EventSink.cpp',
                 'forge.cpp'
-            };    
+            };
         };
     };
 end

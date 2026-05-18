@@ -52,6 +52,8 @@ mklink %USERPROFILE%\bin\forge.exe %USERPROFILE%\forge\bin\forge.exe
 
 NOTE: Forge uses [*vswhere*](https://github.com/Microsoft/vswhere/wiki) to find the Visual C++ compiler for Visual Studio 2015 and later and so requires Visual Studio 15.2 (26418.1 Preview) or later that install *vswhere* to a known location to work out of the box.  Visual Studio 2013, 2012, and 2010 may work but aren't tested.
 
+NOTE: Forge embeds a UTF-8 active code page manifest into `forge.exe` so that the narrow Win32 APIs round-trip UTF-8 paths and identifiers.  This requires Windows 10 version 1903 (build 18362) or later at runtime.  See [Character Encoding](more-details/character-encoding.md) for the encoding contract.
+
 ### Github Actions
 
 To install and use Forge from Github Actions:
