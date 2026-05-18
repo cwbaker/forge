@@ -129,12 +129,14 @@ std::filesystem::path search_up_for_root_directory( const std::string& directory
 {
     std::filesystem::path root_directory;
     std::filesystem::path current_directory( directory );
-    while ( !current_directory.empty() && current_directory.has_root_directory() )
+    std::filesystem::path previous_directory;
+    while ( current_directory != previous_directory && current_directory.has_root_directory() )
     {
         if ( std::filesystem::exists((current_directory / filename).string()) )
         {
             root_directory = current_directory;
         }
+        previous_directory = current_directory;
         current_directory = current_directory.parent_path();
     }
     if ( !std::filesystem::exists((root_directory / filename).string()) )
