@@ -44,7 +44,7 @@ std::unique_ptr<Target> GraphReader::read( const std::string& filename )
         return unique_ptr<Target>();
     }
 
-    const int VERSION = 33;
+    const int VERSION = 34;
     int version = 0;
     value( &version );
     if ( version != VERSION )

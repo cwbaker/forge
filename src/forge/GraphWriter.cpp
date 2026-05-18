@@ -22,7 +22,7 @@ void GraphWriter::write( Target* root_target )
     SWEET_ASSERT( root_target );
     const char FORMAT [] = "Forge Graph";
     value( &FORMAT[0], sizeof(FORMAT) );
-    const int VERSION = 33;
+    const int VERSION = 34;
     value( VERSION );
     root_target->write( *this );
 }
