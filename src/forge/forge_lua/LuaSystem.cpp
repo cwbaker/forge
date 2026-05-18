@@ -378,7 +378,6 @@ uint64_t LuaSystem::fnv1a_start()
 uint64_t LuaSystem::fnv1a_append( uint64_t hash, const unsigned char* data, size_t length )
 {
     SWEET_ASSERT( data );
-    SWEET_ASSERT( length >= 0 );
     for ( size_t i = 0; i < length; ++i )
     {
         const uint64_t FNV_PRIME = 0x100000001b3;
