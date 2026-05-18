@@ -20,6 +20,7 @@ Forge is a Lua-scriptable build tool. The C++ core builds a dependency graph of 
 - `docs/getting-started/configuring-forge.md` explains root `forge.lua` build scripts and toolsets.
 - `docs/getting-started/writing-buildfiles.md` explains `*.forge` buildfiles.
 - `docs/more-details/rules.md`, `dependencies.md`, and `outdated-calculation.md` explain the core build model.
+- `docs/more-details/character-encoding.md` describes Forge's UTF-8 contract for strings, paths, and the graph cache.
 - `docs/reference/` documents Lua API functions, `Target`, and `Toolset`.
 - `docs/cc-module/cc.md` documents the C/C++ Lua rules.
 
@@ -35,5 +36,6 @@ Forge is a Lua-scriptable build tool. The C++ core builds a dependency graph of 
 - C++ is generally C++17. Warnings are treated as errors.
 - Follow surrounding C++ style and existing `sweet::forge` namespaces.
 - Lua/buildfiles use 4-space indentation, semicolon-separated table entries, and portable `/` paths. Convert to native paths only when passing paths to external tools.
+- All strings inside Forge — target ids, paths, branches, filenames, env values — are UTF-8 byte sequences. Strings from Lua are trusted as UTF-8 (no validation). No Unicode normalization is performed; strings compare byte-for-byte. Windows uses a UTF-8 ACP manifest at the OS boundary. See `docs/more-details/character-encoding.md` for the full contract.
 - Do not edit generated or ignored outputs such as `bootstrap/`, `debug/`, `release/`, `shipping/`, `.forge`, `*.o`, or `*.obj`.
 - When changing behavior, check whether corresponding updates are needed in the C++ core, Lua bindings/rules, docs/reference, and `src/forge/forge_test`.

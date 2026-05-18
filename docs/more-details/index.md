@@ -28,3 +28,5 @@ This sections provides more detail about different parts of Forge.  Read as your
 - [String Interpolation](string-interpolation.md) describes the string interpolation used to expand `${...}` references in toolset tags and target identifiers.
 
 - [Automatic Dependencies](automatic-dependencies.md) describes how implicit dependencies can be automatically detected by tracing calls that open files for reading or writing when running a tool.
+
+- [Character Encoding](character-encoding.md) describes how Forge treats text as UTF-8 internally, at the operating system boundary, and in the graph cache.
