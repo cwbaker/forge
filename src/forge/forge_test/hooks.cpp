@@ -14,7 +14,7 @@ SUITE( hooks )
 {
     TEST_FIXTURE( ForgeLuaFixture, hooks )
     {
-        show_errors = true;
-        forge->file( "hooks.lua" );
+        int errors = forge->file( "hooks_tests.lua" );
+        CHECK( errors == 0 );
     }
 }
