@@ -148,13 +148,15 @@ std::filesystem::recursive_directory_iterator System::find( const std::string& p
 std::string System::executable() const
 {
 #if defined(BUILD_OS_WINDOWS)
-    char executable_path [MAX_PATH + 1];
+    // Maximum path characters expanded to UTF-8 plus "\\?\" and null.
+    static thread_local char executable_path [32768 * 3 + 4 + 1];
     int size = ::GetModuleFileNameA( nullptr, executable_path, sizeof(executable_path) );
     executable_path [sizeof(executable_path) - 1] = 0;
     HANDLE file = ::CreateFileA( executable_path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr );
     if ( file != INVALID_HANDLE_VALUE )
     {
-        char linked_path [MAX_PATH + 1];
+        // Maximum path characters expanded to UTF-8 plus "\\?\" and null.
+        static thread_local char linked_path [32768 * 3 + 4 + 1];
         DWORD linked_size = ::GetFinalPathNameByHandleA( file, linked_path, sizeof(linked_path), VOLUME_NAME_DOS );
         ::CloseHandle( file );
         file = INVALID_HANDLE_VALUE;
