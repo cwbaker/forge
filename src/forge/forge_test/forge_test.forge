@@ -1,10 +1,6 @@
 
--- Disable warnings on Linux to avoid unused variable warnings in Boost
--- System library headers.
-local warning_level = 3;
 local libraries = nil;
 if operating_system() == 'linux' then
-    warning_level = 0;
     libraries = {
         'pthread';
         'dl';
@@ -12,9 +8,6 @@ if operating_system() == 'linux' then
 end
 
 for _, cc in toolsets('cc.*') do
-    local cc = cc:inherit {
-        warning_level = warning_level;
-    };
     cc:all {
         cc:Executable '${bin}/forge_test' {
             '${lib}/assert_${architecture}';

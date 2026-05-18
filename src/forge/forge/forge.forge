@@ -2,13 +2,9 @@
 -- Set the version as date/time YYYY.mm.dd HH:MM:SS and variant.
 local version = ('%s %s'):format( os.date('%Y.%m.%d %H:%M:%S'), variant or 'debug' );
 
--- Disable warnings on Linux to avoid unused variable warnings in Boost
--- System library headers.
 local libraries;
-local warning_level = 3;
 if operating_system() == 'linux' then
-    warning_level = 0;
-    libraries = { 
+    libraries = {
         'pthread';
         'dl';
     };
@@ -16,9 +12,8 @@ end
 
 for _, forge in toolsets('cc.*') do
     local forge = forge:inherit {
-        subsystem = 'CONSOLE'; 
+        subsystem = 'CONSOLE';
         stack_size = 32768;
-        warning_level = warning_level;    
     };
 
     forge:all {

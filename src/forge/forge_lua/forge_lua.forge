@@ -1,15 +1,5 @@
 
--- Disable warnings on Linux to avoid unused variable warnings in Boost
--- System library headers.
-local warning_level = 3;
-if operating_system() == 'linux' then
-    warning_level = 0;
-end
-
 for _, forge in toolsets('cc.*') do
-    local forge = forge:inherit {
-        warning_level = warning_level;
-    };
     forge:StaticLibrary '${lib}/forge_lua_${architecture}' {
         '${lib}/assert_${architecture}';
         '${lib}/luaxx_${architecture}';
