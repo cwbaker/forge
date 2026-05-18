@@ -462,7 +462,20 @@ function msvc.link(toolset, target)
         local msld = msvc.visual_cxx_tool(toolset, "link.exe");
         local msmt = msvc.windows_sdk_tool(toolset, "mt.exe");
         local msrc = msvc.windows_sdk_tool(toolset, "rc.exe");
-        local intermediate_manifest = ('%s/%s_intermediate.manifest'):format(toolset:obj_directory(target), target:id());
+        local manifests = {
+            ('%s/%s_intermediate.manifest'):format(toolset:obj_directory(target), target:id());
+        };
+
+        -- Collect any extra manifest files specified by the target (e.g. a
+        -- manifest that declares a UTF-8 active code page) so that they are
+        -- merged into the embedded manifest by mt.exe.  Register them as
+        -- implicit dependencies so that edits to a manifest trigger a relink.
+        if target.manifests then
+            for _, manifest in ipairs(target.manifests) do
+                target:add_implicit_dependency(toolset:SourceFile(manifest));
+                table.insert(manifests, absolute(manifest));
+            end
+        end
 
         if toolset.incremental_linking then
             local embedded_manifest = ("%s_embedded.manifest"):format(target:id());
@@ -484,11 +497,12 @@ function msvc.link(toolset, target)
             local ldflags = table.concat(flags, ' ');
             local ldlibs = table.concat(libraries, ' ');
             local ldobjects = table.concat(objects, '" "');
+            local ldmanifests = table.concat(manifests, '" "');
             local environment = msvc.environments_by_architecture[toolset.architecture];
 
             if exists(embedded_manifest) ~= true then
                 run(msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment);
-                run(msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, intermediate_manifest), environment);
+                run(msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, ldmanifests), environment);
                 run(msrc, ('rc /Fo"%s" "%s"'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter);
             end
 
@@ -496,9 +510,10 @@ function msvc.link(toolset, target)
             table.insert(flags, "/incremental");
             local ldflags = table.concat(flags, ' ');
             local ldobjects = table.concat(objects, '" "');
+            local ldmanifests = table.concat(manifests, '" "');
 
             run(msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment);
-            run(msmt, ('mt /nologo /out:"%s" /manifest %s'):format(embedded_manifest, intermediate_manifest), environment);
+            run(msmt, ('mt /nologo /out:"%s" /manifest "%s"'):format(embedded_manifest, ldmanifests), environment);
             run(msrc, ('rc /Fo"%s" %s'):format(embedded_manifest_res, embedded_manifest_rc), environment, nil, ignore_filter);
             run(msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment);
         else
@@ -507,11 +522,12 @@ function msvc.link(toolset, target)
             local ldflags = table.concat(flags, ' ');
             local ldlibs = table.concat(libraries, ' ');
             local ldobjects = table.concat(objects, '" "');
+            local ldmanifests = table.concat(manifests, '" "');
             local environment = msvc.environments_by_architecture[toolset.architecture];
 
             run(msld, ('link %s "%s" %s'):format(ldflags, ldobjects, ldlibs), environment);
             sleep(100);
-            run(msmt, ('mt /nologo -outputresource:"%s";#1 -manifest %s'):format(native(target:filename()), intermediate_manifest), environment);
+            run(msmt, ('mt /nologo -outputresource:"%s";#1 -manifest "%s"'):format(native(target:filename()), ldmanifests), environment);
         end
     end
     popd();
