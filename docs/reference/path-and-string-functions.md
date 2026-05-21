@@ -42,9 +42,7 @@ function basename( path )
 
 Get the basename of a path.
 
-Extract the basename from `path` (everything except for the extension of which
-the dot "." is considered part, i.e. the dot "." is not returned as part of
-the basename).
+Extract the basename from `path` (everything except for the extension, of which the dot "." is considered part).  Filenames that begin with a dot, such as `.gitignore`, are treated as having no extension — the entire filename is returned as the basename.
 
 **Parameters:**
 
@@ -80,7 +78,7 @@ function extension( path )
 
 Get the extension from a path.
 
-Extract the extension portion of `path` (including the period ".").  If there is no period in `path` then returns the empty string.  Multiple dots will return the right-most period and trailing characters.  A trailing period will return the string ".".
+Extract the extension portion of `path` (including the period ".").  If there is no period in `path` then returns the empty string.  Multiple dots will return the right-most period and trailing characters.  A trailing period will return the string ".".  Filenames that begin with a dot, such as `.gitignore`, are treated as having no extension — the empty string is returned.
 
 **Parameters:**
 
