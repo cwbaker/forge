@@ -62,14 +62,11 @@ forge:Executable '${bin}/forge' {
     '${lib}/error_${architecture}';
     '${lib}/assert_${architecture}';
     '${lib}/liblua_${architecture}';
-    '${lib}/boost_filesystem_${architecture}';
-    '${lib}/boost_system_${architecture}';
 
     libraries = libraries;
-    
+
     forge:Cxx '${obj}/%1' {
-        defines = {    
-            'BOOST_ALL_NO_LIB';
+        defines = {
             ('BUILD_VERSION="\\"%s\\""'):format( version );
         };
         'Application.cpp', 

@@ -29,7 +29,6 @@ for _, cc in toolsets('cc.*') do
 
             cc:Cxx '${obj}/%1' {
                 defines = {
-                    'BOOST_ALL_NO_LIB'; -- Disable automatic linking to Boost libraries.
                     ([[TEST_DIRECTORY=\"%s/\"]]):format( pwd() );
                 };
                 'dependencies.cpp',

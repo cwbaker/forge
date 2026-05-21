@@ -16,7 +16,6 @@ for _, forge in toolsets('cc.*') do
 
         forge:Cxx '${obj}/%1' {
             defines = {
-                'BOOST_ALL_NO_LIB', -- Disable automatic linking to Boost libraries.
                 '_CRT_SECURE_NO_DEPRECATE',
                 '_SCL_SECURE_NO_DEPRECATE',
                 '_WIN32_WINNT=0x0a00',

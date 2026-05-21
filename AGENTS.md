@@ -12,7 +12,7 @@ Forge is a Lua-scriptable build tool. The C++ core builds a dependency graph of 
 - `src/forge/lua/forge` contains the standard Lua API/rules; `src/forge/lua/forge/cc` contains C/C++ toolchain rules.
 - `src/forge/forge_test` contains Forge’s UnitTest++ test suite and Lua test fixtures.
 - `src/assert`, `src/cmdline`, `src/error`, `src/luaxx`, and `src/process` are small local support libraries.
-- `src/boost`, `src/lua`, and `src/unittest-cpp` are vendored/submodule code; avoid changing them unless explicitly needed.
+- `src/lua` and `src/unittest-cpp` are submodule code; avoid changing them unless explicitly needed.
 
 ## Docs map
 

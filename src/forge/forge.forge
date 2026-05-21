@@ -25,7 +25,6 @@ for _, cc in toolsets('cc.*') do
 
         cc:Cxx '${obj}/%1' {
             defines = {
-                'BOOST_ALL_NO_LIB'; -- Disable automatic linking to Boost libraries.
                 '_CRT_SECURE_NO_DEPRECATE'; -- Disable CRT security warnings
                 '_SCL_SECURE_NO_DEPRECATE'; -- Disable SCL security warnings
                 '_WIN32_WINNT=0x0a00'; -- Target Windows 10
