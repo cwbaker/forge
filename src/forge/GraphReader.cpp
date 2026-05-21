@@ -35,7 +35,7 @@ void* GraphReader::find_address_by_old_address( const void* old_address ) const
 
 std::unique_ptr<Target> GraphReader::read( const std::string& filename )
 {
-    const char FORMAT [] = "Sweet Build Graph";
+    const char FORMAT [] = "Forge Graph";
     char format [sizeof(FORMAT)];
     value( &format[0], sizeof(format) );
     if ( strncmp(format, FORMAT, sizeof(FORMAT)) != 0 )
@@ -44,7 +44,7 @@ std::unique_ptr<Target> GraphReader::read( const std::string& filename )
         return unique_ptr<Target>();
     }
 
-    const int VERSION = 32;
+    const int VERSION = 33;
     int version = 0;
     value( &version );
     if ( version != VERSION )
@@ -82,9 +82,11 @@ void GraphReader::value( uint64_t* value )
     istream_->read( reinterpret_cast<char*>(value), sizeof(*value) );
 }
 
-void GraphReader::value( std::time_t* value )
+void GraphReader::value( std::filesystem::file_time_type* value )
 {
-    istream_->read( reinterpret_cast<char*>(value), sizeof(*value) );
+    int64_t count = 0;
+    istream_->read( reinterpret_cast<char*>(&count), sizeof(count) );
+    *value = std::filesystem::file_time_type( std::filesystem::file_time_type::duration(count) );
 }
 
 void GraphReader::value( std::string* value )

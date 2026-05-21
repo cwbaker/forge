@@ -5,7 +5,7 @@
 #include <string>
 #include <ostream>
 #include <memory>
-#include <ctime>
+#include <filesystem>
 #include <stdint.h>
 
 namespace sweet
@@ -27,7 +27,7 @@ public:
     void value( bool value );
     void value( int value );
     void value( uint64_t value );
-    void value( std::time_t value );
+    void value( std::filesystem::file_time_type value );
     void value( const std::string& value );
     void value( const char* value, size_t size );
     void value( const std::vector<std::string>& values );

@@ -20,9 +20,9 @@ GraphWriter::GraphWriter( std::ostream* ostream )
 void GraphWriter::write( Target* root_target )
 {
     SWEET_ASSERT( root_target );
-    const char FORMAT [] = "Sweet Build Graph";
+    const char FORMAT [] = "Forge Graph";
     value( &FORMAT[0], sizeof(FORMAT) );
-    const int VERSION = 32;
+    const int VERSION = 33;
     value( VERSION );
     root_target->write( *this );
 }
@@ -47,9 +47,10 @@ void GraphWriter::value( uint64_t value )
     ostream_->write( reinterpret_cast<const char*>(&value), sizeof(value) );
 }
 
-void GraphWriter::value( std::time_t value )
+void GraphWriter::value( std::filesystem::file_time_type value )
 {
-    ostream_->write( reinterpret_cast<const char*>(&value), sizeof(value) );
+    int64_t count = value.time_since_epoch().count();
+    ostream_->write( reinterpret_cast<const char*>(&count), sizeof(count) );
 }
 
 void GraphWriter::value( const std::string& value )

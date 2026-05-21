@@ -318,7 +318,7 @@ int LuaTarget::timestamp( lua_State* lua_state )
     luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
     if ( target )
     {
-        lua_pushinteger( lua_state, target->timestamp() ? 1 : 0 );
+        lua_pushinteger( lua_state, target->timestamp() != std::filesystem::file_time_type{} ? 1 : 0 );
         return 1;
     }
     return 0;
@@ -331,7 +331,7 @@ int LuaTarget::last_write_time( lua_State* lua_state )
     luaL_argcheck( lua_state, target != nullptr, TARGET, "nil target" );
     if ( target )
     {
-        lua_pushinteger( lua_state, target->last_write_time() ? 1 : 0 );
+        lua_pushinteger( lua_state, target->last_write_time() != std::filesystem::file_time_type{} ? 1 : 0 );
         return 1;
     }
     return 0;

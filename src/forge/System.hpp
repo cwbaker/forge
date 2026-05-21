@@ -3,7 +3,6 @@
 
 #include <filesystem>
 #include <string>
-#include <ctime>
 
 namespace sweet
 {
@@ -25,7 +24,7 @@ public:
     bool is_file( const std::string& path ) const;
     bool is_directory( const std::string& path ) const;
     bool is_regular( const std::string& path ) const;
-    std::time_t last_write_time( const std::string& path ) const;
+    std::filesystem::file_time_type last_write_time( const std::string& path ) const;
     std::filesystem::directory_iterator ls( const std::string& path ) const;
     std::filesystem::recursive_directory_iterator find( const std::string& path ) const;
     std::string executable() const;

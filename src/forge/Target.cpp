@@ -20,7 +20,7 @@ using std::swap;
 using std::remove;
 using std::vector;
 using std::string;
-using std::time_t;
+using file_time_type = std::filesystem::file_time_type;
 using namespace sweet;
 using namespace sweet::forge;
 
@@ -33,8 +33,8 @@ Target::Target()
 , branch_()
 , graph_( nullptr )
 , rule_( nullptr )
-, timestamp_( 0 )
-, last_write_time_( 0 )
+, timestamp_()
+, last_write_time_()
 , hash_( 0 )
 , pending_hash_( 0 )
 , outdated_( false )
@@ -74,8 +74,8 @@ Target::Target( const std::string& id, Graph* graph )
 , branch_()
 , graph_( graph )
 , rule_( nullptr )
-, timestamp_( 0 )
-, last_write_time_( 0 )
+, timestamp_()
+, last_write_time_()
 , hash_( 0 )
 , pending_hash_( 0 )
 , outdated_( false )
@@ -312,22 +312,22 @@ void Target::bind_to_file()
     {
         if ( !filenames_.empty() )
         {
-            time_t latest_last_write_time = 0;
-            time_t earliest_last_write_time = std::numeric_limits<time_t>::max();
+            file_time_type latest_last_write_time = file_time_type{};
+            file_time_type earliest_last_write_time = file_time_type::max();
 
             for ( vector<string>::const_iterator filename = filenames_.begin(); filename != filenames_.end(); ++filename )
             {
                 System* system = graph_->forge()->system();
                 if ( system->exists(*filename) )
                 {
-                    time_t last_write_time = system->last_write_time( *filename );
+                    file_time_type last_write_time = system->last_write_time( *filename );
                     latest_last_write_time = max( last_write_time, latest_last_write_time );
                     earliest_last_write_time = min( last_write_time, earliest_last_write_time );
                 }
                 else
                 {
-                    latest_last_write_time = std::numeric_limits<time_t>::max();
-                    earliest_last_write_time = 0;
+                    latest_last_write_time = file_time_type::max();
+                    earliest_last_write_time = file_time_type{};
                 }
             }
 
@@ -336,8 +336,8 @@ void Target::bind_to_file()
         }
         else
         {
-            timestamp_ = 0;
-            last_write_time_ = 0;
+            timestamp_ = file_time_type{};
+            last_write_time_ = file_time_type{};
         }
         
         bound_to_file_ = true;
@@ -363,7 +363,7 @@ void Target::bind_to_dependencies()
 {
     if ( !bound_to_dependencies_ )
     {
-        time_t timestamp = timestamp_;
+        file_time_type timestamp = timestamp_;
         bool outdated = outdated_;
         int finish = int(dependencies_.size() + implicit_dependencies_.size());
 
@@ -484,7 +484,7 @@ bool Target::built() const
 // @param timestamp
 //  The value to set the timestamp of this Target to.
 */
-void Target::set_timestamp( std::time_t timestamp )
+void Target::set_timestamp( std::filesystem::file_time_type timestamp )
 {
     timestamp_ = timestamp;
 }
@@ -500,7 +500,7 @@ void Target::set_timestamp( std::time_t timestamp )
 // @return
 //  The timestamp.
 */
-std::time_t Target::timestamp() const
+std::filesystem::file_time_type Target::timestamp() const
 {
     return timestamp_;
 }
@@ -516,7 +516,7 @@ std::time_t Target::timestamp() const
 // @return
 //  The last write time of the file that this Target is bound to.
 */
-std::time_t Target::last_write_time() const
+std::filesystem::file_time_type Target::last_write_time() const
 {
     return last_write_time_;
 }

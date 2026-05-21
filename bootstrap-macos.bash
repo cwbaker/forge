@@ -21,13 +21,13 @@ cxx() {
         echo $file...
         local DEFINES="-DBUILD_VARIANT_DEBUG -DBUILD_VERSION=\"bootstrap\" -DLUA_USE_POSIX -DLUA_USE_DLOPEN"
         local INCLUDE_DIRS="-I $SRC -I $SRC/lua/src -I $SRC/boost"
-        local FLAGS="-x c++ -std=c++11 -stdlib=libc++ -fexceptions -frtti -g"
+        local FLAGS="-x c++ -std=c++17 -stdlib=libc++ -fexceptions -frtti -g"
         $CXX $DEFINES $INCLUDE_DIRS $FLAGS -o $file.o -c $file
     done
 }
 
 archive() {
-    $AR -rcs $1 *.o    
+    $AR -rcs $1 *.o
 }
 
 link_forge() {

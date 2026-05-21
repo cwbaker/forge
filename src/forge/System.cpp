@@ -5,7 +5,6 @@
 
 #include "System.hpp"
 #include <assert/assert.hpp>
-#include <chrono>
 
 #if defined(BUILD_OS_WINDOWS)
 #include <windows.h>
@@ -99,13 +98,9 @@ bool System::is_regular( const std::string& path ) const
 // @return
 //  The last write time of the file system entry \e path.
 */
-std::time_t System::last_write_time( const std::string& path ) const
+std::filesystem::file_time_type System::last_write_time( const std::string& path ) const
 {
-    const auto ftime = std::filesystem::last_write_time( path );
-    const auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-        ftime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now()
-    );
-    return std::chrono::system_clock::to_time_t( sctp );
+    return std::filesystem::last_write_time( path );
 }
 
 /**

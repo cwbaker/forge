@@ -11,7 +11,7 @@ set BIN=%~dp0bootstrap\bin
 set DEFINES=/DBUILD_VARIANT_DEBUG /DBUILD_VERSION=\"bootstrap\" /DBOOST_ALL_NO_LIB /D_WIN32_WINNT=0x0a00
 set INCLUDE_DIRS=/I %SRC% /I %SRC%\lua\src /I %SRC%\boost
 set CC_FLAGS=%DEFINES% %INCLUDE_DIRS% /c /MTd /TC /Zi
-set CXX_FLAGS=%DEFINES% %INCLUDE_DIRS% /c /MTd /TP /std:c++14 /EHsc /GR /Zi
+set CXX_FLAGS=%DEFINES% %INCLUDE_DIRS% /c /MTd /TP /std:c++17 /EHsc /GR /Zi
 
 if not exist "%OBJ%" mkdir %OBJ%
 if not exist "%LIBS%" mkdir %LIBS%

@@ -1,5 +1,5 @@
 
--- Reference Lua build scripts from within the source tree rather than 
+-- Reference Lua build scripts from within the source tree rather than
 -- relative to the build executable so that they can be edited in place during
 -- development and are versioned along with the code that they are building.
 package.path = root('src/forge/lua/?.lua')..';'..root('src/forge/lua/?/init.lua');
@@ -40,6 +40,7 @@ local toolset = forge.Toolset 'cc_${platform}_${architecture}' {
     runtime_library = variant == 'debug' and 'static_debug' or 'static_release';
     run_time_type_info = true;
     stack_size = 1048576;
+    standard = 'c++17';
     string_pooling = variant == 'shipping';
     strip = false;
     warning_level = 3;
@@ -66,7 +67,7 @@ toolset:all {
 function install()
     prefix = prefix and root( prefix ) or home( 'forge' );
     local failures = build();
-    if failures == 0 then 
+    if failures == 0 then
         toolset:cpdir( '${prefix}/bin', '${bin}' );
         toolset:cpdir( '${prefix}/lua', 'src/forge/lua' );
     end

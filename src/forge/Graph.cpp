@@ -15,6 +15,8 @@
 #include "GraphWriter.hpp"
 #include <assert/assert.hpp>
 #include <algorithm>
+#include <chrono>
+#include <ctime>
 #include <list>
 #include <memory>
 #include <fstream>
@@ -767,36 +769,37 @@ void Graph::print_dependencies( Target* target, const std::string& directory )
                 printf( "%s ", target->rule()->id().c_str() );
             }
 
-            std::time_t timestamp = target->timestamp();
-            struct tm* time = ::localtime( &timestamp );
-            printf( "'%s' %c%c%c%c%c %04d-%02d-%02d %02d:%02d:%02d %" PRIx64 "",
+            auto format_time = []( std::filesystem::file_time_type file_time, char (&buffer)[20] )
+            {
+                using std::filesystem::file_time_type;
+                using namespace std::chrono;
+                // file_time_type's clock is unspecified and the C++20 clock_cast
+                // and file_clock::to_sys facilities are not yet implemented on
+                // all of MSVC, libstdc++, and libc++.
+                const auto delta = duration_cast<system_clock::duration>(file_time - file_time_type::clock::now());
+                const std::time_t time = system_clock::to_time_t( system_clock::now() + delta );
+                const std::tm local_tm = *std::localtime( &time );
+                std::strftime( buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &local_tm );
+            };
+
+            char timestamp_buffer [20];
+            format_time( target->timestamp(), timestamp_buffer );
+            printf( "'%s' %c%c%c%c%c %s %" PRIx64 "",
                 id(target),
                 target->outdated() ? 'O' : 'o',
                 target->bound_to_file() ? 'F' : 'f',
                 target->referenced_by_script() ? 'S' : 's',
                 target->cleanable() ? 'C' : 'c',
                 target->built() ? 'B' : 'b',
-                time ? time->tm_year + 1900 : 9999,
-                time ? time->tm_mon + 1 : 99,
-                time ? time->tm_mday : 99,
-                time ? time->tm_hour : 99,
-                time ? time->tm_min : 99,
-                time ? time->tm_sec : 99,
+                timestamp_buffer,
                 target->hash()
             );
 
             if ( !target->filenames().empty() )
             {
-                timestamp = target->last_write_time();
-                time = ::localtime( &timestamp );
-                printf( " %04d-%02d-%02d %02d:%02d:%02d",
-                    time->tm_year + 1900,
-                    time->tm_mon + 1,
-                    time->tm_mday,
-                    time->tm_hour,
-                    time->tm_min,
-                    time->tm_sec
-                );
+                char last_write_time_buffer [20];
+                format_time( target->last_write_time(), last_write_time_buffer );
+                printf( " %s", last_write_time_buffer );
 
                 const vector<string>& filenames = target->filenames();
                 for ( vector<string>::const_iterator filename = filenames.begin(); filename != filenames.end(); ++filename )
