@@ -44,18 +44,16 @@ class Process
     bool start_suspended_;
     bool inherit_environment_;
     std::vector<Pipe> pipes_;
-
 #if defined(BUILD_OS_WINDOWS)
     void* process_; ///< The handle to this Process.
     void* suspended_thread_; ///< The handle to the suspended main thread of this Process.
+    int exit_code_;
 #endif
-
 #if defined(BUILD_OS_MACOS)
     pid_t process_;
     int exit_code_;
     bool suspended_;
 #endif
-
 #if defined(BUILD_OS_LINUX)
     pid_t process_;
     int exit_code_;

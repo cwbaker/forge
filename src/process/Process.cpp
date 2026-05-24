@@ -8,6 +8,7 @@
 #include "Process.hpp"
 #include "Environment.hpp"
 #include "Error.hpp"
+#include <error/functions.hpp>
 #include <assert/assert.hpp>
 
 #if defined(BUILD_OS_WINDOWS)
@@ -45,7 +46,8 @@ Process::Process()
   pipes_(),
 #if defined(BUILD_OS_WINDOWS)
   process_( INVALID_HANDLE_VALUE ),
-  suspended_thread_( INVALID_HANDLE_VALUE )
+  suspended_thread_( INVALID_HANDLE_VALUE ),
+  exit_code_( 0 )
 #elif defined(BUILD_OS_MACOS)
   process_( 0 ),
   exit_code_( 0 ),
@@ -64,7 +66,7 @@ Process::~Process()
 {
     resume();
 
-#if defined(BUILD_OS_WINDOWS)   
+#if defined(BUILD_OS_WINDOWS)
     if ( suspended_thread_ != INVALID_HANDLE_VALUE )
     {
         ::CloseHandle( suspended_thread_ );
@@ -282,9 +284,9 @@ void Process::run( const char* arguments )
         ::CloseHandle( process_information.hThread );
     }
 
-    // Close the the write ends of any the pipes used because they only need 
+    // Close the the write ends of any the pipes used because they only need
     // to be used by the child process and also because calls to ::ReadFile()
-    // on the read end only return 0 when all of the write ends have been 
+    // on the read end only return 0 when all of the write ends have been
     // closed.
     for ( vector<Pipe>::iterator pipe = pipes_.begin(); pipe != pipes_.end(); ++pipe )
     {
@@ -302,9 +304,9 @@ void Process::run( const char* arguments )
 
     if ( directory_ )
     {
-        // Use the undocumented `pthread_fchdir()` system call to change the 
+        // Use the undocumented `pthread_fchdir()` system call to change the
         // working directory for the thread that is spawning a process rather than
-        // the global per-process working directory changed by `fchdir()`.  See 
+        // the global per-process working directory changed by `fchdir()`.  See
         // `syscall()` and `<sys/syscall.h>`.
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -474,7 +476,7 @@ void Process::run( const char* arguments )
 
         int result = execve( executable_, &splitter.arguments()[0], envp );
 
-        // Ignore any returned result as any call to `execve()` that returns 
+        // Ignore any returned result as any call to `execve()` that returns
         // is a failure.
         (void) result;
         char message [256];
@@ -490,13 +492,13 @@ void Process::run( const char* arguments )
             pipe->write_fd = -1;
         }
     }
-#endif    
+#endif
 }
 
 /**
 // Get the handle or identifier of this Process.
 //
-// @return 
+// @return
 //  The handle or identifier of this Process cast to a void pointer.
 */
 void* Process::process() const
@@ -533,7 +535,7 @@ void* Process::write_pipe( int index ) const
 /**
 // Resume this Process after it has been started suspended.
 //
-// It is only valid to call this function once to resume an initially 
+// It is only valid to call this function once to resume an initially
 // suspended process.  Additional calls will silently do nothing.
 */
 void Process::resume()
@@ -570,21 +572,27 @@ void Process::wait()
         SWEET_ERROR( WaitForProcessFailedError("Waiting for a process failed - %s", error) );
     }
 
-#elif defined(BUILD_OS_MACOS) || defined(BUILD_OS_LINUX)
-    SWEET_ASSERT( process_ != 0 );
+    DWORD exit_code = 0;
+    BOOL exited = ::GetExitCodeProcess( process_, &exit_code );
+    if ( !exited )
+    {
+        char error [1024];
+        error::Error::format( ::GetLastError(), error, sizeof(error) );
+        SWEET_ERROR( ExitCodeForProcessFailedError("Getting a process exit code failed - %s", error) );
+    }
+    exit_code_ = (int) exit_code;
 
-    pid_t result = waitpid( process_, &exit_code_, 0 );
-    while ( result < 0 && errno == EINTR )
+    ::CloseHandle( process_ );
+    process_ = INVALID_HANDLE_VALUE;
+
+    const DWORD NT_STATUS_SEVERITY_ERROR_MASK = (DWORD) 0xc0000000;
+    if ( (exit_code & NT_STATUS_SEVERITY_ERROR_MASK) == NT_STATUS_SEVERITY_ERROR_MASK )
     {
-        result = waitpid( process_, &exit_code_, 0 );
+        SWEET_ERROR( WaitForProcessFailedError("Process terminated by exception %s (0x%08lx)", error::exception_name(exit_code), (unsigned long) exit_code) );
+        return;
     }
-    if ( result != process_ )
-    {
-        char buffer [1024];
-        SWEET_ERROR( WaitForProcessFailedError("Waiting for a process failed - %s", Error::format(errno, buffer, sizeof(buffer))) );
-    }
-    process_ = 0;
-#elif defined(BUILD_OS_LINUX)
+
+#elif defined(BUILD_OS_MACOS) || defined(BUILD_OS_LINUX)
     SWEET_ASSERT( process_ != 0 );
 
     int status = 0;
@@ -594,25 +602,26 @@ void Process::wait()
         result = waitpid( process_, &status, 0 );
     }
 
-    if ( result == process_ )
-    {
-        if ( WIFEXITED(status) )
-        {
-            exit_code_ = WEXITSTATUS( status );
-        }
-        else if ( WIFSIGNALED(status) )
-        {
-            exit_code_ = WTERMSIG( status );
-        }
-    }
-    else
+    if ( result != process_ )
     {
         char buffer [1024];
         SWEET_ERROR( WaitForProcessFailedError("Waiting for a process failed - %s", Error::format(errno, buffer, sizeof(buffer))) );
         return;
     }
 
-    process_ = 0;    
+    if ( WIFSIGNALED(status) )
+    {
+        int signal = WTERMSIG(status);
+        SWEET_ERROR( WaitForProcessFailedError("Process terminated by signal %s (%d)", error::signal_name(signal), signal) );
+        return;
+    }
+
+    if ( WIFEXITED(status) )
+    {
+        exit_code_ = WEXITSTATUS( status );
+    }
+
+    process_ = 0;
 #endif
 }
 
@@ -625,26 +634,9 @@ void Process::wait()
 int Process::exit_code()
 {
 #if defined(BUILD_OS_WINDOWS)
-    SWEET_ASSERT( process_ != INVALID_HANDLE_VALUE );
-
-    DWORD exit_code = 0;
-    BOOL exited = ::GetExitCodeProcess( process_, &exit_code );
-    if ( !exited )
-    {
-        char error [1024];
-        error::Error::format( ::GetLastError(), error, sizeof(error) );
-        SWEET_ERROR( ExitCodeForProcessFailedError("Getting a process exit code failed - %s", error) );
-    }
-
-    if ( process_ != INVALID_HANDLE_VALUE )
-    {
-        ::CloseHandle( process_ );
-        process_ = INVALID_HANDLE_VALUE;
-    }
-
-    return exit_code;
+    SWEET_ASSERT( process_ == INVALID_HANDLE_VALUE );
 #elif defined(BUILD_OS_MACOS) || defined(BUILD_OS_LINUX)
     SWEET_ASSERT( process_ == 0 );
-    return exit_code_;
 #endif
+    return exit_code_;
 }
