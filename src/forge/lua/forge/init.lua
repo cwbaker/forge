@@ -157,8 +157,9 @@ function run(command, arguments, environment, dependencies_filter, stdout_filter
     if type(arguments) == 'table' then
         arguments = table.concat(arguments, ' ');
     end
-    if execute(command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ...) ~= 0 then
-        error(('%s failed'):format(arguments), 0);
+    local result = execute(command, arguments, environment, dependencies_filter, stdout_filter, stderr_filter, ...);
+    if result ~= 0 then
+        error(('[[%s]] failed with exit code (%d)'):format(arguments, result), 0);
     end
 end
 
@@ -171,11 +172,11 @@ function shell(arguments, environment, dependencies_filter, stdout_filter, stder
     if operating_system() == 'windows' then
         local cmd = 'C:/windows/system32/cmd.exe';
         local result = execute(cmd, ('cmd /c "%s"'):format(arguments), environment, dependencies_filter, stdout_filter, stderr_filter, ...);
-        assertf(result == 0, '[[%s]] failed (result=%d)', arguments, result);
+        assertf(result == 0, '[[%s]] failed with exit code (%d)', arguments, result);
     else
         local sh = '/bin/sh';
         local result = execute(sh, ('sh -c "%s"'):format(arguments), environment, dependencies_filter, stdout_filter, stderr_filter, ...);
-        assertf(result == 0, '[[%s]] failed (result=%d)', arguments, tonumber(result));
+        assertf(result == 0, '[[%s]] failed with exit code (%d)', arguments, tonumber(result));
     end
 end
 
