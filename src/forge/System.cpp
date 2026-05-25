@@ -115,8 +115,8 @@ std::time_t System::last_write_time( const std::string& path ) const
 */
 boost::filesystem::directory_iterator System::ls( const std::string& path ) const
 {
-    return boost::filesystem::exists( path ) ? 
-        boost::filesystem::directory_iterator( path ) : 
+    return boost::filesystem::exists( path ) ?
+        boost::filesystem::directory_iterator( path ) :
         boost::filesystem::directory_iterator()
     ;
 }
@@ -128,13 +128,13 @@ boost::filesystem::directory_iterator System::ls( const std::string& path ) cons
 //  The directory to list files in.
 //
 // @return
-//  A boost::filesystem::recursive_directory_iterator that recursively 
+//  A boost::filesystem::recursive_directory_iterator that recursively
 //  iterates over the files in the directory and its children.
 */
 boost::filesystem::recursive_directory_iterator System::find( const std::string& path ) const
 {
-    return boost::filesystem::exists( path ) ? 
-        boost::filesystem::recursive_directory_iterator( path ) : 
+    return boost::filesystem::exists( path ) ?
+        boost::filesystem::recursive_directory_iterator( path ) :
         boost::filesystem::recursive_directory_iterator()
     ;
 }
@@ -160,8 +160,8 @@ std::string System::executable() const
         file = INVALID_HANDLE_VALUE;
         if ( linked_size < sizeof(linked_path) )
         {
-            // The path returned by `::GetFinalPathNameByHandleA()` has a 
-            // prefix of `\\?\` to indicate that it is an extended length 
+            // The path returned by `::GetFinalPathNameByHandleA()` has a
+            // prefix of `\\?\` to indicate that it is an extended length
             // path.  Skipping over it works for now but is probably the wrong
             // thing in many cases.
             const char* linked_path_without_extended_length_prefix = linked_path + 4;
@@ -177,7 +177,7 @@ std::string System::executable() const
     int linked_size = readlink( executable_path, linked_path, sizeof(linked_path) - 1 );
     if ( linked_size == -1 && errno == EINVAL )
     {
-        return boost::filesystem::path( string(executable_path, size) ).generic_string();
+        return boost::filesystem::path( string(executable_path) ).generic_string();
     }
     else if ( linked_size >= 0 )
     {
@@ -213,7 +213,7 @@ std::string System::home() const
 #else
 #error "ScriptInterface::home() is not implemented for this platform"
 #endif
-    
+
     const char* home = ::getenv( HOME );
     return home ? boost::filesystem::path( string(home) ).generic_string() : string();
 }
@@ -291,7 +291,7 @@ const char* System::operating_system() const
 //  The name of the environment attribute to get the value of.
 //
 // @return
-//  The value of the environment attribute or null if the environment attribute 
+//  The value of the environment attribute or null if the environment attribute
 //  isn't set.
 */
 const char* System::getenv( const char* name ) const
@@ -353,7 +353,7 @@ void System::sleep( float milliseconds ) const
 //  The number of milliseconds elapsed since the system was started.
 */
 float System::ticks() const
-{    
+{
 #if defined(BUILD_OS_WINDOWS)
     return static_cast<float>( ::GetTickCount() ) - initial_tick_count_;
 #elif defined(BUILD_OS_MACOS)
