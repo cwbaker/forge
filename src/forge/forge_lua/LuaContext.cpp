@@ -32,7 +32,7 @@ void LuaContext::create( Forge* forge, lua_State* lua_state )
     SWEET_ASSERT( forge );
     SWEET_ASSERT( lua_state );
 
-    const luaL_Reg working_directory_based_functions[] = 
+    const luaL_Reg working_directory_based_functions[] =
     {
         { "cd", &LuaContext::cd },
         { "pushd", &LuaContext::pushd },
@@ -50,7 +50,7 @@ void LuaContext::create( Forge* forge, lua_State* lua_state )
     lua_pushlightuserdata( lua_state, forge );
     luaL_setfuncs( lua_state, working_directory_based_functions, 1 );
 
-    static const luaL_Reg functions[] = 
+    static const luaL_Reg functions[] =
     {
         { "lower", &LuaContext::lower },
         { "upper", &LuaContext::upper },
@@ -243,7 +243,7 @@ int LuaContext::lower( lua_State* lua_state )
     const char* value = luaL_tolstring( lua_state, STRING, &length );
     string lowercase_value;
     lowercase_value.reserve( length );
-    while ( *value ) 
+    while ( *value )
     {
         lowercase_value.push_back( tolower(*value) );
         ++value;
@@ -259,7 +259,7 @@ int LuaContext::upper( lua_State* lua_state )
     const char* value = luaL_tolstring( lua_state, STRING, &length );
     string uppercase_value;
     uppercase_value.reserve( length );
-    while ( *value ) 
+    while ( *value )
     {
         uppercase_value.push_back( toupper(*value) );
         ++value;
@@ -282,7 +282,7 @@ int LuaContext::branch( lua_State* lua_state )
 {
     const int PATH = 1;
     size_t length = 0;
-    const char* path = luaL_tolstring( lua_state, PATH, &length ); 
+    const char* path = luaL_tolstring( lua_state, PATH, &length );
     string branch = std::filesystem::path( string(path, length) ).parent_path().generic_string();
     lua_pushlstring( lua_state, branch.c_str(), branch.length() );
     return 1;
