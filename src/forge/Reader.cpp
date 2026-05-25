@@ -143,7 +143,7 @@ void Reader::stop()
     {
         {
             std::unique_lock<std::mutex> lock( jobs_mutex_ );
-            if ( !jobs_.empty() )
+            while ( !jobs_.empty() )
             {
                 jobs_empty_condition_.wait( lock );
             }
@@ -151,7 +151,10 @@ void Reader::stop()
             jobs_ready_condition_.notify_all();
         }
 
-        for ( vector<std::thread*>::iterator i = threads_.begin(); i != threads_.end(); ++i )
+        vector<std::thread*> threads;
+        threads.swap( threads_ );
+
+        for ( vector<std::thread*>::iterator i = threads.begin(); i != threads.end(); ++i )
         {
             try
             {
@@ -165,11 +168,11 @@ void Reader::stop()
                 forge_->errorf( 0, "Failed to join thread - %s", exception.what() );
             }
         }
-        
-        while ( !threads_.empty() )
+
+        while ( !threads.empty() )
         {
-            delete threads_.back();
-            threads_.pop_back();
+            delete threads.back();
+            threads.pop_back();
         }
     }
 }
