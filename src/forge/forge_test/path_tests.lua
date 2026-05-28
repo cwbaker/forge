@@ -71,17 +71,6 @@ TestSuite {
         CHECK( is_absolute('a') ~= is_relative('a') );
     end;
 
-    -- lower(), upper()
-    lower_lowercases_string = function()
-        CHECK_EQUAL( 'foo', lower('FOO') );
-        CHECK_EQUAL( 'mixedcase', lower('MixedCase') );
-    end;
-
-    upper_uppercases_string = function()
-        CHECK_EQUAL( 'FOO', upper('foo') );
-        CHECK_EQUAL( 'MIXEDCASE', upper('MixedCase') );
-    end;
-
     -- absolute()
     absolute_with_base_prepends_base_to_relative_path = function()
         CHECK_EQUAL( '/base/foo/bar', absolute('foo/bar', '/base') );

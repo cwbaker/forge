@@ -11,9 +11,15 @@ using namespace sweet::forge;
 
 SUITE( path_and_string_tests )
 {
-    TEST_FIXTURE( ForgeLuaFixture, path_and_string_tests )
+    TEST_FIXTURE( ForgeLuaFixture, path_tests )
     {
-        int errors = forge->file( "path_and_string_tests.lua" );
+        int errors = forge->file( "path_tests.lua" );
+        CHECK( errors == 0 );
+    }
+
+    TEST_FIXTURE( ForgeLuaFixture, string_tests )
+    {
+        int errors = forge->file( "string_tests.lua" );
         CHECK( errors == 0 );
     }
 }
