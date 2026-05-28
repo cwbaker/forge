@@ -2,7 +2,7 @@
 layout: page
 title: Rule Functions
 parent: Reference
-nav_order: 5
+nav_order: 6
 ---
 
 - TOC

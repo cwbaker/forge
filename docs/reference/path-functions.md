@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Path and String Functions
+title: Path Functions
 parent: Reference
 nav_order: 4
 ---
@@ -178,22 +178,6 @@ The leaf portion of a path is the last element.
 
 Returns the last element of `path`
 
-### lower
-
-~~~lua
-function lower( value )
-~~~
-
-Convert a string to lower case.
-
-**Parameters:**
-
-- `value` the string to convert to lower case
-
-**Returns:**
-
-The string `value` converted to lower case.
-
 ### native
 
 ~~~lua
@@ -270,19 +254,3 @@ If the optional `path` parameter is omitted then the calling script's directory 
 **Returns:**
 
 The path `path` expressed as absolute relative to the calling Lua script's directory.
-
-### upper
-
-~~~lua
-function upper( value )
-~~~
-
-Convert a string to upper case.
-
-**Parameters:**
-
-- `value` the string to convert to upper case
-
-**Returns:**
-
-The string `value` converted to upper case.
