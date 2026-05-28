@@ -29,7 +29,6 @@ for _, cc in toolsets('cc.*') do
                 'ErrorChecker.cpp',
                 'FileChecker.cpp',
                 'ForgeLuaFixture.cpp',
-                'TestDirectoryApi.cpp',
                 'TestGraph.cpp',
                 'TestPostorder.cpp'
             };
