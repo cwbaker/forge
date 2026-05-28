@@ -24,12 +24,8 @@ for _, cc in toolsets('cc.*') do
                 defines = {
                     ([[TEST_DIRECTORY=\"%s/\"]]):format( pwd() );
                 };
-                'dependencies.cpp',
-                'file_system_tests.cpp',
-                'hooks.cpp',
+                'lua_tests.cpp',
                 'main.cpp',
-                'path_and_string_tests.cpp',
-                'preorder.cpp',
                 'ErrorChecker.cpp',
                 'FileChecker.cpp',
                 'ForgeLuaFixture.cpp',
