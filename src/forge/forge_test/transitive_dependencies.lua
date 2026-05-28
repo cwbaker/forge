@@ -15,7 +15,7 @@ TestSuite {
         local bar = toolset:StaticLibrary 'bar' {
             'baz';
         };
-        local baz = toolset:StaticLibrary 'baz' {            
+        local baz = toolset:StaticLibrary 'baz' {
         };
 
         CHECK( exe:dependency(1) == foo );
