@@ -5,7 +5,7 @@
 
 #include "stdafx.hpp"
 #include "ConsoleOutputCodePage.hpp"
-#include "EventSink.hpp"
+#include "ForgeErrorPolicy.hpp"
 #include <forge/Forge.hpp>
 #include <forge/path_functions.hpp>
 #include <cmdline/Parser.hpp>
@@ -47,8 +47,7 @@ int main( int argc, char** argv )
         bool stack_trace_enabled = false;
         vector<string> assignments_and_commands;
 
-        EventSink event_sink;
-        error::ErrorPolicy error_policy;
+        ForgeErrorPolicy error_policy;
         cmdline::Parser command_line_parser;
         command_line_parser.add_options()
             ( "help", "h", "Print this message and exit", &help )
@@ -82,7 +81,7 @@ int main( int argc, char** argv )
 
         if ( !root_directory.empty() )
         {
-            Forge forge( directory, error_policy, &event_sink );
+            Forge forge( directory, error_policy );
             forge.set_stack_trace_enabled( stack_trace_enabled );
             forge.set_root_directory( root_directory );
             bool executed_command = false;

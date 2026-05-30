@@ -6,7 +6,7 @@ local function dependency_graph()
     local two = toolset:Target 'two' {'four'; 'three';};
     local three = toolset:Target 'three' {};
     local four = toolset:Target 'four' {};
-    return one, two, three, four;    
+    return one, two, three, four;
 end
 
 TestSuite {
@@ -31,18 +31,18 @@ TestSuite {
 
     assert_in_preorder_traversal = function()
         local one = dependency_graph();
-        local failures = preorder( one, function( target ) 
+        local failures = preorder( one, function( target )
             assert( false );
         end );
-        CHECK_EQUAL( 1, failures );
+        CHECK_EQUAL( 2, failures );
     end;
 
     error_in_preorder_traversal = function()
         local one = dependency_graph();
-        local failures = preorder( one, function( target ) 
+        local failures = preorder( one, function( target )
             error( 'testing error in preorder traversal' );
         end );
-        CHECK_EQUAL( 1, failures );
+        CHECK_EQUAL( 2, failures );
     end;
 
     yield_from_execute_in_preorder_traversal = function()
@@ -51,7 +51,7 @@ TestSuite {
         if operating_system() == 'windows' then
             echo_dev_null = 'echo >nul';
         end
-        local failures = preorder( one, function( target ) 
+        local failures = preorder( one, function( target )
             shell( {echo_dev_null; target:id()} );
         end );
         CHECK_EQUAL( 0, failures );
@@ -59,10 +59,10 @@ TestSuite {
 
     non_existing_executable_in_preorder_traversal = function()
         local one = dependency_graph();
-        local failures = preorder( one, function( target ) 
+        local failures = preorder( one, function( target )
             system( '/this/executable/does/not/exist', '' );
         end );
-        CHECK_EQUAL( 1, failures );
+        CHECK_EQUAL( 2, failures );
     end;
 
     yield_from_buildfile_in_preorder_traversal = function()
@@ -79,9 +79,9 @@ TestSuite {
 
     non_existing_buildfile_in_preorder_traversal = function()
         local one = dependency_graph();
-        local failures = preorder( one, function( target ) 
-            assert( false );
+        local failures = preorder( one, function( target )
+            buildfile( 'this-buildfile-does-not-exist' );
         end );
-        CHECK_EQUAL( 1, failures );
+        CHECK_EQUAL( 2, failures );
     end;
 };

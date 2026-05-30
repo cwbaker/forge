@@ -1,6 +1,5 @@
 #pragma once
 
-#include <forge/ForgeEventSink.hpp>
 #include <error/ErrorPolicy.hpp>
 
 struct lua_State;
@@ -21,7 +20,7 @@ namespace forge
 class FileChecker;
 class Forge;
 
-class ForgeLuaFixture : public ForgeEventSink, public error::ErrorPolicy
+class ForgeLuaFixture : public error::ErrorPolicy
 {
 public:
     forge::Forge* forge;
@@ -35,9 +34,6 @@ public:
 private:
     void report_error( const char* message ) override;
     void report_print( const char* message ) override;
-    void forge_output( Forge* /*forge*/, const char* message ) override;
-    void forge_warning( Forge* /*forge*/, const char* message ) override;
-    void forge_error( Forge* /*forge*/, const char* message ) override;
     static int quiet( lua_State* lua_state );
     static int verbose( lua_State* lua_state );
     static int create( lua_State* lua_state );

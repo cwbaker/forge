@@ -26,7 +26,6 @@ for _, cc in toolsets('cc.*') do
             'Executor.cpp',
             'Filter.cpp',
             'Forge.cpp',
-            'ForgeEventSink.cpp',
             'Graph.cpp',
             'GraphReader.cpp',
             'GraphWriter.cpp',

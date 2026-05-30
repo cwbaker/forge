@@ -2,7 +2,6 @@
 #include "stdafx.hpp"
 #include "ErrorChecker.hpp"
 #include <forge/Forge.hpp>
-#include <forge/ForgeEventSink.hpp>
 #include <UnitTest++/UnitTest++.h>
 
 using namespace sweet::forge;

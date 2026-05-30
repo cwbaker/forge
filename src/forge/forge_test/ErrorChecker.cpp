@@ -12,7 +12,6 @@ using namespace sweet::forge;
 
 ErrorChecker::ErrorChecker()
 : error::ErrorPolicy(),
-  forge::ForgeEventSink(),
   messages(),
   errors( 0 )
 {
@@ -22,19 +21,13 @@ ErrorChecker::~ErrorChecker()
 {
 }
 
-void ErrorChecker::forge_error( Forge* /*forge*/, const char* message )
-{
-    messages.push_back( message );
-    ++errors;
-}    
-
 void ErrorChecker::test( const char* script )
 {
     SWEET_ASSERT( script );
     messages.clear();
-    errors = 0;          
+    errors = 0;
     path path = current_path();
-    Forge forge( path.string(), *this, this );
+    Forge forge( path.string(), *this );
     forge.set_root_directory( path.generic_string() );
     forge.script( string(script) );
 }

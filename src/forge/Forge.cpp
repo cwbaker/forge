@@ -4,7 +4,6 @@
 //
 
 #include "Forge.hpp"
-#include "ForgeEventSink.hpp"
 #include "System.hpp"
 #include "Scheduler.hpp"
 #include "Executor.hpp"
@@ -34,13 +33,11 @@ using namespace sweet::forge;
 //  The directory to search up from to find the root directory (assumed to
 //  be an absolute path).
 //
-// @param event_sink
-//  The EventSink to fire events from this Forge at or null if events 
-//  from this Forge are to be ignored.
+// @param error_policy
+//  The ErrorPolicy to report errors and output through.
 */
-Forge::Forge( const std::string& initial_directory, error::ErrorPolicy& error_policy, ForgeEventSink* event_sink )
+Forge::Forge( const std::string& initial_directory, error::ErrorPolicy& error_policy )
 : error_policy_( error_policy )
-, event_sink_( event_sink )
 , lua_( nullptr )
 , system_( nullptr )
 , reader_( nullptr )
@@ -485,16 +482,10 @@ void Forge::outputf( const char* format, ... )
 {
     SWEET_ASSERT( format );
 
-    if ( event_sink_ && format )
-    {
-        char message [8192];
-        va_list args;
-        va_start( args, format );
-        vsnprintf( message, sizeof(message), format, args );
-        message[sizeof(message) - 1] = 0;
-        va_end( args );
-        event_sink_->forge_output( this, message );
-    }
+    va_list args;
+    va_start( args, format );
+    error_policy_.print_varargs( format, args );
+    va_end( args );
 }
 
 /**
@@ -510,30 +501,20 @@ void Forge::errorf( const char* format, ... )
 {
     SWEET_ASSERT( format );
 
-    if ( event_sink_ && format )
-    {
-        char message [8192];
-        va_list args;
-        va_start( args, format );
-        vsnprintf( message, sizeof(message), format, args );
-        message[sizeof(message) - 1] = 0;
-        va_end( args );
-        event_sink_->forge_error( this, message );
-    }
+    va_list args;
+    va_start( args, format );
+    error_policy_.error_varargs( true, format, args );
+    va_end( args );
 }
 
 void Forge::output( const char* message )
 {
-    if ( event_sink_ && message )
-    {
-        event_sink_->forge_output( this, message );
-    }
+    SWEET_ASSERT( message );
+    error_policy_.print( "%s", message );
 }
 
 void Forge::error( const char* message )
 {
-    if ( event_sink_ && message )
-    {
-        event_sink_->forge_error( this, message );
-    }
+    SWEET_ASSERT( message );
+    error_policy_.error( true, "%s", message );
 }

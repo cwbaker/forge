@@ -27,7 +27,7 @@ ForgeLuaFixture::ForgeLuaFixture()
 , show_errors( false )
 {
     path path = std::filesystem::path( string(TEST_DIRECTORY) );
-    forge = new forge::Forge( path.string(), *this, this );
+    forge = new forge::Forge( path.string(), *this );
     lua_unit_test = new LuaUnitTest;
     file_checker = new FileChecker;
 
@@ -85,41 +85,6 @@ void ForgeLuaFixture::report_print( const char* message )
         fputs( "\n", stdout );
         fflush( stdout );
     }
-}
-
-void ForgeLuaFixture::forge_output( Forge* /*forge*/, const char* message )
-{
-    SWEET_ASSERT( message );
-    if ( show_errors )
-    {
-        fputs( message, stdout );
-        fputs( "\n", stdout );
-        fflush( stdout );
-    }
-}
-
-void ForgeLuaFixture::forge_warning( Forge* /*forge*/, const char* message )
-{
-    SWEET_ASSERT( message );   
-    if ( show_errors )
-    {
-        fputs( "forge_test: ", stderr );
-        fputs( message, stderr );
-        fputs( ".\n", stderr );
-        fflush( stderr );
-    }        
-}
-
-void ForgeLuaFixture::forge_error( Forge* /*forge*/, const char* message )
-{
-    SWEET_ASSERT( message );
-    if ( show_errors )
-    {
-        fputs( "forge_test: ", stderr );
-        fputs( message, stderr );
-        fputs( ".\n", stderr );
-        fflush( stderr );
-    }   
 }
 
 int ForgeLuaFixture::quiet( lua_State* lua_state )

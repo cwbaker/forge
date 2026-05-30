@@ -29,7 +29,7 @@ for _, forge in toolsets('cc.*') do
                     ('BUILD_VERSION="\\"%s\\""'):format( version );
                 };
                 'ConsoleOutputCodePage.cpp',
-                'EventSink.cpp',
+                'ForgeErrorPolicy.cpp',
                 'forge.cpp'
             };
         };

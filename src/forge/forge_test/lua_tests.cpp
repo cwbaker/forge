@@ -38,7 +38,7 @@ SUITE( lua_tests )
     TEST_FIXTURE( ForgeLuaFixture, preorder )
     {
         int errors = forge->file( "preorder.lua" );
-        CHECK_EQUAL( 4, errors );
+        CHECK_EQUAL( 8, errors );
     }
 
     TEST_FIXTURE( ForgeLuaFixture, transitive_dependencies )

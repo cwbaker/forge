@@ -21,7 +21,6 @@ namespace forge
 {
 
 class Context;
-class ForgeEventSink;
 class Reader;
 class Executor;
 class Scheduler;
@@ -38,7 +37,6 @@ class Lua;
 class Forge
 {
     error::ErrorPolicy& error_policy_;
-    ForgeEventSink* event_sink_; ///< The EventSink for this Forge or null if this Forge has no EventSink.
     Lua* lua_; ///< The Lua bindings to the Forge library.
     System* system_; ///< The System that provides access to the operating system.
     Reader* reader_; ///< The reader that filters executable output and dependencies.
@@ -52,7 +50,7 @@ class Forge
     bool stack_trace_enabled_; ///< Print stack traces on error when true.
 
     public:
-        Forge( const std::string& initial_directory, error::ErrorPolicy& error_policy, ForgeEventSink* event_sink );
+        Forge( const std::string& initial_directory, error::ErrorPolicy& error_policy );
         ~Forge();
 
         error::ErrorPolicy& error_policy() const;
