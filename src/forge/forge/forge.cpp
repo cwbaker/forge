@@ -3,7 +3,6 @@
 // Copyright (c) Charles Baker.  All rights reserved.
 //
 
-#include "stdafx.hpp"
 #include "ConsoleOutputCodePage.hpp"
 #include "ForgeErrorPolicy.hpp"
 #include <forge/Forge.hpp>
@@ -18,7 +17,8 @@
 #include <exception>
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef BUILD_OS_WINDOWS
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
 #include <io.h>
 #include <fcntl.h>
 #include <windows.h>

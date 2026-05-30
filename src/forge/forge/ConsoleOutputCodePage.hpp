@@ -16,11 +16,14 @@ class ConsoleOutputCodePage
 public:
     explicit ConsoleOutputCodePage( unsigned int code_page );
     ~ConsoleOutputCodePage();
-    ConsoleOutputCodePage( const ConsoleOutputCodePage& ) = delete;
-    ConsoleOutputCodePage& operator=( const ConsoleOutputCodePage& ) = delete;
 
 private:
     unsigned int prior_code_page_;
+
+    ConsoleOutputCodePage( ConsoleOutputCodePage&& ) = delete;
+    ConsoleOutputCodePage( const ConsoleOutputCodePage& ) = delete;
+    ConsoleOutputCodePage& operator=( ConsoleOutputCodePage&& ) = delete;
+    ConsoleOutputCodePage& operator=( const ConsoleOutputCodePage& ) = delete;
 };
 
 }
