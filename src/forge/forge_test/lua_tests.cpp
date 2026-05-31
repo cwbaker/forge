@@ -46,4 +46,16 @@ SUITE( lua_tests )
         int errors = forge->file( "transitive_dependencies.lua" );
         CHECK( errors == 0 );
     }
+
+    TEST_FIXTURE( ForgeLuaFixture, graph )
+    {
+        int errors = forge->file( "graph_tests.lua" );
+        CHECK_EQUAL( 1, errors );
+    }
+
+    TEST_FIXTURE( ForgeLuaFixture, postorder )
+    {
+        int errors = forge->file( "postorder_tests.lua" );
+        CHECK_EQUAL( 8, errors );
+    }
 }

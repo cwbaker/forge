@@ -26,11 +26,9 @@ for _, cc in toolsets('cc.*') do
                 };
                 'lua_tests.cpp',
                 'main.cpp',
-                'ErrorChecker.cpp',
-                'FileChecker.cpp',
-                'ForgeLuaFixture.cpp',
-                'TestGraph.cpp',
-                'TestPostorder.cpp'
+                'ErrorFixture.cpp',
+                'FileFixture.cpp',
+                'ForgeLuaFixture.cpp'
             };
         };
 
