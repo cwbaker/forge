@@ -31,7 +31,7 @@ public:
     ~ForgeLuaFixture();
 
 private:
-    static int test_suite( lua_State* lua_state );
+    static int unit_test_setup( lua_State* lua_state );
     static int quiet( lua_State* lua_state );
     static int verbose( lua_State* lua_state );
     static int error_message( lua_State* lua_state );

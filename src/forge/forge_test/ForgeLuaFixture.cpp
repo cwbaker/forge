@@ -62,7 +62,7 @@ ForgeLuaFixture::ForgeLuaFixture()
 
     static const luaL_Reg file_functions [] =
     {
-        { "TestSuite", &ForgeLuaFixture::test_suite },
+        { "_unit_test_setup", &ForgeLuaFixture::unit_test_setup },
         { "quiet", &ForgeLuaFixture::quiet },
         { "verbose", &ForgeLuaFixture::verbose },
         { "create", &ForgeLuaFixture::create },
@@ -87,14 +87,11 @@ ForgeLuaFixture::~ForgeLuaFixture()
     delete error_fixture;
 }
 
-int ForgeLuaFixture::test_suite( lua_State* lua_state )
+int ForgeLuaFixture::unit_test_setup( lua_State* lua_state )
 {
     SWEET_ASSERT( lua_state );
-    SWEET_ASSERT( CurrentTest::Details() );
-    SWEET_ASSERT( CurrentTest::Results() );
 
     const int FIXTURE = lua_upvalueindex( 1 );
-    const int TEST_SUITE = 1;
 
     ForgeLuaFixture* fixture = (ForgeLuaFixture*) lua_touserdata( lua_state, FIXTURE );
     SWEET_ASSERT( fixture );
@@ -103,105 +100,14 @@ int ForgeLuaFixture::test_suite( lua_State* lua_state )
     SWEET_ASSERT( forge );
     SWEET_ASSERT( error_fixture );
 
-    luaL_checktype( lua_state, TEST_SUITE, LUA_TTABLE );
-
-    lua_pushnil( lua_state );
-    while ( lua_next(lua_state, TEST_SUITE) != 0 )
-    {
-        if ( lua_isfunction(lua_state, -1) && lua_isstring(lua_state, -2) )
-        {
-            lua_pushvalue( lua_state, -1 );
-            lua_Debug debug;
-            lua_getinfo( lua_state, ">S", &debug );
-            string file = debug.source;
-            int line = debug.linedefined;
-
-            string test_name = lua_tostring( lua_state, -2 );
-            const UnitTest::TestDetails* current_details = UnitTest::CurrentTest::Details();
-            UnitTest::TestDetails details( test_name.c_str(), current_details->suiteName, file.c_str(), line );
-            UnitTest::CurrentTest::Details() = &details;
-
-            Timer test_timer;
-            test_timer.Start();
-            CurrentTest::Results()->OnTestStart( details );
-
-            Context* context = forge->context();
-            string working_directory = context->working_directory()->path();
-            forge->graph()->clear();
-            context->reset_directory( working_directory );
-            error_fixture->clear();
-
-            int result = lua_pcall( lua_state, 0, 0, 0 );
-            switch ( result )
-            {
-                case 0:
-                    break;
-
-                case LUA_ERRRUN:
-                {
-                    MemoryOutStream stream;
-                    stream << lua_tostring( lua_state, -1 );
-                    CurrentTest::Results()->OnTestFailure( details, stream.GetText() );
-                    lua_pop( lua_state, 1 );
-                    break;
-                }
-
-                case LUA_ERRMEM:
-                {
-                    MemoryOutStream stream;
-                    stream << "Out of memory - " << lua_tostring( lua_state, -1 );
-                    CurrentTest::Results()->OnTestFailure( details, stream.GetText() );
-                    lua_pop( lua_state, 1 );
-                    break;
-                }
-
-                case LUA_ERRERR:
-                {
-                    MemoryOutStream stream;
-                    stream << "Error handler failed - " << lua_tostring( lua_state, -1 );
-                    CurrentTest::Results()->OnTestFailure( details, stream.GetText() );
-                    lua_pop( lua_state, 1 );
-                    break;
-                }
-
-                case -1:
-                {
-                    MemoryOutStream stream;
-                    stream << "Execution failed due to an unhandled C++ exception";
-                    CurrentTest::Results()->OnTestFailure( details, stream.GetText() );
-                    break;
-                }
-
-                default:
-                {
-                    SWEET_ASSERT( false );
-                    MemoryOutStream stream;
-                    stream << "Execution failed in an unexpected way - " << lua_tostring( lua_state, -1 );
-                    CurrentTest::Results()->OnTestFailure( details, stream.GetText() );
-                    lua_pop( lua_state, 1 );
-                    break;
-                }
-            }
-
-            const double MAXIMUM_TIME = 1000.0;
-            const double time = test_timer.GetTimeInMs();
-            if ( time > MAXIMUM_TIME )
-            {
-                MemoryOutStream stream;
-                stream << "Global time constraint failed. Expected under " << MAXIMUM_TIME << "ms but took " << time << "ms.";
-                CurrentTest::Results()->OnTestFailure( details, stream.GetText() );
-            }
-            CurrentTest::Results()->OnTestFinish( details, static_cast<float>(time) / 1000.0f );
-            CurrentTest::Details() = current_details;
-            lua_gc( lua_state, LUA_GCCOLLECT, 0 );
-            lua_gc( lua_state, LUA_GCCOLLECT, 0 );
-        }
-        else
-        {
-            lua_pop( lua_state, 1 );
-        }
-    }
-
+    // Reset graph, working directory, and recorded errors before each test so
+    // that tests run independently of one another.  Invoked by the Lua
+    // unit test driver (see `LuaUnitTest`) ahead of each test function.
+    Context* context = forge->context();
+    string working_directory = context->working_directory()->path();
+    forge->graph()->clear();
+    context->reset_directory( working_directory );
+    error_fixture->clear();
     return 0;
 }
 

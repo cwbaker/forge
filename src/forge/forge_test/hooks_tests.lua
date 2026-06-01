@@ -1,4 +1,6 @@
 
+SUITE 'hooks-tests';
+
 require 'forge';
 
 local function open_files_for_hooks_executable()
@@ -11,7 +13,7 @@ end
 local function ignore_filter()
 end
 
-local function hooks_reports_reads_of_opened_files()
+TEST_FIXTURE(_unit_test_setup, 'hooks_reports_reads_of_opened_files', function()
     local accesses = 0;
     local expected_path = absolute( 'hooks_tests.lua' );
 
@@ -34,9 +36,9 @@ local function hooks_reports_reads_of_opened_files()
 
     run( open_files_for_hooks, arguments, nil, dependencies_filter, ignore_filter, ignore_filter );
     assert( accesses > 0, 'No hook accesses reported' );
-end
+end);
 
-local function hooks_reports_reads_of_non_ascii_paths()
+TEST_FIXTURE(_unit_test_setup, 'hooks_reports_reads_of_non_ascii_paths', function()
     local NON_ASCII_FILE = 'h\xc3\xa9llo.txt';
     local expected_path = absolute( NON_ASCII_FILE );
     local saw_read = false;
@@ -61,7 +63,4 @@ local function hooks_reports_reads_of_non_ascii_paths()
 
     run( open_files_for_hooks, arguments, nil, dependencies_filter, ignore_filter, ignore_filter );
     assert( saw_read, ('Hooks did not report read of "%s"'):format(expected_path) );
-end
-
-hooks_reports_reads_of_opened_files();
-hooks_reports_reads_of_non_ascii_paths();
+end);

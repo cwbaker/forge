@@ -3,30 +3,30 @@ local forge = require( 'forge' ):load();
 local toolset = forge.Toolset() {};
 toolset:install( 'forge.cc' );
 
-TestSuite {
-    transitive_dependencies_found = function()
-        local exe = toolset:Executable 'exe' {
-            'foo';
-            'baz';
-        };
-        local foo = toolset:StaticLibrary 'foo' {
-            'bar';
-        };
-        local bar = toolset:StaticLibrary 'bar' {
-            'baz';
-        };
-        local baz = toolset:StaticLibrary 'baz' {
-        };
+SUITE 'transitive-dependencies';
 
-        CHECK( exe:dependency(1) == foo );
-        CHECK( exe:dependency(2) == baz );
-        CHECK( exe:dependency(3) == nil );
+TEST_FIXTURE(_unit_test_setup, 'transitive_dependencies_found', function()
+    local exe = toolset:Executable 'exe' {
+        'foo';
+        'baz';
+    };
+    local foo = toolset:StaticLibrary 'foo' {
+        'bar';
+    };
+    local bar = toolset:StaticLibrary 'bar' {
+        'baz';
+    };
+    local baz = toolset:StaticLibrary 'baz' {
+    };
 
-        prepare( exe );
+    CHECK( exe:dependency(1) == foo );
+    CHECK( exe:dependency(2) == baz );
+    CHECK( exe:dependency(3) == nil );
 
-        CHECK( exe:dependency(1) == foo );
-        CHECK( exe:dependency(2) == bar );
-        CHECK( exe:dependency(3) == baz );
-        CHECK( exe:dependency(4) == nil );
-    end;
-};
+    prepare( exe );
+
+    CHECK( exe:dependency(1) == foo );
+    CHECK( exe:dependency(2) == bar );
+    CHECK( exe:dependency(3) == baz );
+    CHECK( exe:dependency(4) == nil );
+end);
