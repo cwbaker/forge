@@ -330,18 +330,18 @@ function Target.dependencies( target, start, finish )
 
 Iterate over the explicit dependencies of `target`.  The `start` and `finish` parameters are optional and default to 1 and `INT_MAX` respectively to give the effect of iterating over all the explicit dependencies of `target`.
 
-### ordering_dependencies
+### ordering_dependency
 
 ~~~lua
-function Target.ordering_dependencies( target )
+function Target.ordering_dependency( target, n )
 ~~~
 
-Iterate over the ordering dependencies of `target`.  The `start` and `finish` parameters are optional and default to 1 and `INT_MAX` respectively to give the effect of iterating over all the ordering dependencies of `target`.
+Return the `n`th ordering dependency of `target` or nil if `n` is greater than the number of ordering dependencies of `target`.  The `n` parameter is optional and defaults to 1.
 
-### any_dependencies
+### all_dependencies
 
 ~~~lua
-function Target.all_dependencies( target )
+function Target.all_dependencies( target, start, finish )
 ~~~
 
 Iterate over all dependencies of `target`.  The `start` and `finish` parameters are optional and default to 1 and `INT_MAX` respectively to give the effect of iterating over all dependencies of `target`.
