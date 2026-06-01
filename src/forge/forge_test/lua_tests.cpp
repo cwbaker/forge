@@ -35,6 +35,12 @@ SUITE( lua_tests )
         CHECK( errors == 0 );
     }
 
+    TEST_FIXTURE( ForgeLuaFixture, system_functions )
+    {
+        int errors = forge->file( "system_function_tests.lua" );
+        CHECK( errors == 0 );
+    }
+
     TEST_FIXTURE( ForgeLuaFixture, hooks )
     {
         int errors = forge->file( "hooks_tests.lua" );
