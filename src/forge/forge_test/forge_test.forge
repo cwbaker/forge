@@ -22,7 +22,7 @@ for _, cc in toolsets('cc.*') do
 
             cc:Cxx '${obj}/%1' {
                 defines = {
-                    ([[TEST_DIRECTORY=\"%s/\"]]):format( pwd() );
+                    ([[TEST_DIRECTORY=\"%s\"]]):format( pwd() );
                 };
                 'lua_tests.cpp',
                 'main.cpp',
@@ -36,8 +36,8 @@ for _, cc in toolsets('cc.*') do
             cc:Cxx '${obj}/%1' {
                 pdb = 'forge_test_open_files_for_hooks';
                 defines = {
-                    ([[TEST_DIRECTORY=\"%s/\"]]):format( pwd() );
-                    ([[WIDE_TEST_DIRECTORY=L\"%s/\"]]):format( pwd() );
+                    ([[TEST_DIRECTORY=\"%s\"]]):format( pwd() );
+                    ([[WIDE_TEST_DIRECTORY=L\"%s\"]]):format( pwd() );
                 };
                 'forge_test_open_files_for_hooks.cpp';
             };
