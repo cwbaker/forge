@@ -59,6 +59,12 @@ SUITE( lua_tests )
         CHECK( errors == 0 );
     }
 
+    TEST_FIXTURE( ForgeLuaFixture, toolset_methods )
+    {
+        int errors = forge->file( "toolset_tests.lua" );
+        CHECK( errors == 0 );
+    }
+
     TEST_FIXTURE( ForgeLuaFixture, graph )
     {
         int errors = forge->file( "graph_tests.lua" );
