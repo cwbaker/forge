@@ -98,13 +98,7 @@ True if the settings are valid otherwise false.
 
 ## Methods
 
-### create
-
-~~~lua
-function Toolset.create( toolset, settings )
-~~~
-
-Create a new toolset optionally initializing its settings to `settings`.
+New toolsets are created by calling the toolset (see [Construction](#construction) above) and derived from existing toolsets with `clone()` and `inherit()`.
 
 ### clone
 
@@ -122,29 +116,21 @@ function Toolset.inherit( toolset, settings )
 
 Create a new toolset initializing its settings by inheriting settings from `toolset` and overriding by `settings`.  Settings are inherited from `toolset` and overridden by values in `settings`.
 
-### append
-
-~~~lua
-function Toolset.append( toolset, values, value )
-~~~
-
-Append `value` to `values`.  If `value` is a table then all of its array elements are appended to `values`.  Otherwise `value` itself is appended to `values`.
-
 ### merge
 
 ~~~lua
-function Toolset.merge( toolset, destination, source )
+function merge( destination, source )
 ~~~
 
-Merge fields with string keys from `source` to `destination`.
+Merge fields with string keys from `source` into `destination`.  Array-valued fields are appended; other values overwrite.  This is a global function rather than a toolset method.
 
 ### defaults
 
 ~~~lua
-function Toolset.defaults( toolset, destination, source )
+function Toolset.defaults( toolset, values )
 ~~~
 
-Set fields in that aren't already set in `destination` to values from `source`.
+Set fields on `toolset` that aren't already set to the corresponding values from `values`.
 
 ### interpolate
 
@@ -165,7 +151,7 @@ Return a dependencies filter to add dependencies to `target`.  The returned func
 ### filenames_filter
 
 ~~~lua
-function Toolset.dependencies_filter( toolset, target )
+function Toolset.filenames_filter( toolset, target )
 ~~~
 
 Return a filename filter to add output filenames and implicit dependencies to `target`.  The returned function can be passed to `execute()` to automatically detect and add both output filenames and implicit dependencies to `target` when it is built.
