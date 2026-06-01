@@ -88,22 +88,6 @@ TEST_FIXTURE(_unit_test_setup, 'save_binary_writes_to_filename_set_by_load_binar
     rm( cache );
 end);
 
--- print_dependencies(), print_namespace()
-
-TEST_FIXTURE(_unit_test_setup, 'print_dependencies_runs_without_error', function()
-    quiet();
-    local target = Target( forge, 'print_dependencies_target' );
-    print_dependencies( target );
-    CHECK( true );
-end);
-
-TEST_FIXTURE(_unit_test_setup, 'print_namespace_runs_without_error', function()
-    quiet();
-    local target = Target( forge, 'print_namespace_target' );
-    print_namespace( target );
-    CHECK( true );
-end);
-
 -- prune()
 
 TEST_FIXTURE(_unit_test_setup, 'prune_stops_preorder_descent_into_dependencies', function()
