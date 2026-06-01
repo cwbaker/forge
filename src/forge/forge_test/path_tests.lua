@@ -198,3 +198,37 @@ TEST_FIXTURE(_unit_test_setup, 'executable_with_relative_argument_resolves_again
     CHECK( is_absolute(path) );
     CHECK_EQUAL( 'path', leaf(path) );
 end);
+
+-- native()
+
+TEST_FIXTURE(_unit_test_setup, 'native_converts_to_platform_separator', function()
+    if operating_system() == 'windows' then
+        CHECK_EQUAL( 'foo\\bar\\baz.txt', native('foo/bar/baz.txt') );
+    else
+        CHECK_EQUAL( 'foo/bar/baz.txt', native('foo/bar/baz.txt') );
+    end
+end);
+
+-- script()
+
+TEST_FIXTURE(_unit_test_setup, 'script_without_argument_returns_absolute_script_directory', function()
+    require 'forge';
+    local directory = script();
+    CHECK( is_absolute(directory) );
+end);
+
+TEST_FIXTURE(_unit_test_setup, 'script_with_relative_argument_resolves_against_script_directory', function()
+    require 'forge';
+    local path = script( 'sub/file.txt' );
+    CHECK( is_absolute(path) );
+    CHECK_EQUAL( 'file.txt', leaf(path) );
+    CHECK_EQUAL( 'sub', leaf(branch(path)) );
+    -- This test script lives in the root directory so resolving against the
+    -- script directory matches resolving against the root directory.
+    CHECK_EQUAL( root('sub/file.txt'), path );
+end);
+
+TEST_FIXTURE(_unit_test_setup, 'script_passes_through_absolute_argument', function()
+    require 'forge';
+    CHECK_EQUAL( absolute('/already/absolute.txt'), script('/already/absolute.txt') );
+end);
