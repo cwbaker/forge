@@ -59,6 +59,12 @@ SUITE( lua_tests )
         CHECK_EQUAL( 1, errors );
     }
 
+    TEST_FIXTURE( ForgeLuaFixture, graph_functions )
+    {
+        int errors = forge->file( "graph_function_tests.lua" );
+        CHECK_EQUAL( 1, errors );
+    }
+
     TEST_FIXTURE( ForgeLuaFixture, postorder )
     {
         int errors = forge->file( "postorder_tests.lua" );
