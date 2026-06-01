@@ -9,6 +9,7 @@
 #include <luaxx/luaxx.hpp>
 #include <assert/assert.hpp>
 #include <lua.hpp>
+#include <system_error>
 
 using std::string;
 using std::filesystem::directory_iterator;
@@ -152,7 +153,14 @@ int LuaFileSystem::cp( lua_State* lua_state )
     const int FROM = 2;
     std::filesystem::path to = absolute( lua_state, TO );
     std::filesystem::path from = absolute( lua_state, FROM );
-    std::filesystem::copy_file( from, to );
+    std::error_code error_code;
+    std::filesystem::copy_file( from, to, error_code );
+    if ( error_code )
+    {
+        return luaL_error( lua_state, "Copying '%s' to '%s' failed - %s",
+            from.string().c_str(), to.string().c_str(), error_code.message().c_str()
+        );
+    }
     return 0;
 }
 
@@ -160,7 +168,14 @@ int LuaFileSystem::rm( lua_State* lua_state )
 {
     const int PATH = 1;
     std::filesystem::path path = absolute( lua_state, PATH );
-    std::filesystem::remove( path );
+    std::error_code error_code;
+    std::filesystem::remove( path, error_code );
+    if ( error_code )
+    {
+        return luaL_error( lua_state, "Removing '%s' failed - %s",
+            path.string().c_str(), error_code.message().c_str()
+        );
+    }
     return 0;
 }
 
