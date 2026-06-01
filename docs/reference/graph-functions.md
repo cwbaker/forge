@@ -14,9 +14,9 @@ Forge's core data structure is a dependency graph.  The nodes and connections in
 
 Targets exist in a hierarchical namespace with POSIX path like semantics.  Each target has an identifier, a parent, and zero or more children.  A target path consists of one or more identifiers separated by the "/" character.  The special elements "." and ".." refer to the current working directory and parent of the working directory respectively.  Relative target paths are relative to the current working directory.
 
-Add or find targets in the dependency graph with the `add_target()` and `find_target()` functions.  When no existing target is found `add_target()` function will add one and return it while `find_target()` will simply return nil.  Buildfiles usually call domain specific language functions like `Executable`, `StaticLibrary`, etc to create targets rather than calling `add_target()` and `find_target()` directly.
+Find targets in the dependency graph with the `find_target()` function, which returns nil when no matching target exists.  Create targets with `Target()` or, more commonly, the domain specific language functions like `Executable`, `StaticLibrary`, etc.  See [Target](target.md) for the target creation functions.
 
-Add rules with the `add_rule()` function.  Rules are usually created through the higher level functions `Rule()`, `FileRule()`, `PatternRule()`, and `GroupRule()`.
+Rules are created through `Rule()` and the higher level functions `FileRule()`, `PatternRule()`, and `GroupRule()`.  See [Rule Functions](rule-functions.md).
 
 Run a build by visiting the targets in a post-order traversal with `postorder()`.  This visits and builds all dependencies before the targets that depend on them.  Each target is visited by calling a short Lua script that typically calls a function like `build` or `clean` defined on the rule of each visited target.
 
@@ -27,45 +27,6 @@ Load, save, and clear the dependency graph with `load_binary()`, `save_binary()`
 Debug builds by printing the dependency graph with `print_dependencies()` function or the target namespace with the `print_namespace()`.  The dependency information is useful when determining why targets are being built when they shouldn't and vice versa.
 
 ## Functions
-
-### add_target
-
-~~~lua
-function add_target( id, [rule] )
-~~~
-
-Find an existing or create a new target.
-
-The `id` parameter specifies a target path that uniquely identifies the target to find or create.  Relative paths are considered relative to the current working directory.  If `id` is the empty string or nil then an anonymous target is created using an identifier unique within the current working directory.
-
-The `rule` parameter specifies the rule to use when creating the target.  It is an error for the same target to be created with more than one rule.  If `rule` is omitted or nil then a target without any rule is created.
-
-**Parameters:**
-
-- `id` the identifier of the target to find or create (optional)
-- `rule` the rule of the target to create (optional)
-
-**Returns:**
-
-The existing or newly created target identified by `id`. 
-
-### add_rule
-
-~~~lua
-function add_rule( id )
-~~~
-
-Add a rule for use in this dependency graph.
-
-The identifier is used only to describe the type of a target when displaying the dependencies or namespace for a dependency graph.  It should be unique enough to be useful for this purpose.  It doesn't necessarily need to be unique across the entire build.
-
-**Parameters:**
-
-- `id` the identifier of the rule to add
-
-**Returns:**
-
-The new rule.
 
 ### anonymous
 
