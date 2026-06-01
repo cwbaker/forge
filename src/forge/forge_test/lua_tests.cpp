@@ -23,6 +23,12 @@ SUITE( lua_tests )
         CHECK( errors == 0 );
     }
 
+    TEST_FIXTURE( ForgeLuaFixture, directory_function_tests )
+    {
+        int errors = forge->file( "directory_function_tests.lua" );
+        CHECK( errors == 0 );
+    }
+
     TEST_FIXTURE( ForgeLuaFixture, file_system_tests )
     {
         int errors = forge->file( "file_system_tests.lua" );

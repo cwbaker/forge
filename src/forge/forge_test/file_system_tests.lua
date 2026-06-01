@@ -1,33 +1,5 @@
 
 SUITE 'file-system-tests';
--- pwd(), cd(), pushd(), popd()
-
-TEST_FIXTURE(_unit_test_setup, 'pwd_returns_absolute_path', function()
-    local path = pwd();
-    CHECK( is_absolute(path) );
-end);
-
-TEST_FIXTURE(_unit_test_setup, 'cd_changes_pwd_and_back_via_absolute', function()
-    local path = pwd();
-    cd( 'cd_test_subdir' );
-    CHECK_EQUAL( 'cd_test_subdir', leaf(pwd()) );
-    cd( path );
-    CHECK_EQUAL( path, pwd() );
-end);
-
-TEST_FIXTURE(_unit_test_setup, 'pushd_popd_round_trip', function()
-    local before = pwd();
-    pushd( 'a' );
-    local after_first = pwd();
-    CHECK_EQUAL( 'a', leaf(after_first) );
-    pushd( 'b' );
-    CHECK_EQUAL( 'b', leaf(pwd()) );
-    CHECK_EQUAL( 'a', leaf(branch(pwd())) );
-    popd();
-    CHECK_EQUAL( after_first, pwd() );
-    popd();
-    CHECK_EQUAL( before, pwd() );
-end);
 
 -- exists()
 
