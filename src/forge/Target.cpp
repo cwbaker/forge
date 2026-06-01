@@ -33,8 +33,8 @@ Target::Target()
 , branch_()
 , graph_( nullptr )
 , rule_( nullptr )
-, timestamp_()
-, last_write_time_()
+, timestamp_( file_time_type::min() )
+, last_write_time_( file_time_type::min() )
 , hash_( 0 )
 , pending_hash_( 0 )
 , outdated_( false )
@@ -74,8 +74,8 @@ Target::Target( const std::string& id, Graph* graph )
 , branch_()
 , graph_( graph )
 , rule_( nullptr )
-, timestamp_()
-, last_write_time_()
+, timestamp_( file_time_type::min() )
+, last_write_time_( file_time_type::min() )
 , hash_( 0 )
 , pending_hash_( 0 )
 , outdated_( false )
@@ -312,7 +312,7 @@ void Target::bind_to_file()
     {
         if ( !filenames_.empty() )
         {
-            file_time_type latest_last_write_time = file_time_type{};
+            file_time_type latest_last_write_time = file_time_type::min();
             file_time_type earliest_last_write_time = file_time_type::max();
 
             for ( vector<string>::const_iterator filename = filenames_.begin(); filename != filenames_.end(); ++filename )
@@ -327,7 +327,7 @@ void Target::bind_to_file()
                 else
                 {
                     latest_last_write_time = file_time_type::max();
-                    earliest_last_write_time = file_time_type{};
+                    earliest_last_write_time = file_time_type::min();
                 }
             }
 
@@ -336,8 +336,8 @@ void Target::bind_to_file()
         }
         else
         {
-            timestamp_ = file_time_type{};
-            last_write_time_ = file_time_type{};
+            timestamp_ = file_time_type::min();
+            last_write_time_ = file_time_type::min();
         }
         
         bound_to_file_ = true;
