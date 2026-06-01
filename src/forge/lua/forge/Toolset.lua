@@ -156,7 +156,8 @@ function Toolset:platform_matches(...)
         return true;
     end
     for i = 1, select('#', ...) do
-        if platform:match(select(i, ...)) then
+        local pattern = select(i, ...);
+        if platform:match(pattern) then
             return true;
         end
     end
