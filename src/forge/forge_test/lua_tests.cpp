@@ -71,6 +71,12 @@ SUITE( lua_tests )
         CHECK_EQUAL( 1, errors );
     }
 
+    TEST_FIXTURE( ForgeLuaFixture, rule_functions )
+    {
+        int errors = forge->file( "rule_function_tests.lua" );
+        CHECK( errors == 0 );
+    }
+
     TEST_FIXTURE( ForgeLuaFixture, postorder )
     {
         int errors = forge->file( "postorder_tests.lua" );
