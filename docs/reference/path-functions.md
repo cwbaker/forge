@@ -88,6 +88,24 @@ Extract the extension portion of `path` (including the period ".").  If there is
 
 The extension portion of `path` including the leading period ".".
 
+### executable
+
+~~~lua
+function executable( path )
+~~~
+
+Convert a path into an absolute path relative to the directory containing the Forge executable.
+
+If the optional `path` parameter is omitted then the directory containing the Forge executable is returned.  If `path` already specifies an absolute path then it is returned unchanged.
+
+**Parameters:**
+
+- `path` the relative path to make absolute relative to the executable directory
+
+**Returns:**
+
+The relative path `path` expressed as an absolute path relative to the directory containing the Forge executable.
+
 ### home
 
 ~~~lua
