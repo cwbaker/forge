@@ -177,18 +177,35 @@ end);
 -- dependencies_filter(), filenames_filter()
 --
 -- These return filter functions for execute() that detect dependencies and
--- output filenames from build-hook output.  Their end-to-end behaviour is
--- exercised through the build hooks pipeline in hooks_tests.lua; here we only
--- check that each returns a callable filter.
+-- output filenames from build-hook output lines.  Their end-to-end behaviour
+-- through a real process is exercised in hooks_tests.lua; here we feed hook
+-- lines to the returned filter directly.
 
-TEST_FIXTURE(_unit_test_setup, 'dependencies_filter_returns_a_filter_function', function()
+TEST_FIXTURE(_unit_test_setup, 'dependencies_filter_adds_read_files_as_implicit_dependencies', function()
     local toolset = make_toolset();
     local target = Target( toolset, 'dependencies_filter_target' );
-    CHECK_EQUAL( 'function', type(toolset:dependencies_filter(target)) );
+    create( 'dependencies_filter_input.txt' );
+    local filter = toolset:dependencies_filter( target );
+    filter( ("== read '%s'"):format(root('dependencies_filter_input.txt')) );
+    local found = false;
+    for _, dependency in target:all_dependencies() do
+        if leaf(dependency:path()) == 'dependencies_filter_input.txt' then
+            found = true;
+        end
+    end
+    CHECK( found );
 end);
 
-TEST_FIXTURE(_unit_test_setup, 'filenames_filter_returns_a_filter_function', function()
+TEST_FIXTURE(_unit_test_setup, 'filenames_filter_adds_written_files_as_filenames', function()
     local toolset = make_toolset();
     local target = toolset:File( 'filenames_filter_dir/out.bin' );
-    CHECK_EQUAL( 'function', type(toolset:filenames_filter(target)) );
+    local filter = toolset:filenames_filter( target );
+    filter( ("== write '%s'"):format(root('filenames_filter_dir/generated.o')) );
+    local found = false;
+    for _, filename in target:filenames() do
+        if leaf(filename) == 'generated.o' then
+            found = true;
+        end
+    end
+    CHECK( found );
 end);
