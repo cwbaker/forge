@@ -110,3 +110,21 @@ TEST_FIXTURE(_unit_test_setup, 'touch_preserves_file', function()
     touch( 'touch_preserves_file.tmp', 5000 );
     CHECK( exists(root('touch_preserves_file.tmp')) );
 end);
+
+-- documented failure modes
+
+TEST_FIXTURE(_unit_test_setup, 'cp_onto_existing_file_fails', function()
+    create( 'cp_existing_src.tmp', nil, 'hello' );
+    create( 'cp_existing_dst.tmp', nil, 'world' );
+    local ok = pcall( cp, root('cp_existing_dst.tmp'), root('cp_existing_src.tmp') );
+    CHECK( not ok );
+end);
+
+TEST_FIXTURE(_unit_test_setup, 'rm_on_non_empty_directory_fails', function()
+    mkdir( root('rm_non_empty_dir') );
+    create( 'rm_non_empty_dir/child.tmp' );
+    local ok = pcall( rm, root('rm_non_empty_dir') );
+    CHECK( not ok );
+    CHECK( exists(root('rm_non_empty_dir/child.tmp')) );
+    rmdir( root('rm_non_empty_dir') );
+end);
