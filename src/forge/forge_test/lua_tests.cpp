@@ -77,6 +77,12 @@ SUITE( lua_tests )
         CHECK( errors == 0 );
     }
 
+    TEST_FIXTURE( ForgeLuaFixture, target_methods )
+    {
+        int errors = forge->file( "target_tests.lua" );
+        CHECK( errors == 0 );
+    }
+
     TEST_FIXTURE( ForgeLuaFixture, postorder )
     {
         int errors = forge->file( "postorder_tests.lua" );
