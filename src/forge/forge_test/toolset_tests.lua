@@ -91,7 +91,9 @@ TEST_FIXTURE(_unit_test_setup, 'platform_matches_compares_platform_setting', fun
     toolset.platform = 'linux';
     CHECK( toolset:platform_matches('linux') );
     CHECK( toolset:platform_matches('lin') );
+    CHECK( toolset:platform_matches('win32', 'linux') );
     CHECK( not toolset:platform_matches('macos') );
+    CHECK( not toolset:platform_matches('win32', 'macos') );
 end);
 
 -- which()
