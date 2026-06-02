@@ -65,13 +65,13 @@ end
 
 function gcc.static_library_filename(toolset, identifier)
     local identifier = absolute(toolset:interpolate(identifier));
-    local filename = ('%s/lib%s.a'):format(branch(identifier), leaf(identifier));
+    local filename = ('%s/lib%s.a'):format(branch(identifier), cc.strip_lib_prefix(leaf(identifier)));
     return identifier, filename;
 end
 
 function gcc.dynamic_library_filename(toolset, identifier)
     local identifier = absolute(toolset:interpolate(identifier));
-    local filename = ('%s/lib%s.so'):format(branch(identifier), leaf(identifier));
+    local filename = ('%s/lib%s.so'):format(branch(identifier), cc.strip_lib_prefix(leaf(identifier)));
     return identifier, filename;
 end
 
@@ -304,7 +304,7 @@ function gcc.append_libraries(toolset, target, flags)
             if library.whole_archive then
                 table.insert(flags, '-Wl,--whole-archive');
             end
-            table.insert(flags, ('-l%s'):format(library:id()));
+            table.insert(flags, ('-l%s'):format(cc.strip_lib_prefix(library:id())));
             if library.whole_archive then
                 table.insert(flags, '-Wl,--no-whole-archive');
             end

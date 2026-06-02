@@ -55,6 +55,18 @@ function cc.static_library_depend(toolset, target, dependencies)
     end
 end
 
+-- Strip any leading `lib-` prefix from *name*.
+--
+-- Allows libraries to be named with a `lib-` prefix without that prefix
+-- being added a second time in the output filename, e.g. liblua is built to
+-- libliblua.a.
+function cc.strip_lib_prefix(basename)
+    if basename:sub(1, 3) == 'lib' then
+        return basename:sub(4);
+    end
+    return basename;
+end
+
 _G.cc = cc;
 
 local operating_system = _G.operating_system();

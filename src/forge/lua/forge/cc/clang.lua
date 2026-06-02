@@ -75,7 +75,7 @@ end
 
 function clang.static_library_filename(toolset, identifier)
     local identifier = absolute(toolset:interpolate(identifier));
-    local filename = ('%s/lib%s.a'):format(branch(identifier), leaf(identifier));
+    local filename = ('%s/lib%s.a'):format(branch(identifier), cc.strip_lib_prefix(leaf(identifier)));
     return identifier, filename;
 end
 
@@ -88,7 +88,7 @@ function clang.dynamic_library_filename(toolset, identifier)
     elseif operating_system == 'windows' then
         filename = ('%s.dll'):format(identifier);
     else
-        filename = ('%s/lib%s.so'):format(branch(identifier), leaf(identifier));
+        filename = ('%s/lib%s.so'):format(branch(identifier), cc.strip_lib_prefix(leaf(identifier)));
     end
     return identifier, filename;
 end
@@ -363,7 +363,7 @@ function clang.append_libraries(toolset, target, flags)
             if library.whole_archive then
                 table.insert(flags, ('-force_load "%s"'):format(library:filename()));
             else
-                table.insert(flags, ('-l%s'):format(library:id()));
+                table.insert(flags, ('-l%s'):format(cc.strip_lib_prefix(library:id())));
             end
         end
     end
