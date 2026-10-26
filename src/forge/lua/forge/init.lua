@@ -463,7 +463,7 @@ function merge(destination, source)
     local destination = destination or {};
     for key, value in pairs(source) do
         if type(key) == 'string' then
-            if type(value) == 'table' then
+            if type(value) == 'table' and typename(value) ~= 'forge.Target' then
                 local values = destination[key] or {};
                 for _, other_value in ipairs(value) do
                     table.insert(values, other_value);
